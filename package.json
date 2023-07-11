@@ -1,6 +1,6 @@
 {
-  "name": "linktab",
-  "version": "0.1.0",
+  "name": "linkchar-next-template",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "start": "next dev",
@@ -9,22 +9,28 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@types/node": "20.1.1",
-    "@types/react": "18.2.6",
-    "@types/react-dom": "18.2.4",
-    "axios": "^1.2.0",
-    "bootstrap": "^5.2.3",
+    "axios": "^1.4.0",
+    "bootstrap": "^5.3.0",
     "classnames": "^2.3.2",
-    "eslint": "8.40.0",
-    "eslint-config-next": "13.4.1",
-    "formik": "^2.2.9",
-    "framer-motion": "^10.12.10",
-    "next": "13.4.1",
+    "formik": "^2.4.2",
+    "framer-motion": "^10.12.18",
+    "next": "13.4.9",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-query": "^3.39.2",
-    "sass": "^1.56.1",
-    "typescript": "5.0.4",
-    "yup": "^0.32.11"
+    "react-query": "^3.39.3",
+    "sass": "^1.63.6",
+    "swr": "^2.2.0",
+    "typescript": "5.1.6",
+    "yup": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.2.6",
+    "@types/node": "^20.4.1",
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "eslint": "^8.44.0",
+    "eslint-config-next": "^13.4.9",
+    "eslint-plugin-react": "^7.32.2"
   }
 }
