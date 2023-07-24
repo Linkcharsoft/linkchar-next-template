@@ -34,7 +34,7 @@
   },
   "include": [
     "src/",
-    ".next/types/**/*.ts",
+    ".next/types/**/*.ts", "src/assets/fonts/.gitkeep",
   ],
   "exclude": [
     "node_modules"

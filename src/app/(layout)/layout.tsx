@@ -5,6 +5,7 @@ import '@/styles/index.sass'
 
 export const metadata: Metadata = {
   // General
+  metadataBase: new URL('https://linkchar.com'), // Replace with an env variable with proyect domain
   applicationName: 'Linkchar Next Template',
   generator: 'Next.js',
   title: {
@@ -24,13 +25,16 @@ export const metadata: Metadata = {
   ],
   category: 'Software Development',
   // Author
-  authors: [{ name: 'Lucas Ojeda De Sousa (Lukway)', url: 'luwkay.dev@gmail.com' }],
+  authors: [{ name: 'Lucas Ojeda De Sousa (Lukway)', url: 'lukway.dev@gmail.com' }],
   creator: 'Lucas Ojeda De Sousa (Lukway)',
-  publisher: 'Linkchar Next Template',
+  publisher: 'Linkchar - Next Template',
   // URL
-  metadataBase: new URL('http://localhost:3000'),
+  manifest: '/manifest.json',
   alternates: {
     canonical: '/',
+    languages: {
+      'en-US': '/',
+    },
   },
   // SEO
   keywords: ['Linkchar'],
@@ -42,14 +46,14 @@ export const metadata: Metadata = {
     siteName: 'Linkchar Software Development',
     images: [
       {
-        url: 'https://nextjs.org/og.png',
+        url: 'https://linkchar-static-bk.s3.amazonaws.com/static/img/seo/seo.jpg',
         width: 800,
-        height: 600,
+        height: 465,
       },
       {
-        url: 'https://nextjs.org/og-alt.png',
-        width: 1800,
-        height: 1600,
+        url: 'https://linkchar-static-bk.s3.amazonaws.com/static/img/seo/seo.jpg',
+        width: 1400,
+        height: 810,
         alt: 'My custom alt',
       },
     ],
@@ -58,12 +62,15 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Next.js',
-    description: 'Linkchar Next Template',
-    siteId: '1467726470533754880',
-    creator: '@nextjs',
-    creatorId: '1467726470533754880',
-    images: ['https://nextjs.org/og.png'],
+    title: 'Linkchar - Next Template',
+    description: 'Linkchar - Next Template',
+    siteId: '123456789',
+    creator: '@linkchar',
+    creatorId: '123456789',
+    images: {
+      url: 'https://linkchar-static-bk.s3.amazonaws.com/static/img/seo/seo.jpg',
+      alt: 'Linkchar',
+    }
   },
   // Robots
   robots: {
@@ -82,38 +89,47 @@ export const metadata: Metadata = {
   // Icons
   icons: {
     icon: [
-      { url: '/favicon16.svg', sizes: '16x16' },
-      { url: '/favicon32.svg', sizes: '32x32' },
-      { url: '/favicon36.svg', sizes: '36x36' },
-      { url: '/favicon48.svg', sizes: '48x48' },
-      { url: '/favicon72.svg', sizes: '72x72' },
-      { url: '/favicon96.svg', sizes: '96x96' },
-      { url: '/favicon128.svg', sizes: '128x128' },
-      { url: '/favicon144.svg', sizes: '144x144' },
-      { url: '/favicon152.svg', sizes: '152x152' },
-      { url: '/favicon192.svg', sizes: '192x192' },
-      { url: '/favicon256.svg', sizes: '256x256' },
-      { url: '/favicon512.svg', sizes: '512x512' },
+      { url: '/favicon.ico', type: 'image/x-ico' },
+      { url: '/favicon16.ico', sizes: '16x16', type: 'image/x-ico' },
+      { url: '/favicon32.ico', sizes: '32x32', type: 'image/x-ico' },
+      { url: '/favicon36.ico', sizes: '36x36', type: 'image/x-ico' },
+      { url: '/favicon48.ico', sizes: '48x48', type: 'image/x-ico' },
+      { url: '/favicon57.ico', sizes: '57x57', type: 'image/x-ico' },
+      { url: '/favicon60.ico', sizes: '60x60', type: 'image/x-ico' },
+      { url: '/favicon72.ico', sizes: '72x72', type: 'image/x-ico' },
+      { url: '/favicon76.ico', sizes: '76x76', type: 'image/x-ico' },
+      { url: '/favicon96.ico', sizes: '96x96', type: 'image/x-ico' },
+      { url: '/favicon114.ico', sizes: '114x114', type: 'image/x-ico' },
+      { url: '/favicon120.ico', sizes: '120x120', type: 'image/x-ico' },
+      { url: '/favicon128.ico', sizes: '128x128', type: 'image/x-ico' },
+      { url: '/favicon144.ico', sizes: '144x144', type: 'image/x-ico' },
+      { url: '/favicon152.ico', sizes: '152x152', type: 'image/x-ico' },
+      { url: '/favicon180.ico', sizes: '180x180', type: 'image/x-ico' },
+      { url: '/favicon192.ico', sizes: '192x192', type: 'image/x-ico' },
+      { url: '/favicon256.ico', sizes: '256x256', type: 'image/x-ico' },
+      { url: '/favicon512.ico', sizes: '512x512', type: 'image/x-ico' },
     ],
     shortcut: {
-      url: '/favicon144.png',
+      url: '/favicon144.ico',
       sizes: '144x144',
+      type: 'image/x-ico'
     },
     apple: [
-      { url: '/favicon57.svg', sizes: '57x57' },
-      { url: '/favicon60.svg', sizes: '60x60' },
-      { url: '/favicon72.svg', sizes: '72x72' },
-      { url: '/favicon76.svg', sizes: '76x76' },
-      { url: '/favicon114.svg', sizes: '114x114' },
-      { url: '/favicon120.svg', sizes: '120x120' },
-      { url: '/favicon144.svg', sizes: '144x144' },
-      { url: '/favicon152.svg', sizes: '152x152' },
-      { url: '/favicon180.svg', sizes: '180x180' },
+      { url: '/favicon57.ico', sizes: '57x57', type: 'image/x-ico' },
+      { url: '/favicon60.ico', sizes: '60x60', type: 'image/x-ico' },
+      { url: '/favicon72.ico', sizes: '72x72', type: 'image/x-ico' },
+      { url: '/favicon76.ico', sizes: '76x76', type: 'image/x-ico' },
+      { url: '/favicon114.ico', sizes: '114x114', type: 'image/x-ico' },
+      { url: '/favicon120.ico', sizes: '120x120', type: 'image/x-ico' },
+      { url: '/favicon144.ico', sizes: '144x144', type: 'image/x-ico' },
+      { url: '/favicon152.ico', sizes: '152x152', type: 'image/x-ico' },
+      { url: '/favicon180.ico', sizes: '180x180', type: 'image/x-ico' },
     ],
     other: {
       rel: 'apple-touch-icon-precomposed',
-      url: '/favicon144.png',
+      url: '/favicon144.ico',
       sizes: '144x144',
+      type: 'image/x-ico'
     },
   },
   // Verification
@@ -130,13 +146,11 @@ export const metadata: Metadata = {
     title: 'Linkchar',
     statusBarStyle: 'black-translucent',
     startupImage: [
-      'image path',
-      {
-        url: 'image path',
-        media: '(device-width: 768px) and (device-height: 1024px)',
-      },
+      '/splash.png'
     ],
-  }
+  },
+  // Extras
+  bookmarks: ['https://linkchar.com']
 }
 
 interface Props {
