@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   ],
   category: 'Software Development',
   // Author
+  // Add all team members
   authors: [{ name: 'Lucas Ojeda De Sousa (Lukway)', url: 'lukway.dev@gmail.com' }],
   creator: 'Lucas Ojeda De Sousa (Lukway)',
   publisher: 'Linkchar - Next Template',
