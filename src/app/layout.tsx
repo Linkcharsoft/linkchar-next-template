@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 
-import 'bootstrap/dist/css/bootstrap.css'
+
 import '@/styles/index.sass'
+
 
 export const metadata: Metadata = {
   // General

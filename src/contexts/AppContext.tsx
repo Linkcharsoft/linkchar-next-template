@@ -1,10 +1,13 @@
 import { createContext } from 'react'
 
+
 export const AppContext = createContext(null)
+
 
 interface Props {
   children: React.ReactNode
 }
+
 
 const AppContextProvider = ({ children }: Props) => {
   return (
