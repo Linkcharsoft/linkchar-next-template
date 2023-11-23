@@ -7,12 +7,7 @@
     "build": "next build",
     "serve": "next start",
     "lint": "next lint",
-    "prepush": "npm run build && echo \"Build successful\" || echo \"Build failed\""
-  },
-  "husky": {
-    "hooks": {
-      "pre-push": "npm run prepush"
-    }
+    "prepush": "npm run build || exit 1"
   },
   "dependencies": {
     "classnames": "2.3.2",
