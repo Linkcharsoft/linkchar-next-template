@@ -165,6 +165,7 @@ export default function Layout({ children }: Props) {
         <h1>Layout</h1>
         { children }
         >
+        >
       </body>
     </html>
   )
