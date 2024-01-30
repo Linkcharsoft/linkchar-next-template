@@ -1,7 +1,10 @@
 import { Metadata } from 'next'
-
+import { PrimeReactProvider } from 'primereact/api'
 
 import '@/styles/index.sass'
+import 'primeicons/primeicons.css'
+import 'primereact/resources/primereact.min.css'
+import 'primereact/resources/themes/lara-dark-blue/theme.css'
 
 
 export const metadata: Metadata = {
@@ -162,7 +165,9 @@ export default function Layout({ children }: Props) {
   return (
     <html lang="en">
       <body>
-        { children }
+        <PrimeReactProvider>
+          { children }
+        </PrimeReactProvider>
       </body>
     </html>
   )
