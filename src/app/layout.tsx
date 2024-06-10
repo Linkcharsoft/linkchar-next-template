@@ -4,8 +4,7 @@ import { PrimeReactProvider } from 'primereact/api'
 import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
-import 'primereact/resources/themes/lara-dark-blue/theme.css'
-
+import 'primereact/resources/themes/lara-light-blue/theme.css'
 
 export const metadata: Metadata = {
   // General
@@ -14,18 +13,18 @@ export const metadata: Metadata = {
   generator: 'Next.js',
   title: {
     default: 'Linkchar',
-    template: '%s | Linkchar',
+    template: '%s | Linkchar'
   },
   description: 'Linkchar Next Template - Created by Lucas Ojeda De Sousa (Lukway)',
   viewport: {
     width: 'device-width',
     initialScale: 1,
-    maximumScale: 1,
+    maximumScale: 1
   },
   referrer: 'origin-when-cross-origin',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' }
   ],
   category: 'Software Development',
   // Author
@@ -38,8 +37,8 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
     languages: {
-      'en-US': '/',
-    },
+      'en-US': '/'
+    }
   },
   // SEO
   keywords: ['Linkchar'],
@@ -53,17 +52,17 @@ export const metadata: Metadata = {
       {
         url: 'https://linkchar-static-bk.s3.amazonaws.com/static/img/seo/seo.jpg',
         width: 800,
-        height: 465,
+        height: 465
       },
       {
         url: 'https://linkchar-static-bk.s3.amazonaws.com/static/img/seo/seo.jpg',
         width: 1400,
         height: 810,
-        alt: 'My custom alt',
-      },
+        alt: 'My custom alt'
+      }
     ],
     locale: 'en_US',
-    authors: ['Lucas Ojeda De Sousa (Lukway)'],
+    authors: ['Lucas Ojeda De Sousa (Lukway)']
   },
   twitter: {
     card: 'summary_large_image',
@@ -74,7 +73,7 @@ export const metadata: Metadata = {
     creatorId: '123456789',
     images: {
       url: 'https://linkchar-static-bk.s3.amazonaws.com/static/img/seo/seo.jpg',
-      alt: 'Linkchar',
+      alt: 'Linkchar'
     }
   },
   // Robots
@@ -88,8 +87,8 @@ export const metadata: Metadata = {
       noimageindex: true,
       'max-video-preview': -1,
       'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+      'max-snippet': -1
+    }
   },
   // Icons
   icons: {
@@ -112,7 +111,7 @@ export const metadata: Metadata = {
       { url: '/favicon180.ico', sizes: '180x180', type: 'image/x-ico' },
       { url: '/favicon192.ico', sizes: '192x192', type: 'image/x-ico' },
       { url: '/favicon256.ico', sizes: '256x256', type: 'image/x-ico' },
-      { url: '/favicon512.ico', sizes: '512x512', type: 'image/x-ico' },
+      { url: '/favicon512.ico', sizes: '512x512', type: 'image/x-ico' }
     ],
     shortcut: {
       url: '/favicon144.ico',
@@ -128,14 +127,14 @@ export const metadata: Metadata = {
       { url: '/favicon120.ico', sizes: '120x120', type: 'image/x-ico' },
       { url: '/favicon144.ico', sizes: '144x144', type: 'image/x-ico' },
       { url: '/favicon152.ico', sizes: '152x152', type: 'image/x-ico' },
-      { url: '/favicon180.ico', sizes: '180x180', type: 'image/x-ico' },
+      { url: '/favicon180.ico', sizes: '180x180', type: 'image/x-ico' }
     ],
     other: {
       rel: 'apple-touch-icon-precomposed',
       url: '/favicon144.ico',
       sizes: '144x144',
       type: 'image/x-ico'
-    },
+    }
   },
   // Verification
   verification: {
@@ -143,16 +142,14 @@ export const metadata: Metadata = {
     yandex: 'yandex',
     yahoo: 'yahoo',
     other: {
-      me: ['contact@linkchar.com', 'https://linkchar.com'],
-    },
+      me: ['contact@linkchar.com', 'https://linkchar.com']
+    }
   },
   // Apple
   appleWebApp: {
     title: 'Linkchar',
     statusBarStyle: 'black-translucent',
-    startupImage: [
-      '/splash.png'
-    ],
+    startupImage: ['/splash.png']
   },
   // Extras
   bookmarks: ['https://linkchar.com']
@@ -164,10 +161,20 @@ interface Props {
 export default function Layout({ children }: Props) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              const style = document.createElement('style')
+              style.innerHTML = '@layer tailwind-base, primereact, tailwind-utilities;'
+              style.setAttribute('type', 'text/css')
+              document.querySelector('head').prepend(style)
+            `,
+          }}
+        />
+      </head>
       <body>
-        <PrimeReactProvider>
-          { children }
-        </PrimeReactProvider>
+        <PrimeReactProvider>{children}</PrimeReactProvider>
       </body>
     </html>
   )
