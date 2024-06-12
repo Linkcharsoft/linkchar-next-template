@@ -25,8 +25,6 @@ updateParam('search', value, false, true) // Update single param with scroll
 updateParam('search', value, true, true) // Update single param with reset page and scroll
 
 updateParams({ search: value, page: 1 }, true) // Update multiple params with scroll
-updateParams({ search: value, page: 1 }, false, true) // Update multiple params with reset page
-updateParams({ search: value, page: 1 }, true, true) // Update multiple params with reset page and scroll
 */
 
 import { useTransition } from 'react'
@@ -47,7 +45,7 @@ export default function useParamsHandler<
     resetPage?: boolean,
     scroll?: boolean
   ) => void
-  updateParams: (object: Partial<T>, scroll?: boolean, resetPage?: boolean) => void
+  updateParams: (object: Partial<T>, scroll?: boolean) => void
 } {
   const router = useRouter()
   const pathname = usePathname()
