@@ -1,30 +1,29 @@
 import { API_URL, STRAPI_URL } from '@/constants'
 
-
 type CustomFetchType = {
   path: string
   token?: string
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-  body?: object,
+  body?: object
   params?: string | URLSearchParams | Record<string, string> | string[][] | any
   headers?: Record<string, string>
   strapi?: boolean
 }
 
-type CustomFetchResponse = {
-  response: Response,
-  ok: boolean,
-  data: any
+type CustomFetchResponse<T extends object> = {
+  response: Response
+  ok: boolean
+  data: T
+  error: unknown
 }
 
 type FetchOptionsType = {
-  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
-  headers: Headers,
-  body?: string | FormData,
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  headers: Headers
+  body?: string | FormData
 }
 
-
-export const customFetch = async ({
+export const customFetch = async <T extends object>({
   path,
   token,
   method,
@@ -32,7 +31,7 @@ export const customFetch = async ({
   params,
   headers = { 'Content-Type': 'application/json' },
   strapi = false
-}: CustomFetchType): Promise<CustomFetchResponse> => {
+}: CustomFetchType): Promise<CustomFetchResponse<T>> => {
   const urlPath = new URL(`${path}`, strapi ? STRAPI_URL : API_URL)
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
@@ -42,10 +41,10 @@ export const customFetch = async ({
   const fetchOptions: FetchOptionsType = {
     method,
     headers: requestHeaders,
-    body: undefined,
+    body: undefined
   }
 
-  if(body && !(body instanceof FormData)) fetchOptions.body = JSON.stringify(body)
+  if (body && !(body instanceof FormData)) fetchOptions.body = JSON.stringify(body)
   else fetchOptions.body = body
 
   try {
@@ -53,50 +52,40 @@ export const customFetch = async ({
 
     if (response.status === 401) deleteInvalidToken()
 
-    let data: any = null
-    if (response.status !== 204)
-      data = await response.json()
+    let data: T = {} as T
+    if (response.status !== 204) data = await response.json()
 
-    if(strapi && Object.keys(data.meta).length === 0) {
-      delete data.meta
-      data = data?.data
+    if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
+      delete (data as any).meta
+      data = (data as any)?.data
     }
 
     return {
       response,
       ok: response.ok,
-      data
+      data: response.ok ? data : ({} as T),
+      error: response.ok ? null : data
     }
   } catch (error) {
-    return handleError(error, requestHeaders)
+    return handleError<T>(error, requestHeaders)
   }
 }
-
 
 const deleteInvalidToken = () => {
   localStorage.removeItem('token')
   window.dispatchEvent(new Event('storage'))
 }
 
-const handleError = (error: unknown, headers: Headers) => {
+const handleError = <T extends object>(error: unknown, headers: Headers): CustomFetchResponse<T> => {
   const response = new Response('Something went wrong', {
     status: 500,
-    headers,
+    headers
   })
-
-  if (error) {
-    return {
-      response,
-      ok: false,
-      data: error
-    }
-  }
 
   return {
     response,
     ok: false,
-    data: `Something went wrong, error ${JSON.stringify(error)}`
+    data: {} as T,
+    error: error ?? 'Something went wrong'
   }
 }
-
-
