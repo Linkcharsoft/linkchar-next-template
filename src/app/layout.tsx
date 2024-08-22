@@ -1,10 +1,20 @@
-import { Metadata } from 'next'
+import { Metadata, Viewport } from 'next'
 import { PrimeReactProvider } from 'primereact/api'
 
 import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' }
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1
+}
 
 export const metadata: Metadata = {
   // General
@@ -16,16 +26,7 @@ export const metadata: Metadata = {
     template: '%s | Linkchar'
   },
   description: 'Linkchar Next Template - Created by Lucas Ojeda De Sousa (Lukway)',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1
-  },
   referrer: 'origin-when-cross-origin',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' }
-  ],
   category: 'Software Development',
   // Author
   // Add all team members
