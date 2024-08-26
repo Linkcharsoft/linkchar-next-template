@@ -1,8 +1,8 @@
 import { useContext } from 'react'
-import { AppContext } from '@/contexts/AppContext'
+import { AppContext, AppContextType } from '@/contexts/AppContext'
 
 const useAppContext = () => {
-  return useContext(AppContext)
+  return useContext(AppContext) as AppContextType
 }
 
 export default useAppContext
