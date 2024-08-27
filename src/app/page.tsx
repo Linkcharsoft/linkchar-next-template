@@ -5,7 +5,6 @@ import * as THREE from 'three'
 import Lenis from '@studio-freight/lenis'
 import Logo from '@/assets/images/logo.svg'
 
-
 const MAX_TIME_VALUE = 10
 const PRODUCT_NAME = 'Linkchar'
 
