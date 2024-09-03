@@ -9,6 +9,9 @@ import type { User } from '@/types/users'
 export interface UserContextType {
   user: User
   mutateUser: () => void
+
+  token: string
+  sessionStatus: 'loading' | 'authenticated' | 'unauthenticated'
 }
 
 export const UserContext = createContext<UserContextType | null>(null)
@@ -18,7 +21,7 @@ interface UserContextProviderType {
 }
 
 const UserContextProvider = ({ children }: UserContextProviderType) => {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
   const {
     data: user,
@@ -29,12 +32,18 @@ const UserContextProvider = ({ children }: UserContextProviderType) => {
   )
 
   const userData: User = useMemo(() => user?.data as User, [user])
-  // const isAdmin = useMemo(() => userData?.is_staff, [userData])
+
+  const token = session?.user?.accessToken as string
+
+  const sessionStatus = status
 
 
   const value = {
     user: userData,
-    mutateUser
+    mutateUser,
+
+    token,
+    sessionStatus
   }
 
 

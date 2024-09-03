@@ -11,7 +11,6 @@ import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { completeRegistration } from '@/api/users'
 import useUserContext from '@/hooks/useUserContext'
-import { useSession } from 'next-auth/react'
 import usePressKey from '@/hooks/usePressKey'
 import useAppContext from '@/hooks/useAppContext'
 import { Button } from 'primereact/button'
@@ -46,10 +45,11 @@ const ROLES = [
 
 
 const CompleteProfilePage = () => {
-  const { data: session, status: statusSession } = useSession()
   const {
     user,
-    mutateUser
+    mutateUser,
+    token,
+    sessionStatus
   } = useUserContext()
   const { showLoadingModal, hideLoadingModal } = useAppContext()
   const [ step, setStep ] = useState<1 | 2>(1)
@@ -67,14 +67,14 @@ const CompleteProfilePage = () => {
 
 
   useEffect(() => {
-    if (statusSession === 'loading') return
-    if(!session?.user.accessToken || !user) {
+    if (sessionStatus === 'loading') return
+    if(!token || !user) {
       router.replace('/login')
     }
     // if (user?.profile?.is_register_complete) {
     //   router.replace('/')
     // }
-  }, [session, user, statusSession])
+  }, [token, user, sessionStatus])
 
 
   const formikPersonalData = useFormik<FormPersonalDataValues>({
@@ -137,7 +137,7 @@ const CompleteProfilePage = () => {
           ...(values.role === 'Others' && { other_role: values.other_role })
         }
       }
-      const response = await completeRegistration(session?.user?.accessToken as string, body)
+      const response = await completeRegistration(token, body)
 
       if (response.ok) {
         mutateUser()
@@ -160,7 +160,7 @@ const CompleteProfilePage = () => {
   }
 
 
-  if (!isClient || session?.user.accessToken || !user) return null
+  if (!isClient || !token || !user) return null
 
   return (
     <>

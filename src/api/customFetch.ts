@@ -36,7 +36,7 @@ export const customFetch = async <T extends object>({
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
   const requestHeaders = new Headers(headers)
-  if (token) requestHeaders.append('Authorization', `Token ${token}`)
+  if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
 
   const fetchOptions: FetchOptionsType = {
     method,
