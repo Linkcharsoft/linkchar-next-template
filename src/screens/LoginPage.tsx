@@ -39,20 +39,28 @@ const LoginPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal()
-
-      const result = await signIn('credentials', {
-        redirect: false, 
-        email: values.email,
-        password: values.password
+      showLoadingModal({
+        title: 'Logging in',
+        message: 'Please wait...'
       })
 
-      if (result?.error) {
-        setErrors({ password: result.error })
-      } else {
-        router.push('/success-login')
+      try {
+        const result = await signIn('credentials', {
+          redirect: false, 
+          email: values.email,
+          password: values.password
+        })
+  
+        setTimeout(() => {
+          if (result?.ok) return router.replace('/success-login')
+        }, 100)
+        setErrors({ password: 'Invalid email or password' })
+      } catch (error) {
+        setErrors({ password: 'Something went wrong, please try again later' })
+        console.error(error)
+      } finally {
+        setTimeout(() => hideLoadingModal(), 1000)
       }
-      setTimeout(() => hideLoadingModal(), 1000)
     }
   })
 

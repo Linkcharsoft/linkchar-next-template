@@ -44,7 +44,7 @@ const RecoveryPasswordConfirmationPage = ({ token, email }: Props) => {
 
 
   useEffect(() => {
-    showLoadingModal()
+    showLoadingModal({})
     const checkUrlToken = async () => {
       const decodedToken = decodeURIComponent(token)
       const decodedEmail = decodeURIComponent(email)

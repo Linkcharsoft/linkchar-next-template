@@ -42,7 +42,7 @@ const PasswordRecoveryPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async ({ email }) => {
-      showLoadingModal()
+      showLoadingModal({})
       setButtonDisabled(true)
 
       try {

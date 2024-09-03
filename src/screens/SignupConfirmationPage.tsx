@@ -35,7 +35,7 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
 
 
   useEffect(() => {
-    showLoadingModal()
+    showLoadingModal({})
     const verifyToken = async () => {
       const decodedToken = decodeURIComponent(confirmationKey )
       const { ok } = await emailConfirmation({ key: decodedToken })
@@ -62,7 +62,7 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
     }),
     validateOnChange: false,
     onSubmit: async ({ email }) => {
-      showLoadingModal()
+      showLoadingModal({})
       setButtonDisabled(true)
 
       const timeout = setTimeout(() => {

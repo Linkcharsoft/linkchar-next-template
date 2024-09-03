@@ -1,14 +1,30 @@
-import NextAuth, { Session, User } from 'next-auth'
+import NextAuth, { DefaultSession, Session, User } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { JWT } from 'next-auth/jwt'
-import { signOut } from 'next-auth/react'
-import { API_URL } from '../../../src/constants'
+import { API_URL, NEXTAUTH_SECRET } from '../../../src/constants'
+
+interface ExtendedUser extends User {
+  access: string
+  refresh: string
+  access_expiration: string
+  refresh_expiration: string
+}
 
 interface ExtendedJWT extends JWT {
   accessToken?: string
   refreshToken?: string
   accessTokenExpires?: number
   refreshTokenExpires?: number
+}
+
+interface ProfileSession extends Session {
+  error?: boolean
+  user: {
+    accessToken?: string
+    refreshToken?: string
+    accessTokenExpires?: number
+    refreshTokenExpires?: number
+  } & DefaultSession['user']
 }
 
 export default NextAuth({
@@ -28,10 +44,7 @@ export default NextAuth({
 
         const res = await fetch(`${API_URL}/api/auth/login/`, {
           method: 'POST',
-          body: JSON.stringify({
-            email,
-            password
-          }),
+          body: JSON.stringify({ email, password }),
           headers: { 'Content-Type': 'application/json' }
         })
 
@@ -44,34 +57,27 @@ export default NextAuth({
             refresh: user.refresh,
             access_expiration: user.access_expiration,
             refresh_expiration: user.refresh_expiration
-          }
+          } as ExtendedUser
         }
 
         return null
       }
     })
   ],
+  secret: NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60,
+    updateAge: 24 * 60 * 60
+  },
   callbacks: {
-    async jwt({ token, user }: { token: ExtendedJWT; user?: User }) {
-      if (user) {
-        token.accessToken = user.access
-        token.refreshToken = user.refresh
-        token.accessTokenExpires = new Date(user.access_expiration).getTime()
-        token.refreshTokenExpires = new Date(user.refresh_expiration).getTime()
-      }
-
-      const isTokenValid = await fetch(`${API_URL}/api/auth/token/verify/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token.accessToken}`
-        }
-      })
-
-      if (!isTokenValid.ok) {
-        console.error('Token no válido. Iniciando sesión...')
-        await signOut({ callbackUrl: '/login' })
-        return token
+    async jwt({ token, user }: { token: ExtendedJWT; user?: User | ExtendedUser }) {
+      if (user && 'access' in user && 'refresh' in user) {
+        const extendedUser = user as ExtendedUser
+        token.accessToken = extendedUser.access
+        token.refreshToken = extendedUser.refresh
+        token.accessTokenExpires = new Date(extendedUser.access_expiration).getTime()
+        token.refreshTokenExpires = new Date(extendedUser.refresh_expiration).getTime()
       }
 
       if (Date.now() > (token.accessTokenExpires || 0)) {
@@ -79,8 +85,9 @@ export default NextAuth({
           const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${token.refreshToken}`
-            }
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ refresh: token.refreshToken })
           })
 
           const refreshedTokens = await res.json()
@@ -91,19 +98,31 @@ export default NextAuth({
           token.accessTokenExpires = new Date(refreshedTokens.access_expiration).getTime()
           token.refreshTokenExpires = new Date(refreshedTokens.refresh_expiration).getTime()
         } catch (error) {
-          console.error('Error al refrescar el token de acceso', error)
-          return token
+          console.error('Error refreshing token:', error)
+          return { ...token, error: 'RefreshAccessTokenError' }
         }
       }
 
       return token
     },
 
-    async session({ session, token }: { session: Session; token: ExtendedJWT }) {
-      session.user.accessToken = token.accessToken as string | undefined
-      session.user.refreshToken = token.refreshToken as string | undefined
-      session.user.accessTokenExpires = token.accessTokenExpires as number | undefined
-      session.user.refreshTokenExpires = token.refreshTokenExpires as number | undefined
+    async session({
+      session,
+      token
+    }: {
+      session: Session & Partial<ProfileSession>
+      token: ExtendedJWT
+    }): Promise<Session | ProfileSession> {
+      if (session.user) {
+        session.user.accessToken = token.accessToken
+        session.user.refreshToken = token.refreshToken
+        session.user.accessTokenExpires = token.accessTokenExpires
+        session.user.refreshTokenExpires = token.refreshTokenExpires
+
+        if (token.error) {
+          session.error = true
+        }
+      }
 
       return session
     }

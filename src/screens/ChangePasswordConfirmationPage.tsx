@@ -10,7 +10,7 @@ import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
 import useAppContext from '@/hooks/useAppContext'
-import useAuthContext from '@/hooks/useAuthContext'
+import useUserContext from '@/hooks/useUserContext'
 import validatePassword from '@/utils/validatePassword'
 
 
@@ -25,7 +25,7 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
 const ChangePasswordConfirmationPage = ({ token }: Props) => {
-  const { user } = useAuthContext()
+  const { user } = useUserContext()
   const {
     showLoadingModal,
     hideLoadingModal,
@@ -37,7 +37,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
 
   useEffect(() => {
-    showLoadingModal()
+    showLoadingModal({})
     const checkUrlToken = async () => {
       const decodedToken = decodeURIComponent(token)
       if (user) {
@@ -84,7 +84,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     },
     validateOnChange: false,
     onSubmit: async ({ password }) => {
-      showLoadingModal()
+      showLoadingModal({})
       const decodedToken = decodeURIComponent(token)
       try {
         const { ok } = await passwordConfirm({

@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    API_URL: process.env.API_URL
+    API_URL: process.env.API_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     // MEDIA_URL: process.env.MEDIA_URL,
     // STRAPI_URL: process.env.STRAPI_URL,
     // STRAPI_MEDIA_URL: process.env.STRAPI_MEDIA_URL,

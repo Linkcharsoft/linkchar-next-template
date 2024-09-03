@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useState } from 'react'
 import { ToastMessage } from 'primereact/toast'
+import { SessionProvider } from 'next-auth/react'
 
 type LoadingModalState = {
   show: boolean
@@ -17,7 +18,7 @@ type ModalState = {
 
 export interface AppContextType {
   loadingModal: LoadingModalState
-  showLoadingModal: ({ title, message }?: { title?: string, message?: string }) => void
+  showLoadingModal: ({ title, message }: { title?: string, message?: string }) => void
   hideLoadingModal: () => void
 
   modalState: ModalState
@@ -102,9 +103,11 @@ const AppContextProvider = ({ children }: Props) => {
   }
 
   return (
-    <AppContext.Provider value={contextValue}>
-      { children }
-    </AppContext.Provider>
+    <SessionProvider>
+      <AppContext.Provider value={contextValue}>
+        { children }
+      </AppContext.Provider>
+    </SessionProvider>
   )
 }
 

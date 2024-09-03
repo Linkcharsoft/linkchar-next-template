@@ -46,7 +46,7 @@ const SignupPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal()
+      showLoadingModal({})
       const { ok, error } = await signup(values)
 
       if (!ok) {

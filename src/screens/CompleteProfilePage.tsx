@@ -10,7 +10,8 @@ import { useFormik } from 'formik'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { completeRegistration } from '@/api/users'
-import useAuthContext from '@/hooks/useAuthContext'
+import useUserContext from '@/hooks/useUserContext'
+import { useSession } from 'next-auth/react'
 import usePressKey from '@/hooks/usePressKey'
 import useAppContext from '@/hooks/useAppContext'
 import { Button } from 'primereact/button'
@@ -45,11 +46,11 @@ const ROLES = [
 
 
 const CompleteProfilePage = () => {
+  const { data: session, status: statusSession } = useSession()
   const {
-    token,
     user,
     mutateUser
-  } = useAuthContext()
+  } = useUserContext()
   const { showLoadingModal, hideLoadingModal } = useAppContext()
   const [ step, setStep ] = useState<1 | 2>(1)
   const router = useRouter()
@@ -66,13 +67,14 @@ const CompleteProfilePage = () => {
 
 
   useEffect(() => {
-    if(!token) {
+    if (statusSession === 'loading') return
+    if(!session?.user.accessToken || !user) {
       router.replace('/login')
     }
-    if (user?.profile?.is_register_complete) {
-      router.replace('/')
-    }
-  }, [token, user])
+    // if (user?.profile?.is_register_complete) {
+    //   router.replace('/')
+    // }
+  }, [session, user, statusSession])
 
 
   const formikPersonalData = useFormik<FormPersonalDataValues>({
@@ -116,14 +118,14 @@ const CompleteProfilePage = () => {
       organization: Yup.string().max(255, 'Max: 255 characters').required('Required'),
       role: Yup.string().required('Required'),
       other_role: Yup.string().when('role', {
-        is: (role) => role === 'Others',
+        is: (role: string) => role === 'Others',
         then: (schema) => schema.max(255, 'Max: 255 characters').required('Required'),
         otherwise: (schema) => schema
       })
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal()
+      showLoadingModal({})
       const cleanPhoneNumber = formikPersonalData?.values?.phone?.replace(/[()\s-]/g, '') || null
       const body = {
         first_name: formikPersonalData.values.first_name,
@@ -135,7 +137,7 @@ const CompleteProfilePage = () => {
           ...(values.role === 'Others' && { other_role: values.other_role })
         }
       }
-      const response = await completeRegistration(token, body)
+      const response = await completeRegistration(session?.user?.accessToken as string, body)
 
       if (response.ok) {
         mutateUser()
@@ -158,7 +160,7 @@ const CompleteProfilePage = () => {
   }
 
 
-  if (!isClient || !token || user?.profile?.is_register_complete) return null
+  if (!isClient || session?.user.accessToken || !user) return null
 
   return (
     <>
