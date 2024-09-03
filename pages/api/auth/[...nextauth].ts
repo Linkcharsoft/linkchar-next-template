@@ -20,11 +20,17 @@ export default NextAuth({
         password: { label: 'Password', type: 'password' }
       },
       authorize: async (credentials) => {
+        const { email, password } = credentials || {}
+
+        if (!email || !password) {
+          return null
+        }
+
         const res = await fetch(`${API_URL}/api/auth/login/`, {
           method: 'POST',
           body: JSON.stringify({
-            email: credentials?.email,
-            password: credentials?.password
+            email,
+            password
           }),
           headers: { 'Content-Type': 'application/json' }
         })

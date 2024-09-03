@@ -1,12 +1,12 @@
-import HomePage from '@/screens/HomePage'
 import { Metadata } from 'next'
+import ChangePasswordPage from '@/screens/ChangePasswordPage'
 
 export const metadata: Metadata = {
-  title: 'Home'
+  title: 'Change Password'
 }
 
 const Page = () => (
-  <HomePage/>
+  <ChangePasswordPage/>
 )
 
 export default Page
