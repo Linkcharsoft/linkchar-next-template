@@ -1,4 +1,5 @@
 import { API_URL, STRAPI_URL } from '@/constants'
+import { signOut } from 'next-auth/react'
 
 type CustomFetchType = {
   path: string
@@ -50,7 +51,7 @@ export const customFetch = async <T extends object>({
   try {
     const response = await fetch(urlPath.toString(), fetchOptions)
 
-    if (response.status === 401) deleteInvalidToken()
+    if (response.status === 401) handleSignOut()
 
     let data: T = {} as T
     if (response.status !== 204) data = await response.json()
@@ -71,9 +72,8 @@ export const customFetch = async <T extends object>({
   }
 }
 
-const deleteInvalidToken = () => {
-  localStorage.removeItem('token')
-  window.dispatchEvent(new Event('storage'))
+const handleSignOut = () => {
+  signOut({ callbackUrl: '/login' })
 }
 
 const handleError = <T extends object>(error: unknown, headers: Headers): CustomFetchResponse<T> => {
