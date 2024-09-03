@@ -1,5 +1,8 @@
 import { Metadata, Viewport } from 'next'
 import { PrimeReactProvider } from 'primereact/api'
+import Tailwind from 'primereact/passthrough/tailwind'
+import AppContextProvider from '@/contexts/AppContext'
+import AuthContextProvider from '@/contexts/AuthContext'
 
 import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
@@ -175,7 +178,13 @@ export default function Layout({ children }: Props) {
         />
       </head>
       <body>
-        <PrimeReactProvider>{children}</PrimeReactProvider>
+        <PrimeReactProvider value={{ pt: Tailwind }}>
+          <AuthContextProvider>
+            <AppContextProvider>
+              { children }
+            </AppContextProvider>
+          </AuthContextProvider>
+        </PrimeReactProvider>
       </body>
     </html>
   )

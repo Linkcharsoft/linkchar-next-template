@@ -1,3 +1,4 @@
+'use client'
 import { createContext, useState } from 'react'
 
 type LoadingModalState = {
@@ -15,7 +16,7 @@ type ModalState = {
 
 export interface AppContextType {
   loadingModal: LoadingModalState
-  showLoadingModal: (title: string, message: string) => void
+  showLoadingModal: ({ title, message }?: { title?: string, message?: string }) => void
   hideLoadingModal: () => void
 
   modalState: ModalState
@@ -44,7 +45,7 @@ const AppContextProvider = ({ children }: Props) => {
     content: ''
   })
 
-  const showLoadingModal = (title: string, message: string) => {
+  const showLoadingModal = ({ title = '', message = '' }: { title?: string, message?: string }) => {
     setLoadingModal({
       show: true,
       title,
