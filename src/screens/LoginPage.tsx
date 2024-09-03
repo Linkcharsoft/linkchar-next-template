@@ -6,8 +6,7 @@ import * as Yup from 'yup'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
-import { login } from '@/api/users'
-import useAuthContext from '@/hooks/useAuthContext'
+import { signIn } from 'next-auth/react'
 import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
@@ -21,7 +20,6 @@ type LoginFormikType = {
 
 
 const LoginPage = () => {
-  const { updateToken } = useAuthContext()
   const {
     showLoadingModal,
     hideLoadingModal
@@ -42,28 +40,17 @@ const LoginPage = () => {
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
       showLoadingModal()
-      const { ok, data } = await login(values)
-      console.log(ok)
 
-      if (!ok) {
-        if (
-          data.email &&
-          data.email.length &&
-          data.email[0].includes('Enter a valid email address.')
-        ) {
-          setErrors({ email: 'Please enter a valid email address.' })
-        }
-        if (data.non_field_errors && data.non_field_errors.length) {
-          setErrors({
-            password: data.non_field_errors[0]
-          })
-        }
+      const result = await signIn('credentials', {
+        redirect: false, 
+        email: values.email,
+        password: values.password
+      })
 
-        setErrors({
-          password: 'Unable to log in with provided credentials'
-        })
+      if (result?.error) {
+        setErrors({ password: result.error })
       } else {
-        updateToken(data.key)
+        router.push('/success-login')
       }
       setTimeout(() => hideLoadingModal(), 1000)
     }

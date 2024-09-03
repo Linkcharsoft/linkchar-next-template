@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import useAuthContext from '@/hooks/useAuthContext'
 import LoadingModal from '@/components/modals/LoadingModal'
+import ToastMessages from '@/components/modals/ToastMessages'
 import Logo from '@/assets/images/logo.svg'
 
 
@@ -35,6 +36,7 @@ const AuthLayout = ({ children }: Props) => {
       <section className="relative flex w-[45%] items-center justify-center bg-white">
         { children }
         <LoadingModal />
+        <ToastMessages/>
       </section>
 
       <section className="h-full w-[55%] bg-black flex justify-center items-center">

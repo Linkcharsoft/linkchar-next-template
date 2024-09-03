@@ -1,23 +1,24 @@
 import { customFetch } from './customFetch'
+import type { User } from '@/types/users'
 
 export const getMyUser = async (token: string) => {
-  return await customFetch({
+  return await customFetch<User>({
     path: '/api/users/me/',
     method: 'GET',
     token
   })
 }
 
-export const login = async (body: { email: string; password: string }) => {
-  return await customFetch({
-    path: '/api/auth/login/',
-    method: 'POST',
-    body
-  })
-}
+// export const login = async (body: { email: string; password: string }) => {
+//   return await customFetch<LoginResponse>({
+//     path: '/api/auth/login/',
+//     method: 'POST',
+//     body
+//   })
+// }
 
 export const logout = async (token: string) => {
-  return await customFetch({
+  return await customFetch<any>({
     path: '/api/auth/logout/',
     method: 'POST',
     token
@@ -25,7 +26,9 @@ export const logout = async (token: string) => {
 }
 
 export const signup = async (body: { email: string; password: string }) => {
-  return await customFetch({
+  return await customFetch<{
+    detail: string
+  }>({
     path: '/api/auth/register/',
     method: 'POST',
     body
@@ -36,7 +39,7 @@ export const passwordRecoveryChange = async (body: {
   request_type: 'change' | 'reset'
   email: string
 }) => {
-  return await customFetch({
+  return await customFetch({  // type this according to the need 
     path: '/api/users/password-recovery/',
     method: 'POST',
     body
@@ -92,7 +95,7 @@ type Profile = {
 
 
 export const updateUserProfile = async (token: string, body: any) => {
-  return await customFetch({
+  return await customFetch({  // type this according to the need 
     path: '/api/users/me/',
     method: 'PATCH',
     token,
@@ -105,7 +108,7 @@ export const completeRegistration  = async (token: string, body: {
   last_name: string
   profile: Profile
 }) => {
-  return await customFetch({
+  return await customFetch<any>({ // type this according to the need 
     path: '/api/users/me/complete-register/',
     method: 'PATCH',
     token,

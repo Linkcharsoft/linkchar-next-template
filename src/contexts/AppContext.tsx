@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useState } from 'react'
+import { ToastMessage } from 'primereact/toast'
 
 type LoadingModalState = {
   show: boolean
@@ -22,6 +23,9 @@ export interface AppContextType {
   modalState: ModalState
   showModalState: (type: 'success' | 'info' | 'warning' | 'error', header: string, content: string) => void
   hideModalState: () => void
+
+  toastMessage: ToastMessage
+  setToastMessage: (message: ToastMessage) => void
 }
 
 export const AppContext = createContext<AppContextType | null>(null)
@@ -43,6 +47,11 @@ const AppContextProvider = ({ children }: Props) => {
     type: 'success',
     header: '',
     content: ''
+  })
+
+  const [toastMessage, setToastMessage] = useState<ToastMessage>({
+    severity: 'info',
+    summary: ''
   })
 
   const showLoadingModal = ({ title = '', message = '' }: { title?: string, message?: string }) => {
@@ -86,7 +95,10 @@ const AppContextProvider = ({ children }: Props) => {
     
     modalState,
     showModalState,
-    hideModalState
+    hideModalState,
+
+    toastMessage,
+    setToastMessage
   }
 
   return (
