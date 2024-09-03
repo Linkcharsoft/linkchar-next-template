@@ -6,7 +6,7 @@ import * as Yup from 'yup'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
-import { signIn } from 'next-auth/react'
+import { getSession, signIn } from 'next-auth/react'
 import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
@@ -41,20 +41,24 @@ const LoginPage = () => {
     onSubmit: async (values, { setErrors }) => {
       showLoadingModal({
         title: 'Logging in',
-        message: 'Please wait...'
+        message: 'Please wait...',
       })
-
+    
       try {
         const result = await signIn('credentials', {
           redirect: false, 
           email: values.email,
-          password: values.password
+          password: values.password,
         })
-  
-        setTimeout(() => {
-          if (result?.ok) return router.replace('/success-login')
-        }, 100)
-        setErrors({ password: 'Invalid email or password' })
+    
+        if (result?.ok) {
+          const updatedSession = await getSession()
+          if (updatedSession) {
+            router.replace('/success-login') 
+          }
+        } else {
+          setErrors({ password: 'Invalid email or password' })
+        }
       } catch (error) {
         setErrors({ password: 'Something went wrong, please try again later' })
         console.error(error)
