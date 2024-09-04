@@ -1,5 +1,6 @@
 import { API_URL, STRAPI_URL } from '@/constants'
 import { signOut } from 'next-auth/react'
+import { getSession } from 'next-auth/react'
 
 type CustomFetchType = {
   path: string
@@ -48,44 +49,75 @@ export const customFetch = async <T extends object>({
   if (body && !(body instanceof FormData)) fetchOptions.body = JSON.stringify(body)
   else fetchOptions.body = body
 
+  let response = await fetch(urlPath.toString(), fetchOptions)
+  
+  if (response.status === 401) {
+    const newAccessToken = await refreshToken()
+
+    if (newAccessToken) {
+      requestHeaders.set('Authorization', `Bearer ${newAccessToken}`)
+      fetchOptions.headers = requestHeaders
+
+      response = await fetch(urlPath.toString(), fetchOptions)
+
+      if (response.ok) {
+        let data: T = {} as T
+        if (response.status !== 204) data = await response.json()
+
+        if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
+          delete (data as any).meta
+          data = (data as any)?.data
+        }
+
+        return {
+          response,
+          ok: response.ok,
+          data: response.ok ? data : ({} as T),
+          error: response.ok ? null : data
+        }
+      }
+    }
+    
+    handleSignOut()
+  }
+
+  let data: T = {} as T
+  if (response.status !== 204) data = await response.json()
+
+  if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
+    delete (data as any).meta
+    data = (data as any)?.data
+  }
+
+  return {
+    response,
+    ok: response.ok,
+    data: response.ok ? data : ({} as T),
+    error: response.ok ? null : data
+  }
+}
+
+const refreshToken = async (): Promise<string | null> => {
   try {
-    const response = await fetch(urlPath.toString(), fetchOptions)
+    const refresh = await getSession()
+    if (!refresh) return null
 
-    if (response.status === 401) handleSignOut()
+    const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refresh.user.refreshToken })
+    })
 
-    let data: T = {} as T
-    if (response.status !== 204) data = await response.json()
+    if (!res.ok) throw new Error('Token refresh failed')
 
-    if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
-      delete (data as any).meta
-      data = (data as any)?.data
-    }
-
-    return {
-      response,
-      ok: response.ok,
-      data: response.ok ? data : ({} as T),
-      error: response.ok ? null : data
-    }
+    const refreshedTokens = await res.json()
+    return refreshedTokens.access
   } catch (error) {
-    return handleError<T>(error, requestHeaders)
+    console.error('Error refreshing token:', error)
+    return null
   }
 }
 
 const handleSignOut = () => {
   signOut({ callbackUrl: '/login' })
-}
-
-const handleError = <T extends object>(error: unknown, headers: Headers): CustomFetchResponse<T> => {
-  const response = new Response('Something went wrong', {
-    status: 500,
-    headers
-  })
-
-  return {
-    response,
-    ok: false,
-    data: {} as T,
-    error: error ?? 'Something went wrong'
-  }
 }
