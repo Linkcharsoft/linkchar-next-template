@@ -1,4 +1,6 @@
 import { API_URL, STRAPI_URL } from '@/constants'
+import { signOut } from 'next-auth/react'
+import { getSession } from 'next-auth/react'
 
 type CustomFetchType = {
   path: string
@@ -36,7 +38,7 @@ export const customFetch = async <T extends object>({
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
   const requestHeaders = new Headers(headers)
-  if (token) requestHeaders.append('Authorization', `Token ${token}`)
+  if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
 
   const fetchOptions: FetchOptionsType = {
     method,
@@ -47,45 +49,75 @@ export const customFetch = async <T extends object>({
   if (body && !(body instanceof FormData)) fetchOptions.body = JSON.stringify(body)
   else fetchOptions.body = body
 
-  try {
-    const response = await fetch(urlPath.toString(), fetchOptions)
+  let response = await fetch(urlPath.toString(), fetchOptions)
+  
+  if (response.status === 401) {
+    const newAccessToken = await refreshToken()
 
-    if (response.status === 401) deleteInvalidToken()
+    if (newAccessToken) {
+      requestHeaders.set('Authorization', `Bearer ${newAccessToken}`)
+      fetchOptions.headers = requestHeaders
 
-    let data: T = {} as T
-    if (response.status !== 204) data = await response.json()
+      response = await fetch(urlPath.toString(), fetchOptions)
 
-    if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
-      delete (data as any).meta
-      data = (data as any)?.data
+      if (response.ok) {
+        let data: T = {} as T
+        if (response.status !== 204) data = await response.json()
+
+        if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
+          delete (data as any).meta
+          data = (data as any)?.data
+        }
+
+        return {
+          response,
+          ok: response.ok,
+          data: response.ok ? data : ({} as T),
+          error: response.ok ? null : data
+        }
+      }
     }
-
-    return {
-      response,
-      ok: response.ok,
-      data: response.ok ? data : ({} as T),
-      error: response.ok ? null : data
-    }
-  } catch (error) {
-    return handleError<T>(error, requestHeaders)
+    
+    handleSignOut()
   }
-}
 
-const deleteInvalidToken = () => {
-  localStorage.removeItem('token')
-  window.dispatchEvent(new Event('storage'))
-}
+  let data: T = {} as T
+  if (response.status !== 204) data = await response.json()
 
-const handleError = <T extends object>(error: unknown, headers: Headers): CustomFetchResponse<T> => {
-  const response = new Response('Something went wrong', {
-    status: 500,
-    headers
-  })
+  if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
+    delete (data as any).meta
+    data = (data as any)?.data
+  }
 
   return {
     response,
-    ok: false,
-    data: {} as T,
-    error: error ?? 'Something went wrong'
+    ok: response.ok,
+    data: response.ok ? data : ({} as T),
+    error: response.ok ? null : data
   }
+}
+
+const refreshToken = async (): Promise<string | null> => {
+  try {
+    const refresh = await getSession()
+    if (!refresh) return null
+
+    const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refresh.user.refreshToken })
+    })
+
+    if (!res.ok) throw new Error('Token refresh failed')
+
+    const refreshedTokens = await res.json()
+    return refreshedTokens.access
+  } catch (error) {
+    console.error('Error refreshing token:', error)
+    return null
+  }
+}
+
+const handleSignOut = () => {
+  signOut({ callbackUrl: '/login' })
 }

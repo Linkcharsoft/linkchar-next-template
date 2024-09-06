@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation'
 import { useIsClient } from 'usehooks-ts'
 import { passwordRecoveryChange } from '@/api/users'
 import useAppContext from '@/hooks/useAppContext'
-import useAuthContext from '@/hooks/useAuthContext'
+import useUserContext from '@/hooks/useUserContext'
 import { Button } from 'primereact/button'
 
 
 const ChangePasswordPage = () => {
-  const { token, user } = useAuthContext()
+  const { user, token, sessionStatus } = useUserContext()
   const {
     showLoadingModal,
     hideLoadingModal
@@ -20,15 +20,16 @@ const ChangePasswordPage = () => {
 
 
   useEffect(() => {
+    if (sessionStatus === 'loading') return
     if(!token || !user) {
       router.replace('/')
     }
-  }, [token, user])
+  }, [token, user, sessionStatus])
 
 
 
   const handleGetEmail = async () => {
-    showLoadingModal()
+    showLoadingModal({})
     setButtonDisabled(true)
 
     setTimeout(() => {

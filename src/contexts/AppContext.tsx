@@ -1,5 +1,7 @@
 'use client'
 import { createContext, useState } from 'react'
+import { ToastMessage } from 'primereact/toast'
+import { SessionProvider } from 'next-auth/react'
 
 type LoadingModalState = {
   show: boolean
@@ -16,12 +18,15 @@ type ModalState = {
 
 export interface AppContextType {
   loadingModal: LoadingModalState
-  showLoadingModal: ({ title, message }?: { title?: string, message?: string }) => void
+  showLoadingModal: ({ title, message }: { title?: string, message?: string }) => void
   hideLoadingModal: () => void
 
   modalState: ModalState
   showModalState: (type: 'success' | 'info' | 'warning' | 'error', header: string, content: string) => void
   hideModalState: () => void
+
+  toastMessage: ToastMessage
+  setToastMessage: (message: ToastMessage) => void
 }
 
 export const AppContext = createContext<AppContextType | null>(null)
@@ -43,6 +48,11 @@ const AppContextProvider = ({ children }: Props) => {
     type: 'success',
     header: '',
     content: ''
+  })
+
+  const [toastMessage, setToastMessage] = useState<ToastMessage>({
+    severity: 'info',
+    summary: ''
   })
 
   const showLoadingModal = ({ title = '', message = '' }: { title?: string, message?: string }) => {
@@ -86,13 +96,18 @@ const AppContextProvider = ({ children }: Props) => {
     
     modalState,
     showModalState,
-    hideModalState
+    hideModalState,
+
+    toastMessage,
+    setToastMessage
   }
 
   return (
-    <AppContext.Provider value={contextValue}>
-      { children }
-    </AppContext.Provider>
+    <SessionProvider>
+      <AppContext.Provider value={contextValue}>
+        { children }
+      </AppContext.Provider>
+    </SessionProvider>
   )
 }
 

@@ -46,28 +46,29 @@ const SignupPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal()
-      const { ok, data } = await signup(values)
+      showLoadingModal({})
+      const { ok, error } = await signup(values)
 
       if (!ok) {
+        const emailError = error as { email?: string[] }
         if (
-          data.email &&
-          data.email.length &&
-          data.email[0].includes('Enter a valid email address.')
+          emailError.email &&
+          emailError.email.length &&
+          emailError.email[0]?.includes('Enter a valid email address.')
         ) {
-          setErrors({ email: data.email[0] })
+          setErrors({ email: emailError.email[0] })
         }
         if (
-          data.email &&
-          data.email.length &&
-          data.email[0].includes(
+          emailError.email &&
+          emailError.email.length &&
+          emailError.email[0].includes(
             'A user is already registered with this e-mail address.'
           )
         ) {
-          setErrors({ email: data.email[0] })
+          setErrors({ email: emailError.email[0] })
         }
 
-        if (data.password && data.password.length) {
+        if ((error as { password?: string[] }).password && (error as { password?: string[] }).password?.length) {
           setErrors({ password: 'Invalid password.' })
         }
       } else {

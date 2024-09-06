@@ -6,8 +6,7 @@ import * as Yup from 'yup'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
-import { login } from '@/api/users'
-import useAuthContext from '@/hooks/useAuthContext'
+import { getSession, signIn } from 'next-auth/react'
 import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
@@ -21,7 +20,6 @@ type LoginFormikType = {
 
 
 const LoginPage = () => {
-  const { updateToken } = useAuthContext()
   const {
     showLoadingModal,
     hideLoadingModal
@@ -41,31 +39,32 @@ const LoginPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal()
-      const { ok, data } = await login(values)
-      console.log(ok)
-
-      if (!ok) {
-        if (
-          data.email &&
-          data.email.length &&
-          data.email[0].includes('Enter a valid email address.')
-        ) {
-          setErrors({ email: 'Please enter a valid email address.' })
-        }
-        if (data.non_field_errors && data.non_field_errors.length) {
-          setErrors({
-            password: data.non_field_errors[0]
-          })
-        }
-
-        setErrors({
-          password: 'Unable to log in with provided credentials'
+      showLoadingModal({
+        title: 'Logging in',
+        message: 'Please wait...',
+      })
+    
+      try {
+        const result = await signIn('credentials', {
+          redirect: false, 
+          email: values.email,
+          password: values.password,
         })
-      } else {
-        updateToken(data.key)
+    
+        if (result?.ok) {
+          const updatedSession = await getSession()
+          if (updatedSession) {
+            router.replace('/success-login') 
+          }
+        } else {
+          setErrors({ password: 'Invalid email or password' })
+        }
+      } catch (error) {
+        setErrors({ password: 'Something went wrong, please try again later' })
+        console.error(error)
+      } finally {
+        setTimeout(() => hideLoadingModal(), 1000)
       }
-      setTimeout(() => hideLoadingModal(), 1000)
     }
   })
 

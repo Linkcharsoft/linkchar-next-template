@@ -28,7 +28,7 @@ const EmailValidationPage = ({ email }: Props) => {
   const handleLoginRedirect = () => router.replace('/login')
 
   const handleResendEmail = async (email: string) => {
-    showLoadingModal()
+    showLoadingModal({})
     setButtonDisabled(true)
 
     setTimeout(() => {
