@@ -27,7 +27,7 @@ const UserContextProvider = ({ children }: UserContextProviderType) => {
     data: user,
     mutate: mutateUser
   } = useSWR(
-    session?.user?.accessToken ? 'api/users/me/' : null,
+    session?.user?.accessToken ? `api-users-get-${session?.user?.accessToken}` : null,
     () => getMyUser(session?.user?.accessToken as string)
   )
 
