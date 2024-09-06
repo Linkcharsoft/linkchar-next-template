@@ -39,7 +39,7 @@ export const passwordRecoveryChange = async (body: {
   request_type: 'change' | 'reset'
   email: string
 }) => {
-  return await customFetch({  // type this according to the need 
+  return await customFetch<any>({  // type this according to the need 
     path: '/api/users/password-recovery/',
     method: 'POST',
     body
@@ -86,16 +86,9 @@ export const resendEmailConfirmation  = async (body: {
   })
 }
 
-type Profile = {
-  phone: string | null
-  organization: string
-  role: string
-  other_role?: string
-}
-
 
 export const updateUserProfile = async (token: string, body: any) => {
-  return await customFetch({  // type this according to the need 
+  return await customFetch<any>({  // type this according to the need 
     path: '/api/users/me/',
     method: 'PATCH',
     token,
@@ -106,7 +99,7 @@ export const updateUserProfile = async (token: string, body: any) => {
 export const completeRegistration  = async (token: string, body: {
   first_name: string;
   last_name: string
-  profile: Profile
+  phone: string | null
 }) => {
   return await customFetch<any>({ // type this according to the need 
     path: '/api/users/me/complete-register/',

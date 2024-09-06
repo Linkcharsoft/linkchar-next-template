@@ -8,6 +8,7 @@ declare module 'next-auth' {
       refreshToken?: string
       accessTokenExpires?: number
       refreshTokenExpires?: number
+      // add your custom properties here
     } & DefaultSession['user']
   }
 }
