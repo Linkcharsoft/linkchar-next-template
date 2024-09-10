@@ -1,12 +1,12 @@
-import HomePage from '@/screens/HomePage'
 import { Metadata } from 'next'
+import SignupPage from '@/screens/SignupPage'
 
 export const metadata: Metadata = {
-  title: 'Home'
+  title: 'Sign up'
 }
 
 const Page = () => (
-  <HomePage/>
+  <SignupPage />
 )
 
 export default Page

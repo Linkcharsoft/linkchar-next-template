@@ -1,0 +1,14 @@
+import { DefaultSession } from 'next-auth'
+
+declare module 'next-auth' {
+  interface Session {
+    error: boolean
+    user: {
+      accessToken?: string
+      refreshToken?: string
+      accessTokenExpires?: number
+      refreshTokenExpires?: number
+      // add your custom properties here
+    } & DefaultSession['user']
+  }
+}
