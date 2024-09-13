@@ -121,7 +121,7 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
               style={{ color: '#E5007E', fontSize: '30px' }}
             />
           </div>
-          <div className="mx-auto flex w-[243px] flex-col gap-4">
+          <div className="mx-auto flex flex-col gap-4">
             <p className="text-center text-base font-normal leading-5 text-surface-800">
               The link you&apos;ve used is no longer available, please try entering your email again.
             </p>
