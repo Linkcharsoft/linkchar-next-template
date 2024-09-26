@@ -1,40 +1,34 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { useFormik } from 'formik'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { completeRegistration } from '@/api/users'
-import useUserContext from '@/hooks/useUserContext'
 import usePressKey from '@/hooks/usePressKey'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
+import { useSession } from 'next-auth/react'
 
 interface FormPersonalDataValues {
   first_name: string
   last_name: string
-  phone: string | null
   general?: string
 }
 const CompleteProfilePage = () => {
-  const { user, mutateUser, token } = useUserContext()
-  const { showLoadingModal, hideLoadingModal } = useAppContext()
+  const { data: session, update } = useSession()
+  const { showLoadingModal, hideLoadingModal } = useAppStore()
   const router = useRouter()
-  const isClient = useIsClient()
 
   usePressKey('Enter', () => {
     formik.handleSubmit()
   })
 
-  // La logica de redireccion deberia ir en middleware.ts
-
   const formik = useFormik<FormPersonalDataValues>({
     initialValues: {
       first_name: '',
       last_name: '',
-      phone: ''
     },
     validationSchema: Yup.object({
       first_name: Yup.string().max(150, 'Max: 150 characters').required('Required'),
@@ -54,13 +48,12 @@ const CompleteProfilePage = () => {
       const body = {
         first_name: values.first_name,
         last_name: values.last_name,
-        phone: values.phone
       }
-      const response = await completeRegistration(token, body)
+      const response = await completeRegistration(session?.user.access as string, body)
 
       if (response.ok) {
-        mutateUser()
-        setTimeout(() => router.replace('/'), 1000)
+        await update({ first_name: values.first_name, last_name: values.last_name })
+        router.replace('/complete-profile') // force pathname to be /complete-profile for the middleware
       } else {
         const errors = response.data.non_field_errors?.[0]
         if (errors) {
@@ -72,8 +65,6 @@ const CompleteProfilePage = () => {
       setTimeout(() => hideLoadingModal(), 1000)
     }
   })
-
-  if (!isClient || !token || !user) return null
 
   return (
     <>
@@ -110,20 +101,6 @@ const CompleteProfilePage = () => {
                 invalid={Boolean(formik.errors.last_name)}
               />
               <InputError message={formik.errors.last_name} />
-            </div>
-            <div className="flex flex-col gap-[10px]">
-              <Label htmlFor="phone">Phone number</Label>
-              <InputText
-                name="phone"
-                id="phone"
-                inputMode="tel"
-                keyfilter={/[\d+]/}
-                placeholder="Type your phone number"
-                value={formik.values.phone || ''}
-                onChange={formik.handleChange}
-                invalid={Boolean(formik.errors.phone)}
-              />
-              <InputError message={formik.errors.phone} />
             </div>
           </div>
           <InputError message={formik.errors.general} />

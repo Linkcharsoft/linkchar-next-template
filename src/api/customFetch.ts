@@ -105,7 +105,7 @@ const refreshToken = async (): Promise<string | null> => {
     const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh: refresh.user.refreshToken })
+      body: JSON.stringify({ refresh: refresh.user.refresh })
     })
 
     if (!res.ok) throw new Error('Token refresh failed')

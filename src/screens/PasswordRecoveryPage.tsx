@@ -6,7 +6,7 @@ import { useIsClient } from 'usehooks-ts'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { passwordRecoveryChange } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
@@ -22,7 +22,7 @@ const PasswordRecoveryPage = () => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppContext()
+  } = useAppStore()
   const isClient = useIsClient()
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
   const [ isFirstClick, setIsFirstClick ] = useState<boolean>(true)

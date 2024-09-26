@@ -10,7 +10,7 @@ import { getSession, signIn } from 'next-auth/react'
 import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 
 
 type LoginFormikType = {
@@ -23,7 +23,7 @@ const LoginPage = () => {
   const {
     showLoadingModal,
     hideLoadingModal
-  } = useAppContext()
+  } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
 
