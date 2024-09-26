@@ -1,8 +1,8 @@
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import { AnimatePresence, motion } from 'framer-motion'
 
 const LoadingModal = () => {
-  const { loadingModal } = useAppContext()
+  const { loadingModal } = useAppStore()
 
   return (
     <AnimatePresence>

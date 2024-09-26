@@ -99,7 +99,6 @@ export const updateUserProfile = async (token: string, body: any) => {
 export const completeRegistration  = async (token: string, body: {
   first_name: string;
   last_name: string
-  phone: string | null
 }) => {
   return await customFetch<any>({ // type this according to the need 
     path: '/api/users/me/complete-register/',

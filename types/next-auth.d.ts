@@ -4,11 +4,14 @@ declare module 'next-auth' {
   interface Session {
     error: boolean
     user: {
-      accessToken?: string
-      refreshToken?: string
-      accessTokenExpires?: number
-      refreshTokenExpires?: number
-      // add your custom properties here
+      access?: string
+      refresh?: string
+      access_expiration?: number
+      refresh_expiration?: number
+      user_id?: number
+      email?: string
+      first_name?: string
+      last_name?: string
     } & DefaultSession['user']
   }
 }

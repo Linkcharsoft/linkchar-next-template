@@ -9,7 +9,7 @@ import { Password } from 'primereact/password'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import usePressKey from '@/hooks/usePressKey'
 import validatePassword from '@/utils/validatePassword'
 
@@ -30,7 +30,7 @@ const RecoveryPasswordConfirmationPage = ({ token, email }: Props) => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppContext()
+  } = useAppStore()
   const isClient = useIsClient()
   const router = useRouter()
   const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')

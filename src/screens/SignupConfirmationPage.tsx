@@ -6,7 +6,7 @@ import * as Yup from 'yup'
 import { useIsClient } from 'usehooks-ts'
 import { InputText } from 'primereact/inputtext'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { Button } from 'primereact/button'
@@ -27,7 +27,7 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppContext()
+  } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
   const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('invalid')

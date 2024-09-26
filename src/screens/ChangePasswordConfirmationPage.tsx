@@ -9,10 +9,9 @@ import { Button } from 'primereact/button'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
-import useUserContext from '@/hooks/useUserContext'
+import { useAppStore } from '@/stores/appStore'
 import validatePassword from '@/utils/validatePassword'
-
+import { useSession } from 'next-auth/react'
 
 type Props = {
   token: string
@@ -25,24 +24,24 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
 const ChangePasswordConfirmationPage = ({ token }: Props) => {
-  const { user } = useUserContext()
   const {
     showLoadingModal,
     hideLoadingModal,
     showModalState
-  } = useAppContext()
+  } = useAppStore()
   const isClient = useIsClient()
   const router = useRouter()
   const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')
+  const { data: session } = useSession()
 
 
   useEffect(() => {
     showLoadingModal({})
     const checkUrlToken = async () => {
       const decodedToken = decodeURIComponent(token)
-      if (user) {
+      if (session?.user) {
         const { ok } = await checkPasswordToken({
-          email: user.email,
+          email: session?.user.email as string,
           token: decodedToken
         })
 
@@ -57,7 +56,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     }
 
     checkUrlToken()
-  }, [user])
+  }, [session?.user])
 
 
   const formik = useFormik<ChangePasswordConfirmationFormikType>({
@@ -89,7 +88,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       try {
         const { ok } = await passwordConfirm({
           token: decodedToken,
-          email: user.email,
+          email: session?.user.email ?? '',
           password
         })
         if (!ok) {

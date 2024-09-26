@@ -8,7 +8,7 @@ import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { signup } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
@@ -25,7 +25,7 @@ const SignupPage = () => {
   const {
     showLoadingModal,
     hideLoadingModal
-  } = useAppContext()
+  } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
 

@@ -1,32 +1,20 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import { passwordRecoveryChange } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
-import useUserContext from '@/hooks/useUserContext'
+import { useAppStore } from '@/stores/appStore'
 import { Button } from 'primereact/button'
+import { useSession } from 'next-auth/react'
 
 
 const ChangePasswordPage = () => {
-  const { user, token, sessionStatus } = useUserContext()
+  const { data: session } = useSession()
   const {
     showLoadingModal,
     hideLoadingModal
-  } = useAppContext()
+  } = useAppStore()
   const isClient = useIsClient()
-  const router = useRouter()
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
-
-
-  useEffect(() => {
-    if (sessionStatus === 'loading') return
-    if(!token || !user) {
-      router.replace('/')
-    }
-  }, [token, user, sessionStatus])
-
-
 
   const handleGetEmail = async () => {
     showLoadingModal({})
@@ -39,7 +27,7 @@ const ChangePasswordPage = () => {
     try {
       const { ok } = await passwordRecoveryChange({
         request_type: 'change',
-        email: user.email
+        email: session?.user.email as string
       })
 
       if (!ok) {
@@ -61,7 +49,7 @@ const ChangePasswordPage = () => {
   }
 
 
-  if (!isClient || !token || !user) return null
+  if (!isClient || session?.user) return null
 
   return (
     <main className="AuthLayout">
@@ -73,7 +61,7 @@ const ChangePasswordPage = () => {
         <div className="mx-auto flex w-[243px] flex-col gap-4">
           <p className="text-center text-base font-normal leading-5 text-surface-800">
             We will send you an email to{' '}
-            <span className="font-semibold">{ user?.email }</span> with a link to
+            <span className="font-semibold">{ session?.user?.email }</span> with a link to
             change your password.
           </p>
           <p className="text-center text-base font-normal leading-5 text-surface-800">
