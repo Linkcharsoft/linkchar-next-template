@@ -62,7 +62,7 @@ NextAuth provides callbacks for various events, such as sign in, sign out, and e
 
 NextAuth provides a session object that contains information about the user's session, such as the user ID, access token, and refresh token. The session object is available in the `src/pages/api/auth/[...nextauth].ts` file.
 
-#### Middleware
+### Middleware
 
 This template includes a custom middleware function designed to manage access control based on user authentication status. The middleware retrieves the JWT token using NextAuth and determines whether users have access to public or private routes. Below is a summary of how the middleware works:
 
