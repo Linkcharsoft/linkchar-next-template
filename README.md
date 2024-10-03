@@ -79,7 +79,7 @@ This template includes a custom middleware function designed to manage access co
 
 The middleware is located in the `src/middleware.ts` file and is responsible for handling authentication and authorization for different routes in the application.
 
-## Standar date format - dayjs
+## Standard date format - dayjs
 
 #### Import and Configure the Plugin
 In the component or module where you need to work with UTC dates, import dayjs and the utc plugin, then extend dayjs with the plugin:
