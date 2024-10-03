@@ -12,23 +12,68 @@ yarn dev
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## General information
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This template includes the following functionalities:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+- Login
+- Signup
+- Email validation
+- Password recovery
+- Complete profile
+- Change password
 
-## Learn More
+And the next libraries:
 
-To learn more about Next.js, take a look at the following resources:
+- Next.js
+- Tailwind CSS
+- PrimeReact
+- NextAuth
+- Zustand
+- @studio-freight/lenis
+- formik
+- framer-motion
+- swr
+- usehooks-ts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## About the template
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+This template is a Next.js template that includes a basic authentication system using NextAuth and Zustand. It also includes a custom hook called useParamsHandler that allows you to handle URL parameters in the URL. The template also includes a custom hook called usePressKey that allows you to handle keyboard events.
+For auth functionalities, the template uses NextAuth, which is a popular authentication library for Next.js.
 
-## Deploy on Vercel
+## About next-auth
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+NextAuth is a popular authentication library for Next.js. It provides a simple and easy-to-use API for handling authentication and authorization in your Next.js applications. With NextAuth, you can easily add authentication to your Next.js applications, including login, signup, password recovery, and more.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+#### NextAuth configuration
+
+The next-auth configuration file is located in the `src/pages/api/auth/[...nextauth].ts` file. This file contains the configuration for the authentication system, including the providers, callbacks, and other settings.
+
+#### NextAuth providers
+
+NextAuth supports various providers, including email, password, OAuth, and more. The providers are configured in the src/pages/api/auth/[...nextauth].ts file.
+For this template, the providers are configured to use the credentials strategy, which allows users to sign in using their email and password. Additionally, this setup is combined with the JWT strategy to ensure token-based authentication, enabling secure and stateless session management for the users. The JWT tokens are issued and verified when users sign in using their credentials, allowing further API requests to be authenticated with these tokens.
+
+#### NextAuth callbacks
+
+NextAuth provides callbacks for various events, such as sign in, sign out, and error. The callbacks are configured in the `src/pages/api/auth/[...nextauth].ts` file.
+
+#### NextAuth session
+
+NextAuth provides a session object that contains information about the user's session, such as the user ID, access token, and refresh token. The session object is available in the `src/pages/api/auth/[...nextauth].ts` file.
+
+#### Middleware
+
+This template includes a custom middleware function designed to manage access control based on user authentication status. The middleware retrieves the JWT token using NextAuth and determines whether users have access to public or private routes. Below is a summary of how the middleware works:
+
+- Token Retrieval: The middleware attempts to retrieve the token using getToken from NextAuth.
+- Public and Private Paths:
+  - The template defines certain public paths (e.g., /login, /signup) that do not require authentication.
+  - Static resources (e.g., images, fonts) are also publicly accessible.
+- Redirection Logic:
+  If an authenticated user tries to access public client paths like /login or /signup, they will be redirected to the home page (/).
+  If no token is present and the user tries to access a private route, they will be redirected to the login page (/login).
+- Profile Completion Check (optional): The middleware can be extended to check if a user's profile is complete and redirect them to a profile completion page if necessary.
+  This middleware ensures that unauthenticated users are restricted from accessing private pages while authenticated users are seamlessly redirected to the appropriate sections of the application.
+
+The middleware is located in the `src/middleware.ts` file and is responsible for handling authentication and authorization for different routes in the application.
