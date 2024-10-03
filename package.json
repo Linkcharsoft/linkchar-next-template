@@ -13,6 +13,8 @@
   "dependencies": {
     "@studio-freight/lenis": "1.0.42",
     "classnames": "2.5.1",
+    "dayjs": "^1.11.13",
+    "dayjs-plugin-utc": "^0.1.2",
     "formik": "2.4.6",
     "framer-motion": "11.3.30",
     "next": "14.2.10",

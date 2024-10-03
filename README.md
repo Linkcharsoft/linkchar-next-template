@@ -35,6 +35,7 @@ And the next libraries:
 - framer-motion
 - swr
 - usehooks-ts
+- dayjs
 
 ## About the template
 
@@ -77,3 +78,37 @@ This template includes a custom middleware function designed to manage access co
   This middleware ensures that unauthenticated users are restricted from accessing private pages while authenticated users are seamlessly redirected to the appropriate sections of the application.
 
 The middleware is located in the `src/middleware.ts` file and is responsible for handling authentication and authorization for different routes in the application.
+
+### Standar date format - dayjs
+
+#### Import and Configure the Plugin
+In the component or module where you need to work with UTC dates, import dayjs and the utc plugin, then extend dayjs with the plugin:
+```javascript
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+// Extend dayjs with the UTC plugin
+dayjs.extend(utc);
+```
+
+#### Usage Examples
+```javascript
+const currentUTCDate = dayjs().utc().format();
+console.log(currentUTCDate); // Displays the current date and time in UTC (ISO format)
+```
+
+#### Converting a Local Date to UTC
+If you have a local date and need to convert it to UTC, you can use this approach:
+```javascript
+const localDate = '2024-10-03T15:30:00'; // Local date
+const utcDate = dayjs(localDate).utc().format();
+console.log(utcDate); // Outputs the date in UTC
+```
+
+#### Formatting UTC Dates
+To standardize the UTC date into a specific format, use the following code:
+```javascript
+const formattedUTCDate = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
+console.log(formattedUTCDate); // For example: "2024-10-03 18:30:00"
+```
+For more information about dayjs, you can refer to the official documentation: https://day.js.org/docs/en/display/format
