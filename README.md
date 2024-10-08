@@ -15,7 +15,6 @@
    - [Project Structure](#project-structure)
    - [Additional Libraries](#additional-libraries)
    - [E2E Test Example](#e2e-test-example)
-   - [Explanation of Key Sections](#explanation-of-key-sections)
 7. [Standard Date Format - dayjs](#standard-date-format---dayjs)
    - [Import and Configure the Plugin](#import-and-configure-the-plugin)
    - [Usage Examples](#usage-examples)
