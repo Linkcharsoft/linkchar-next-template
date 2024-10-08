@@ -15,6 +15,7 @@
    - [Project Structure](#project-structure)
    - [Additional Libraries](#additional-libraries)
    - [E2E Test Example](#e2e-test-example)
+   - [Navigation and Route Protection Test Example](#navigation-and-route-protection-test-example)
 7. [Standard Date Format - dayjs](#standard-date-format---dayjs)
    - [Import and Configure the Plugin](#import-and-configure-the-plugin)
    - [Usage Examples](#usage-examples)
@@ -122,7 +123,7 @@ cypress
 - cypress-dotenv to load environment variables from a .env file.
 - cypress-file-upload to handle file uploads in tests, enabling the use of cy.upload().
 
-#### e2e Text Example
+#### E2E Text Example
 ```javascript
 import 'cypress-file-upload'
 
@@ -176,6 +177,47 @@ describe('Profile Information Update', () => {
   })
 })
 ```
+#### Navigation and Route Protection Test Example
+```javascript
+describe('Navigation and Route Protection', () => {
+  const baseUrl = Cypress.config('baseUrl')
+  const protectedRoute = `${baseUrl}/`
+  const loginRoute = `${baseUrl}/login`
+  
+  before(() => {
+    // Load fixture data if needed, e.g., user credentials
+    cy.fixture('userData').then(function (data) {
+      this.data = data
+    })
+  })
+
+  context('Unauthenticated user', () => {
+    it('should redirect to login page when trying to access a protected route', function () {
+      cy.visit(protectedRoute)
+      cy.url().should('eq', loginRoute) // Assert redirection to login
+    })
+  })
+
+  context('Authenticated user', () => {
+    beforeEach(function () {
+      // Log in using custom command and store session
+      cy.login(this.data.email, this.data.password) // Ensure this command is set up in commands.ts
+    })
+
+    it('should access protected route after login', () => {
+      cy.visit(protectedRoute)
+      cy.url().should('eq', protectedRoute) // Assert the user is on the protected route
+      cy.contains('Powered by Linkchar') // Customize based on your dashboard content
+    })
+
+    it('should redirect to home when visiting login page as authenticated user', () => {
+      cy.visit(loginRoute)
+      cy.url().should('eq', `${baseUrl}/`) // Assert redirection to home page
+    })
+  })
+})
+```
+
 Explanation of Key Sections
 - Fixture Loading: Loads static data from a fixture file to make tests reusable.
 - Dynamic Data Generation: Adds unique values for fields to simulate different data each test run.
