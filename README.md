@@ -1,3 +1,28 @@
+# README Index
+
+1. [Getting Started](#getting-started)
+2. [General Information](#general-information)
+   - [Template Functionalities](#template-functionalities)
+   - [Libraries Included](#libraries-included)
+3. [About the Template](#about-the-template)
+4. [About NextAuth](#about-nextauth)
+   - [NextAuth Configuration](#nextauth-configuration)
+   - [NextAuth Providers](#nextauth-providers)
+   - [NextAuth Callbacks](#nextauth-callbacks)
+   - [NextAuth Session](#nextauth-session)
+5. [Middleware](#middleware)
+6. [Cypress E2E Testing](#cypress-e2e-testing)
+   - [Project Structure](#project-structure)
+   - [Additional Libraries](#additional-libraries)
+   - [E2E Test Example](#e2e-test-example)
+7. [Standard Date Format - dayjs](#standard-date-format---dayjs)
+   - [Import and Configure the Plugin](#import-and-configure-the-plugin)
+   - [Usage Examples](#usage-examples)
+   - [Converting a Local Date to UTC](#converting-a-local-date-to-utc)
+   - [Formatting UTC Dates](#formatting-utc-dates)
+
+<hr>
+
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
@@ -78,6 +103,89 @@ This template includes a custom middleware function designed to manage access co
   This middleware ensures that unauthenticated users are restricted from accessing private pages while authenticated users are seamlessly redirected to the appropriate sections of the application.
 
 The middleware is located in the `src/middleware.ts` file and is responsible for handling authentication and authorization for different routes in the application.
+
+## Cypress e2e testing
+#### Project Structure
+Your Cypress project follows this folder structure:
+```textplain
+cypress
+├── e2e
+│   └── **.cy.ts       // E2E test files in TypeScript format
+├── fixtures
+│   └── example.ts     // Static data for use in tests
+└── support
+    ├── commands.ts    // Custom Cypress commands
+    └── e2e.ts         // Support configuration for E2E tests
+```
+
+#### Aditional Libraries
+- cypress-dotenv to load environment variables from a .env file.
+- cypress-file-upload to handle file uploads in tests, enabling the use of cy.upload().
+
+#### e2e Text Example
+```javascript
+import 'cypress-file-upload'
+
+describe('Profile Information Update', () => {
+  before(function () {
+    // Load data from fixture
+    cy.fixture('example').then(function (data) {
+      this.data = data
+    })
+  })
+
+  it('logs in and updates profile information', function () {
+    // Base URLs
+    const baseUrl = Cypress.config('baseUrl')
+    const profileUrl = `${baseUrl}/profile`
+
+    // Dynamic variables for profile updates
+    const firstName = 'TestFirst' + Math.floor(Math.random() * 1000)
+    const lastName = 'TestLast' + Math.floor(Math.random() * 1000)
+    const phone = '+12345' + Math.floor(Math.random() * 1000)
+    
+    // Intercept profile update request
+    cy.intercept('PATCH', '/api/users/me').as('updateProfile')
+
+    // Log in using custom command (requires setup in commands.ts)
+    cy.login(this.data.email, this.data.password).then(() => {
+      cy.url().should('eq', `${baseUrl}/dashboard`)
+      cy.get('.ProfileButton').should('be.visible').click()
+    })
+
+    // Navigate to profile page
+    cy.get('[href="/profile"]').click()
+    cy.url().should('eq', profileUrl)
+
+    // Update profile fields
+    cy.get('#first_name').clear().type(firstName)
+    cy.get('#last_name').clear().type(lastName)
+    cy.get('#phone').clear().type(phone)
+
+    // Submit changes
+    cy.get('.saveButton').click()
+
+    // Wait for profile update request
+    cy.wait('@updateProfile').its('response.statusCode').should('eq', 200)
+
+    // Reload page and verify updates
+    cy.reload()
+    cy.get('#first_name').should('have.value', firstName)
+    cy.get('#last_name').should('have.value', lastName)
+    cy.get('#phone').should('have.value', phone)
+  })
+})
+```
+Explanation of Key Sections
+- Fixture Loading: Loads static data from a fixture file to make tests reusable.
+- Dynamic Data Generation: Adds unique values for fields to simulate different data each test run.
+- Interception: Captures network requests, allowing us to validate the response.
+- Custom Commands: A cy.login() command (created in commands.ts) abstracts login steps, improving code readability.
+- Assertions: Verifies that the profile page displays updated values after submission.
+
+This test flow covers typical user actions like loading data, interacting with form fields, intercepting network requests, and verifying responses.
+
+
 
 ## Standard date format - dayjs
 
