@@ -46,7 +46,6 @@ This template includes the following functionalities:
 - Signup
 - Email validation
 - Password recovery
-- Complete profile
 - Change password
 
 And the next libraries:

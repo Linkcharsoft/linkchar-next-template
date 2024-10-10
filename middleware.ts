@@ -59,11 +59,6 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    // 6. If the token exists but the profile is not complete, redirect to the complete profile page
-    // if (pathname !== '/complete-profile' && token && !token.is_register_complete) {
-    //   return NextResponse.redirect(new URL('/complete-profile', req.url))
-    // }
-
     // 7. If the user is authenticated and everything is fine, proceed with the request
     return NextResponse.next()
   } catch (error) {

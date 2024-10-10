@@ -37,7 +37,6 @@ interface ProfileSession extends Session {
     email?: string | null
     first_name?: string | null
     last_name?: string | null
-    // is_register_complete?: boolean
   } & DefaultSession['user']
 }
 
@@ -152,7 +151,6 @@ export default NextAuth({
         session.user.email = token.email
         session.user.first_name = token.first_name
         session.user.last_name = token.last_name
-        // session.user.is_register_complete = token.is_register_complete
 
         if (token.error) {
           session.error = true

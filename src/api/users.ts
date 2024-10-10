@@ -19,18 +19,6 @@ export const updateUserProfile = async (token: string, body: any) => {
   })
 }
 
-export const completeRegistration  = async (token: string, body: {
-  first_name: string;
-  last_name: string
-}) => {
-  return await customFetch<any>({ // type this according to the need 
-    path: '/api/auth/user/complete-register/',
-    method: 'PATCH',
-    token,
-    body
-  })
-}
-
 // auth endpoints
 export const signup = async (body: { email: string; password1: string, password2: string }) => {
   return await customFetch<{
