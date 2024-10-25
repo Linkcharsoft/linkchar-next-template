@@ -6,13 +6,12 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  params: {
-    key: string
-  }
+  params: Promise<{ key: string }>
 }
 
-const Page = ({ params: { key } }: Props) => (
-  <SignupConfirmationPage confirmationKey ={key} />
-)
+const Page = async ({ params }: Props) => {
+  const { key } = await params
+  return <SignupConfirmationPage confirmationKey={key} />
+}
 
 export default Page
