@@ -1,8 +1,5 @@
 import { Metadata, Viewport } from 'next'
-import { PrimeReactProvider } from 'primereact/api'
-import Tailwind from 'primereact/passthrough/tailwind'
-import AppContextProvider from '@/contexts/AppContext'
-import UserContextProvider from '@/contexts/UserContext'
+import ProvidersContainer from '@/containers/ProvidersContainer'
 
 import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
@@ -178,13 +175,9 @@ export default function Layout({ children }: Props) {
         />
       </head>
       <body>
-        <PrimeReactProvider value={{ pt: Tailwind }}>
-          <AppContextProvider>
-            <UserContextProvider>
-              { children }
-            </UserContextProvider>
-          </AppContextProvider>
-        </PrimeReactProvider>
+        <ProvidersContainer>
+          { children }
+        </ProvidersContainer>
       </body>
     </html>
   )

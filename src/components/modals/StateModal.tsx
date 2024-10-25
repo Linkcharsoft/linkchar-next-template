@@ -1,11 +1,11 @@
 import { Button } from 'primereact/button'
 import { Dialog } from 'primereact/dialog'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 
 /* DOCS: https://primereact.org/dialog/ */
 
 export default function BasicDemo() {
-  const { modalState, hideModalState } = useAppContext()
+  const { modalState, hideModalState } = useAppStore()
 
   /* THIS IS A EXAMPLE COLORS AND ICONS */
 

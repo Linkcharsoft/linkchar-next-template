@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useIsClient } from 'usehooks-ts'
 import { Button } from 'primereact/button'
 import { resendEmailConfirmation } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 
 
 type Props = {
@@ -16,7 +16,7 @@ const EmailValidationPage = ({ email }: Props) => {
   const {
     showLoadingModal,
     hideLoadingModal
-  } = useAppContext()
+  } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)

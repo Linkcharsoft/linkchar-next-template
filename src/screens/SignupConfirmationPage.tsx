@@ -6,7 +6,7 @@ import * as Yup from 'yup'
 import { useIsClient } from 'usehooks-ts'
 import { InputText } from 'primereact/inputtext'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { Button } from 'primereact/button'
@@ -27,7 +27,7 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppContext()
+  } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
   const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('invalid')
@@ -121,7 +121,7 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
               style={{ color: '#E5007E', fontSize: '30px' }}
             />
           </div>
-          <div className="mx-auto flex w-[243px] flex-col gap-4">
+          <div className="mx-auto flex flex-col gap-4">
             <p className="text-center text-base font-normal leading-5 text-surface-800">
               The link you&apos;ve used is no longer available, please try entering your email again.
             </p>

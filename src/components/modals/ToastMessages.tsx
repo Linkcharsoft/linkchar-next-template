@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useRef } from 'react'
 import { Toast } from 'primereact/toast'
-import useAppContext from '@/hooks/useAppContext'
+import { useAppStore } from '@/stores/appStore'
 
 const ToastMessages = () => {
   const toastRef = useRef<Toast>(null)
-  const { toastMessage, setToastMessage } = useAppContext()
+  const { toastMessage, setToastMessage } = useAppStore()
 
   useEffect(() => {
     if (toastMessage.summary) {

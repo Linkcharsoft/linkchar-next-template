@@ -1,6 +1,6 @@
 'use client'
 import { Session } from 'next-auth'
-import { getSession, signOut } from 'next-auth/react'
+import { getSession, signOut, signIn } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 
 const Page = () => {
@@ -18,6 +18,10 @@ const Page = () => {
     signOut({ callbackUrl: '/login' })
   }
 
+  const handleSignIn = () => {
+    signIn('credentials', { redirect: false })
+  }
+  
   return (
     <div className="flex flex-col gap-4 m-4">
       <div className="flex flex-col gap-2">
@@ -25,6 +29,7 @@ const Page = () => {
         <pre>{JSON.stringify(session, null, 2)}</pre>
       </div>
       <button onClick={handleSignOut}>Cerrar Sesión</button>
+      <button onClick={handleSignIn}>Iniciar Sesión</button>
     </div>
   )
 }

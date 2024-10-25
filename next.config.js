@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
+const isProd = process.env.NODE_ENV === 'production'
 const nextConfig = {
   reactStrictMode: false,
+  compiler: {
+    removeConsole: isProd,
+  },
   env: {
     API_URL: process.env.API_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,

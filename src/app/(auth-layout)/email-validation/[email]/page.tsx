@@ -6,13 +6,12 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  params: {
-    email: string
-  }
+  params: Promise<{ email: string }>
 }
 
-const Page = ({ params: { email } }: Props) => (
-  <EmailValidationPage email={email} />
-)
+const Page = async ({ params }: Props) => {
+  const { email } = await params
+  return <EmailValidationPage email={email} />
+}
 
 export default Page

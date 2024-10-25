@@ -29,6 +29,9 @@
         "./src/*"
       ]
     },
+    "types": [
+      "cypress",
+    ],
     "plugins": [
       {
         "name": "next"
@@ -39,7 +42,8 @@
   "include": [
     "src/",
     "types/next-auth.d.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "cypress/**/*.ts"
   ],
   "exclude": [
     "node_modules"
