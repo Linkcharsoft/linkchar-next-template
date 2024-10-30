@@ -1,13 +1,15 @@
 /** @type {import('next').NextConfig} */
-const isProd = process.env.NODE_ENV === 'production'
+const IS_PROD = process.env.NODE_ENV === 'production'
+
 const nextConfig = {
   reactStrictMode: false,
   compiler: {
-    removeConsole: isProd,
+    removeConsole: IS_PROD,
   },
   env: {
     API_URL: process.env.API_URL,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    CLARITY_ID: process.env.CLARITY_ID,
     // MEDIA_URL: process.env.MEDIA_URL,
     // STRAPI_URL: process.env.STRAPI_URL,
     // STRAPI_MEDIA_URL: process.env.STRAPI_MEDIA_URL,
