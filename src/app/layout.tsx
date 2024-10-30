@@ -1,4 +1,5 @@
 import { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import ProvidersContainer from '@/containers/ProvidersContainer'
 
 import '@/styles/index.sass'
@@ -173,6 +174,19 @@ export default function Layout({ children }: Props) {
             `,
           }}
         />
+
+        {/* Clarity */}
+        {process.env.CLARITY_ID && (
+          <Script id="ms_clarity">
+            {`
+              (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", ${process.env.CLARITY_ID});
+            `}
+          </Script>
+        )}
       </head>
       <body>
         <ProvidersContainer>
