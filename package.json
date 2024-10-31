@@ -13,6 +13,7 @@
     "test:run": "cypress run"
   },
   "dependencies": {
+    "@sentry/nextjs": "^8.36.0",
     "@studio-freight/lenis": "1.0.42",
     "classnames": "2.5.1",
     "dayjs": "^1.11.13",
