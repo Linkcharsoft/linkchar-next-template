@@ -1,0 +1,101 @@
+## REMOVE .EXAMPLE FROM FILE NAME
+
+name: Cypress E2E Tests
+
+on:
+  push:
+    branches:
+      - develop  # Configura la rama que deseas monitorear para commits
+
+jobs:
+  Initializer:
+    name: Initializer
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: set-matrix
+        run: echo "matrix=$(ls ./cypress/e2e/ | awk '{print "cypress/e2e/" $0}' | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./node_modules
+            .next/cache
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cypress install
+        uses: cypress-io/github-action@v6
+        with:
+          # Disable running of tests within install job
+          runTests: false
+          build: npm run build
+        env: # use vars for not secret values
+          API_URL: ${{ vars.API_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+
+      - name: Save build folder
+        uses: actions/upload-artifact@v4
+        with:
+          include-hidden-files: true
+          name: build
+          if-no-files-found: error
+          path: |
+            ./.next
+            ./next-env.d.ts
+
+
+  cypress-run:
+    needs: [Initializer]
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: ${{ fromJson(needs.Initializer.outputs.matrix) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download the build folder
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          runTests: false
+          start: npm run serve
+          browser: chrome
+          spec: ${{ matrix.containers }}
+
+        env: # use vars for not secret values
+          API_URL: ${{ vars.API_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+
+  Post-test:
+    needs: [cypress-run]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Test Failure
+        if: ${{ needs.cypress-run.result == 'failure' }}
+        uses: rjstone/discord-webhook-notify@v1
+        with:
+          severity: error
+          details: Test Failed!
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }} # add discord webook to github secrets for deploy alerts
+          
+      - name: Trigger Amplify Deploy
+        if: ${{ needs.cypress-run.result == 'success' }}
+        run: | # add amplify deploy url to github secrets for deploy alerts
+          curl -X POST -d {} "${{ secrets.AMPLIFY_DEPLOY_URL }}" -H "Content-Type:application/json"
