@@ -24,7 +24,6 @@
 8. [Using dimensions for responsive design](#using-dimensions-for-responsive-design)
    - [Differences Between vh, dvh, and svh](#differences-between-vh-dvh-and-svh)
 
-
 <hr>
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
@@ -58,7 +57,7 @@ And the next libraries:
 - PrimeReact
 - NextAuth
 - Zustand
-- @studio-freight/lenis
+- lenis
 - formik
 - framer-motion
 - swr
@@ -108,8 +107,11 @@ This template includes a custom middleware function designed to manage access co
 The middleware is located in the `src/middleware.ts` file and is responsible for handling authentication and authorization for different routes in the application.
 
 ## Cypress e2e testing
+
 #### Project Structure
+
 Your Cypress project follows this folder structure:
+
 ```textplain
 cypress
 ├── e2e
@@ -122,10 +124,12 @@ cypress
 ```
 
 #### Aditional Libraries
+
 - cypress-dotenv to load environment variables from a .env file.
 - cypress-file-upload to handle file uploads in tests, enabling the use of cy.upload().
 
 #### E2E Text Example
+
 ```javascript
 import 'cypress-file-upload'
 
@@ -179,7 +183,9 @@ describe('Profile Information Update', () => {
   })
 })
 ```
+
 #### Navigation and Route Protection Test Example
+
 ```javascript
 describe('Navigation and Route Protection', () => {
   const baseUrl = Cypress.config('baseUrl')
@@ -221,6 +227,7 @@ describe('Navigation and Route Protection', () => {
 ```
 
 Explanation of Key Sections
+
 - Fixture Loading: Loads static data from a fixture file to make tests reusable.
 - Dynamic Data Generation: Adds unique values for fields to simulate different data each test run.
 - Interception: Captures network requests, allowing us to validate the response.
@@ -229,12 +236,12 @@ Explanation of Key Sections
 
 This test flow covers typical user actions like loading data, interacting with form fields, intercepting network requests, and verifying responses.
 
-
-
 ## Standard date format - dayjs
 
 #### Import and Configure the Plugin
+
 In the component or module where you need to work with UTC dates, import dayjs and the utc plugin, then extend dayjs with the plugin:
+
 ```javascript
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -244,13 +251,16 @@ dayjs.extend(utc);
 ```
 
 #### Usage Examples
+
 ```javascript
 const currentUTCDate = dayjs().utc().format();
 console.log(currentUTCDate); // Displays the current date and time in UTC (ISO format)
 ```
 
 #### Converting a Local Date to UTC
+
 If you have a local date and need to convert it to UTC, you can use this approach:
+
 ```javascript
 const localDate = '2024-10-03T15:30:00'; // Local date
 const utcDate = dayjs(localDate).utc().format();
@@ -258,17 +268,22 @@ console.log(utcDate); // Outputs the date in UTC
 ```
 
 #### Formatting UTC Dates
+
 To standardize the UTC date into a specific format, use the following code:
+
 ```javascript
 const formattedUTCDate = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
 console.log(formattedUTCDate); // For example: "2024-10-03 18:30:00"
 ```
-For more information about dayjs, you can refer to the official documentation: https://day.js.org/docs/en/display/format
+
+For more information about dayjs, you can refer to the official documentation: <https://day.js.org/docs/en/display/format>
 
 ## Using dimensions for responsive design
+
 When developing responsive designs, especially for mobile compatibility, it's essential to select the appropriate unit of measurement for viewport height. Specifically, **the svh unit is recommended for handling height** in mobile web browsers like Safari on iOS, which can present challenges with traditional vh units.
 
 #### Differences Between vh, dvh, and svh
+
 - vh (Viewport Height): Represents 1% of the viewport height. However, it does not account for dynamic UI changes like the appearance of the address bar or keyboard on mobile browsers. When these UI elements appear, the visible area shrinks, causing potential layout shifts.
 - dvh (Dynamic Viewport Height): Adjusts based on dynamic changes in the viewport size. For instance, if the browser UI (address bar or keyboard) appears, the dvh value changes to reflect the newly available height. However, when using dvh, it can lead to undesired overflow behavior, particularly when a keyboard pops up. The scroll may extend beyond the container, which isn't ideal for keeping elements confined.
 - svh (Small Viewport Height): Stays constant regardless of dynamic changes in UI elements, providing a stable height based on the smallest viewport height available. This makes it preferable for mobile layouts because it ensures the content is contained within the viewport, even if an on-screen keyboard or other UI elements appear.
@@ -277,4 +292,4 @@ In summary, using svh offers better control and consistency for mobile layouts. 
 
 However, for layouts without interactive elements, such as text-only sections or image galleries, dvh can be preferable since it adjusts dynamically to changes in viewport height. For layouts that include interactive elements like input, textarea, or select, svh is recommended to ensure the layout remains stable even when the on-screen keyboard or other UI elements appear.
 
-For more information on viewport units: https://web.dev/blog/viewport-units/
+For more information on viewport units: <https://web.dev/blog/viewport-units/>

@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
 import * as THREE from 'three'
-import Lenis from '@studio-freight/lenis'
+import Lenis from 'lenis'
 import Logo from '@/assets/images/logo.svg'
 
 const MAX_TIME_VALUE = 10
