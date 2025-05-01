@@ -1,6 +1,6 @@
 import NextAuth, { DefaultSession, Session, User } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
 import { JWT } from 'next-auth/jwt'
+import CredentialsProvider from 'next-auth/providers/credentials'
 import { API_URL, NEXTAUTH_SECRET } from '../../../src/constants'
 
 interface ExtendedUser extends User {
@@ -8,7 +8,7 @@ interface ExtendedUser extends User {
   refresh: string
   access_expiration: string
   refresh_expiration: string
-  user_id: number 
+  user_id: number
   email: string | null
   first_name: string | null
   last_name: string | null

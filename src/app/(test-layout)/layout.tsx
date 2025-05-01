@@ -1,8 +1,9 @@
 'use client'
 import { SessionProvider } from 'next-auth/react'
+import { ReactNode } from 'react'
 
 interface Props {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 const Layout = ({ children }: Props) => {

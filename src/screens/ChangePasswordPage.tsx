@@ -1,10 +1,10 @@
 'use client'
+import { useSession } from 'next-auth/react'
+import { Button } from 'primereact/button'
 import { useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import { passwordRecoveryChange } from '@/api/users'
 import { useAppStore } from '@/stores/appStore'
-import { Button } from 'primereact/button'
-import { useSession } from 'next-auth/react'
 
 
 const ChangePasswordPage = () => {

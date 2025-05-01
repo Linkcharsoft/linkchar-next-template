@@ -1,6 +1,6 @@
 'use client'
-import { useAppStore } from '@/stores/appStore'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useAppStore } from '@/stores/appStore'
 
 const LoadingModal = () => {
   const { loadingModal } = useAppStore()

@@ -5,14 +5,16 @@ export const metadata: Metadata = {
   title: 'Email Validation'
 }
 
-type Props = {
-  params: {
-    email: string
-  }
+interface Props {
+  params: Promise<{ email: string }>
 }
 
-const Page = ({ params: { email } }: Props) => (
-  <EmailValidationPage email={email} />
-)
+const Page = async ({ params }: Props) => {
+  const { email } = await params
+
+  return (
+    <EmailValidationPage email={email} />
+  )
+}
 
 export default Page

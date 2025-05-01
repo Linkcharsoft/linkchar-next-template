@@ -1,6 +1,5 @@
+import { signOut , getSession } from 'next-auth/react'
 import { API_URL, STRAPI_URL } from '@/constants'
-import { signOut } from 'next-auth/react'
-import { getSession } from 'next-auth/react'
 
 type CustomFetchType = {
   path: string

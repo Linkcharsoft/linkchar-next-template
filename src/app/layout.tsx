@@ -1,5 +1,6 @@
 import { Metadata, Viewport } from 'next'
 import Script from 'next/script'
+import { ReactNode } from 'react'
 import ProvidersContainer from '@/containers/ProvidersContainer'
 
 import '@/styles/index.sass'
@@ -158,7 +159,7 @@ export const metadata: Metadata = {
 }
 
 interface Props {
-  children: React.ReactNode
+  children: ReactNode
 }
 export default function Layout({ children }: Props) {
   return (

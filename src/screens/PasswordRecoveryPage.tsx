@@ -1,15 +1,15 @@
 'use client'
-import { useState } from 'react'
 import { useFormik } from 'formik'
-import * as Yup from 'yup'
-import { useIsClient } from 'usehooks-ts'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
+import { useState } from 'react'
+import { useIsClient } from 'usehooks-ts'
+import * as Yup from 'yup'
 import { passwordRecoveryChange } from '@/api/users'
-import { useAppStore } from '@/stores/appStore'
-import usePressKey from '@/hooks/usePressKey'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
+import usePressKey from '@/hooks/usePressKey'
+import { useAppStore } from '@/stores/appStore'
 
 
 type PasswordRecoveryFormikType = {

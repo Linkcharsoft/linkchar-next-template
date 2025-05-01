@@ -1,15 +1,15 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useFormik } from 'formik'
-import * as Yup from 'yup'
-import { useIsClient } from 'usehooks-ts'
+import { useRouter } from 'next/navigation'
+import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
+import { useEffect, useState } from 'react'
+import { useIsClient } from 'usehooks-ts'
+import * as Yup from 'yup'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
-import { useAppStore } from '@/stores/appStore'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
-import { Button } from 'primereact/button'
+import { useAppStore } from '@/stores/appStore'
 
 
 type Props = {

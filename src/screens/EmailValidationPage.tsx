@@ -1,8 +1,8 @@
 'use client'
-import React, { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useIsClient } from 'usehooks-ts'
 import { Button } from 'primereact/button'
+import React, { useMemo, useState } from 'react'
+import { useIsClient } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/users'
 import { useAppStore } from '@/stores/appStore'
 

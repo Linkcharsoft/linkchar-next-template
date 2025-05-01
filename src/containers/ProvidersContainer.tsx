@@ -1,8 +1,8 @@
 'use client'
-import { ReactNode } from 'react'
+import { SessionProvider } from 'next-auth/react'
 import { PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
-import { SessionProvider } from 'next-auth/react'
+import { ReactNode } from 'react'
 
 interface Props {
   children: ReactNode

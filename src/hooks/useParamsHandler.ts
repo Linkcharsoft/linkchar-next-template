@@ -27,10 +27,10 @@ updateParam('search', value, true, true) // Update single param with reset page 
 updateParams({ search: value, page: 1 }, true) // Update multiple params with scroll
 */
 
-import { useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTransition } from 'react'
 
-let intervalId: NodeJS.Timeout | null = null
+let intervalId: ReturnType<typeof setTimeout> | null = null
 
 export default function useParamsHandler<
   T extends Record<string, string | number | Array<string> | Array<number> | null>

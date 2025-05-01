@@ -1,5 +1,5 @@
-import HomePage from '@/screens/HomePage'
 import { Metadata } from 'next'
+import HomePage from '@/screens/HomePage'
 
 export const metadata: Metadata = {
   title: 'Home'

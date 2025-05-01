@@ -14,7 +14,7 @@ describe('Login and logout', () => {
       // Verify if the token is stored in cookies
       cy.getCookie('next-auth.session-token').should('exist')
       cy.get('pre').contains('admin@admin.com').should('be.visible')
-      
+
       // Logout
       cy.get('button').contains('Cerrar Sesión').should('be.visible').click()
 

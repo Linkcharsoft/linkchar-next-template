@@ -1,11 +1,12 @@
 import Image from 'next/image'
+import { ReactNode } from 'react'
+import Logo from '@/assets/images/logo.svg'
 import LoadingModal from '@/components/modals/LoadingModal'
 import ToastMessages from '@/components/modals/ToastMessages'
-import Logo from '@/assets/images/logo.svg'
 
 
 interface Props {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 

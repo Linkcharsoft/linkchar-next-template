@@ -5,15 +5,18 @@ export const metadata: Metadata = {
   title: 'Password Recovery - Confirmation'
 }
 
-type Props = {
-  params: {
+interface Props {
+  params: Promise<{
     token: string
     email: string
-  }
+  }>
 }
 
-const Page = ({ params: { token, email } }: Props) => (
-  <RecoveryPasswordConfirmationPage token={token} email={email} />
-)
+const Page = async ({ params }: Props) => {
+  const { token, email } = await params
+  return (
+    <RecoveryPasswordConfirmationPage token={token} email={email} />
+  )
+}
 
 export default Page

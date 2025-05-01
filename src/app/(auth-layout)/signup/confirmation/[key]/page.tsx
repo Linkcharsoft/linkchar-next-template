@@ -1,18 +1,20 @@
-import SignupConfirmationPage from '@/screens/SignupConfirmationPage'
 import { Metadata } from 'next'
+import SignupConfirmationPage from '@/screens/SignupConfirmationPage'
 
 export const metadata: Metadata = {
   title: 'Sign up - Confirmation'
 }
 
 type Props = {
-  params: {
-    key: string
-  }
+  params: Promise<{ key: string }>
 }
 
-const Page = ({ params: { key } }: Props) => (
-  <SignupConfirmationPage confirmationKey ={key} />
-)
+const Page = async ({ params }: Props) => {
+  const { key } = await params
+
+  return (
+    <SignupConfirmationPage confirmationKey ={key} />
+  )
+}
 
 export default Page
