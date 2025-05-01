@@ -30,7 +30,7 @@
       ]
     },
     "types": [
-      "cypress",
+      "cypress"
     ],
     "plugins": [
       {
@@ -40,12 +40,13 @@
     "strictNullChecks": true
   },
   "include": [
+    "cypress/**/*.ts",
     "src/",
+    // ".next/types/**/*.ts",
     "types/next-auth.d.ts",
-    ".next/types/**/*.ts",
-    "cypress/**/*.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "./node_modules"
   ]
 }
