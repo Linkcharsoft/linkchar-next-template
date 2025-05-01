@@ -1,3 +1,6 @@
+@use 'resources/mixins' as mixins
+@use "sass:meta"
+
 // Replace with the link of the fonts of this project
 @import url('https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,700&display=swap')
 
@@ -12,20 +15,17 @@
   @tailwind utilities
 
 // Variables & Resources
-@import 'resources/mixins'
-// @import 'resources/variables'
-// @import 'resources/general'
-// @import 'resources/texts'
+@include meta.load-css('resources/general')
 
 // Layouts
-@import 'layouts/AuthLayout'
+@include meta.load-css('layouts/AuthLayout')
 
 // Pages
-@import 'screens/HomePage'
+@include meta.load-css('screens/HomePage')
 
 // Containers
 
 // Components
-@import 'components/modals/LoadingModal'
 
 // Modals
+@include meta.load-css('components/modals/LoadingModal')
