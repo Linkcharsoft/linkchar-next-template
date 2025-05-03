@@ -1,7 +1,7 @@
 import NextAuth, { DefaultSession, Session, User } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { API_URL, NEXTAUTH_SECRET } from '../../../src/constants'
+import { API_URL, AUTH_SECRET } from '../../../src/constants'
 
 interface ExtendedUser extends User {
   access: string
@@ -85,7 +85,7 @@ export default NextAuth({
       }
     })
   ],
-  secret: NEXTAUTH_SECRET,
+  secret: AUTH_SECRET,
   session: {
     strategy: 'jwt',
     maxAge: 3 * 24 * 60 * 60,

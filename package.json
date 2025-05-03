@@ -21,7 +21,7 @@
     "framer-motion": "12.9.4",
     "lenis": "1.3.1",
     "next": "15.3.1",
-    "next-auth": "4.24.11",
+    "next-auth": "^5.0.0-beta.27",
     "primeicons": "7.0.0",
     "primereact": "10.9.5",
     "react": "19.1.0",
