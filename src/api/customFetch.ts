@@ -33,7 +33,7 @@ export const customFetch = async <T extends object>({
   headers = { 'Content-Type': 'application/json' },
   strapi = false
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
-  const urlPath = new URL(`${path}`, strapi ? STRAPI_URL : API_URL)
+  const urlPath = new URL(`${path}/api`, strapi ? STRAPI_URL : API_URL)
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
   const requestHeaders = new Headers(headers)
@@ -49,7 +49,7 @@ export const customFetch = async <T extends object>({
   else fetchOptions.body = body
 
   let response = await fetch(urlPath.toString(), fetchOptions)
-  
+
   if (response.status === 401) {
     const newAccessToken = await refreshToken()
 
@@ -76,7 +76,7 @@ export const customFetch = async <T extends object>({
         }
       }
     }
-    
+
     handleSignOut()
   }
 
