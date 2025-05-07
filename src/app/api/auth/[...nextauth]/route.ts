@@ -1,7 +1,9 @@
+
+
 import NextAuth, { DefaultSession, Session, User } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import { API_URL, AUTH_SECRET } from '../../../src/constants'
+import Credentials from 'next-auth/providers/credentials'
+import { API_URL, AUTH_SECRET } from '@/constants'
 
 interface ExtendedUser extends User {
   access: string
@@ -40,10 +42,11 @@ interface ProfileSession extends Session {
   } & DefaultSession['user']
 }
 
-export default NextAuth({
+const handler = NextAuth({
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: 'Credentials',
+      type: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' }
@@ -51,37 +54,36 @@ export default NextAuth({
       authorize: async (credentials) => {
         const { email, password } = credentials || {}
 
-        if (!email || !password) {
+        if(!email || !password) return null
+
+        try {
+          const response = await fetch(`${API_URL}api/auth/login/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          })
+          const data = await response.json()
+
+          if (!response.ok) {
+            throw new Error(data.non_field_errors?.[0] || 'Invalid credentials')
+          } else if(data) {
+            return {
+              ...data.user,
+              access: data.access,
+              refresh: data.refresh,
+              access_expiration: data.access_expiration,
+              refresh_expiration: data.refresh_expiration,
+              user_id: data.user?.id,
+              email: data.user?.email,
+              first_name: data.user?.first_name,
+              last_name: data.user?.last_name,
+            } as ExtendedUser
+          }
+
           return null
+        } catch (error) {
+          throw new Error(error.message || 'Invalid credentials')
         }
-
-        const res = await fetch(`${API_URL}api/auth/login/`, {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-          headers: { 'Content-Type': 'application/json' }
-        })
-
-        const user = await res.json()
-
-        if (!res.ok) {
-          throw new Error(user.non_field_errors?.[0] || 'Invalid credentials')
-        }
-
-        if (res.ok && user) {
-          return {
-            ...user.user,
-            access: user.access,
-            refresh: user.refresh,
-            access_expiration: user.access_expiration,
-            refresh_expiration: user.refresh_expiration,
-            user_id: user.user?.id,
-            email: user.user?.email,
-            first_name: user.user?.first_name,
-            last_name: user.user?.last_name,
-          } as ExtendedUser
-        }
-
-        return null
       }
     })
   ],
@@ -109,7 +111,7 @@ export default NextAuth({
         token.first_name = session.first_name
         token.last_name = session.last_name
       }
-      
+
       if (Date.now() > (token.access_expiration || 0)) {
         try {
           const res = await fetch(`${API_URL}api/auth/token/refresh/`, {
@@ -161,3 +163,5 @@ export default NextAuth({
     }
   }
 })
+
+export { handler as GET, handler as POST }
