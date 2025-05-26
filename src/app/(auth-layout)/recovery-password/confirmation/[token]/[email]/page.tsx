@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import RecoveryPasswordConfirmationPage from '@/screens/RecoveryPasswordConfirmationPage'
+import RecoveryPasswordConfirmationPage from '@/screens/auth/RecoveryPasswordConfirmationPage'
 
 export const metadata: Metadata = {
   title: 'Password Recovery - Confirmation'

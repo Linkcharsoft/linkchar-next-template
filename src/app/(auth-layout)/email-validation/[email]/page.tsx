@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import EmailValidationPage from '@/screens/EmailValidationPage'
+import EmailValidationPage from '@/screens/auth/EmailValidationPage'
 
 export const metadata: Metadata = {
   title: 'Email Validation'

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import SignupConfirmationPage from '@/screens/SignupConfirmationPage'
+import SignupConfirmationPage from '@/screens/auth/SignupConfirmationPage'
 
 export const metadata: Metadata = {
   title: 'Sign up - Confirmation'

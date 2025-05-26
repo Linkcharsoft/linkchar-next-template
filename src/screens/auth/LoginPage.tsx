@@ -43,18 +43,18 @@ const LoginPage = () => {
         title: 'Logging in',
         message: 'Please wait...',
       })
-    
+
       try {
         const result = await signIn('credentials', {
-          redirect: false, 
+          redirect: false,
           email: values.email,
           password: values.password,
         })
-    
+
         if (result?.ok) {
           const updatedSession = await getSession()
           if (updatedSession) {
-            router.replace('/success-login') 
+            router.replace('/success-login')
           }
         } else {
           setErrors({ password: 'Invalid email or password' })

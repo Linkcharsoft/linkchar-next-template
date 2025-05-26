@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import LoginPage from '@/screens/LoginPage'
+import LoginPage from '@/screens/auth/LoginPage'
 
 
 export const metadata: Metadata = {
