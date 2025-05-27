@@ -33,7 +33,7 @@ export const customFetch = async <T extends object>({
   headers = { 'Content-Type': 'application/json' },
   strapi = false
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
-  const urlPath = new URL(`${path}/api`, strapi ? STRAPI_URL : API_URL)
+  const urlPath = new URL(`/api${path}`, strapi ? STRAPI_URL : API_URL)
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
   const requestHeaders = new Headers(headers)
