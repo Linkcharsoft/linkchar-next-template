@@ -49,14 +49,14 @@ const SignupPage = () => {
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
       showLoadingModal({})
-      
+
       try {
         const { ok, error } = await signup({
           email: values.email,
           password1: values.password,
           password2: values.password
         })
-  
+
         if (!ok) {
           const emailError = error as { email?: string[] }
           if (
@@ -75,7 +75,7 @@ const SignupPage = () => {
           ) {
             setErrors({ email: emailError.email[0] })
           }
-  
+
           if ((error as { password?: string[] }).password && (error as { password?: string[] }).password?.length) {
             setErrors({ password: 'Invalid password.' })
           }

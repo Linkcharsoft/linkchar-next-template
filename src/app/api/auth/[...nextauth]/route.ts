@@ -1,4 +1,4 @@
-import NextAuth, { Session, User } from 'next-auth'
+import NextAuth, { Session } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 import Credentials from 'next-auth/providers/credentials'
 import { API_URL, AUTH_SECRET } from '@/constants'
