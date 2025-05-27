@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import ChangePasswordPage from '@/screens/ChangePasswordPage'
+import ChangePasswordPage from '@/screens/auth/ChangePasswordPage'
 
 export const metadata: Metadata = {
   title: 'Change Password'
