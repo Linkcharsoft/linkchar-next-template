@@ -103,7 +103,7 @@ const LoginPage = () => {
               onChange={formik.handleChange}
               invalid={Boolean(formik.errors.email)}
               autoComplete="email"
-              keyfilter='email'
+              // keyfilter='email'
             />
             <InputError message={formik.errors.email} />
           </div>
