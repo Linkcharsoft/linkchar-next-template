@@ -10,7 +10,7 @@ const InputError = ({ message }: Props) => {
     <AnimatePresence>
       {message && (
         <motion.div
-          className="fw-medium text-sm flex items-center gap-2"
+          className="InputError fw-medium text-sm flex items-center gap-2"
           style={{
             color: '#CC1600'
           }}
