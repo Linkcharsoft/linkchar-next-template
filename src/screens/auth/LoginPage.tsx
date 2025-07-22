@@ -1,7 +1,6 @@
 'use client'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
-import { getSession, signIn } from 'next-auth/react'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
@@ -11,6 +10,7 @@ import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
+import useUserStore from '@/stores/userStore'
 
 
 type LoginFormikType = {
@@ -18,12 +18,15 @@ type LoginFormikType = {
   password: string
 }
 
+const SUCCES_REDIRECT = '/'
+
 
 const LoginPage = () => {
   const {
     showLoadingModal,
     hideLoadingModal
   } = useAppStore()
+  const { setUser } = useUserStore()
   const router = useRouter()
   const isClient = useIsClient()
 
@@ -45,22 +48,37 @@ const LoginPage = () => {
       })
 
       try {
-        const result = await signIn('credentials', {
-          redirect: false,
-          email: values.email,
-          password: values.password,
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: values.email,
+            password: values.password
+          })
         })
 
-        if (result?.ok) {
-          const updatedSession = await getSession()
-          if (updatedSession) {
-            router.replace('/success-login')
-          }
+        if(response.ok) {
+          const user = await response.json()
+
+          setUser(user)
+          router.replace(SUCCES_REDIRECT)
         } else {
-          setErrors({ password: 'Invalid email or password' })
+          const errors = await response.json()
+
+          if(errors.non_field_errors?.[0]?.includes('mail is not verified')) {
+            router.push('/email-validation')
+            setErrors({ email: 'Email is not verified' })
+          } else {
+            setErrors({
+              email: 'Invalid email or password',
+              password: 'Invalid email or password'
+            })
+          }
         }
       } catch (error) {
-        setErrors({ password: 'Something went wrong, please try again later' })
+        setErrors({ password: 'Something went wrong, please try again' })
         console.error(error)
       } finally {
         setTimeout(() => hideLoadingModal(), 1000)

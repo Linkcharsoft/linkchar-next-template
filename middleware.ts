@@ -2,7 +2,6 @@ import { NextResponse , NextRequest } from 'next/server'
 import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants'
 import { getAccessToken } from '@/utils/auth'
 
-
 const AUTH_PATHS = new Set([
   '/login',
   '/signup',
@@ -19,10 +18,8 @@ export async function middleware(req: NextRequest) {
 
   // ⛔ Ignore static resources
   if (STATIC_RESOURCES_REGEX.test(pathname)) return NextResponse.next()
-
   // ⛔ Ignore API routes
   if (pathname.startsWith('/api')) return NextResponse.next()
-
   // ⛔ Ignore Next.js chunks
   if (pathname.startsWith('/_next')) return NextResponse.next()
 
@@ -30,12 +27,10 @@ export async function middleware(req: NextRequest) {
 
   try {
     const authCookie = req.cookies.get(AUTH_COOKIE_NAME)
-
     // 🔄 If there is no auth cookie and tries to acces a protected path, redirect to login
     if(!authCookie && !isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))
 
     const token = await getAccessToken()
-
     // 🔄 If there is token and tries to access a auth path, redirect to the authenticated home path
     if(token && isAuthFlow) {
       return NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
