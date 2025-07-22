@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { logout } from '@/api/users'
-import getServerSession from '@/utils/getServerSession'
+import { AUTH_COOKIE_NAME } from '@/constants'
+import { getServerSession } from '@/utils/auth'
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession()
 
@@ -35,6 +36,6 @@ export async function POST() {
   } finally {
     const cookieStore = await cookies()
 
-    cookieStore.delete('linkchar-session')
+    cookieStore.delete(AUTH_COOKIE_NAME)
   }
 }
