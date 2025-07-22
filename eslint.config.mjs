@@ -40,8 +40,7 @@ const config = [...fixupConfigRules(compat.extends(
   languageOptions: {
     globals: {
       ...globals.browser,
-      ...globals.node,
-      ...cypressPlugin.environments.globals.globals
+      ...globals.node
     },
 
     parser: tsParser,
@@ -94,7 +93,7 @@ const config = [...fixupConfigRules(compat.extends(
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/no-unused-vars': 'warn',
     ...cypressPlugin.configs.recommended.rules,
-    'cypress/no-unnecessary-waiting': 'off'
+    'cypress/unsafe-to-chain-command': 'off'
   },
 
   ignores: [
