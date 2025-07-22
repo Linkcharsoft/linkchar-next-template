@@ -115,8 +115,8 @@ const LoginPage = () => {
           Log in
         </h1>
 
-        <div className="flex flex-col gap-[23px]">
-          <div className="flex flex-col gap-[10px]">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <InputText
               name="email"
@@ -131,7 +131,7 @@ const LoginPage = () => {
             />
             <InputError message={formik.errors.email} />
           </div>
-          <div className="w-full flex flex-col gap-[10px]">
+          <div className="w-full flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
             <Password
               name="password"
@@ -156,6 +156,7 @@ const LoginPage = () => {
         <div className="flex w-full justify-center">
           <Button
             link
+            type='button'
             className="ButtonLink"
             onClick={handlePasswordRecoreryRedirect}
           >
@@ -179,6 +180,7 @@ const LoginPage = () => {
         <div className="flex w-full justify-center">
           <Button
             link
+            type='button'
             className="ButtonLink"
             onClick={handleSignUpRedirect}
           >
