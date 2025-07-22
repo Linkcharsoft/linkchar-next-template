@@ -1,7 +1,8 @@
+import { AuthType, UserType } from '@/types/auth'
 import { customFetch } from './customFetch'
 import type { User } from '@/types/users'
 
-// user endpoints
+// User
 export const getMyUser = async (token: string) => {
   return await customFetch<User>({
     path: '/auth/user/',
@@ -19,7 +20,35 @@ export const updateUserProfile = async (token: string, body: any) => {
   })
 }
 
-// auth endpoints
+// Auth
+type LoginResponse = AuthType & {
+  user: UserType
+}
+
+export const login = async (body: { email: string; password: string }) => {
+  return await customFetch<LoginResponse>({
+    path: '/auth/login/',
+    method: 'POST',
+    body
+  })
+}
+
+export const logout = async (token: string) => {
+  return await customFetch({
+    path: '/auth/logout/',
+    method: 'POST',
+    token
+  })
+}
+
+export const refreshToken = async (body: { refresh: string }) => {
+  return await customFetch({
+    path: '/auth/token/refresh/',
+    method: 'POST',
+    body
+  })
+}
+
 export const signup = async (body: { email: string; password1: string, password2: string }) => {
   return await customFetch<{
     detail: string
