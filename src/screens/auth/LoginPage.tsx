@@ -104,7 +104,13 @@ const LoginPage = () => {
 
   return (
     <main className="AuthLayout">
-      <section className="AuthLayout__Section">
+      <form
+        className="AuthLayout__Section"
+        onSubmit={e => {
+          e.preventDefault()
+          formik.handleSubmit()
+        }}
+      >
         <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
           Log in
         </h1>
@@ -162,13 +168,9 @@ const LoginPage = () => {
 
         <div className="flex w-full justify-center">
           <Button
-            onClick={e => {
-              e.preventDefault()
-              formik.handleSubmit()
-            }}
-            disabled={formik.isSubmitting}
-            className="w-full"
             type="submit"
+            className="w-full"
+            disabled={formik.isSubmitting}
           >
             Log in
           </Button>
@@ -186,7 +188,7 @@ const LoginPage = () => {
             </p>
           </Button>
         </div>
-      </section>
+      </form>
     </main>
   )
 }
