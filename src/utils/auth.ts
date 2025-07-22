@@ -31,9 +31,18 @@ export const getAccessToken = async () => {
 }
 
 export const getServerUser = async () => {
-  const res = await fetch('/api/auth/me/', {
+  const origin = process.env.__NEXT_PRIVATE_ORIGIN
+
+  if(!origin) return
+  // throw new Error('Origin not defined. Are you calling getServerUser on the server?')
+
+  const cookieStore = await cookies()
+
+  const res = await fetch(`${origin}/api/auth/me/`, {
     method: 'GET',
-    credentials: 'include',
+    headers: {
+      Cookie: cookieStore
+    },
     cache: 'no-store',
   })
 
