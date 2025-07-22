@@ -161,6 +161,7 @@ export const metadata: Metadata = {
 interface Props {
   children: ReactNode
 }
+
 export default function Layout({ children }: Props) {
   return (
     <html lang="en">

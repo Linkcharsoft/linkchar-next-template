@@ -1,68 +1,57 @@
-import { NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
-import type { NextRequest } from 'next/server'
+import { NextResponse , NextRequest } from 'next/server'
+import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants'
+import { getAccessToken } from '@/utils/auth'
+
+
+const AUTH_PATHS = new Set([
+  '/login',
+  '/signup',
+  '/email-validation',
+  '/recovery-password',
+])
+
+const AUTHENTICATED_HOME_PATH: string | null = '/'
+
+const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  // ⛔ Ignore static resources
+  if (STATIC_RESOURCES_REGEX.test(pathname)) return NextResponse.next()
+
+  // ⛔ Ignore API routes
+  if (pathname.startsWith('/api')) return NextResponse.next()
+
+  // ⛔ Ignore Next.js chunks
+  if (pathname.startsWith('/_next')) return NextResponse.next()
+
+  const isAuthFlow = [...AUTH_PATHS].some(path => path === pathname)
+
   try {
-    const token = await getToken({ req, secret: process.env.AUTH_SECRET })
+    const authCookie = req.cookies.get(AUTH_COOKIE_NAME)
 
-    const { pathname } = req.nextUrl
+    // 🔄 If there is no auth cookie and tries to acces a protected path, redirect to login
+    if(!authCookie && !isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))
 
-    const PUBLIC_PATHS = [
-      '/login',
-      '/signup',
-      '/public',
-      '/_next',
-      '/favicon.ico',
-      '/email-validation',
-      '/recovery-password',
-    ]
+    const token = await getAccessToken()
 
-    const PUBLIC_CLIENT_PATHS = [
-      '/login',
-      '/signup',
-      '/email-validation',
-      '/recovery-password',
-    ]
-
-    const API_PUBLIC_PATHS = [
-      '/api/auth/*',
-      '/api/*'
-    ]
-
-    const STATIC_RESOURCES = [
-      /\.(png|jpg|jpeg|gif|ico|svg|webp|woff|woff2|ttf|otf|eot|json|map)$/i
-    ]
-
-    // 1. If the user is authenticated and tries to access a public client path (login, signup, etc.), redirect to the home page
-    if (token && PUBLIC_CLIENT_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
-      return NextResponse.redirect(new URL('/', req.url))
+    // 🔄 If there is token and tries to access a auth path, redirect to the authenticated home path
+    if(token && isAuthFlow) {
+      return NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
     }
 
-    // 2. Allow access to public paths or API routes without authentication
-    if (PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(`${path}/`))) {
-      return NextResponse.next()
-    }
-
-    // 3. Allow access to public API routes
-    if (API_PUBLIC_PATHS.some(path => pathname.match(new RegExp(`^${path.replace('*', '.*')}$`)))) {
-      return NextResponse.next()
-    }
-
-    // 4. Allow access to static resources
-    if (STATIC_RESOURCES.some(regex => regex.test(pathname))) {
-      return NextResponse.next()
-    }
-
-    // 5. If no token is present, redirect to the login page
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-
-    // 7. If the user is authenticated and everything is fine, proceed with the request
+    // ✅ If the user is authenticated and everything is fine, proceed with the request
     return NextResponse.next()
   } catch (error) {
     console.error('Middleware error:', error)
+    const authErrors = Object.values(AUTH_TOKEN_ERRORS)
+
+    // 🔄 If there is no token, redirect to login
+    if(authErrors.includes(error.message) && !isAuthFlow) {
+      return NextResponse.redirect(new URL('/login', req.url))
+    }
+
     return NextResponse.next()
   }
 }

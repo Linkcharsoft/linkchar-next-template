@@ -42,6 +42,7 @@
   "include": [
     "cypress/**/*.ts",
     "src/",
+    "middleware.ts",
     // ".next/types/**/*.ts",
     "types/next-auth.d.ts",
     ".next/types/**/*.ts"
