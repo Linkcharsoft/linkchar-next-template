@@ -1,4 +1,3 @@
-import { signOut , getSession } from 'next-auth/react'
 import { API_URL, STRAPI_URL } from '@/constants'
 
 type CustomFetchType = {
@@ -97,26 +96,26 @@ export const customFetch = async <T extends object>({
 }
 
 const refreshToken = async (): Promise<string | null> => {
-  try {
-    const refresh = await getSession()
-    if (!refresh) return null
+  // try {
+  //   const refresh = await getSession()
+  //   if (!refresh) return null
 
-    const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh: refresh.user.refresh })
-    })
+  //   const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ refresh: refresh.user.refresh })
+  //   })
 
-    if (!res.ok) throw new Error('Token refresh failed')
+  //   if (!res.ok) throw new Error('Token refresh failed')
 
-    const refreshedTokens = await res.json()
-    return refreshedTokens.access
-  } catch (error) {
-    console.error('Error refreshing token:', error)
-    return null
-  }
+  //   const refreshedTokens = await res.json()
+  //   return refreshedTokens.access
+  // } catch (error) {
+  //   console.error('Error refreshing token:', error)
+  //   return null
+  // }
 }
 
 const handleSignOut = () => {
-  signOut({ callbackUrl: '/login' })
+  // signOut({ callbackUrl: '/login' })
 }
