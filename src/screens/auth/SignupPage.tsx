@@ -1,13 +1,13 @@
 'use client'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
-import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { useMemo, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { signup } from '@/api/users'
+import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import usePressKey from '@/hooks/usePressKey'
@@ -28,8 +28,7 @@ const SignupPage = () => {
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
-
-  const [ error, setError ] = useState<string | null>(null)
+  const [ generalError, setGeneralError ] = useState<string | null>(null)
 
 
   usePressKey('Enter', () => {
@@ -48,7 +47,10 @@ const SignupPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal({})
+      showLoadingModal({
+        title: 'Signing up',
+        message: 'Please wait...'
+      })
 
       try {
         const { ok, error } = await signup({
@@ -59,44 +61,34 @@ const SignupPage = () => {
 
         if (!ok) {
           const emailError = error as { email?: string[] }
-          if (
-            emailError.email &&
-            emailError.email.length &&
-            emailError.email[0]?.includes('Enter a valid email address.')
-          ) {
-            setErrors({ email: emailError.email[0] })
-          }
-          if (
-            emailError.email &&
-            emailError.email.length &&
-            emailError.email[0].includes(
-              'A user is already registered with this e-mail address.'
-            )
-          ) {
-            setErrors({ email: emailError.email[0] })
+          const passwordError = error as { password1?: string[] }
+          const unknownError = error as { non_field_errors?: string[] }
+
+          if (emailError.email && emailError.email.length) {
+            return setErrors({ email: emailError.email[0] })
           }
 
-          if ((error as { password?: string[] }).password && (error as { password?: string[] }).password?.length) {
-            setErrors({ password: 'Invalid password.' })
+          if (passwordError.password1 && passwordError.password1.length) {
+            return setErrors({ password: passwordError.password1[0] })
           }
+
+          if (unknownError.non_field_errors && unknownError.non_field_errors.length) {
+            return setErrors({ password: unknownError.non_field_errors[0] })
+          }
+
+          throw new Error('An error occurred. Please try again.')
         } else {
-          handleConfirmationRedirect(values.email)
+          router.push(`/email-validation/${encodeURIComponent(values.email)}`)
         }
       } catch (error) {
-        console.error(`Error signing up: ${error}`)
+        setGeneralError('An error occurred. Please try again.')
+        // ! Sentry
+        console.error(`Error signing up: ${error.message}`)
       } finally {
-        setError('An error occurred. Please try again.')
         setTimeout(() => hideLoadingModal(), 500)
       }
     }
   })
-
-
-  const handleLoginRedirect = () => router.push('/login')
-
-  const handleConfirmationRedirect = (email) => {
-    router.push(`/email-validation/${encodeURIComponent(email)}`)
-  }
 
 
   const PASSWORD_VALIDATION = useMemo(() => validatePassword(formik.values.password), [formik.values.password])
@@ -106,12 +98,19 @@ const SignupPage = () => {
 
   return (
     <main className="AuthLayout">
-      <section className="AuthLayout__Section">
-        <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+      <form
+        className="AuthLayout__Section"
+        onSubmit={e => {
+          e.preventDefault()
+          formik.handleSubmit()
+        }}
+      >
+        <h1 className="AuthLayout__Title">
           Sign up
         </h1>
-        <div className="flex flex-col gap-[23px]">
-          <div className="flex flex-col gap-[10px]">
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <InputText
               name="email"
@@ -126,7 +125,8 @@ const SignupPage = () => {
             />
             <InputError message={formik.errors.email} />
           </div>
-          <div className="flex flex-col gap-[10px]">
+
+          <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
             <Password
               name="password"
@@ -183,30 +183,37 @@ const SignupPage = () => {
               </div>
             )}
           </div>
-          <InputError message={error ?? ''} />
+
+          <InputError message={generalError ?? ''} />
         </div>
+
         <div className="flex w-full justify-center">
-          <Button
+          <CustomButton
+            className="w-full"
             onClick={e => {
               e.preventDefault()
               formik.handleSubmit()
             }}
-            disabled={formik.isSubmitting}
-            className="w-full"
             type="submit"
+            disabled={formik.isSubmitting}
           >
             Sign up
-          </Button>
+          </CustomButton>
         </div>
+
         <div className="flex w-full justify-center">
-          <Button onClick={handleLoginRedirect} link className="ButtonLink">
-            <p className="font-normal text-surface-800">
-              Already have an account?{' '}
-              <span className="font-bold text-surface-800">Log in</span>
-            </p>
-          </Button>
+          <CustomButton
+            variant='transparent'
+            href='/login'
+            className='w-full'
+            type='button'
+          >
+            <span className="text-surface-800">
+              Already have an account? <span className="font-bold">Log in</span>
+            </span>
+          </CustomButton>
         </div>
-      </section>
+      </form>
     </main>
   )
 }

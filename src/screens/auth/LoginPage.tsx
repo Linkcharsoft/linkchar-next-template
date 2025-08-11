@@ -85,9 +85,10 @@ const LoginPage = () => {
         }
       } catch (error) {
         setErrors({ password: 'Something went wrong, please try again' })
+        // ! Sentry
         console.error(error)
       } finally {
-        setTimeout(() => hideLoadingModal(), 1000)
+        setTimeout(() => hideLoadingModal(), 500)
       }
     }
   })
@@ -161,8 +162,8 @@ const LoginPage = () => {
 
         <div className="flex w-full justify-center">
           <CustomButton
-            type="submit"
             className="w-full"
+            type="submit"
             disabled={formik.isSubmitting}
           >
             Log in
