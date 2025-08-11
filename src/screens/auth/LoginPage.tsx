@@ -6,6 +6,7 @@ import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
+import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import usePressKey from '@/hooks/usePressKey'
@@ -29,6 +30,11 @@ const LoginPage = () => {
   const { setUser } = useUserStore()
   const router = useRouter()
   const isClient = useIsClient()
+
+
+  usePressKey('Enter', () => {
+    formik.handleSubmit()
+  })
 
 
   const formik = useFormik<LoginFormikType>({
@@ -87,19 +93,6 @@ const LoginPage = () => {
   })
 
 
-  usePressKey('Enter', () => {
-    formik.handleSubmit()
-  })
-
-
-  const handleSignUpRedirect = () => {
-    router.push('/signup')
-  }
-  const handlePasswordRecoreryRedirect = () => {
-    router.push('/recovery-password')
-  }
-
-
   if (!isClient) return null
 
   return (
@@ -111,7 +104,7 @@ const LoginPage = () => {
           formik.handleSubmit()
         }}
       >
-        <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+        <h1 className="mx-auto text-center text-3xl font-bold leading-none text-surface-900">
           Log in
         </h1>
 
@@ -154,41 +147,39 @@ const LoginPage = () => {
         </div>
 
         <div className="flex w-full justify-center">
-          <Button
-            link
+          <CustomButton
+            variant='transparent'
+            href='/recovery-password'
+            className='w-full'
             type='button'
-            className="ButtonLink"
-            onClick={handlePasswordRecoreryRedirect}
           >
-            <p className="font-normal text-surface-800">
-              Forgot password?{' '}
-              <span className="font-bold text-surface-800">Recover it</span>
-            </p>
-          </Button>
+            <span className='text-surface-800'>
+              Forgot password? <span className="font-bold">Recover it</span>
+            </span>
+          </CustomButton>
         </div>
 
         <div className="flex w-full justify-center">
-          <Button
+          <CustomButton
             type="submit"
             className="w-full"
             disabled={formik.isSubmitting}
           >
             Log in
-          </Button>
+          </CustomButton>
         </div>
 
         <div className="flex w-full justify-center">
-          <Button
-            link
+          <CustomButton
+            variant='transparent'
+            href='/signup'
+            className='w-full'
             type='button'
-            className="ButtonLink"
-            onClick={handleSignUpRedirect}
           >
-            <p className="font-normal text-surface-800">
-              Don&apos;t have an account?{' '}
-              <span className="font-bold text-surface-800">Sign up</span>
-            </p>
-          </Button>
+            <span className='text-surface-800'>
+              Don&apos;t have an account? <span className="font-bold">Sign up</span>
+            </span>
+          </CustomButton>
         </div>
       </form>
     </main>
