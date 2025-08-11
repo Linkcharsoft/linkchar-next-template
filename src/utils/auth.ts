@@ -37,11 +37,12 @@ export const getServerUser = async () => {
   // throw new Error('Origin not defined. Are you calling getServerUser on the server?')
 
   const cookieStore = await cookies()
+  const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME)?.value ?? ''
 
   const res = await fetch(`${origin}/api/auth/me/`, {
     method: 'GET',
     headers: {
-      Cookie: cookieStore
+      Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`,
     },
     cache: 'no-store',
   })

@@ -4,7 +4,7 @@ import { Button, ButtonProps as OriginalButtonProps } from 'primereact/button'
 import { classNames } from 'primereact/utils'
 import { Tooltip } from 'react-tooltip'
 
-interface ButtonProps extends OriginalButtonProps {
+interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
   variant?: 'primary' | 'white' | 'transparent'
   size?: 'small' | 'medium' | 'large'
   href
