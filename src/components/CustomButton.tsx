@@ -3,6 +3,7 @@ import { Url } from 'next/dist/shared/lib/router/router'
 import Link from 'next/link'
 import { Button, ButtonProps as OriginalButtonProps } from 'primereact/button'
 import { classNames } from 'primereact/utils'
+import { memo } from 'react'
 import { Tooltip } from 'react-tooltip'
 
 interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
@@ -77,4 +78,4 @@ const CustomButton = ({
   )
 }
 
-export default CustomButton
+export default memo(CustomButton)
