@@ -96,13 +96,13 @@ const EmailValidationPage = ({ email }: Props) => {
       <section className="AuthLayout__Section">
         <i className="pi pi-envelope text-blue-600 text-[48px] text-center" />
 
-        <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+        <h1 className="mx-auto text-center text-3xl font-bold leading-none text-surface-900">
           Validate your email!
         </h1>
 
         <div className="mx-auto flex flex-col gap-4">
           <p className="text-center text-base font-normal text-surface-800">
-            We sent you an email to <span className="font-semibold">{DECODED_EMAIL}</span> with a link to validate your account.
+            We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{DECODED_EMAIL}</span> with a link to validate your account.
           </p>
         </div>
 
