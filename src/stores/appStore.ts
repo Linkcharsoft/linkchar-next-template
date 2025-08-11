@@ -17,7 +17,7 @@ type ModalState = {
 
 interface AppState {
   loadingModal: LoadingModalState
-  showLoadingModal: (params: { title?: string, message?: string }) => void
+  showLoadingModal: (params: Omit<LoadingModalState, 'show'>) => void
   hideLoadingModal: () => void
 
   modalState: ModalState
@@ -32,16 +32,15 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   loadingModal: {
     show: false,
-    title: '',
-    message: ''
+    title: 'Titulo',
+    message: 'Mensaje'
   },
   showLoadingModal: ({ title = '', message = '' }) =>
-    set((state) => ({
+    set(() => ({
       loadingModal: {
-        ...state.loadingModal,
         show: true,
         title,
-        message,
+        message
       }
     })),
   hideLoadingModal: () =>
