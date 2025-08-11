@@ -1,5 +1,6 @@
 'use client'
 import { AnimatePresence, motion } from 'framer-motion'
+import { memo } from 'react'
 import { useAppStore } from '@/stores/appStore'
 
 const LoadingModal = () => {
@@ -51,4 +52,4 @@ const LoadingModal = () => {
   )
 }
 
-export default LoadingModal
+export default memo(LoadingModal)
