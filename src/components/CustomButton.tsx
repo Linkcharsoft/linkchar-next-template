@@ -1,4 +1,5 @@
 'use client'
+import { Url } from 'next/dist/shared/lib/router/router'
 import Link from 'next/link'
 import { Button, ButtonProps as OriginalButtonProps } from 'primereact/button'
 import { classNames } from 'primereact/utils'
@@ -7,7 +8,8 @@ import { Tooltip } from 'react-tooltip'
 interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
   variant?: 'primary' | 'white' | 'transparent'
   size?: 'small' | 'medium' | 'large'
-  href
+  href?: Url
+  replace?: boolean | undefined
 }
 
 const VARIANT_CLASSES = {
@@ -26,6 +28,7 @@ const CustomButton = ({
   variant = 'primary',
   size = 'medium',
   href,
+  replace,
   onClick,
   disabled = false,
   children,
@@ -52,6 +55,7 @@ const CustomButton = ({
         {href ? (
           <Link
             href={disabled ? '#' : href}
+            replace={replace}
             onClick={(e) => {
               if (disabled) {
                 e.preventDefault()
