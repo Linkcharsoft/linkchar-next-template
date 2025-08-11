@@ -96,7 +96,7 @@ const EmailValidationPage = ({ email }: Props) => {
       <section className="AuthLayout__Section">
         <i className="pi pi-envelope text-blue-600 text-[48px] text-center" />
 
-        <h1 className="mx-auto text-center text-3xl font-bold leading-none text-surface-900">
+        <h1 className="AuthLayout__Title">
           Validate your email!
         </h1>
 

@@ -54,7 +54,7 @@ const ChangePasswordPage = () => {
   return (
     <main className="AuthLayout">
       <section className="AuthLayout__Section">
-        <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+        <h1 className="AuthLayout__Title">
           Change password
         </h1>
 

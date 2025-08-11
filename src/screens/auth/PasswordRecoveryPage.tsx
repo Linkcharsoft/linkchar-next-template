@@ -85,7 +85,7 @@ const PasswordRecoveryPage = () => {
   return (
     <main className="AuthLayout">
       <section className="AuthLayout__Section">
-        <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+        <h1 className="AuthLayout__Title">
           Enter your email
         </h1>
         <div className="mx-auto flex w-[243px] flex-col gap-4">

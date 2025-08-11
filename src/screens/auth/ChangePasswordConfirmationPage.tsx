@@ -128,7 +128,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     return (
       <main className="AuthLayout">
         <section className="AuthLayout__Section">
-          <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+          <h1 className="AuthLayout__Title">
             Change Password
           </h1>
           <div className="flex w-full justify-center align-middle">
@@ -158,7 +158,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     return (
       <main className="AuthLayout">
         <section className="AuthLayout__Section">
-          <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
+          <h1 className="AuthLayout__Title">
             Enter new password
           </h1>
           <div className="flex flex-col gap-[10px]">

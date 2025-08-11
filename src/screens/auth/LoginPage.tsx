@@ -104,7 +104,7 @@ const LoginPage = () => {
           formik.handleSubmit()
         }}
       >
-        <h1 className="mx-auto text-center text-3xl font-bold leading-none text-surface-900">
+        <h1 className="AuthLayout__Title">
           Log in
         </h1>
 
