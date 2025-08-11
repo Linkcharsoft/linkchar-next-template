@@ -23,7 +23,7 @@ export async function middleware(req: NextRequest) {
   // ⛔ Ignore Next.js chunks
   if (pathname.startsWith('/_next')) return NextResponse.next()
 
-  const isAuthFlow = [...AUTH_PATHS].some(path => path === pathname)
+  const isAuthFlow = [...AUTH_PATHS].some(path => pathname.includes(path))
 
   try {
     const authCookie = req.cookies.get(AUTH_COOKIE_NAME)
