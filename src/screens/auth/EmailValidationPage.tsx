@@ -1,9 +1,12 @@
 'use client'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Button } from 'primereact/button'
-import React, { useMemo, useState } from 'react'
-import { useIsClient } from 'usehooks-ts'
+import { useEffect, useMemo } from 'react'
+import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/users'
+import GmailIcon from '@/assets/icons/GmailIcon'
+import OutlookIcon from '@/assets/icons/OutlookIcon'
+import CustomButton from '@/components/CustomButton'
 import { useAppStore } from '@/stores/appStore'
 
 
@@ -15,41 +18,71 @@ type Props = {
 const EmailValidationPage = ({ email }: Props) => {
   const {
     showLoadingModal,
-    hideLoadingModal
+    hideLoadingModal,
+    setToastMessage
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
-  const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
+  const [ timer, setTimer ] = useSessionStorage<number>('emailResendTimer', 0)
+
+
+  // Redirect if there isnt email
+  useEffect(() => {
+    if (!email) router.replace('/login')
+  }, [email])
+
+  // Timer logic
+  useEffect(() => {
+    if (timer <= 0) return
+
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [setTimer, timer > 0])
 
 
   const DECODED_EMAIL = useMemo(() => decodeURIComponent(email), [email])
 
 
-  const handleLoginRedirect = () => router.replace('/login')
-
   const handleResendEmail = async (email: string) => {
-    showLoadingModal({})
-    setButtonDisabled(true)
-
-    setTimeout(() => {
-      setButtonDisabled(false)
-    }, 15000) // 15 seconds interval. Preventing spam
+    showLoadingModal({
+      title: 'Resending email',
+      message: 'Please wait...'
+    })
 
     try {
       const { ok } = await resendEmailConfirmation({ email })
-      if (!ok) {
-        // TODO: error modal
-        setTimeout(() => {
-          setButtonDisabled(false)
-        }, 30000)
+
+      if (ok) {
+        setToastMessage({
+          severity: 'success',
+          summary: 'Email sent! Please check your inbox',
+          life: 10000
+        })
+
+        setTimer(30)
       } else {
-        // TODO: success modal
-        setTimeout(() => {
-          setButtonDisabled(false)
-        }, 30000)
+        setToastMessage({
+          severity: 'error',
+          summary: 'Error sending email, please try again later',
+          life: 15000
+        })
       }
     } catch (error) {
-      console.error(`Error sending email: ${error}`)
+      setToastMessage({
+        severity: 'error',
+        summary: 'Error sending email, please try again later',
+        life: 15000
+      })
+      // ! Sentry
     } finally {
       hideLoadingModal()
     }
@@ -61,40 +94,58 @@ const EmailValidationPage = ({ email }: Props) => {
   return (
     <main className="AuthLayout">
       <section className="AuthLayout__Section">
+        <i className="pi pi-envelope text-blue-600 text-[48px] text-center" />
+
         <h1 className="mx-auto text-center text-2xl font-bold leading-none text-surface-900">
           Validate your email!
         </h1>
 
-        <div className="mx-auto flex w-[243px] flex-col gap-4">
-          <p className="text-center text-base font-normal leading-5 text-surface-800">
-            We sent you an email with a link to validate your account.
+        <div className="mx-auto flex flex-col gap-4">
+          <p className="text-center text-base font-normal text-surface-800">
+            We sent you an email to <span className="font-semibold">{DECODED_EMAIL}</span> with a link to validate your account.
           </p>
         </div>
 
-        <div className="flex w-full justify-center">
-          <Button
-            className="w-full"
-            onClick={handleLoginRedirect}
+        <div className="flex justify-center items-center gap-8">
+          <Link
+            className='hover:opacity-75'
+            href='https://outlook.com'
+            target='_blank'
           >
-            Go to log in
-          </Button>
+            <OutlookIcon/>
+          </Link>
+
+          <Link
+            className='hover:opacity-75'
+            href='https://gmail.com/'
+            target='_blank'
+          >
+            <GmailIcon/>
+          </Link>
         </div>
 
         <div className="flex w-full justify-center">
-          <Button
-            onClick={() => handleResendEmail(DECODED_EMAIL)}
-            link
-            className="w-[80%]"
-            disabled={buttonDisabled}
+          <CustomButton
+            href={'/login'}
+            replace
+            className="w-full"
           >
-            <p className="font-normal text-surface-800">
-              Didn&apos;t receive anything?
-              <span className="font-bold text-surface-800">
-                {' '}
-                Click here to send again.
-              </span>
-            </p>
-          </Button>
+            Go to log in
+          </CustomButton>
+        </div>
+
+        <div className="w-full flex flex-col justify-center items-center gap-2">
+          <p className="font-normal text-surface-800">
+            Didn&apos;t receive anything?
+          </p>
+
+          <button
+            onClick={() => handleResendEmail(DECODED_EMAIL)}
+            className='font-semibold hover:opacity-75'
+            disabled={timer > 0}
+          >
+            {timer > 0 ? `Wait ${timer}s to resend` : 'Click here to send again'}
+          </button>
         </div>
       </section>
     </main>
