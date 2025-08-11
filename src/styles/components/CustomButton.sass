@@ -1,0 +1,41 @@
+.CustomButton
+  &.p-button
+    justify-content: center
+    align-items: center
+    gap: 8px
+    padding: 8px 24px
+    font-size: 14px
+    font-weight: 600
+    text-align: center
+    transition: all 0.2s
+  a
+    width: 100%
+    height: 100%
+    display: flex
+    justify-content: center
+    align-items: center
+    position: absolute
+    top: 0
+    left: 0
+
+  // Variants
+  &--Primary
+    @apply bg-blue-600 text-white hover:opacity-75 focus:shadow-sm
+  &--White
+    @apply bg-white text-blue-600 border-blue-600 hover:opacity-75 focus:shadow-sm
+  &--Transparent
+    @apply bg-transparent text-blue-600 border-none hover:opacity-75 focus:shadow-none
+
+  // Sizes
+  &--Small
+    height: 38px
+  &--Medium
+    height: 44px
+  &--Large
+    height: 50px
+
+  // Extras
+  &--Disabled
+    opacity: .4 !important
+    cursor: not-allowed
+    pointer-events: unset
