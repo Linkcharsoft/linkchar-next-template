@@ -86,7 +86,7 @@ const LoginPage = () => {
       } catch (error) {
         setErrors({ password: 'Something went wrong, please try again' })
         // ! Sentry
-        console.error(error)
+        console.error(`Error: ${error.message}`)
       } finally {
         setTimeout(() => hideLoadingModal(), 500)
       }

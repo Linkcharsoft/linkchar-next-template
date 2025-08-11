@@ -83,7 +83,7 @@ const SignupPage = () => {
       } catch (error) {
         setGeneralError('An error occurred. Please try again.')
         // ! Sentry
-        console.error(`Error signing up: ${error.message}`)
+        console.error(`Error: ${error.message}`)
       } finally {
         setTimeout(() => hideLoadingModal(), 500)
       }

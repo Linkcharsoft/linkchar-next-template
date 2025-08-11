@@ -83,6 +83,7 @@ const EmailValidationPage = ({ email }: Props) => {
         life: 15000
       })
       // ! Sentry
+      console.error(`Error: ${error.message}`)
     } finally {
       hideLoadingModal()
     }
