@@ -1,7 +1,6 @@
 'use client'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
-import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { useIsClient } from 'usehooks-ts'
@@ -25,7 +24,8 @@ const SUCCES_REDIRECT = '/'
 const LoginPage = () => {
   const {
     showLoadingModal,
-    hideLoadingModal
+    hideLoadingModal,
+    setToastMessage
   } = useAppStore()
   const { setUser } = useUserStore()
   const router = useRouter()
@@ -70,6 +70,12 @@ const LoginPage = () => {
 
           setUser(user)
           router.replace(SUCCES_REDIRECT)
+
+          setToastMessage({
+            severity: 'success',
+            summary: 'Login successful',
+            life: 3000
+          })
         } else {
           const errors = await response.json()
 
@@ -88,7 +94,7 @@ const LoginPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        setTimeout(() => hideLoadingModal(), 500)
+        hideLoadingModal()
       }
     }
   })

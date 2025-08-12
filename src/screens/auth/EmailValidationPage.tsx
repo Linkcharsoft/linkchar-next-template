@@ -23,7 +23,7 @@ const EmailValidationPage = ({ email }: Props) => {
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
-  const [ timer, setTimer ] = useSessionStorage<number>('emailResendTimer', 0)
+  const [ timer, setTimer ] = useSessionStorage<number>('validation-resend-timer', 0)
 
 
   // Redirect if there isnt email
@@ -65,7 +65,7 @@ const EmailValidationPage = ({ email }: Props) => {
         setToastMessage({
           severity: 'success',
           summary: 'Email sent! Please check your inbox',
-          life: 10000
+          life: 3000
         })
 
         setTimer(30)
@@ -73,14 +73,14 @@ const EmailValidationPage = ({ email }: Props) => {
         setToastMessage({
           severity: 'error',
           summary: 'Error sending email, please try again later',
-          life: 15000
+          life: 5000
         })
       }
     } catch (error) {
       setToastMessage({
         severity: 'error',
         summary: 'Error sending email, please try again later',
-        life: 15000
+        life: 5000
       })
       // ! Sentry
       console.error(`Error: ${error.message}`)
@@ -103,7 +103,7 @@ const EmailValidationPage = ({ email }: Props) => {
 
         <div className="mx-auto flex flex-col gap-4">
           <p className="text-center text-base font-normal text-surface-800">
-            We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{DECODED_EMAIL}</span> with a link to validate your account.
+            We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{DECODED_EMAIL}</span> with a link to validate your account
           </p>
         </div>
 
