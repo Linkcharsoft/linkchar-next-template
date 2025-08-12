@@ -43,14 +43,14 @@ export const useAppStore = create<AppState>((set) => ({
         message
       }
     })),
-  hideLoadingModal: () =>
+  hideLoadingModal: () => setTimeout(() =>
     set(() => ({
       loadingModal: {
         show: false,
         title: '',
         message: ''
       }
-    })),
+    })), 500),
 
   modalState: {
     show: false,

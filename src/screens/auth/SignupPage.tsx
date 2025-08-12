@@ -85,7 +85,7 @@ const SignupPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        setTimeout(() => hideLoadingModal(), 500)
+        hideLoadingModal()
       }
     }
   })
