@@ -88,7 +88,8 @@ const PasswordRecoveryPage = () => {
         <h1 className="AuthLayout__Title">
           Enter your email
         </h1>
-        <div className="mx-auto flex w-[243px] flex-col gap-4">
+
+        <div className="mx-auto flex w-full flex-col gap-4">
           <p className="text-center text-base font-normal leading-5 text-surface-800">
             We will send you an email with a link to change your password.
           </p>
@@ -96,8 +97,9 @@ const PasswordRecoveryPage = () => {
             Make sure to check the spam folder.
           </p>
         </div>
-        <div className="flex flex-col gap-[23px]">
-          <div className="flex flex-col gap-[10px]">
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <InputText
               name="email"

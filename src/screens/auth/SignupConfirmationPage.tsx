@@ -125,8 +125,8 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
             <p className="text-center text-base font-normal leading-5 text-surface-800">
               The link you&apos;ve used is no longer available, please try entering your email again.
             </p>
-            <div className="flex flex-col gap-[23px]">
-              <div className="flex flex-col gap-[10px]">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="email">Email</Label>
                 <InputText
                   name="email"
