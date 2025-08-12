@@ -1,4 +1,4 @@
-import { HTMLProps } from 'react'
+import { HTMLProps, memo } from 'react'
 
 const Label = (props: HTMLProps<HTMLLabelElement>) => {
   return (
@@ -11,4 +11,4 @@ const Label = (props: HTMLProps<HTMLLabelElement>) => {
   )
 }
 
-export default Label
+export default memo(Label)
