@@ -25,7 +25,7 @@ type RecoveryPasswordConfirmationFormikType = {
 type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
-const RecoveryPasswordConfirmationPage = ({ token, email }: Props) => {
+const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const {
     showLoadingModal,
     hideLoadingModal,
@@ -167,7 +167,7 @@ const RecoveryPasswordConfirmationPage = ({ token, email }: Props) => {
           <h1 className="AuthLayout__Title">
             Enter new password
           </h1>
-          <div className="flex flex-col gap-[10px]">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
             <Password
               name="password"
@@ -272,4 +272,4 @@ const RecoveryPasswordConfirmationPage = ({ token, email }: Props) => {
     )
 }
 
-export default RecoveryPasswordConfirmationPage
+export default PasswordRecoveryConfirmationPage
