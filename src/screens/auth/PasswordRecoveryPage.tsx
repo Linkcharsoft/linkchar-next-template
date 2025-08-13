@@ -136,7 +136,7 @@ const PasswordRecoveryPage = () => {
               className="flex justify-center items-center gap-8"
               initial={{ height: 0,opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.3, delay: 0.5 }}
             >
               <Link
                 className='hover:opacity-75'
