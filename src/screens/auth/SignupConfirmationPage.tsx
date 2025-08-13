@@ -4,16 +4,23 @@ import { useRouter } from 'next/navigation'
 import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { useEffect, useState } from 'react'
-import { useIsClient } from 'usehooks-ts'
+import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
+import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
+import Loader from '@/components/Loader'
 import { useAppStore } from '@/stores/appStore'
+import usePressKey from '@/hooks/usePressKey'
+import { AnimatePresence, motion } from 'framer-motion'
+import Link from 'next/link'
+import OutlookIcon from '@/assets/icons/OutlookIcon'
+import GmailIcon from '@/assets/icons/GmailIcon'
 
 
 type Props = {
-  confirmationKey: string
+  token: string
 }
 
 type SignupConfirmationFormikType = {
@@ -22,7 +29,7 @@ type SignupConfirmationFormikType = {
 type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
-const SignupConfirmationPage = ({confirmationKey } : Props) => {
+const SignupConfirmationPage = ({ token } : Props) => {
   const {
     showLoadingModal,
     hideLoadingModal,
@@ -30,27 +37,65 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
+  const [ showEmails, setShowEmails ] = useState<boolean>(false)
+  const [ timer, setTimer ] = useSessionStorage<number>('confirmation-resend-timer', 0)
+
   const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('invalid')
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
 
 
+  usePressKey('Enter', () => {
+    if(tokenStatus === 'invalid') {
+      formik.handleSubmit()
+    }
+  })
+
+
+  // Verify token logic
   useEffect(() => {
-    showLoadingModal({})
+    showLoadingModal({
+      title: 'Verifying link',
+      message: 'Please wait...'
+    })
+
     const verifyToken = async () => {
-      const decodedToken = decodeURIComponent(confirmationKey )
+      const decodedToken = decodeURIComponent(token)
+
       const { ok } = await emailConfirmation({ key: decodedToken })
 
-      if (!ok) {
-        setTokenStatus('invalid')
-        hideLoadingModal()
-      } else {
+      if (ok) {
         setTokenStatus('valid')
-        hideLoadingModal()
+      } else {
+        setTokenStatus('invalid')
       }
+
+      hideLoadingModal()
     }
 
     verifyToken()
   }, [])
+
+  // Redirect if there isnt token
+  useEffect(() => {
+    if (!token) router.replace('/login')
+  }, [token])
+
+  // Timer logic
+  useEffect(() => {
+    if (timer <= 0) return
+
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [setTimer, timer > 0])
 
 
   const formik = useFormik<SignupConfirmationFormikType>({
@@ -62,126 +107,163 @@ const SignupConfirmationPage = ({confirmationKey } : Props) => {
     }),
     validateOnChange: false,
     onSubmit: async ({ email }) => {
-      showLoadingModal({})
-      setButtonDisabled(true)
+      showLoadingModal({
+        title: 'Resending email',
+        message: 'Please wait...'
+      })
 
-      const timeout = setTimeout(() => {
-        setButtonDisabled(false)
-      }, 30000) // 30 seconds interval. Preventing spam
       try {
-        const { ok } = await resendEmailConfirmation({
-          email: email
-        })
+        const { ok } = await resendEmailConfirmation({ email })
 
-        if (!ok) {
-          setToastMessage({
-            severity: 'error',
-            summary: 'Something went wrong, please try again later',
-            life: 30000
-          })
-        } else {
+        if (ok) {
           setToastMessage({
             severity: 'success',
-            summary: 'Email sent!',
-            life: 30000
+            summary: 'Email sent! Please check your inbox',
+            life: 3000
+          })
+
+          setShowEmails(true)
+          setTimer(30)
+        } else {
+          setToastMessage({
+            severity: 'error',
+            summary: 'Error sending email, please try again later',
+            life: 5000
           })
         }
       } catch (error) {
-        console.error(`Error sending email: ${error}`)
         setToastMessage({
           severity: 'error',
-          summary: 'Something went wrong, please try again later',
-          life: 30000
+          summary: 'Error sending email, please try again later',
+          life: 5000
         })
+        // ! Sentry
+        console.error(`Error: ${error.message}`)
       } finally {
         hideLoadingModal()
-        clearTimeout(timeout)
       }
     }
   })
 
 
-  const handleLoginRedirect = () => router.replace('/login')
-
-
   if (!isClient) return null
-
-  if (tokenStatus === 'loading') return null
-
-  if (tokenStatus === 'invalid') {
-    return (
-      <main className="AuthLayout">
-        <section className="AuthLayout__Section">
-          <h1 className="AuthLayout__Title">
-            Sign up
-          </h1>
-          <div className="flex w-full justify-center align-middle">
-            <i
-              className="pi pi-exclamation-circle"
-              style={{ color: '#E5007E', fontSize: '30px' }}
-            />
-          </div>
-          <div className="mx-auto flex flex-col gap-4">
-            <p className="text-center text-base font-normal leading-5 text-surface-800">
-              The link you&apos;ve used is no longer available, please try entering your email again.
-            </p>
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="email">Email</Label>
-                <InputText
-                  name="email"
-                  id="email"
-                  inputMode="email"
-                  placeholder="Type your email"
-                  value={formik.values.email}
-                  onChange={formik.handleChange}
-                  invalid={Boolean(formik.errors.email)}
-                  autoComplete="email"
-                  keyfilter='email'
-                />
-                <InputError message={formik.errors.email as string} />
-              </div>
-            </div>
-            <div className="flex w-full justify-center">
-              <Button
-                onClick={e => {
-                  e.preventDefault()
-                  formik.handleSubmit()
-                }}
-                className="w-full mt-3"
-                disabled={buttonDisabled}
-                type="submit"
-              >
-                Resend email
-              </Button>
-            </div>
-          </div>
-        </section>
-      </main>
-    )
-  }
 
   return (
     <main className="AuthLayout">
-      <section className="AuthLayout__Section">
+      <form
+        className="AuthLayout__Section"
+        onSubmit={e => {
+          e.preventDefault()
+          if(tokenStatus === 'invalid') {
+            formik.handleSubmit()
+          }
+        }}
+      >
         <h1 className="AuthLayout__Title">
-          Sign up
+          Sign up: Confirmation
         </h1>
-        <div className="mx-auto flex w-[243px] flex-col gap-4">
-          <p className="text-center text-base font-normal leading-5 text-surface-800">
-            Account successfully verified!
-          </p>
-        </div>
 
-        <div className="flex w-full justify-center">
-          <Button
-            className="w-full"
-            onClick={handleLoginRedirect}
-          >
-            Go to log in
-          </Button>
-        </div>
-      </section>
+        {tokenStatus === 'loading' && (
+          <div className="mx-auto">
+            <Loader/>
+          </div>
+        )}
+
+        {tokenStatus === 'invalid' && (
+          <>
+            <div className="flex w-full justify-center items-center">
+              <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
+            </div>
+
+            <div className="mx-auto flex flex-col gap-4">
+              <p className="text-center text-base font-normal text-surface-800">
+                The link you&apos;ve used is no longer available, please try entering your email again.
+              </p>
+
+              <AnimatePresence>
+                {showEmails && (
+                  <motion.div
+                    className="flex justify-center items-center gap-8"
+                    initial={{ height: 0,opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.5 }}
+                  >
+                    <Link
+                      className='hover:opacity-75'
+                      href='https://outlook.com'
+                      target='_blank'
+                    >
+                      <OutlookIcon/>
+                    </Link>
+
+                    <Link
+                      className='hover:opacity-75'
+                      href='https://gmail.com/'
+                      target='_blank'
+                    >
+                      <GmailIcon/>
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <InputText
+                    name="email"
+                    id="email"
+                    inputMode="email"
+                    placeholder="Type your email"
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    invalid={Boolean(formik.errors.email)}
+                    autoComplete="email"
+                    keyfilter='email'
+                    disabled={formik.isSubmitting}
+                  />
+                  <InputError message={formik.errors.email as string} />
+                </div>
+              </div>
+
+              <div className="flex w-full justify-center">
+                <CustomButton
+                  className="w-full mt-3"
+                  type="submit"
+                  disabled={formik.isSubmitting || timer > 0}
+                >
+                  {timer > 0 ? `Wait ${timer}s to resend` : 'Resend email'}
+                </CustomButton>
+              </div>
+            </div>
+          </>
+        )}
+
+        {(tokenStatus === 'valid') && (
+          <>
+            <div className="flex w-full justify-center items-center">
+              <i className="pi pi-check-circle text-green-600 text-[48px] text-center"/>
+            </div>
+
+            <div className="mx-auto flex w-[243px] flex-col gap-4">
+              <p className="text-center text-base font-normal text-surface-800">
+                Account successfully verified!
+              </p>
+            </div>
+
+            <div className="flex w-full justify-center">
+              <CustomButton
+                className="w-full"
+                href='/login'
+                replace
+                type='button'
+              >
+                Go to log in
+              </CustomButton>
+            </div>
+          </>
+        )}
+      </form>
     </main>
   )
 }
