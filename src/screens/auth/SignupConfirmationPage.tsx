@@ -40,7 +40,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
   const [ showEmails, setShowEmails ] = useState<boolean>(false)
   const [ timer, setTimer ] = useSessionStorage<number>('confirmation-resend-timer', 0)
 
-  const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('invalid')
+  const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
 
 
