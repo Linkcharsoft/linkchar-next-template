@@ -1,7 +1,8 @@
 'use client'
+import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
@@ -23,6 +24,7 @@ const EmailValidationPage = ({ email }: Props) => {
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
+  const [ showEmails, setShowEmails ] = useState<boolean>(false)
   const [ timer, setTimer ] = useSessionStorage<number>('validation-resend-timer', 0)
 
 
@@ -68,6 +70,7 @@ const EmailValidationPage = ({ email }: Props) => {
           life: 3000
         })
 
+        setShowEmails(true)
         setTimer(30)
       } else {
         setToastMessage({
@@ -107,23 +110,32 @@ const EmailValidationPage = ({ email }: Props) => {
           </p>
         </div>
 
-        <div className="flex justify-center items-center gap-8">
-          <Link
-            className='hover:opacity-75'
-            href='https://outlook.com'
-            target='_blank'
-          >
-            <OutlookIcon/>
-          </Link>
+        <AnimatePresence>
+          {showEmails && (
+            <motion.div
+              className="flex justify-center items-center gap-8"
+              initial={{ height: 0,opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Link
+                className='hover:opacity-75'
+                href='https://outlook.com'
+                target='_blank'
+              >
+                <OutlookIcon/>
+              </Link>
 
-          <Link
-            className='hover:opacity-75'
-            href='https://gmail.com/'
-            target='_blank'
-          >
-            <GmailIcon/>
-          </Link>
-        </div>
+              <Link
+                className='hover:opacity-75'
+                href='https://gmail.com/'
+                target='_blank'
+              >
+                <GmailIcon/>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="flex w-full justify-center">
           <CustomButton

@@ -1,5 +1,6 @@
 'use client'
 import { useFormik } from 'formik'
+import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import { InputText } from 'primereact/inputtext'
 import { useEffect, useState } from 'react'
@@ -27,7 +28,7 @@ const PasswordRecoveryPage = () => {
     setToastMessage
   } = useAppStore()
   const isClient = useIsClient()
-  const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
+  const [ showEmails, setShowEmails ] = useState<boolean>(false)
   const [ timer, setTimer ] = useSessionStorage<number>('recovery-resend-timer', 0)
 
 
@@ -80,8 +81,8 @@ const PasswordRecoveryPage = () => {
             summary: 'Email sent! Please check your inbox',
             life: 3000
           })
-          setTimeout(() => {
-            setButtonDisabled(false)
+
+          setShowEmails(true)
           setTimer(30)
         } else {
           setToastMessage({
