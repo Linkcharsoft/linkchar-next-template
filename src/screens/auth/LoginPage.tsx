@@ -80,8 +80,15 @@ const LoginPage = () => {
           const errors = await response.json()
 
           if(errors.non_field_errors?.[0]?.includes('mail is not verified')) {
-            router.push('/email-validation')
-            setErrors({ email: 'Email is not verified' })
+            setToastMessage({
+              severity: 'error',
+              summary: 'Email not verified',
+              detail: 'Redirecting to email validation page',
+              life: 3000
+            })
+            setTimeout(() => {
+              router.push(`/email-validation/${encodeURIComponent(values.email)}`)
+            }, 500)
           } else {
             setErrors({
               email: 'Invalid email or password',
