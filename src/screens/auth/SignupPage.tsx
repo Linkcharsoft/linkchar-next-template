@@ -122,6 +122,8 @@ const SignupPage = () => {
               invalid={Boolean(formik.errors.email)}
               autoComplete="email"
               keyfilter='email'
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
             />
             <InputError message={formik.errors.email} />
           </div>
@@ -143,6 +145,8 @@ const SignupPage = () => {
                   className: 'w-full'
                 }
               }}
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
             />
             <InputError message={formik.errors.password} />
             {formik.values.password === '' ? (
@@ -196,6 +200,7 @@ const SignupPage = () => {
             }}
             type="submit"
             disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
           >
             Sign up
           </CustomButton>
@@ -207,6 +212,8 @@ const SignupPage = () => {
             href='/login'
             className='w-full'
             type='button'
+            disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
           >
             <span className="text-surface-800">
               Already have an account? <span className="font-bold">Log in</span>

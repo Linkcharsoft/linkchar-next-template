@@ -221,6 +221,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
                     autoComplete="email"
                     keyfilter='email'
                     disabled={formik.isSubmitting}
+                    aria-disabled={formik.isSubmitting}
                   />
                   <InputError message={formik.errors.email as string} />
                 </div>
@@ -231,6 +232,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
                   className="w-full mt-3"
                   type="submit"
                   disabled={formik.isSubmitting || timer > 0}
+                  aria-disabled={formik.isSubmitting || timer > 0}
                 >
                   {timer > 0 ? `Wait ${timer}s to resend` : 'Resend email'}
                 </CustomButton>

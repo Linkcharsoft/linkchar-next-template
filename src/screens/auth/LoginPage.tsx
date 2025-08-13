@@ -135,6 +135,8 @@ const LoginPage = () => {
               invalid={Boolean(formik.errors.email)}
               autoComplete="email"
               // keyfilter='email'
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
             />
             <InputError message={formik.errors.email} />
           </div>
@@ -155,6 +157,8 @@ const LoginPage = () => {
                   className: 'w-full'
                 }
               }}
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
             />
             <InputError message={formik.errors.password} />
           </div>
@@ -166,6 +170,8 @@ const LoginPage = () => {
             href='/recovery-password'
             className='w-full'
             type='button'
+            disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
           >
             <span className='text-surface-800'>
               Forgot password? <span className="font-bold">Recover it</span>
@@ -178,6 +184,7 @@ const LoginPage = () => {
             className="w-full"
             type="submit"
             disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
           >
             Log in
           </CustomButton>
@@ -189,6 +196,8 @@ const LoginPage = () => {
             href='/signup'
             className='w-full'
             type='button'
+            disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
           >
             <span className='text-surface-800'>
               Don&apos;t have an account? <span className="font-bold">Sign up</span>

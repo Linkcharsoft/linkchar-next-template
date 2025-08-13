@@ -170,6 +170,8 @@ const PasswordRecoveryPage = () => {
               invalid={Boolean(formik.errors.email)}
               autoComplete="email"
               keyfilter='email'
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
             />
             <InputError message={formik.errors.email} />
           </div>
@@ -180,6 +182,7 @@ const PasswordRecoveryPage = () => {
             className="w-full"
             type="submit"
             disabled={formik.isSubmitting || timer > 0}
+            aria-disabled={formik.isSubmitting || timer > 0}
           >
             {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
           </CustomButton>
@@ -190,6 +193,8 @@ const PasswordRecoveryPage = () => {
           href='/login'
           className='w-full'
           type='button'
+          disabled={formik.isSubmitting}
+          aria-disabled={formik.isSubmitting}
         >
           <span className='text-surface-800'>
             Go back to <span className="font-bold">Log in</span>
