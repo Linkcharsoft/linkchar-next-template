@@ -87,7 +87,7 @@ const LoginPage = () => {
               life: 3000
             })
             setTimeout(() => {
-              router.push(`/email-validation/${encodeURIComponent(values.email)}`)
+              router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
             }, 500)
           } else {
             setErrors({

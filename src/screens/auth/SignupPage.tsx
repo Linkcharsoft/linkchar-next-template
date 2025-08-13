@@ -78,7 +78,7 @@ const SignupPage = () => {
 
           throw new Error('An error occurred. Please try again.')
         } else {
-          router.push(`/email-validation/${encodeURIComponent(values.email)}`)
+          router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
         }
       } catch (error) {
         setGeneralError('An error occurred. Please try again.')
