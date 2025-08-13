@@ -6,14 +6,14 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  params: Promise<{ key: string }>
+  params: Promise<{ token: string }>
 }
 
 const Page = async ({ params }: Props) => {
-  const { key } = await params
+  const { token } = await params
 
   return (
-    <SignupConfirmationPage confirmationKey ={key} />
+    <SignupConfirmationPage token={token} />
   )
 }
 
