@@ -1,11 +1,14 @@
 'use client'
 import { useFormik } from 'formik'
-import { Button } from 'primereact/button'
+import Link from 'next/link'
 import { InputText } from 'primereact/inputtext'
-import { useState } from 'react'
-import { useIsClient } from 'usehooks-ts'
+import { useEffect, useState } from 'react'
+import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { passwordRecoveryChange } from '@/api/users'
+import GmailIcon from '@/assets/icons/GmailIcon'
+import OutlookIcon from '@/assets/icons/OutlookIcon'
+import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import usePressKey from '@/hooks/usePressKey'
@@ -25,12 +28,30 @@ const PasswordRecoveryPage = () => {
   } = useAppStore()
   const isClient = useIsClient()
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
-  const [ isFirstClick, setIsFirstClick ] = useState<boolean>(true)
+  const [ timer, setTimer ] = useSessionStorage<number>('recovery-resend-timer', 0)
 
 
   usePressKey('Enter', () => {
     formik.handleSubmit()
   })
+
+
+  // Timer logic
+  useEffect(() => {
+    if (timer <= 0) return
+
+    const interval = setInterval(() => {
+      setTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [setTimer, timer > 0])
 
 
   const formik = useFormik<PasswordRecoveryFormikType>({
@@ -42,8 +63,10 @@ const PasswordRecoveryPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async ({ email }) => {
-      showLoadingModal({})
-      setButtonDisabled(true)
+      showLoadingModal({
+        title: 'Sending email',
+        message: 'Plase wait...'
+      })
 
       try {
         const { ok } = await passwordRecoveryChange({
@@ -51,27 +74,29 @@ const PasswordRecoveryPage = () => {
           email: email
         })
 
-        if (!ok) {
-          setToastMessage({
-            severity: 'error',
-            summary: 'Something went wrong, please try again later',
-            life: 3000
-          })
-          setTimeout(() => {
-            setButtonDisabled(false)
-          }, 30000)
-        } else {
+        if (ok) {
           setToastMessage({
             severity: 'success',
-            summary: 'Email sent!',
+            summary: 'Email sent! Please check your inbox',
             life: 3000
           })
           setTimeout(() => {
             setButtonDisabled(false)
-          }, 30000)
-          setIsFirstClick(false)
+          setTimer(30)
+        } else {
+          setToastMessage({
+            severity: 'error',
+            summary: 'Error sending email, please try again later',
+            life: 5000
+          })
         }
       } catch (error) {
+        setToastMessage({
+          severity: 'error',
+          summary: 'Error sending email, please try again later',
+          life: 5000
+        })
+        // ! Sentry
         console.error(`Error sending email: ${error}`)
       } finally {
         hideLoadingModal()
@@ -84,19 +109,52 @@ const PasswordRecoveryPage = () => {
 
   return (
     <main className="AuthLayout">
-      <section className="AuthLayout__Section">
+      <form
+        className="AuthLayout__Section"
+        onSubmit={(e) => {
+          e.preventDefault()
+          formik.handleSubmit()
+        }}
+      >
         <h1 className="AuthLayout__Title">
           Enter your email
         </h1>
 
         <div className="mx-auto flex w-full flex-col gap-4">
           <p className="text-center text-base font-normal leading-5 text-surface-800">
-            We will send you an email with a link to change your password.
+            We will send you an email with a link to change your password
           </p>
           <p className="text-center text-base font-normal leading-5 text-surface-800">
-            Make sure to check the spam folder.
+            Make sure to check the spam folder
           </p>
         </div>
+
+        <AnimatePresence>
+          {showEmails && (
+            <motion.div
+              className="flex justify-center items-center gap-8"
+              initial={{ height: 0,opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Link
+                className='hover:opacity-75'
+                href='https://outlook.com'
+                target='_blank'
+              >
+                <OutlookIcon/>
+              </Link>
+
+              <Link
+                className='hover:opacity-75'
+                href='https://gmail.com/'
+                target='_blank'
+              >
+                <GmailIcon/>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
@@ -115,20 +173,28 @@ const PasswordRecoveryPage = () => {
             <InputError message={formik.errors.email} />
           </div>
         </div>
+
         <div className="flex w-full justify-center">
-          <Button
-            onClick={e => {
-              e.preventDefault()
-              formik.handleSubmit()
-            }}
+          <CustomButton
             className="w-full"
-            disabled={buttonDisabled}
             type="submit"
+            disabled={formik.isSubmitting || timer > 0}
           >
-            {isFirstClick ? 'Get email' : 'Re-send email'}
-          </Button>
+            {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
+          </CustomButton>
         </div>
-      </section>
+
+        <CustomButton
+          variant='transparent'
+          href='/login'
+          className='w-full'
+          type='button'
+        >
+          <span className='text-surface-800'>
+            Go back to <span className="font-bold">Log in</span>
+          </span>
+        </CustomButton>
+      </form>
     </main>
   )
 }
