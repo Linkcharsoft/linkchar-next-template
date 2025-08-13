@@ -5,7 +5,8 @@ import { getAccessToken } from '@/utils/auth'
 const AUTH_PATHS = new Set([
   '/login',
   '/signup',
-  '/email-validation',
+  '/signup/email-validation',
+  '/signup/confirmation',
   '/recovery-password',
 ])
 
