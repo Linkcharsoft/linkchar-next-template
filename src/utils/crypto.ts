@@ -1,9 +1,9 @@
 import 'server-only'
 import { SessionType } from '@/types/auth'
 
-const SECRET_KEY = process.env.AUTH_SECRET
-if (!SECRET_KEY) throw new Error('Missing AUTH_SECRET')
-if (SECRET_KEY.length !== 32) throw new Error('AUTH_SECRET must be 32 characters long')
+const AUTH_SECRET = process.env.AUTH_SECRET
+if (!AUTH_SECRET) throw new Error('Missing AUTH_SECRET')
+if (AUTH_SECRET.length !== 32) throw new Error('AUTH_SECRET must be 32 characters long')
 
 const ENCRYPTION_KEY = crypto.subtle.importKey(
   'raw',
