@@ -9,7 +9,6 @@ import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
-import Loader from '@/components/Loader'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import validatePassword from '@/utils/validatePassword'
@@ -152,7 +151,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const PASSWORD_VALIDATION = useMemo(() => validatePassword(formik.values.password), [formik.values.password])
 
 
-  if (!isClient) return null
+  if (!isClient || tokenStatus === 'loading') return null
 
   return (
     <main className="AuthLayout">
@@ -168,12 +167,6 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         <h1 className="AuthLayout__Title">
           Password recovery
         </h1>
-
-        {(tokenStatus === 'loading') && (
-          <div className="mx-auto">
-            <Loader/>
-          </div>
-        )}
 
         {(tokenStatus === 'invalid') && (
           <>

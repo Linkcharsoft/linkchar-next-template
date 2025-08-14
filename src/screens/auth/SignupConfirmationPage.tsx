@@ -10,7 +10,6 @@ import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
-import Loader from '@/components/Loader'
 import { useAppStore } from '@/stores/appStore'
 import usePressKey from '@/hooks/usePressKey'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -144,7 +143,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
   })
 
 
-  if (!isClient) return null
+  if (!isClient || tokenStatus === 'loading') return null
 
   return (
     <main className="AuthLayout">
@@ -160,12 +159,6 @@ const SignupConfirmationPage = ({ token } : Props) => {
         <h1 className="AuthLayout__Title">
           Sign up: Confirmation
         </h1>
-
-        {(tokenStatus === 'loading') && (
-          <div className="mx-auto">
-            <Loader/>
-          </div>
-        )}
 
         {(tokenStatus === 'invalid') && (
           <>
