@@ -1,6 +1,7 @@
 'use server'
 import { cookies } from 'next/headers'
 import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants'
+import { UserType } from '@/types/auth'
 import { decryptSession } from './crypto'
 
 export const getServerSession = async () => {
@@ -30,7 +31,7 @@ export const getAccessToken = async () => {
   return session.access
 }
 
-export const getServerUser = async () => {
+export const getServerUser = async (): UserType | null => {
   const origin = process.env.__NEXT_PRIVATE_ORIGIN
 
   if(!origin) return
