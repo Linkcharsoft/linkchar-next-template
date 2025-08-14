@@ -35,8 +35,8 @@ const SignupConfirmationPage = ({ token } : Props) => {
     hideLoadingModal,
     setToastMessage
   } = useAppStore()
-  const router = useRouter()
   const isClient = useIsClient()
+  const router = useRouter()
   const [ showEmails, setShowEmails ] = useState<boolean>(false)
   const [ timer, setTimer ] = useSessionStorage<number>('confirmation-resend-timer', 0)
 
@@ -102,10 +102,10 @@ const SignupConfirmationPage = ({ token } : Props) => {
     initialValues: {
       email: ''
     },
+    validateOnChange: false,
     validationSchema: Yup.object({
       email: Yup.string().email('Enter a valid email address').required('Required')
     }),
-    validateOnChange: false,
     onSubmit: async ({ email }) => {
       showLoadingModal({
         title: 'Resending email',
@@ -163,13 +163,13 @@ const SignupConfirmationPage = ({ token } : Props) => {
           Sign up: Confirmation
         </h1>
 
-        {tokenStatus === 'loading' && (
+        {(tokenStatus === 'loading') && (
           <div className="mx-auto">
             <Loader/>
           </div>
         )}
 
-        {tokenStatus === 'invalid' && (
+        {(tokenStatus === 'invalid') && (
           <>
             <div className="flex w-full justify-center items-center">
               <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>

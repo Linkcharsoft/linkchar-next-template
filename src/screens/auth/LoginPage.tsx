@@ -83,7 +83,7 @@ const LoginPage = () => {
             setToastMessage({
               severity: 'error',
               summary: 'Email not verified',
-              detail: 'Redirecting to email validation page',
+              detail: 'Redirecting to email validation page...',
               life: 3000
             })
             setTimeout(() => {
@@ -167,7 +167,7 @@ const LoginPage = () => {
         <div className="flex w-full justify-center">
           <CustomButton
             variant='transparent'
-            href='/recovery-password'
+            href='/password-recovery'
             className='w-full'
             type='button'
             disabled={formik.isSubmitting}

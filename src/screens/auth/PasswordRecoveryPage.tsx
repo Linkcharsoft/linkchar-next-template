@@ -72,7 +72,7 @@ const PasswordRecoveryPage = () => {
       try {
         const { ok } = await passwordRecoveryChange({
           request_type: 'reset',
-          email: email
+          email
         })
 
         if (ok) {
