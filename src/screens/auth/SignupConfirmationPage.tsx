@@ -39,9 +39,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
   const router = useRouter()
   const [ showEmails, setShowEmails ] = useState<boolean>(false)
   const [ timer, setTimer ] = useSessionStorage<number>('confirmation-resend-timer', 0)
-
   const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')
-  const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
 
 
   usePressKey('Enter', () => {
