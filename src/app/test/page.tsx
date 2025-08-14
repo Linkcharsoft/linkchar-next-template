@@ -4,11 +4,8 @@ import { getServerUser } from '@/utils/auth'
 const Page = async () => {
   const user = await getServerUser()
 
-  console.log(user)
-
   return (
-    <TestPage/>
-    // <TestPage/>
+    <TestPage user={user}/>
   )
 }
 

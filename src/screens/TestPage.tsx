@@ -4,8 +4,7 @@ import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import Label from '@/components/Label'
 
-// const TestPage = ({ user }) => {
-const TestPage = () => {
+const TestPage = ({ user }) => {
   return (
     <div className='flex flex-col gap-12'>
       <form
@@ -29,7 +28,7 @@ const TestPage = () => {
         }}
       >
         <h1>Login</h1>
-        <div className="flex flex-col gap-[10px]">
+        <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>
           <InputText
             name="email"
@@ -40,7 +39,7 @@ const TestPage = () => {
             // keyfilter='email'
           />
         </div>
-        <div className="w-full flex flex-col gap-[10px]">
+        <div className="w-full flex flex-col gap-2">
           <Label htmlFor="password">Password</Label>
           <Password
             name="password"
@@ -105,11 +104,16 @@ const TestPage = () => {
       </form>
       <h2>User</h2>
 
-      {/* <h2>
-        {
-          JSON.stringify(user)
-        }
-      </h2> */}
+      <code>
+        {/* {
+          Object.entries(user).map(([key, value]) => (
+            <div key={key}>
+              <span className='font-bold'>{key}:</span> {value}
+            </div>
+          ))
+        } */}
+        {JSON.stringify(user, null, 4)}
+      </code>
     </div>
   )
 }
