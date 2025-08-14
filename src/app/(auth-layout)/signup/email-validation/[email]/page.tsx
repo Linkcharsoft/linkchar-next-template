@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import EmailValidationPage from '@/screens/auth/EmailValidationPage'
 
 export const metadata: Metadata = {
-  title: 'Email Validation'
+  title: 'Sign up - Email Validation'
 }
 
 interface Props {
