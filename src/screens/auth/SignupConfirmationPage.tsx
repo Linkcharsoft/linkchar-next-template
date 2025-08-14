@@ -175,7 +175,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
               <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
             </div>
 
-            <div className="mx-auto flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
               <p className="text-center text-base font-normal text-surface-800">
                 The link you&apos;ve used is no longer available, please try entering your email again.
               </p>

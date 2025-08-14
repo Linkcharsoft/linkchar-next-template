@@ -35,7 +35,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   } = useAppStore()
   const isClient = useIsClient()
   const router = useRouter()
-  const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('valid')
+  const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')
 
 
   usePressKey('Enter', () => {
@@ -46,37 +46,37 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
 
   // Verify token logic
-  // useEffect(() => {
-  //   showLoadingModal({
-  //     title: 'Verifying link',
-  //     message: 'Please wait...'
-  //   })
+  useEffect(() => {
+    showLoadingModal({
+      title: 'Verifying link',
+      message: 'Please wait...'
+    })
 
-  //   const checkUrlToken = async () => {
-  //     const decodedToken = decodeURIComponent(token)
-  //     const decodedEmail = decodeURIComponent(email)
+    const checkUrlToken = async () => {
+      const decodedToken = decodeURIComponent(token)
+      const decodedEmail = decodeURIComponent(email)
 
-  //     const { ok } = await checkPasswordToken({
-  //       email: decodedEmail,
-  //       token: decodedToken
-  //     })
+      const { ok } = await checkPasswordToken({
+        email: decodedEmail,
+        token: decodedToken
+      })
 
-  //     if (ok) {
-  //       setTokenStatus('valid')
-  //     } else {
-  //       setTokenStatus('invalid')
-  //     }
+      if (ok) {
+        setTokenStatus('valid')
+      } else {
+        setTokenStatus('invalid')
+      }
 
-  //     hideLoadingModal()
-  //   }
+      hideLoadingModal()
+    }
 
-  //   checkUrlToken()
-  // }, [])
+    checkUrlToken()
+  }, [])
 
-  // // Redirect if there isnt token or email
-  // useEffect(() => {
-  //   if (!token || !email) router.replace('/login')
-  // }, [token, email])
+  // Redirect if there isnt token or email
+  useEffect(() => {
+    if (!token || !email) router.replace('/login')
+  }, [token, email])
 
 
   const formik = useFormik<RecoveryPasswordConfirmationFormikType>({
@@ -146,9 +146,6 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
       }
     }
   })
-
-
-  const handleRerecoverPasswordRedirect = () => router.replace('/password-recovery')
 
 
   const PASSWORD_VALIDATION = useMemo(() => validatePassword(formik.values.password), [formik.values.password])
