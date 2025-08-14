@@ -98,7 +98,7 @@ const PasswordRecoveryPage = () => {
           life: 5000
         })
         // ! Sentry
-        console.error(`Error sending email: ${error}`)
+        console.error(`Error: ${error.message}`)
       } finally {
         hideLoadingModal()
       }

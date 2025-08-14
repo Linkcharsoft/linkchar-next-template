@@ -125,6 +125,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
             detail: 'Redirecting to login page...',
             life: 3000
           })
+
           setTimeout(() => router.replace('/login'), 3000)
         } else {
           setToastMessage({
