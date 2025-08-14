@@ -199,11 +199,11 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         {(tokenStatus === 'valid') && (
           <>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">New password</Label>
               <Password
                 name="password"
                 id="password"
-                placeholder="Type your password"
+                placeholder="Type your new password"
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 invalid={Boolean(formik.errors.password)}
@@ -291,7 +291,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
               </div>
             )}
 
-            <div className="flex w-full justify-center">
+            <div className="w-full flex justify-center">
               <CustomButton
                 className="w-full"
                 type='submit'
