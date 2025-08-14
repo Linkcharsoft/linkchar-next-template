@@ -114,6 +114,7 @@ const refreshToken = async (): Promise<string | null> => {
   //   console.error('Error refreshing token:', error)
   //   return null
   // }
+  return null
 }
 
 const handleSignOut = () => {
