@@ -7,7 +7,7 @@ const AUTH_PATHS = new Set([
   '/signup',
   '/signup/email-validation',
   '/signup/confirmation',
-  '/recovery-password',
+  '/password-recovery',
 ])
 
 const AUTHENTICATED_HOME_PATH: string = '/'
