@@ -25,7 +25,6 @@ const ChangePasswordPage = () => {
   const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
   const [ showEmails, setShowEmails ] = useState<boolean>(false)
   const [ timer, setTimer ] = useSessionStorage<number>('change-resend-timer', 0)
-  console.log(user)
 
 
   usePressKey('Enter', () => {
