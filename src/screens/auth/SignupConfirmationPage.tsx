@@ -220,7 +220,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
 
               <div className="flex w-full justify-center">
                 <CustomButton
-                  className="w-full mt-3"
+                  className="w-full"
                   type="submit"
                   disabled={formik.isSubmitting || timer > 0}
                   aria-disabled={formik.isSubmitting || timer > 0}
