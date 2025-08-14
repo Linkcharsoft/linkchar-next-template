@@ -56,7 +56,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       const decodedToken = decodeURIComponent(token)
 
       const { ok } = await checkPasswordToken({
-        email: user.email,
+        email: user?.email,
         token: decodedToken
       })
 
@@ -107,7 +107,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       try {
         const { ok } = await passwordConfirm({
           token: decodedToken,
-          email: user.email,
+          email: user?.email,
           password
         })
 

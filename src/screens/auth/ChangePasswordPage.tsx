@@ -60,7 +60,7 @@ const ChangePasswordPage = () => {
     try {
       const { ok } = await passwordRecoveryChange({
         request_type: 'change',
-        email: user.email as string
+        email: user?.email as string
       })
 
       if (ok) {

@@ -31,10 +31,10 @@ export const getAccessToken = async () => {
   return session.access
 }
 
-export const getServerUser = async (): UserType | null => {
+export const getServerUser = async (): Promise<UserType | null> => {
   const origin = process.env.__NEXT_PRIVATE_ORIGIN
 
-  if(!origin) return
+  if(!origin) return null
   // throw new Error('Origin not defined. Are you calling getServerUser on the server?')
 
   const cookieStore = await cookies()
