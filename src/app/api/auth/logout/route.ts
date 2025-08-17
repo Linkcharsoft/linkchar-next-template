@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { logout } from '@/api/users'
 import { AUTH_COOKIE_NAME } from '@/constants'
 import { getServerSession } from '@/utils/auth'
 
-export async function POST(req: NextRequest) {
+export async function POST () {
   try {
     const session = await getServerSession()
 

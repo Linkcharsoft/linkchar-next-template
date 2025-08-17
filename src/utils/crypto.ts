@@ -17,7 +17,7 @@ const ENCRYPTION_KEY = crypto.subtle.importKey(
 
 const IV_LENGTH = 12
 
-export async function encryptSession(data: object): Promise<string> {
+export async function encryptSession (data: object): Promise<string> {
   try {
     const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
     const key = await ENCRYPTION_KEY
@@ -37,7 +37,7 @@ export async function encryptSession(data: object): Promise<string> {
   }
 }
 
-export async function decryptSession(session: string): Promise<SessionType | null> {
+export async function decryptSession (session: string): Promise<SessionType | null> {
   try {
     const key = await ENCRYPTION_KEY
 

@@ -1,18 +1,17 @@
 'use client'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
-import { Button } from 'primereact/button'
 import { Password } from 'primereact/password'
 import { useEffect, useMemo, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
+import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import validatePassword from '@/utils/validatePassword'
-import CustomButton from '@/components/CustomButton'
 
 
 type Props = {
@@ -34,7 +33,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   } = useAppStore()
   const isClient = useIsClient()
   const router = useRouter()
-  const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')
+  const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
 
 
   usePressKey('Enter', () => {

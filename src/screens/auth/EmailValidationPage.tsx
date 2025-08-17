@@ -23,7 +23,7 @@ const EmailValidationPage = ({ email }: Props) => {
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
-  const [ timer, setTimer ] = useSessionStorage<number>('validation-resend-timer', 0)
+  const [timer, setTimer] = useSessionStorage<number>('validation-resend-timer', 0)
 
 
   // Redirect if there isnt email

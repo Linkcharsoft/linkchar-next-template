@@ -17,7 +17,7 @@ const HomePage = () => {
   const fragmentRef = useRef<any>(null)
 
 
-  function oscilateTime(time) {
+  function oscilateTime (time) {
     const boundedTime = time % (2 * MAX_TIME_VALUE)
     const oscillatingTime = boundedTime > MAX_TIME_VALUE ? 2 * MAX_TIME_VALUE - boundedTime : boundedTime
     return oscillatingTime
@@ -57,16 +57,16 @@ const HomePage = () => {
         private fieldOfView: number
         private camera: THREE.PerspectiveCamera
         private timer: number
-        private mousePos: {x: number, y: number}
+        private mousePos: { x: number, y: number }
         private mouseX: number
         private mouseY: number
-        private targetMousePos: {x: number, y: number}
+        private targetMousePos: { x: number, y: number }
         private material: THREE.RawShaderMaterial
         private planeGeometry: THREE.PlaneGeometry
         private mat: THREE.MeshBasicMaterial
         private plane: THREE.Mesh
 
-        constructor(width, height) {
+        constructor (width, height) {
           this.renderer = new THREE.WebGLRenderer({
             alpha: true,
             antialias: false
@@ -88,43 +88,43 @@ const HomePage = () => {
           this.camera.position.x = 0
           this.container.appendChild(this.renderer.domElement)
           this.timer = 0
-          this.mousePos = {x: 0, y: 0}
+          this.mousePos = { x: 0, y: 0 }
           this.mouseX = 0
           this.mouseY = 0
-          this.targetMousePos = {x: 0, y: 0}
+          this.targetMousePos = { x: 0, y: 0 }
           this.createPlane()
           this.render()
         }
 
-        createPlane() {
+        createPlane () {
           this.material = new THREE.RawShaderMaterial({
             vertexShader: vertexRef.current?.textContent,
             fragmentShader: fragmentRef.current?.textContent,
             uniforms: {
-              iTime: {type: 'f', value: 0},
-              uHue: {type: 'f', value: .5},
-              uHueVariation: {type: 'f', value: 1},
-              uGradient: {type: 'f', value: 1},
-              uDensity: {type: 'f', value: 1},
-              uDisplacement: {type: 'f', value: 1},
-              uMousePosition: {type: 'v2', value: new THREE.Vector2(1.5, 3.5)},
-              iResolution: {type: 'v2', value: new THREE.Vector2(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight)},
-              scroll: {type: 'f', value: 0},
+              iTime: { type: 'f', value: 0 },
+              uHue: { type: 'f', value: .5 },
+              uHueVariation: { type: 'f', value: 1 },
+              uGradient: { type: 'f', value: 1 },
+              uDensity: { type: 'f', value: 1 },
+              uDisplacement: { type: 'f', value: 1 },
+              uMousePosition: { type: 'v2', value: new THREE.Vector2(1.5, 3.5) },
+              iResolution: { type: 'v2', value: new THREE.Vector2(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight) },
+              scroll: { type: 'f', value: 0 },
             }
           })
           this.planeGeometry = new THREE.PlaneGeometry(2, 4, 1, 1)
-          this.mat = new THREE.MeshBasicMaterial({color: 0xffff00, side: THREE.DoubleSide})
+          this.mat = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })
           this.plane = new THREE.Mesh(this.planeGeometry, this.material)
           this.scene.add(this.plane)
           this.plane.position.z = 0
         }
 
-        loop() {
+        loop () {
           this.render()
           requestId = requestAnimationFrame(this.loop.bind(this))
         }
 
-        render() {
+        render () {
           this.timer += 0.5
           this.plane.material.uniforms.iTime.value = oscilateTime(this.timer / 300)
           this.mousePos.x += (this.targetMousePos.x - this.mousePos.x) * .1
@@ -138,17 +138,17 @@ const HomePage = () => {
         }
 
         // start render
-        start() {
+        start () {
           this.loop()
         }
 
         // stop render
-        stop() {
+        stop () {
           window.cancelAnimationFrame(requestId)
           requestId = undefined
         }
 
-        updateSize(w, h) {
+        updateSize (w, h) {
           // Update camera
           this.camera.aspect = w / h
           this.camera.updateProjectionMatrix()
@@ -160,7 +160,7 @@ const HomePage = () => {
         }
 
 
-        mouseMove(mousePos) {
+        mouseMove (mousePos) {
           this.targetMousePos.x = mousePos.px
           this.targetMousePos.y = mousePos.py
           this.mouseX = (mousePos.x - windowHalfX) * 0.01
@@ -168,7 +168,7 @@ const HomePage = () => {
         }
       }
 
-      const mousePos = {x: 0, y: 0, px: 0, py: 0}
+      const mousePos = { x: 0, y: 0, px: 0, py: 0 }
       let world
 
       // let gui = new dat.GUI()

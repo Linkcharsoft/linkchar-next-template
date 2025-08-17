@@ -22,9 +22,9 @@ const ChangePasswordPage = () => {
   const { user } = useUserStore()
   const isClient = useIsClient()
   const router = useRouter()
-  const [ buttonDisabled, setButtonDisabled ] = useState<boolean>(false)
-  const [ showEmails, setShowEmails ] = useState<boolean>(false)
-  const [ timer, setTimer ] = useSessionStorage<number>('change-resend-timer', 0)
+  const [buttonDisabled, setButtonDisabled] = useState<boolean>(false)
+  const [showEmails, setShowEmails] = useState<boolean>(false)
+  const [timer, setTimer] = useSessionStorage<number>('change-resend-timer', 0)
 
 
   usePressKey('Enter', () => {

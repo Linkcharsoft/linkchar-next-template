@@ -28,7 +28,7 @@ const SignupPage = () => {
   } = useAppStore()
   const router = useRouter()
   const isClient = useIsClient()
-  const [ generalError, setGeneralError ] = useState<string | null>(null)
+  const [generalError, setGeneralError] = useState<string | null>(null)
 
 
   usePressKey('Enter', () => {

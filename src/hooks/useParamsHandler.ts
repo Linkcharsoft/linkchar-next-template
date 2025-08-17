@@ -34,7 +34,7 @@ let intervalId: ReturnType<typeof setTimeout> | null = null
 
 export default function useParamsHandler<
   T extends Record<string, string | number | Array<string> | Array<number> | null>
->(
+> (
   params = {} as T,
   initialParams: string | URLSearchParams | Record<string, string> | string[][] | undefined
 ): {

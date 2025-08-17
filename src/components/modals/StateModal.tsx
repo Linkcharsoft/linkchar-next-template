@@ -5,7 +5,7 @@ import { useAppStore } from '@/stores/appStore'
 
 /* DOCS: https://primereact.org/dialog/ */
 
-export default function StateModal() {
+export default function StateModal () {
   const { modalState, hideModalState } = useAppStore()
 
   /* THIS IS A EXAMPLE COLORS AND ICONS */

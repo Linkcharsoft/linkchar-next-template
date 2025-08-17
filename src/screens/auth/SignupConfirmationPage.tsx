@@ -1,21 +1,20 @@
 'use client'
 import { useFormik } from 'formik'
+import { AnimatePresence, motion } from 'framer-motion'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Button } from 'primereact/button'
 import { InputText } from 'primereact/inputtext'
 import { useEffect, useState } from 'react'
 import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
+import GmailIcon from '@/assets/icons/GmailIcon'
+import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
-import { useAppStore } from '@/stores/appStore'
 import usePressKey from '@/hooks/usePressKey'
-import { AnimatePresence, motion } from 'framer-motion'
-import Link from 'next/link'
-import OutlookIcon from '@/assets/icons/OutlookIcon'
-import GmailIcon from '@/assets/icons/GmailIcon'
+import { useAppStore } from '@/stores/appStore'
 
 
 type Props = {
@@ -36,9 +35,9 @@ const SignupConfirmationPage = ({ token } : Props) => {
   } = useAppStore()
   const isClient = useIsClient()
   const router = useRouter()
-  const [ showEmails, setShowEmails ] = useState<boolean>(false)
-  const [ timer, setTimer ] = useSessionStorage<number>('confirmation-resend-timer', 0)
-  const [ tokenStatus, setTokenStatus ] = useState<TokenStatusType>('loading')
+  const [showEmails, setShowEmails] = useState<boolean>(false)
+  const [timer, setTimer] = useSessionStorage<number>('confirmation-resend-timer', 0)
+  const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
 
 
   usePressKey('Enter', () => {

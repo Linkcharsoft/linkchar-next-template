@@ -28,8 +28,8 @@ const PasswordRecoveryPage = () => {
     setToastMessage
   } = useAppStore()
   const isClient = useIsClient()
-  const [ showEmails, setShowEmails ] = useState<boolean>(false)
-  const [ timer, setTimer ] = useSessionStorage<number>('recovery-resend-timer', 0)
+  const [showEmails, setShowEmails] = useState<boolean>(false)
+  const [timer, setTimer] = useSessionStorage<number>('recovery-resend-timer', 0)
 
 
   usePressKey('Enter', () => {

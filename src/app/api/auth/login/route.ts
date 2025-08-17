@@ -5,7 +5,7 @@ import { AUTH_COOKIE_NAME } from '@/constants'
 import { SessionType } from '@/types/auth'
 import { encryptSession } from '@/utils/crypto'
 
-export async function POST(req: NextRequest) {
+export async function POST (req: NextRequest) {
   try {
     const body = await req.json()
 
