@@ -6,8 +6,7 @@ import { Password } from 'primereact/password'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import CustomButton from '@/components/CustomButton'
-import InputError from '@/components/InputError'
-import Label from '@/components/Label'
+import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
@@ -127,8 +126,11 @@ const LoginPage = () => {
         </h1>
 
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
+          <InputContainer
+            label='Email'
+            htmlFor='email'
+            error={formik.errors.email}
+          >
             <InputText
               name="email"
               id="email"
@@ -142,10 +144,13 @@ const LoginPage = () => {
               disabled={formik.isSubmitting}
               aria-disabled={formik.isSubmitting}
             />
-            <InputError message={formik.errors.email} />
-          </div>
-          <div className="w-full flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
+          </InputContainer>
+
+          <InputContainer
+            label='Password'
+            htmlFor='password'
+            error={formik.errors.password}
+          >
             <Password
               name="password"
               id="password"
@@ -164,8 +169,7 @@ const LoginPage = () => {
               disabled={formik.isSubmitting}
               aria-disabled={formik.isSubmitting}
             />
-            <InputError message={formik.errors.password} />
-          </div>
+          </InputContainer>
         </div>
 
         <div className="flex w-full justify-center">

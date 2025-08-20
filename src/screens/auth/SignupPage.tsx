@@ -8,6 +8,7 @@ import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { signup } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
+import InputContainer from '@/components/InputContainer'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
@@ -111,8 +112,11 @@ const SignupPage = () => {
         </h1>
 
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
+          <InputContainer
+            label='Email'
+            htmlFor='email'
+            error={formik.errors.email}
+          >
             <InputText
               name="email"
               id="email"
@@ -126,30 +130,34 @@ const SignupPage = () => {
               disabled={formik.isSubmitting}
               aria-disabled={formik.isSubmitting}
             />
-            <InputError message={formik.errors.email} />
-          </div>
+          </InputContainer>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Password
-              name="password"
-              id="password"
-              placeholder="Type your password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              invalid={Boolean(formik.errors.password)}
-              autoComplete="current-password"
-              toggleMask
-              feedback={false}
-              pt={{
-                input: {
-                  className: 'w-full'
-                }
-              }}
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
-            />
-            <InputError message={formik.errors.password} />
+          <div className="flex flex-col gap-4">
+            <InputContainer
+              label='Email'
+              htmlFor='email'
+              error={formik.errors.email}
+            >
+              <Password
+                name="password"
+                id="password"
+                placeholder="Type your password"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                invalid={Boolean(formik.errors.password)}
+                autoComplete="current-password"
+                toggleMask
+                feedback={false}
+                pt={{
+                  input: {
+                    className: 'w-full'
+                  }
+                }}
+                disabled={formik.isSubmitting}
+                aria-disabled={formik.isSubmitting}
+              />
+            </InputContainer>
+
             {formik.values.password === '' ? (
               <ul className="list-disc pl-4 text-base font-normal leading-5 text-surface-700">
                 <li>Minimum of 8 characters.</li>

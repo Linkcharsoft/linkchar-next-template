@@ -7,8 +7,7 @@ import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
-import InputError from '@/components/InputError'
-import Label from '@/components/Label'
+import InputContainer from '@/components/InputContainer'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import useUserStore from '@/stores/userStore'
@@ -188,98 +187,102 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'valid') && (
           <>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">New password</Label>
-              <Password
-                name="password"
-                id="password"
-                onChange={formik.handleChange}
-                value={formik.values.password}
-                invalid={Boolean(formik.errors.password)}
-                placeholder="Type your new password"
-                autoComplete="current-password"
-                toggleMask
-                feedback={false}
-                pt={{
-                  input: {
-                    className: 'w-full'
-                  }
-                }}
-                disabled={formik.isSubmitting}
-                aria-disabled={formik.isSubmitting}
-              />
-              <InputError message={formik.errors.password} />
-            </div>
+            <div className="flex flex-col gap-4">
+              <InputContainer
+                label='New password'
+                htmlFor='password'
+                error={formik.errors.password}
+              >
+                <Password
+                  name="password"
+                  id="password"
+                  onChange={formik.handleChange}
+                  value={formik.values.password}
+                  invalid={Boolean(formik.errors.password)}
+                  placeholder="Type your new password"
+                  autoComplete="current-password"
+                  toggleMask
+                  feedback={false}
+                  pt={{
+                    input: {
+                      className: 'w-full'
+                    }
+                  }}
+                  disabled={formik.isSubmitting}
+                  aria-disabled={formik.isSubmitting}
+                />
+              </InputContainer>
 
-            {formik.values.password === '' ? (
-              <ul className="list-disc pl-4 text-base font-normal leading-5 text-surface-700">
-                <li>Minimum of 8 characters.</li>
-                <li>Cannot be entirely numeric.</li>
-                <li>Must contain at least one uppercase letter.</li>
-              </ul>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2">
-                  <i
-                    className={
-                      PASSWORD_VALIDATION.length ? 'pi pi-check' : 'pi pi-times'
-                    }
-                    style={{
-                      color: PASSWORD_VALIDATION.length ? '#188A42' : '#D9342B'
-                    }}
-                  />
-                  <span
-                    className={
-                      PASSWORD_VALIDATION.length
-                        ? 'text-green-700'
-                        : 'text-red-600'
-                    }
-                  >
-                    Minimum of 8 characters.
-                  </span>
+              {formik.values.password === '' ? (
+                <ul className="list-disc pl-4 text-base font-normal leading-5 text-surface-700">
+                  <li>Minimum of 8 characters.</li>
+                  <li>Cannot be entirely numeric.</li>
+                  <li>Must contain at least one uppercase letter.</li>
+                </ul>
+              ) : (
+                <div>
+                  <div className="flex items-center gap-2">
+                    <i
+                      className={
+                        PASSWORD_VALIDATION.length ? 'pi pi-check' : 'pi pi-times'
+                      }
+                      style={{
+                        color: PASSWORD_VALIDATION.length ? '#188A42' : '#D9342B'
+                      }}
+                    />
+                    <span
+                      className={
+                        PASSWORD_VALIDATION.length
+                          ? 'text-green-700'
+                          : 'text-red-600'
+                      }
+                    >
+                      Minimum of 8 characters.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <i
+                      className={
+                        PASSWORD_VALIDATION.uppercase ? 'pi pi-check' : 'pi pi-times'
+                      }
+                      style={{
+                        color: PASSWORD_VALIDATION.uppercase ? '#188A42' : '#D9342B'
+                      }}
+                    />
+                    <span
+                      className={
+                        PASSWORD_VALIDATION.uppercase
+                          ? 'text-green-700'
+                          : 'text-red-600'
+                      }
+                    >
+                      Must contain at least one uppercase letter.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <i
+                      className={
+                        PASSWORD_VALIDATION.notNumeric
+                          ? 'pi pi-check'
+                          : 'pi pi-times'
+                      }
+                      style={{
+                        color: PASSWORD_VALIDATION.notNumeric ? '#188A42' : '#D9342B'
+                      }}
+                    />
+                    <span
+                      className={
+                        PASSWORD_VALIDATION.notNumeric
+                          ? 'text-green-700'
+                          : 'text-red-600'
+                      }
+                    >
+                      Cannot be entirely numeric.
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <i
-                    className={
-                      PASSWORD_VALIDATION.uppercase ? 'pi pi-check' : 'pi pi-times'
-                    }
-                    style={{
-                      color: PASSWORD_VALIDATION.uppercase ? '#188A42' : '#D9342B'
-                    }}
-                  />
-                  <span
-                    className={
-                      PASSWORD_VALIDATION.uppercase
-                        ? 'text-green-700'
-                        : 'text-red-600'
-                    }
-                  >
-                    Must contain at least one uppercase letter.
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <i
-                    className={
-                      PASSWORD_VALIDATION.notNumeric
-                        ? 'pi pi-check'
-                        : 'pi pi-times'
-                    }
-                    style={{
-                      color: PASSWORD_VALIDATION.notNumeric ? '#188A42' : '#D9342B'
-                    }}
-                  />
-                  <span
-                    className={
-                      PASSWORD_VALIDATION.notNumeric
-                        ? 'text-green-700'
-                        : 'text-red-600'
-                    }
-                  >
-                    Cannot be entirely numeric.
-                  </span>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="w-full flex justify-center">
               <CustomButton

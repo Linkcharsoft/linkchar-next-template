@@ -10,6 +10,7 @@ import { passwordRecoveryChange } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
+import InputContainer from '@/components/InputContainer'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
@@ -158,25 +159,25 @@ const PasswordRecoveryPage = () => {
           )}
         </AnimatePresence>
 
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <InputText
-              name="email"
-              id="email"
-              inputMode="email"
-              placeholder="Type your email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              invalid={Boolean(formik.errors.email)}
-              autoComplete="email"
-              keyfilter='email'
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
-            />
-            <InputError message={formik.errors.email} />
-          </div>
-        </div>
+        <InputContainer
+          label='Email'
+          htmlFor='email'
+          error={formik.errors.email}
+        >
+          <InputText
+            name="email"
+            id="email"
+            inputMode="email"
+            placeholder="Type your email"
+            value={formik.values.email}
+            onChange={formik.handleChange}
+            invalid={Boolean(formik.errors.email)}
+            autoComplete="email"
+            keyfilter='email'
+            disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
+          />
+        </InputContainer>
 
         <div className="flex w-full justify-center">
           <CustomButton
