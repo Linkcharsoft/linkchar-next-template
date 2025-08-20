@@ -10,6 +10,7 @@ import { signup } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import validatePassword from '@/utils/validatePassword'
@@ -42,8 +43,8 @@ const SignupPage = () => {
       password: ''
     },
     validationSchema: Yup.object({
-      email: Yup.string().email('Enter a valid email address').required('Required'),
-      password: Yup.string().required('Required')
+      email: Yup.string().email(AUTH_INPUT_ERRORS['invalid-email']).required(AUTH_INPUT_ERRORS.required),
+      password: Yup.string().required(AUTH_INPUT_ERRORS.required)
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {

@@ -8,6 +8,7 @@ import * as Yup from 'yup'
 import CustomButton from '@/components/CustomButton'
 import InputError from '@/components/InputError'
 import Label from '@/components/Label'
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import useUserStore from '@/stores/userStore'
@@ -43,8 +44,8 @@ const LoginPage = () => {
       password: ''
     },
     validationSchema: Yup.object({
-      email: Yup.string().email('Enter a valid email address').required('Required'),
-      password: Yup.string().required('Required')
+      email: Yup.string().email(AUTH_INPUT_ERRORS['invalid-email']).required(AUTH_INPUT_ERRORS.required),
+      password: Yup.string().required(AUTH_INPUT_ERRORS.required)
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
@@ -91,13 +92,16 @@ const LoginPage = () => {
             }, 500)
           } else {
             setErrors({
-              email: 'Invalid email or password',
-              password: 'Invalid email or password'
+              email: AUTH_INPUT_ERRORS['invalid-email-or-password'],
+              password: AUTH_INPUT_ERRORS['invalid-email-or-password']
             })
           }
         }
       } catch (error) {
-        setErrors({ password: 'Something went wrong, please try again' })
+        setErrors({
+          email: AUTH_INPUT_ERRORS.general,
+          password: AUTH_INPUT_ERRORS.general
+        })
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
