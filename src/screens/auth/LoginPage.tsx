@@ -86,6 +86,9 @@ const LoginPage = () => {
               detail: 'Redirecting to email validation page...',
               life: 5000
             })
+            setErrors({
+              email: AUTH_INPUT_ERRORS['verify-email'],
+            })
             setTimeout(() => {
               router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
             }, 500)
