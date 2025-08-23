@@ -162,26 +162,20 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <div className="flex w-full justify-center items-center">
-              <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
-            </div>
+            <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
 
-            <div className="flex flex-col gap-4">
-              <p className="text-center text-base font-normal text-surface-800">
-                The link you&apos;ve used is no longer available
-              </p>
+            <p className="text-center text-base font-normal text-surface-800">
+              The link you&apos;ve used is no longer available
+            </p>
 
-              <div className="flex w-full justify-center">
-                <CustomButton
-                  className="w-full"
-                  href='/change-password'
-                  replace
-                  type='button'
-                >
-                  Please try again
-                </CustomButton>
-              </div>
-            </div>
+            <CustomButton
+              className="w-full"
+              href='/change-password'
+              replace
+              type='button'
+            >
+              Please try again
+            </CustomButton>
           </>
         )}
 
@@ -284,16 +278,14 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
               )}
             </div>
 
-            <div className="w-full flex justify-center">
-              <CustomButton
-                className="w-full"
-                type='submit'
-                disabled={formik.isSubmitting}
-                aria-disabled={formik.isSubmitting}
-              >
-                Change password
-              </CustomButton>
-            </div>
+            <CustomButton
+              className="w-full"
+              type='submit'
+              disabled={formik.isSubmitting}
+              aria-disabled={formik.isSubmitting}
+            >
+              Change password
+            </CustomButton>
           </>
         )}
       </form>

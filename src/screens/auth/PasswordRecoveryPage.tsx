@@ -11,8 +11,6 @@ import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
-import InputError from '@/components/InputError'
-import Label from '@/components/Label'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
@@ -123,7 +121,7 @@ const PasswordRecoveryPage = () => {
           Enter your email
         </h1>
 
-        <div className="mx-auto flex w-full flex-col gap-4">
+        <div className="w-full flex flex-col gap-4">
           <p className="text-center text-base font-normal leading-5 text-surface-800">
             We will send you an email with a link to change your password
           </p>
@@ -179,7 +177,7 @@ const PasswordRecoveryPage = () => {
           />
         </InputContainer>
 
-        <div className="flex w-full justify-center">
+        <div className="w-full flex flex-col gap-4">
           <CustomButton
             className="w-full"
             type="submit"
@@ -188,20 +186,18 @@ const PasswordRecoveryPage = () => {
           >
             {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
           </CustomButton>
-        </div>
 
-        <CustomButton
-          variant='transparent'
-          href='/login'
-          className='w-full'
-          type='button'
-          disabled={formik.isSubmitting}
-          aria-disabled={formik.isSubmitting}
-        >
-          <span className='text-surface-800'>
+          <CustomButton
+            variant='transparent'
+            href='/login'
+            className='w-full'
+            type='button'
+            disabled={formik.isSubmitting}
+            aria-disabled={formik.isSubmitting}
+          >
             Go back to <span className="font-bold">Log in</span>
-          </span>
-        </CustomButton>
+          </CustomButton>
+        </div>
       </form>
     </main>
   )

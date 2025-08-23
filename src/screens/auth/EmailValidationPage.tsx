@@ -101,11 +101,9 @@ const EmailValidationPage = ({ email }: Props) => {
           Validate your email!
         </h1>
 
-        <div className="mx-auto flex flex-col gap-4">
-          <p className="text-center text-base font-normal text-surface-800">
-            We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{DECODED_EMAIL}</span> with a link to validate your account
-          </p>
-        </div>
+        <p className="text-center text-base font-normal text-surface-800">
+          We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{DECODED_EMAIL}</span> with a link to validate your account
+        </p>
 
 
         <div className="flex justify-center items-center gap-8">
@@ -126,28 +124,29 @@ const EmailValidationPage = ({ email }: Props) => {
           </Link>
         </div>
 
-        <div className="flex w-full justify-center">
+        <div className="w-full flex flex-col gap-6">
           <CustomButton
-            href={'/login'}
+            href='/login'
             replace
             className="w-full"
           >
             Go to log in
           </CustomButton>
-        </div>
 
-        <div className="w-full flex flex-col justify-center items-center gap-2">
-          <p className="font-normal text-surface-800">
-            Didn&apos;t receive anything?
-          </p>
+          <div className="w-full flex flex-col justify-center items-center gap-2">
+            <p className="font-normal text-surface-800">
+              Didn&apos;t receive anything?
+            </p>
 
-          <button
-            onClick={() => handleResendEmail(DECODED_EMAIL)}
-            className='font-semibold hover:opacity-75'
-            disabled={timer > 0}
-          >
-            {timer > 0 ? `Wait ${timer}s to resend` : 'Click here to send again'}
-          </button>
+            <CustomButton
+              variant='transparent'
+              className='w-full !font-semibold'
+              onClick={() => handleResendEmail(DECODED_EMAIL)}
+              disabled={timer > 0}
+            >
+              {timer > 0 ? `Wait ${timer}s to resend` : 'Click here to send again'}
+            </CustomButton>
+          </div>
         </div>
       </section>
     </main>

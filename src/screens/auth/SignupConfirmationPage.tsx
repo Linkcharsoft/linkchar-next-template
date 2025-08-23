@@ -12,8 +12,6 @@ import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
-import InputError from '@/components/InputError'
-import Label from '@/components/Label'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
@@ -163,11 +161,9 @@ const SignupConfirmationPage = ({ token } : Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <div className="flex w-full justify-center items-center">
-              <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
-            </div>
+            <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               <p className="text-center text-base font-normal text-surface-800">
                 The link you&apos;ve used is no longer available, please try entering your email again.
               </p>
@@ -218,43 +214,35 @@ const SignupConfirmationPage = ({ token } : Props) => {
                   aria-disabled={formik.isSubmitting}
                 />
               </InputContainer>
-
-              <div className="flex w-full justify-center">
-                <CustomButton
-                  className="w-full"
-                  type="submit"
-                  disabled={formik.isSubmitting || timer > 0}
-                  aria-disabled={formik.isSubmitting || timer > 0}
-                >
-                  {timer > 0 ? `Wait ${timer}s to resend` : 'Resend email'}
-                </CustomButton>
-              </div>
             </div>
+
+            <CustomButton
+              className="w-full"
+              type="submit"
+              disabled={formik.isSubmitting || timer > 0}
+              aria-disabled={formik.isSubmitting || timer > 0}
+            >
+              {timer > 0 ? `Wait ${timer}s to resend` : 'Resend email'}
+            </CustomButton>
           </>
         )}
 
         {(tokenStatus === 'valid') && (
           <>
-            <div className="flex w-full justify-center items-center">
-              <i className="pi pi-check-circle text-green-600 text-[48px] text-center"/>
-            </div>
+            <i className="pi pi-check-circle text-green-600 text-[48px] text-center"/>
 
-            <div className="mx-auto flex w-[243px] flex-col gap-4">
-              <p className="text-center text-base font-normal text-surface-800">
-                Account successfully verified!
-              </p>
-            </div>
+            <p className="text-center text-base font-normal text-surface-800">
+              Account successfully verified!
+            </p>
 
-            <div className="flex w-full justify-center">
-              <CustomButton
-                className="w-full"
-                href='/login'
-                replace
-                type='button'
-              >
-                Go to log in
-              </CustomButton>
-            </div>
+            <CustomButton
+              className="w-full"
+              href='/login'
+              replace
+              type='button'
+            >
+              Go to log in
+            </CustomButton>
           </>
         )}
       </form>

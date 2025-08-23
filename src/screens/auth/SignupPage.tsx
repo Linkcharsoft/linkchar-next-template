@@ -10,7 +10,6 @@ import { signup } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import InputError from '@/components/InputError'
-import Label from '@/components/Label'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
@@ -134,8 +133,8 @@ const SignupPage = () => {
 
           <div className="flex flex-col gap-4">
             <InputContainer
-              label='Email'
-              htmlFor='email'
+              label='Password'
+              htmlFor='password'
               error={formik.errors.email}
             >
               <Password
@@ -200,7 +199,7 @@ const SignupPage = () => {
           <InputError message={generalError ?? ''} />
         </div>
 
-        <div className="flex w-full justify-center">
+        <div className="w-full flex flex-col gap-4">
           <CustomButton
             className="w-full"
             onClick={e => {
@@ -213,9 +212,7 @@ const SignupPage = () => {
           >
             Sign up
           </CustomButton>
-        </div>
 
-        <div className="flex w-full justify-center">
           <CustomButton
             variant='transparent'
             href='/login'
@@ -224,9 +221,7 @@ const SignupPage = () => {
             disabled={formik.isSubmitting}
             aria-disabled={formik.isSubmitting}
           >
-            <span className="text-surface-800">
-              Already have an account? <span className="font-bold">Log in</span>
-            </span>
+            Already have an account?{' '}<span className="font-bold">Log in</span>
           </CustomButton>
         </div>
       </form>

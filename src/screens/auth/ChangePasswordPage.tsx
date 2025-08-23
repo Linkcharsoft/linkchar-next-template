@@ -145,7 +145,7 @@ const ChangePasswordPage = () => {
           )}
         </AnimatePresence>
 
-        <div className="flex w-full justify-center">
+        <div className="w-full flex flex-col gap-4">
           <CustomButton
             className="w-full"
             type='submit'
@@ -154,20 +154,18 @@ const ChangePasswordPage = () => {
           >
             {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
           </CustomButton>
-        </div>
 
-        <CustomButton
-          variant='transparent'
-          onClick={() => router.back()}
-          className='w-full'
-          type='button'
-          disabled={buttonDisabled}
-          aria-disabled={buttonDisabled}
-        >
-          <span className='text-surface-800 font-bold'>
+          <CustomButton
+            variant='transparent'
+            onClick={() => router.back()}
+            className='w-full'
+            type='button'
+            disabled={buttonDisabled}
+            aria-disabled={buttonDisabled}
+          >
             Go back
-          </span>
-        </CustomButton>
+          </CustomButton>
+        </div>
       </form>
     </main>
   )

@@ -175,7 +175,7 @@ const LoginPage = () => {
           </InputContainer>
         </div>
 
-        <div className="flex w-full justify-center">
+        <div className="w-full flex flex-col gap-4">
           <CustomButton
             variant='transparent'
             href='/password-recovery'
@@ -188,9 +188,7 @@ const LoginPage = () => {
               Forgot password? <span className="font-bold">Recover it</span>
             </span>
           </CustomButton>
-        </div>
 
-        <div className="flex w-full justify-center">
           <CustomButton
             className="w-full"
             type="submit"
@@ -199,9 +197,7 @@ const LoginPage = () => {
           >
             Log in
           </CustomButton>
-        </div>
 
-        <div className="flex w-full justify-center">
           <CustomButton
             variant='transparent'
             href='/signup'
@@ -210,9 +206,7 @@ const LoginPage = () => {
             disabled={formik.isSubmitting}
             aria-disabled={formik.isSubmitting}
           >
-            <span className='text-surface-800'>
-              Don&apos;t have an account? <span className="font-bold">Sign up</span>
-            </span>
+            Don&apos;t have an account? <span className="font-bold">Sign up</span>
           </CustomButton>
         </div>
       </form>
