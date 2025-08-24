@@ -1,10 +1,9 @@
-import { AuthType, UserType } from '@/types/auth'
 import { customFetch } from './customFetch'
-import type { User } from '@/types/users'
+import type { AuthType, UserType } from '@/types/auth'
 
 // User
 export const getMyUser = async (token: string) => {
-  return await customFetch<User>({
+  return await customFetch<UserType>({
     path: '/auth/user/',
     method: 'GET',
     token
