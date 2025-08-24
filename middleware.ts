@@ -1,5 +1,5 @@
 import { NextResponse , NextRequest } from 'next/server'
-import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants'
+import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
 
 const AUTH_PATHS = new Set([
@@ -14,7 +14,7 @@ const AUTHENTICATED_HOME_PATH: string = '/'
 
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i
 
-export async function middleware(req: NextRequest) {
+export async function middleware (req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // ⛔ Ignore static resources
