@@ -1,3 +1,11 @@
+export const AUTH_COOKIE_NAME = 'linkchar-session'
+
+export const AUTH_TOKEN_ERRORS = {
+  'not-found': 'No session found',
+  'invalid': 'Invalid session',
+  'general': 'Failed to get session'
+}
+
 export const AUTH_INPUT_ERRORS = {
   general: 'Something went wrong, please try again',
   required: 'Required',

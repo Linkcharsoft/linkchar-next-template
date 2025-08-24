@@ -1,6 +1,6 @@
 'use server'
 import { cookies } from 'next/headers'
-import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants'
+import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
 import { UserType } from '@/types/auth'
 import { decryptSession } from './crypto'
 

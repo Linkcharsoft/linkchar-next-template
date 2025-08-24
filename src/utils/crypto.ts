@@ -1,6 +1,6 @@
 import 'server-only'
 import { cookies } from 'next/headers'
-import { AUTH_COOKIE_NAME } from '@/constants'
+import { AUTH_COOKIE_NAME } from '@/constants/auth'
 import { SessionType } from '@/types/auth'
 
 const AUTH_SECRET = process.env.AUTH_SECRET
