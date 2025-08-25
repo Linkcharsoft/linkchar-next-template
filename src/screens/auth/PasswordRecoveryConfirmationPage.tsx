@@ -8,6 +8,7 @@ import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import validatePassword from '@/utils/validatePassword'
@@ -82,7 +83,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
     },
     validateOnChange: false,
     validationSchema: Yup.object({
-      password: Yup.string().required('Required')
+      password: Yup.string().required(AUTH_INPUT_ERRORS.required)
     }),
     validate: values => {
       const errors: Partial<typeof values> = {}

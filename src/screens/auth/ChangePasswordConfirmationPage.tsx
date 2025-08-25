@@ -77,7 +77,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     },
     validateOnChange: false,
     validationSchema: Yup.object({
-      password: Yup.string().required('Required')
+      password: Yup.string().required(AUTH_INPUT_ERRORS.required)
     }),
     validate: values => {
       const errors: Partial<typeof values> = {}
