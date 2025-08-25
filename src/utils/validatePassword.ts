@@ -1,4 +1,6 @@
-const VALIDATION_TYPES = ['length', 'notNumeric', 'uppercase'] as const
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
+
+const VALIDATION_TYPES = ['length', 'numeric', 'uppercase'] as const
 
 type ValidationType = typeof VALIDATION_TYPES[number]
 
@@ -17,19 +19,19 @@ const validatePassword = (password: string): ValidatePasswordType => {
     types: VALIDATION_TYPES,
     validations: {
       length: {
-        label: 'Minimum of 8 characters',
+        label: AUTH_INPUT_ERRORS['password-length'],
         value: password.length >= 8
       },
-      notNumeric: {
-        label: 'Cannot be entirely numeric',
+      numeric: {
+        label: AUTH_INPUT_ERRORS['password-numeric'],
         value: !/^\d+$/.test(password)
       },
       // alphaNumeric: {
-      //   label: ';Must contain at least one number', // We might need this in future
+      //   label: AUTH_INPUT_ERRORS["password-alphanumeric"], // We might need this in future
       //   value: !/\d/.test(password)
       // },
       uppercase: {
-        label: 'Must contain at least one uppercase letter',
+        label: AUTH_INPUT_ERRORS['password-uppercase'],
         value: /[A-Z]/.test(password)
       }
     }
