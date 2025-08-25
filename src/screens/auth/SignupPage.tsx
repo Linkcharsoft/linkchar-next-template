@@ -3,13 +3,14 @@ import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { signup } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import InputError from '@/components/InputError'
+import PasswordValidation from '@/components/PasswordValidation'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
@@ -47,6 +48,23 @@ const SignupPage = () => {
       password: Yup.string().required(AUTH_INPUT_ERRORS.required)
     }),
     validateOnChange: false,
+    validate: values => {
+      const errors: Partial<typeof values> = {}
+
+      if (values.password) {
+        const passwordValidations = validatePassword(values.password)
+
+        for (const type of passwordValidations.types) {
+          if (!passwordValidations.validations[type].value) {
+            console.log(passwordValidations.validations[type])
+            errors.password = passwordValidations.validations[type].label
+            break
+          }
+        }
+      }
+
+      return errors
+    },
     onSubmit: async (values, { setErrors }) => {
       showLoadingModal({
         title: 'Signing up',
@@ -92,7 +110,6 @@ const SignupPage = () => {
   })
 
 
-  const PASSWORD_VALIDATION = useMemo(() => validatePassword(formik.values.password), [formik.values.password])
 
 
   if (!isClient) return null
@@ -135,7 +152,7 @@ const SignupPage = () => {
             <InputContainer
               label='Password'
               htmlFor='password'
-              error={formik.errors.email}
+              error={formik.errors.password}
             >
               <Password
                 name="password"
@@ -157,43 +174,7 @@ const SignupPage = () => {
               />
             </InputContainer>
 
-            {formik.values.password === '' ? (
-              <ul className="list-disc pl-4 text-base font-normal leading-5 text-surface-700">
-                <li>Minimum of 8 characters.</li>
-                <li>Cannot be entirely numeric.</li>
-                <li>Must contain at least one uppercase letter.</li>
-              </ul>
-            ) : (
-              <div>
-                <div className="flex items-center gap-2">
-                  <i
-                    className={PASSWORD_VALIDATION.length ? 'pi pi-check' : 'pi pi-times'}
-                    style={{ color: PASSWORD_VALIDATION.length ? '#188A42' : '#D9342B' }}
-                  />
-                  <span className={PASSWORD_VALIDATION.length ? 'text-green-700' : 'text-red-600'}>
-                    Minimum of 8 characters.
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <i
-                    className={PASSWORD_VALIDATION.uppercase ? 'pi pi-check' : 'pi pi-times'}
-                    style={{ color: PASSWORD_VALIDATION.uppercase ? '#188A42' : '#D9342B' }}
-                  />
-                  <span className={PASSWORD_VALIDATION.uppercase ? 'text-green-700' : 'text-red-600'}>
-                    Must contain at least one uppercase letter.
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <i
-                    className={PASSWORD_VALIDATION.notNumeric ? 'pi pi-check' : 'pi pi-times'}
-                    style={{ color: PASSWORD_VALIDATION.notNumeric ? '#188A42' : '#D9342B' }}
-                  />
-                  <span className={PASSWORD_VALIDATION.notNumeric ? 'text-green-700' : 'text-red-600'}>
-                    Cannot be entirely numeric.
-                  </span>
-                </div>
-              </div>
-            )}
+            <PasswordValidation password={formik.values.password}/>
           </div>
 
           <InputError message={generalError ?? ''} />

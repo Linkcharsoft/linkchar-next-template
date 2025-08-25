@@ -2,12 +2,14 @@
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { Password } from 'primereact/password'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
+import PasswordValidation from '@/components/PasswordValidation'
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import useUserStore from '@/stores/userStore'
@@ -83,13 +85,15 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       const errors: Partial<typeof values> = {}
 
       if (values.password) {
-        if (values.password.length < 8) errors.password = 'Minimum 8 characters'
-        // else if (!RegExp(/\d/).test(values.password))
-        //   errors.password = 'At least one number required' WE MIGHT NEED THIS IN FUTURE
-        else if (!RegExp(/[A-Z]/).test(values.password))
-          errors.password = 'At least one uppercase letter required'
-        else if (RegExp(/^\d+$/).test(values.password))
-          errors.password = 'Cannot be entirely numeric'
+        const passwordValidations = validatePassword(values.password)
+
+        for (const type of passwordValidations.types) {
+          if (!passwordValidations.validations[type].value) {
+            console.log(passwordValidations.validations[type])
+            errors.password = passwordValidations.validations[type].label
+            break
+          }
+        }
       }
 
       return errors
@@ -138,9 +142,6 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       }
     }
   })
-
-
-  const PASSWORD_VALIDATION = useMemo(() => validatePassword(formik.values.password), [formik.values.password])
 
 
   if (!isClient || tokenStatus === 'loading') return null
@@ -207,75 +208,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
                 />
               </InputContainer>
 
-              {formik.values.password === '' ? (
-                <ul className="list-disc pl-4 text-base font-normal leading-5 text-surface-700">
-                  <li>Minimum of 8 characters.</li>
-                  <li>Cannot be entirely numeric.</li>
-                  <li>Must contain at least one uppercase letter.</li>
-                </ul>
-              ) : (
-                <div>
-                  <div className="flex items-center gap-2">
-                    <i
-                      className={
-                        PASSWORD_VALIDATION.length ? 'pi pi-check' : 'pi pi-times'
-                      }
-                      style={{
-                        color: PASSWORD_VALIDATION.length ? '#188A42' : '#D9342B'
-                      }}
-                    />
-                    <span
-                      className={
-                        PASSWORD_VALIDATION.length
-                          ? 'text-green-700'
-                          : 'text-red-600'
-                      }
-                    >
-                      Minimum of 8 characters.
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <i
-                      className={
-                        PASSWORD_VALIDATION.uppercase ? 'pi pi-check' : 'pi pi-times'
-                      }
-                      style={{
-                        color: PASSWORD_VALIDATION.uppercase ? '#188A42' : '#D9342B'
-                      }}
-                    />
-                    <span
-                      className={
-                        PASSWORD_VALIDATION.uppercase
-                          ? 'text-green-700'
-                          : 'text-red-600'
-                      }
-                    >
-                      Must contain at least one uppercase letter.
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <i
-                      className={
-                        PASSWORD_VALIDATION.notNumeric
-                          ? 'pi pi-check'
-                          : 'pi pi-times'
-                      }
-                      style={{
-                        color: PASSWORD_VALIDATION.notNumeric ? '#188A42' : '#D9342B'
-                      }}
-                    />
-                    <span
-                      className={
-                        PASSWORD_VALIDATION.notNumeric
-                          ? 'text-green-700'
-                          : 'text-red-600'
-                      }
-                    >
-                      Cannot be entirely numeric.
-                    </span>
-                  </div>
-                </div>
-              )}
+              <PasswordValidation password={formik.values.password}/>
             </div>
 
             <CustomButton
