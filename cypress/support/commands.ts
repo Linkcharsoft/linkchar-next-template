@@ -37,15 +37,20 @@ Cypress.Commands.add('createInbox', () => {
 
       // 📌 Case 2: Inbox already exists in user.json
       return cy.mailslurp({ apiKey: Cypress.env('MAILSLURP_API_KEY') })
-        .then((ms: MailSlurp) => Cypress.Promise.try(() => ms.getInbox(data.id))
+        .then((ms: MailSlurp) => Cypress.Promise
+          .try(() => ms.getInbox(data.id))
           .catch((err: any) => {
             cy.log(err)
-            if (err.errorClass === 'Error404NotFound') {
+            const errors = ['Error403Forbidden', 'Error404NotFound']
+
+            if (errors.includes(err.errorClass)) {
               return createAndSaveInbox()
             }
           })
         )
         .then(inbox => {
+
+          cy.log(inbox)
           // Check inbox expiration
           if (inbox.expiresAt && new Date(inbox.expiresAt) < new Date()) {
             // Expired -> create a new one
