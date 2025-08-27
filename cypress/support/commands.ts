@@ -1,46 +1,59 @@
 /// <reference types="cypress" />
-// ***********************************************
-// This example commands.ts shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
 
 declare namespace Cypress {
   interface Chainable {
-    login(email: string, password: string): Chainable<any>
+    /**
+     * Create or retrieve a MailSlurp inbox.
+     * - If it doesn't exist, it creates a new one and saves it in `cypress/fixtures/user.json`.
+     * - If it exists but is expired, it generates a new one.
+     * - If it exists and is still valid, it reuses it.
+     * @example
+     * cy.createInbox()
+     */
+    createInbox(): Chainable<{ id: string; email: string }>
   }
 }
 
-Cypress.Commands.add('login', (email, password) => {
-  const loginUrl = `${Cypress.env('BASE_URL') || 'http://localhost:3000'}/login`
-  const emailInputSelector = '#email'
-  const passwordInputSelector = '.p-password-input'
+Cypress.Commands.add('createInbox', () => {
+  const FILE_NAME = 'cypress/fixtures/user.json'
 
-  cy.visit(loginUrl).then(() => {
-    cy.wait(2000)
-    cy.get(emailInputSelector).should('be.visible').clear().type(email)
-    cy.get(passwordInputSelector).should('be.visible').clear().type(password)
-    cy.get('button').contains('Log in').should('be.visible').click()
-  })
+  return cy.readFile(FILE_NAME, { log: false, failOnNonExisting: false })
+    .then((data) => {
+      cy.log('Data: ',data)
+
+      const createAndSaveInbox = () => {
+        return cy.mailslurp({ apiKey: Cypress.env('MAILSLURP_API_KEY') })
+          .then((ms: MailSlurp) => ms.createInbox())
+          .then(inbox => {
+            const userData = { id: inbox.id!, email: inbox.emailAddress! }
+
+            cy.writeFile(FILE_NAME, userData, { log: false })
+            return cy.wrap(userData, { log: false })
+          })
+      }
+
+      // 📌 Case 1: No inbox found -> create a new one
+      if (!data || !data.id || !data.email) return createAndSaveInbox()
+
+      // 📌 Case 2: Inbox already exists in user.json
+      return cy.mailslurp({ apiKey: Cypress.env('MAILSLURP_API_KEY') })
+        .then((ms: MailSlurp) => Cypress.Promise.try(() => ms.getInbox(data.id))
+          .catch((err: any) => {
+            cy.log(err)
+            if (err.errorClass === 'Error404NotFound') {
+              return createAndSaveInbox()
+            }
+          })
+        )
+        .then(inbox => {
+          // Check inbox expiration
+          if (inbox.expiresAt && new Date(inbox.expiresAt) < new Date()) {
+            // Expired -> create a new one
+            return createAndSaveInbox()
+          }
+
+          // Inbox still valid -> return the existing one
+          return cy.wrap(data, { log: false })
+        })
+    })
 })
