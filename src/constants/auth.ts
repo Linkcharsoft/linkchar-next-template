@@ -15,5 +15,6 @@ export const AUTH_INPUT_ERRORS = {
   'password-length': 'Minimum of 8 characters',
   'password-numeric': 'Cannot be entirely numeric',
   'password-alphanumeric': 'Must contain at least one number',
-  'password-uppercase': 'Must contain at least one uppercase letter'
+  'password-uppercase': 'Must contain at least one uppercase letter',
+  'password-symbol': 'Must contain at least one symbol'
 }
