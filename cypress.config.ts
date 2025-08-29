@@ -23,7 +23,7 @@ export default defineConfig({
     experimentalWebKitSupport: true, // Enable WebKit support
     env: {
       API_URL: process.env.API_URL,
-      AUTH_MAILSLURP_API_KEY: process.env.AUTH_MAILSLURP_API_KEY,
+      MAILSLURP_API_KEY: process.env.MAILSLURP_API_KEY,
       AUTH_DEFAULT_USER: process.env.AUTH_DEFAULT_USER,
       AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD
     },
