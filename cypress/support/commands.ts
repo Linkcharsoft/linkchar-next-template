@@ -22,7 +22,7 @@ Cypress.Commands.add('createInbox', () => {
       cy.log('Data: ',data)
 
       const createAndSaveInbox = () => {
-        return cy.mailslurp({ apiKey: Cypress.env('MAILSLURP_API_KEY') })
+        return cy.mailslurp({ apiKey: Cypress.env('AUTH_MAILSLURP_API_KEY') })
           .then((ms: MailSlurp) => ms.createInbox())
           .then(inbox => {
             const userData = { id: inbox.id!, email: inbox.emailAddress! }
@@ -36,7 +36,7 @@ Cypress.Commands.add('createInbox', () => {
       if (!data || !data.id || !data.email) return createAndSaveInbox()
 
       // 📌 Case 2: Inbox already exists in user.json
-      return cy.mailslurp({ apiKey: Cypress.env('MAILSLURP_API_KEY') })
+      return cy.mailslurp({ apiKey: Cypress.env('AUTH_MAILSLURP_API_KEY') })
         .then((ms: MailSlurp) => Cypress.Promise
           .try(() => ms.getInbox(data.id))
           .catch((err: any) => {
