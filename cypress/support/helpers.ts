@@ -1,10 +1,7 @@
 type CheckInputErrorProps = {
   alias: string
-  message: string
-  error?: true
-} | {
-  alias: string
-  error: false
+  message?: string
+  error?: boolean
 }
 
 export const checkInputError = ({
@@ -18,7 +15,11 @@ export const checkInputError = ({
       .parents('.InputContainer')
       .find('.InputError')
       .should('be.visible')
-      .and('have.text', message)
+      .then(($el) => {
+        if (message) {
+          expect($el.text()).to.eq(message)
+        }
+      })
   } else {
     cy.get(alias)
       .should('not.have.class', 'p-invalid')
