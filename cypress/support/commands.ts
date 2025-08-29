@@ -1,7 +1,14 @@
 /// <reference types="cypress" />
+import { MailSlurp, InboxDto } from 'mailslurp-client'
 
-declare namespace Cypress {
-  interface Chainable {
+type InboxType = {
+  id: string
+  emailAddress: string
+}
+
+declare global {
+  namespace Cypress {
+    interface Chainable {
     /**
      * Create or retrieve a MailSlurp inbox.
      * - If it doesn't exist, it creates a new one and saves it in `cypress/fixtures/user.json`.
@@ -10,25 +17,28 @@ declare namespace Cypress {
      * @example
      * cy.createInbox()
      */
-    createInbox(): Chainable<{ id: string; email: string }>
+      createInbox(): Chainable<InboxType>
+    }
   }
 }
 
 Cypress.Commands.add('createInbox', () => {
   const FILE_NAME = 'cypress/fixtures/user.json'
 
-  return cy.readFile(FILE_NAME, { log: false, failOnNonExisting: false })
+  cy.readFile(FILE_NAME, { log: false })
     .then((data) => {
-      cy.log('Data: ',data)
+      let newUser = false
 
       const createAndSaveInbox = () => {
-        return cy.mailslurp({ apiKey: Cypress.env('AUTH_MAILSLURP_API_KEY') })
+        return cy.mailslurp()
           .then((ms: MailSlurp) => ms.createInbox())
           .then(inbox => {
-            const userData = { id: inbox.id!, email: inbox.emailAddress! }
+            newUser = true
+
+            const userData = { id: inbox.id!, emailAddress: inbox.emailAddress! }
 
             cy.writeFile(FILE_NAME, userData, { log: false })
-            return cy.wrap(userData, { log: false })
+            return cy.wrap<InboxType>(userData, { log: false })
           })
       }
 
@@ -36,11 +46,10 @@ Cypress.Commands.add('createInbox', () => {
       if (!data || !data.id || !data.email) return createAndSaveInbox()
 
       // 📌 Case 2: Inbox already exists in user.json
-      return cy.mailslurp({ apiKey: Cypress.env('AUTH_MAILSLURP_API_KEY') })
+      return cy.mailslurp()
         .then((ms: MailSlurp) => Cypress.Promise
           .try(() => ms.getInbox(data.id))
           .catch((err: any) => {
-            cy.log(err)
             const errors = ['Error403Forbidden', 'Error404NotFound']
 
             if (errors.includes(err.errorClass)) {
@@ -48,17 +57,24 @@ Cypress.Commands.add('createInbox', () => {
             }
           })
         )
-        .then(inbox => {
-
-          cy.log(inbox)
+        .then((inbox: InboxDto) => {
+          if(!newUser) {
           // Check inbox expiration
-          if (inbox.expiresAt && new Date(inbox.expiresAt) < new Date()) {
+            if (!inbox.expiresAt || (inbox.expiresAt && new Date(inbox.expiresAt) < new Date())) {
             // Expired -> create a new one
-            return createAndSaveInbox()
+              return createAndSaveInbox()
+            }
           }
 
           // Inbox still valid -> return the existing one
-          return cy.wrap(data, { log: false })
+          return cy.wrap<InboxType>({
+            id: inbox.id,
+            emailAddress: inbox.emailAddress
+          }, { log: false })
         })
     })
 })
+
+
+
+
