@@ -7,9 +7,9 @@ describe('SignUp', () => {
 
     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
-    cy.createInbox().then(({ id, email }) => {
+    cy.createInbox().then(({ id, emailAddress }) => {
       cy.wrap(id).as('inbox-id')
-      cy.wrap(email).as('email-address')
+      cy.wrap(emailAddress).as('email-address')
     })
   })
 
