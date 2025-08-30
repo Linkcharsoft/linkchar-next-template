@@ -26,7 +26,7 @@ Cypress.Commands.add('createInbox', () => {
   const FILE_NAME = 'cypress/fixtures/user.json'
 
   cy.readFile(FILE_NAME, { log: false })
-    .then((data) => {
+    .then((data: InboxType) => {
       let newUser = false
 
       const createAndSaveInbox = () => {
@@ -43,7 +43,7 @@ Cypress.Commands.add('createInbox', () => {
       }
 
       // 📌 Case 1: No inbox found -> create a new one
-      if (!data || !data.id || !data.email) return createAndSaveInbox()
+      if (!data || !data.id || !data.emailAddress) return createAndSaveInbox()
 
       // 📌 Case 2: Inbox already exists in user.json
       return cy.mailslurp()
