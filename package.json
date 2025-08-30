@@ -13,9 +13,9 @@
     "test:run": "cypress run"
   },
   "dependencies": {
-    "@sentry/nextjs": "10.7.0",
+    "@sentry/nextjs": "10.8.0",
     "classnames": "2.5.1",
-    "dayjs": "1.11.15",
+    "dayjs": "1.11.18",
     "formik": "2.4.6",
     "framer-motion": "12.23.12",
     "jose": "6.1.0",
