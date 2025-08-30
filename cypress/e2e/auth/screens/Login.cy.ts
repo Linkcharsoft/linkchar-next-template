@@ -55,4 +55,24 @@ describe('Login', () => {
       message: AUTH_INPUT_ERRORS['invalid-email-or-password']
     })
   })
+
+  it('Navigation 🔗: Sign Up', () => {
+    const baseURL = Cypress.config().baseUrl
+
+    cy.get('a[href="/signup"]').click()
+
+    cy.url().should('equal', `${baseURL}/signup`)
+
+    cy.visit('/login')
+  })
+
+  it('Navigation 🔗: Password Recovery', () => {
+    const baseURL = Cypress.config().baseUrl
+
+    cy.get('a[href="/password-recovery"]').click()
+
+    cy.url().should('equal', `${baseURL}/password-recovery`)
+
+    cy.visit('/login')
+  })
 })

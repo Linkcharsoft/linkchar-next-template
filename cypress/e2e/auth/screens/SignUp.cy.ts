@@ -101,6 +101,16 @@ describe('SignUp', () => {
     })
   })
 
+  it('Navigation 🔗: Sign Up', () => {
+    const baseURL = Cypress.config().baseUrl
+
+    cy.get('a[href="/login"]').click()
+
+    cy.url().should('equal', `${baseURL}/login`)
+
+    cy.visit('/signup')
+  })
+
   // it('Sign up ✅', () => {
 
   // })
