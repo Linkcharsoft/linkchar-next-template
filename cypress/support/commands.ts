@@ -1,5 +1,6 @@
 /// <reference types="cypress" />
 import { MailSlurp, InboxDto } from 'mailslurp-client'
+import { AUTH_COOKIE_NAME } from '../../src/constants/auth'
 
 type InboxType = {
   id: string
@@ -23,6 +24,13 @@ declare global {
        * Login with default user
        * @example
        * cy.login()
+       */
+      login()
+
+      /**
+       * Logout user
+       * @example
+       * cy.logout()
        */
       login()
     }
@@ -95,6 +103,17 @@ Cypress.Commands.add('login', () => {
   cy.url().should('equal', `${baseURL}/`)
 
   cy.getCookie(AUTH_COOKIE_NAME).should('exist')
+})
+
+Cypress.Commands.add('logout', () => {
+  cy.clearCookie(AUTH_COOKIE_NAME)
+
+  cy.visit('/login')
+
+  const baseURL = Cypress.config().baseUrl
+  cy.url().should('equal', `${baseURL}/login`)
+
+  cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 })
 
 
