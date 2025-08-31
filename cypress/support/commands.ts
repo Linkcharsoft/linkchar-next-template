@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 import { MailSlurp, InboxDto, Email } from 'mailslurp-client'
-import { AUTH_BASE_EMAIL_ADDRESS, AUTH_COOKIE_NAME } from '../../src/constants/auth'
+import { AUTH_BACKEND_EMAIL_ADDRESS, AUTH_COOKIE_NAME } from '../../src/constants/auth'
 
 type InboxType = {
   id: string
@@ -134,7 +134,7 @@ Cypress.Commands.add('getLastestEmail', (inboxId: string) => {
       { timeout: 90000 }
     )
   }).then((email) => {
-    expect(email.sender?.emailAddress).to.equal(AUTH_BASE_EMAIL_ADDRESS)
+    expect(email.sender?.emailAddress).to.equal(AUTH_BACKEND_EMAIL_ADDRESS)
 
     return cy.wrap(email, { log: false })
   })
