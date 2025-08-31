@@ -1,5 +1,7 @@
 export const AUTH_COOKIE_NAME = 'linkchar-session'
 
+export const AUTH_BASE_EMAIL_ADDRESS = 'base@linkchar.com'
+
 export const AUTH_TOKEN_ERRORS = {
   'not-found': 'No session found',
   'invalid': 'Invalid session',
