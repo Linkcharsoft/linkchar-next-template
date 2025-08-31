@@ -9,15 +9,22 @@ type InboxType = {
 declare global {
   namespace Cypress {
     interface Chainable {
-    /**
-     * Create or retrieve a MailSlurp inbox.
-     * - If it doesn't exist, it creates a new one and saves it in `cypress/fixtures/user.json`.
-     * - If it exists but is expired, it generates a new one.
-     * - If it exists and is still valid, it reuses it.
-     * @example
-     * cy.createInbox()
-     */
+      /**
+       * Create or retrieve a MailSlurp inbox.
+       * - If it doesn't exist, it creates a new one and saves it in `cypress/fixtures/user.json`.
+       * - If it exists but is expired, it generates a new one.
+       * - If it exists and is still valid, it reuses it.
+       * @example
+       * cy.createInbox()
+       */
       createInbox(): Chainable<InboxType>
+
+      /**
+       * Login with default user
+       * @example
+       * cy.login()
+       */
+      login()
     }
   }
 }
@@ -73,6 +80,21 @@ Cypress.Commands.add('createInbox', () => {
           }, { log: false })
         })
     })
+})
+
+Cypress.Commands.add('login', () => {
+  cy.visit('/login')
+
+  cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+
+  cy.get('input[name="email"]').type(Cypress.env('AUTH_DEFAULT_USER'))
+  cy.get('input[name="password"]').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+  cy.get('button[type="submit"]').click()
+
+  const baseURL = Cypress.config().baseUrl
+  cy.url().should('equal', `${baseURL}/`)
+
+  cy.getCookie(AUTH_COOKIE_NAME).should('exist')
 })
 
 
