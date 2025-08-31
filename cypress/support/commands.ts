@@ -32,7 +32,7 @@ declare global {
        * @example
        * cy.logout()
        */
-      login()
+      logout()
     }
   }
 }
