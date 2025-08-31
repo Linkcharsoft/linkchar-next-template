@@ -110,8 +110,4 @@ describe('SignUp', () => {
 
     cy.visit('/signup')
   })
-
-  // it('Sign up ✅', () => {
-
-  // })
 })
