@@ -91,6 +91,8 @@ Cypress.Commands.add('createInbox', () => {
 })
 
 Cypress.Commands.add('login', () => {
+  cy.intercept('POST', '/api/auth/login').as('login')
+
   cy.visit('/login')
 
   cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
@@ -98,6 +100,8 @@ Cypress.Commands.add('login', () => {
   cy.get('input[name="email"]').type(Cypress.env('AUTH_DEFAULT_USER'))
   cy.get('input[name="password"]').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
   cy.get('button[type="submit"]').click()
+
+  cy.wait('@login').its('response.statusCode').should('eq', 200)
 
   const baseURL = Cypress.config().baseUrl
   cy.url().should('equal', `${baseURL}/`)
