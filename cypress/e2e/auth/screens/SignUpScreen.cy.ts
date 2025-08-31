@@ -1,7 +1,7 @@
 import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '../../../../src/constants/auth'
 import { checkInputError } from '../../../support/helpers'
 
-describe('SignUp', () => {
+describe('Sign Up: Screen', () => {
   before(() => {
     cy.visit('/signup')
 

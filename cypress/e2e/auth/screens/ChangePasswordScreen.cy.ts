@@ -1,4 +1,4 @@
-describe('Change Password', () => {
+describe('Change Password: Screen', () => {
   before(() => {
     cy.login()
 
