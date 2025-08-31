@@ -1,7 +1,7 @@
-import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '../../../../src/constants/auth'
-import { checkInputError } from '../../../support/helpers'
+import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
+import { checkInputError } from '../../support/helpers'
 
-describe('Login: Screen', () => {
+describe('Login: Errors ❌', () => {
   before(() => {
     cy.visit('/login')
 
@@ -14,7 +14,7 @@ describe('Login: Screen', () => {
     cy.get('button[type="submit"]').as('submit-button')
   })
 
-  it('Errors ❌: Required', () => {
+  it('Required', () => {
     cy.get('@submit-button').click()
 
     checkInputError({
@@ -27,7 +27,7 @@ describe('Login: Screen', () => {
     })
   })
 
-  it('Errors ❌: Invalid email', () => {
+  it('Invalid email', () => {
     cy.get('@email-input').type('test')
 
     cy.get('@submit-button').click()
@@ -38,7 +38,7 @@ describe('Login: Screen', () => {
     })
   })
 
-  it('Errors ❌: Invalid credentials', () => {
+  it('Invalid credentials', () => {
     const randomCredential = Math.random().toString(36).slice(2, 12)
 
     cy.get('@email-input').type(`${randomCredential}@mail.com`)
@@ -55,10 +55,24 @@ describe('Login: Screen', () => {
       message: AUTH_INPUT_ERRORS['invalid-email-or-password']
     })
   })
+})
 
-  it('Navigation 🔗: Sign Up', () => {
-    const baseURL = Cypress.config().baseUrl
+describe('Login: Navigation 🔗', () => {
+  const baseURL = Cypress.config().baseUrl
 
+  before(() => {
+    cy.visit('/login')
+
+    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+  })
+
+  beforeEach(() => {
+    cy.get('input[name="email"]').as('email-input').clear()
+    cy.get('input[name="password"]').as('password-input').clear()
+    cy.get('button[type="submit"]').as('submit-button')
+  })
+
+  it('Sign Up', () => {
     cy.get('a[href="/signup"]').click()
 
     cy.url().should('equal', `${baseURL}/signup`)
@@ -66,13 +80,12 @@ describe('Login: Screen', () => {
     cy.visit('/login')
   })
 
-  it('Navigation 🔗: Password Recovery', () => {
-    const baseURL = Cypress.config().baseUrl
-
+  it('Password Recovery', () => {
     cy.get('a[href="/password-recovery"]').click()
 
     cy.url().should('equal', `${baseURL}/password-recovery`)
 
     cy.visit('/login')
   })
+
 })

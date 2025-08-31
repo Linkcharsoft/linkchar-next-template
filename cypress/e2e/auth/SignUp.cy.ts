@@ -1,7 +1,7 @@
-import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '../../../../src/constants/auth'
-import { checkInputError } from '../../../support/helpers'
+import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
+import { checkInputError } from '../../support/helpers'
 
-describe('Sign Up: Screen', () => {
+describe('Sign Up: Errors ❌', () => {
   before(() => {
     cy.visit('/signup')
 
@@ -19,7 +19,7 @@ describe('Sign Up: Screen', () => {
     cy.get('button[type="submit"]').as('submit-button')
   })
 
-  it('Errors ❌: Required', () => {
+  it('Required', () => {
     cy.get('@submit-button').click()
     checkInputError({
       alias: '@email-input',
@@ -31,7 +31,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Errors ❌: Invalid email', () => {
+  it('Invalid email', () => {
     cy.get('@email-input').type('test')
 
     cy.get('@submit-button').click()
@@ -41,7 +41,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Errors ❌: Password length', () => {
+  it('Password length', () => {
     cy.get('@password-input').type('1234567')
 
     cy.get('@submit-button').click()
@@ -51,7 +51,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Errors ❌: Password only numeric', () => {
+  it('Password only numeric', () => {
     cy.get('@password-input').type('12345678')
 
     cy.get('@submit-button').click()
@@ -61,7 +61,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Errors ❌: Password one uppercase', () => {
+  it('Password one uppercase', () => {
     cy.get('@password-input').type('1234567a')
 
     cy.get('@submit-button').click()
@@ -71,7 +71,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Errors ❌: Password one symbol', () => {
+  it('Password one symbol', () => {
     cy.get('@password-input').type('1234567A')
 
     cy.get('@submit-button').click()
@@ -81,7 +81,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Success ✅: Password', () => {
+  it('Good password ', () => {
     cy.get('@password-input').type('1234567A@')
 
     cy.get('@submit-button').click()
@@ -91,7 +91,7 @@ describe('Sign Up: Screen', () => {
     })
   })
 
-  it('Errors ❌: Existing user', () => {
+  it('Existing user', () => {
     cy.get('@email-input').type(Cypress.env('AUTH_DEFAULT_USER'))
     cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
 
@@ -100,8 +100,27 @@ describe('Sign Up: Screen', () => {
       alias: '@email-input'
     })
   })
+})
 
-  it('Navigation 🔗: Sign Up', () => {
+describe('Sign Up: Navigation 🔗', () => {
+  before(() => {
+    cy.visit('/signup')
+
+    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+
+    cy.createInbox().then(({ id, emailAddress }) => {
+      cy.wrap(id).as('inbox-id')
+      cy.wrap(emailAddress).as('email-address')
+    })
+  })
+
+  beforeEach(() => {
+    cy.get('input[name="email"]').as('email-input').clear()
+    cy.get('input[name="password"]').as('password-input').clear()
+    cy.get('button[type="submit"]').as('submit-button')
+  })
+
+  it('Login', () => {
     const baseURL = Cypress.config().baseUrl
 
     cy.get('a[href="/login"]').click()
@@ -111,3 +130,41 @@ describe('Sign Up: Screen', () => {
     cy.visit('/signup')
   })
 })
+
+// describe('Sign Up: Success ✅', () => {
+//   before(() => {
+//     cy.visit('/signup')
+
+//     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+
+//     cy.createInbox().then(({ id, emailAddress }) => {
+//       cy.wrap(id).as('inbox-id')
+//       cy.wrap(emailAddress).as('email-address')
+//     })
+//   })
+
+//   beforeEach(() => {
+//     cy.get('input[name="email"]').as('email-input').clear()
+//     cy.get('input[name="password"]').as('password-input').clear()
+//     cy.get('button[type="submit"]').as('submit-button')
+//   })
+
+//   it('Email and Password', () => {
+//     cy.intercept('POST', '/api/auth/registration').as('registration')
+
+//     cy.get('@email-address').then((email) => {
+//       cy.get('@email-input').type(email as string)
+//     })
+//     cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+
+//     cy.get('@submit-button').click()
+
+//     cy.wait('@registration').its('response.statusCode').should('eq', 201)
+
+//     // Check email validation
+//   })
+
+//   it('Resend email validation', () => {
+
+//   })
+// })
