@@ -68,10 +68,12 @@ Cypress.Commands.add('logout', () => {
 
   cy.visit('/login')
 
-  const baseURL = Cypress.config().baseUrl
-  cy.url().should('equal', `${baseURL}/login`)
+  cy.url().reload()
 
   cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+
+  const baseURL = Cypress.config().baseUrl
+  cy.url().should('equal', `${baseURL}/login`)
 })
 
 Cypress.Commands.add('createInbox', () => {
