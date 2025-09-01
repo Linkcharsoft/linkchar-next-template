@@ -128,7 +128,7 @@ const ChangePasswordPage = () => {
             >
               <Link
                 className='hover:opacity-75'
-                href='https://outlook.com'
+                href='https://outlook.com/'
                 target='_blank'
               >
                 <OutlookIcon/>

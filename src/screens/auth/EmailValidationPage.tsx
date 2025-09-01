@@ -109,7 +109,7 @@ const EmailValidationPage = ({ email }: Props) => {
         <div className="flex justify-center items-center gap-8">
           <Link
             className='hover:opacity-75'
-            href='https://outlook.com'
+            href='https://outlook.com/'
             target='_blank'
           >
             <OutlookIcon/>
