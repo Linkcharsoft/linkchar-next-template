@@ -92,5 +92,7 @@ describe('Login: Navigation 🔗', () => {
 describe('Login: Success ✅', () => {
   it('Default user login', () => {
     cy.login()
+
+    cy.logout()
   })
 })
