@@ -1,6 +1,8 @@
 import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
 import { checkInputError } from '../../support/helpers'
 
+const baseURL = Cypress.config().baseUrl
+
 describe('Login: Errors ❌', () => {
   before(() => {
     cy.visit('/login')
@@ -58,8 +60,6 @@ describe('Login: Errors ❌', () => {
 })
 
 describe('Login: Navigation 🔗', () => {
-  const baseURL = Cypress.config().baseUrl
-
   before(() => {
     cy.visit('/login')
 
@@ -87,5 +87,10 @@ describe('Login: Navigation 🔗', () => {
 
     cy.visit('/login')
   })
+})
 
+describe('Login: Success ✅', () => {
+  it('Default user login', () => {
+    cy.login()
+  })
 })
