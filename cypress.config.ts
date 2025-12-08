@@ -19,7 +19,6 @@ export default defineConfig({
     testIsolation: false,
     // chromeWebSecurity: false,
     waitForAnimations: true,
-    experimentalStudio: true, // Enable Cypress Studio for recording
     experimentalWebKitSupport: true, // Enable WebKit support
     env: {
       API_URL: process.env.API_URL,
