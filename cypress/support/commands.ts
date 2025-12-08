@@ -130,16 +130,15 @@ Cypress.Commands.add('createInbox', () => {
 })
 
 Cypress.Commands.add('getLastestEmail', (inboxId: string) => {
-  return cy.mailslurp().then((ms: MailSlurp): Email => {
-    return cy.wrap(
-      ms.waitForLatestEmail(inboxId, 60000, false),
-      { timeout: 90000 }
-    )
-  }).then((email) => {
-    expect(email.sender?.emailAddress).to.equal(AUTH_BACKEND_EMAIL_ADDRESS)
+  return cy.then(() => {
+    return cy
+      .mailslurp()
+      .then((ms: MailSlurp) => ms.waitForLatestEmail(inboxId, 60000, false))
+      .then((email: Email) => {
+        expect(email.sender?.emailAddress).to.equal(AUTH_BACKEND_EMAIL_ADDRESS)
 
-    return cy.wrap(email, { log: false })
+        return email
+      })
   })
 })
-
 
