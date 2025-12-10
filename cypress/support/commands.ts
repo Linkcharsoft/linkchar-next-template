@@ -26,7 +26,7 @@ declare global {
 
       /**
        * Create or retrieve a MailSlurp inbox.
-       * - If it doesn't exist, it creates a new one and saves it in `cypress/fixtures/user.json`.
+       * - If it doesn't exist, it creates a new one and saves it in `cypress/fixtures/auth-user.json`.
        * - If it exists but is expired, it generates a new one.
        * - If it exists and is still valid, it reuses it.
        * @example
@@ -77,7 +77,7 @@ Cypress.Commands.add('logout', () => {
 })
 
 Cypress.Commands.add('createInbox', () => {
-  const FILE_NAME = 'cypress/fixtures/user.json'
+  const FILE_NAME = 'cypress/fixtures/auth-user.json'
 
   cy.readFile(FILE_NAME, { log: false })
     .then((data: InboxType) => {
@@ -99,7 +99,7 @@ Cypress.Commands.add('createInbox', () => {
       // 📌 Case 1: No inbox found -> create a new one
       if (!data || !data.id || !data.emailAddress) return createAndSaveInbox()
 
-      // 📌 Case 2: Inbox already exists in user.json
+      // 📌 Case 2: Inbox already exists in auth-user.json
       return cy.mailslurp()
         .then((ms: MailSlurp) => Cypress.Promise
           .try(() => ms.getInbox(data.id))
