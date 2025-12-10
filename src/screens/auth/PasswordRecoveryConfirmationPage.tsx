@@ -39,7 +39,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
   usePressKey('Enter', () => {
     if (tokenStatus === 'valid') {
-      formik.handleSubmit()
+      recoveryConfirmationFormik.handleSubmit()
     }
   })
 
@@ -78,7 +78,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   }, [token, email])
 
 
-  const formik = useFormik<RecoveryPasswordConfirmationFormikType>({
+  const recoveryConfirmationFormik = useFormik<RecoveryPasswordConfirmationFormikType>({
     initialValues: {
       password: ''
     },
@@ -159,7 +159,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         onSubmit={e => {
           e.preventDefault()
           if(tokenStatus === 'valid') {
-            formik.handleSubmit()
+            recoveryConfirmationFormik.handleSubmit()
           }
         }}
       >
@@ -194,15 +194,15 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
               <InputContainer
                 label='New password'
                 htmlFor='password'
-                error={formik.errors.password}
+                error={recoveryConfirmationFormik.errors.password}
               >
                 <Password
                   name="password"
                   id="password"
                   placeholder="Type your new password"
-                  value={formik.values.password}
-                  onChange={formik.handleChange}
-                  invalid={Boolean(formik.errors.password)}
+                  value={recoveryConfirmationFormik.values.password}
+                  onChange={recoveryConfirmationFormik.handleChange}
+                  invalid={Boolean(recoveryConfirmationFormik.errors.password)}
                   autoComplete="current-password"
                   toggleMask
                   feedback={false}
@@ -211,19 +211,19 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
                       className: 'w-full'
                     }
                   }}
-                  disabled={formik.isSubmitting}
-                  aria-disabled={formik.isSubmitting}
+                  disabled={recoveryConfirmationFormik.isSubmitting}
+                  aria-disabled={recoveryConfirmationFormik.isSubmitting}
                 />
               </InputContainer>
 
-              <PasswordValidation password={formik.values.password}/>
+              <PasswordValidation password={recoveryConfirmationFormik.values.password}/>
             </div>
 
             <CustomButton
               className="w-full"
               type='submit'
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
+              disabled={recoveryConfirmationFormik.isSubmitting}
+              aria-disabled={recoveryConfirmationFormik.isSubmitting}
             >
               Change password
             </CustomButton>

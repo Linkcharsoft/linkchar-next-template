@@ -34,11 +34,11 @@ const SignupPage = () => {
 
 
   usePressKey('Enter', () => {
-    formik.handleSubmit()
+    signupFormik.handleSubmit()
   })
 
 
-  const formik = useFormik<SignupFormikType>({
+  const signupFormik = useFormik<SignupFormikType>({
     initialValues: {
       email: '',
       password: ''
@@ -110,8 +110,6 @@ const SignupPage = () => {
   })
 
 
-
-
   if (!isClient) return null
 
   return (
@@ -120,7 +118,7 @@ const SignupPage = () => {
         className="AuthLayout__Section"
         onSubmit={e => {
           e.preventDefault()
-          formik.handleSubmit()
+          signupFormik.handleSubmit()
         }}
       >
         <h1 className="AuthLayout__Title">
@@ -131,20 +129,20 @@ const SignupPage = () => {
           <InputContainer
             label='Email'
             htmlFor='email'
-            error={formik.errors.email}
+            error={signupFormik.errors.email}
           >
             <InputText
               name="email"
               id="email"
               inputMode="email"
               placeholder="Type your email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              invalid={Boolean(formik.errors.email)}
+              value={signupFormik.values.email}
+              onChange={signupFormik.handleChange}
+              invalid={Boolean(signupFormik.errors.email)}
               autoComplete="email"
               keyfilter='email'
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
+              disabled={signupFormik.isSubmitting}
+              aria-disabled={signupFormik.isSubmitting}
             />
           </InputContainer>
 
@@ -152,15 +150,15 @@ const SignupPage = () => {
             <InputContainer
               label='Password'
               htmlFor='password'
-              error={formik.errors.password}
+              error={signupFormik.errors.password}
             >
               <Password
                 name="password"
                 id="password"
                 placeholder="Type your password"
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                invalid={Boolean(formik.errors.password)}
+                value={signupFormik.values.password}
+                onChange={signupFormik.handleChange}
+                invalid={Boolean(signupFormik.errors.password)}
                 autoComplete="current-password"
                 toggleMask
                 feedback={false}
@@ -169,12 +167,12 @@ const SignupPage = () => {
                     className: 'w-full'
                   }
                 }}
-                disabled={formik.isSubmitting}
-                aria-disabled={formik.isSubmitting}
+                disabled={signupFormik.isSubmitting}
+                aria-disabled={signupFormik.isSubmitting}
               />
             </InputContainer>
 
-            <PasswordValidation password={formik.values.password}/>
+            <PasswordValidation password={signupFormik.values.password}/>
           </div>
 
           <InputError message={generalError ?? ''} />
@@ -185,11 +183,11 @@ const SignupPage = () => {
             className="w-full"
             onClick={e => {
               e.preventDefault()
-              formik.handleSubmit()
+              signupFormik.handleSubmit()
             }}
             type="submit"
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={signupFormik.isSubmitting}
+            aria-disabled={signupFormik.isSubmitting}
           >
             Sign up
           </CustomButton>
@@ -199,8 +197,8 @@ const SignupPage = () => {
             href='/login'
             className='w-full'
             type='button'
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={signupFormik.isSubmitting}
+            aria-disabled={signupFormik.isSubmitting}
           >
             Already have an account?{' '}<span className="font-bold">Log in</span>
           </CustomButton>

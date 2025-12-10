@@ -40,7 +40,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
   usePressKey('Enter', () => {
     if (tokenStatus === 'valid') {
-      formik.handleSubmit()
+      changeConfirmationFormik.handleSubmit()
     }
   })
 
@@ -73,7 +73,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   }, [user])
 
 
-  const formik = useFormik<ChangePasswordConfirmationFormikType>({
+  const changeConfirmationFormik = useFormik<ChangePasswordConfirmationFormikType>({
     initialValues: {
       password: ''
     },
@@ -153,7 +153,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         onSubmit={e => {
           e.preventDefault()
           if(tokenStatus === 'valid') {
-            formik.handleSubmit()
+            changeConfirmationFormik.handleSubmit()
           }
         }}
       >
@@ -186,14 +186,14 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
               <InputContainer
                 label='New password'
                 htmlFor='password'
-                error={formik.errors.password}
+                error={changeConfirmationFormik.errors.password}
               >
                 <Password
                   name="password"
                   id="password"
-                  onChange={formik.handleChange}
-                  value={formik.values.password}
-                  invalid={Boolean(formik.errors.password)}
+                  onChange={changeConfirmationFormik.handleChange}
+                  value={changeConfirmationFormik.values.password}
+                  invalid={Boolean(changeConfirmationFormik.errors.password)}
                   placeholder="Type your new password"
                   autoComplete="current-password"
                   toggleMask
@@ -203,19 +203,19 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
                       className: 'w-full'
                     }
                   }}
-                  disabled={formik.isSubmitting}
-                  aria-disabled={formik.isSubmitting}
+                  disabled={changeConfirmationFormik.isSubmitting}
+                  aria-disabled={changeConfirmationFormik.isSubmitting}
                 />
               </InputContainer>
 
-              <PasswordValidation password={formik.values.password}/>
+              <PasswordValidation password={changeConfirmationFormik.values.password}/>
             </div>
 
             <CustomButton
               className="w-full"
               type='submit'
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
+              disabled={changeConfirmationFormik.isSubmitting}
+              aria-disabled={changeConfirmationFormik.isSubmitting}
             >
               Change password
             </CustomButton>

@@ -33,7 +33,7 @@ const PasswordRecoveryPage = () => {
 
 
   usePressKey('Enter', () => {
-    formik.handleSubmit()
+    passwordRecoveryFormik.handleSubmit()
   })
 
 
@@ -55,7 +55,7 @@ const PasswordRecoveryPage = () => {
   }, [setTimer, timer > 0])
 
 
-  const formik = useFormik<PasswordRecoveryFormikType>({
+  const passwordRecoveryFormik = useFormik<PasswordRecoveryFormikType>({
     initialValues: {
       email: ''
     },
@@ -114,7 +114,7 @@ const PasswordRecoveryPage = () => {
         className="AuthLayout__Section"
         onSubmit={(e) => {
           e.preventDefault()
-          formik.handleSubmit()
+          passwordRecoveryFormik.handleSubmit()
         }}
       >
         <h1 className="AuthLayout__Title">
@@ -160,20 +160,20 @@ const PasswordRecoveryPage = () => {
         <InputContainer
           label='Email'
           htmlFor='email'
-          error={formik.errors.email}
+          error={passwordRecoveryFormik.errors.email}
         >
           <InputText
             name="email"
             id="email"
             inputMode="email"
             placeholder="Type your email"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            invalid={Boolean(formik.errors.email)}
+            value={passwordRecoveryFormik.values.email}
+            onChange={passwordRecoveryFormik.handleChange}
+            invalid={Boolean(passwordRecoveryFormik.errors.email)}
             autoComplete="email"
             keyfilter='email'
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={passwordRecoveryFormik.isSubmitting}
+            aria-disabled={passwordRecoveryFormik.isSubmitting}
           />
         </InputContainer>
 
@@ -181,8 +181,8 @@ const PasswordRecoveryPage = () => {
           <CustomButton
             className="w-full"
             type="submit"
-            disabled={formik.isSubmitting || timer > 0}
-            aria-disabled={formik.isSubmitting || timer > 0}
+            disabled={passwordRecoveryFormik.isSubmitting || timer > 0}
+            aria-disabled={passwordRecoveryFormik.isSubmitting || timer > 0}
           >
             {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
           </CustomButton>
@@ -192,8 +192,8 @@ const PasswordRecoveryPage = () => {
             href='/login'
             className='w-full'
             type='button'
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={passwordRecoveryFormik.isSubmitting}
+            aria-disabled={passwordRecoveryFormik.isSubmitting}
           >
             Go back to <span className="font-bold">Log in</span>
           </CustomButton>

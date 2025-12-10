@@ -42,7 +42,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
 
   usePressKey('Enter', () => {
     if(tokenStatus === 'invalid') {
-      formik.handleSubmit()
+      invalidTokenFormik.handleSubmit()
     }
   })
 
@@ -94,7 +94,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
   }, [setTimer, timer > 0])
 
 
-  const formik = useFormik<SignupConfirmationFormikType>({
+  const invalidTokenFormik = useFormik<SignupConfirmationFormikType>({
     initialValues: {
       email: ''
     },
@@ -151,7 +151,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
         onSubmit={e => {
           e.preventDefault()
           if(tokenStatus === 'invalid') {
-            formik.handleSubmit()
+            invalidTokenFormik.handleSubmit()
           }
         }}
       >
@@ -198,20 +198,20 @@ const SignupConfirmationPage = ({ token } : Props) => {
               <InputContainer
                 label='Email'
                 htmlFor='email'
-                error={formik.errors.email}
+                error={invalidTokenFormik.errors.email}
               >
                 <InputText
                   name="email"
                   id="email"
                   inputMode="email"
                   placeholder="Type your email"
-                  value={formik.values.email}
-                  onChange={formik.handleChange}
-                  invalid={Boolean(formik.errors.email)}
+                  value={invalidTokenFormik.values.email}
+                  onChange={invalidTokenFormik.handleChange}
+                  invalid={Boolean(invalidTokenFormik.errors.email)}
                   autoComplete="email"
                   keyfilter='email'
-                  disabled={formik.isSubmitting}
-                  aria-disabled={formik.isSubmitting}
+                  disabled={invalidTokenFormik.isSubmitting}
+                  aria-disabled={invalidTokenFormik.isSubmitting}
                 />
               </InputContainer>
             </div>
@@ -219,8 +219,8 @@ const SignupConfirmationPage = ({ token } : Props) => {
             <CustomButton
               className="w-full"
               type="submit"
-              disabled={formik.isSubmitting || timer > 0}
-              aria-disabled={formik.isSubmitting || timer > 0}
+              disabled={invalidTokenFormik.isSubmitting || timer > 0}
+              aria-disabled={invalidTokenFormik.isSubmitting || timer > 0}
             >
               {timer > 0 ? `Wait ${timer}s to resend` : 'Resend email'}
             </CustomButton>

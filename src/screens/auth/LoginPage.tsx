@@ -33,11 +33,11 @@ const LoginPage = () => {
 
 
   usePressKey('Enter', () => {
-    formik.handleSubmit()
+    loginFormik.handleSubmit()
   })
 
 
-  const formik = useFormik<LoginFormikType>({
+  const loginFormik = useFormik<LoginFormikType>({
     initialValues: {
       email: '',
       password: ''
@@ -121,7 +121,7 @@ const LoginPage = () => {
         className="AuthLayout__Section"
         onSubmit={e => {
           e.preventDefault()
-          formik.handleSubmit()
+          loginFormik.handleSubmit()
         }}
       >
         <h1 className="AuthLayout__Title">
@@ -132,35 +132,35 @@ const LoginPage = () => {
           <InputContainer
             label='Email'
             htmlFor='email'
-            error={formik.errors.email}
+            error={loginFormik.errors.email}
           >
             <InputText
               name="email"
               id="email"
               inputMode="email"
               placeholder="Type your email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              invalid={Boolean(formik.errors.email)}
+              value={loginFormik.values.email}
+              onChange={loginFormik.handleChange}
+              invalid={Boolean(loginFormik.errors.email)}
               autoComplete="email"
               // keyfilter='email'
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
+              disabled={loginFormik.isSubmitting}
+              aria-disabled={loginFormik.isSubmitting}
             />
           </InputContainer>
 
           <InputContainer
             label='Password'
             htmlFor='password'
-            error={formik.errors.password}
+            error={loginFormik.errors.password}
           >
             <Password
               name="password"
               id="password"
               placeholder="Type your password"
-              onChange={formik.handleChange}
-              value={formik.values.password}
-              invalid={Boolean(formik.errors.password)}
+              onChange={loginFormik.handleChange}
+              value={loginFormik.values.password}
+              invalid={Boolean(loginFormik.errors.password)}
               autoComplete="current-password"
               toggleMask
               feedback={false}
@@ -169,8 +169,8 @@ const LoginPage = () => {
                   className: 'w-full'
                 }
               }}
-              disabled={formik.isSubmitting}
-              aria-disabled={formik.isSubmitting}
+              disabled={loginFormik.isSubmitting}
+              aria-disabled={loginFormik.isSubmitting}
             />
           </InputContainer>
         </div>
@@ -181,8 +181,8 @@ const LoginPage = () => {
             href='/password-recovery'
             className='w-full'
             type='button'
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={loginFormik.isSubmitting}
+            aria-disabled={loginFormik.isSubmitting}
           >
             <span className='text-surface-800'>
               Forgot password? <span className="font-bold">Recover it</span>
@@ -192,8 +192,8 @@ const LoginPage = () => {
           <CustomButton
             className="w-full"
             type="submit"
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={loginFormik.isSubmitting}
+            aria-disabled={loginFormik.isSubmitting}
           >
             Log in
           </CustomButton>
@@ -203,8 +203,8 @@ const LoginPage = () => {
             href='/signup'
             className='w-full'
             type='button'
-            disabled={formik.isSubmitting}
-            aria-disabled={formik.isSubmitting}
+            disabled={loginFormik.isSubmitting}
+            aria-disabled={loginFormik.isSubmitting}
           >
             Don&apos;t have an account? <span className="font-bold">Sign up</span>
           </CustomButton>
