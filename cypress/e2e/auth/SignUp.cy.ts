@@ -104,7 +104,7 @@ describe('Sign Up: Success ✅', () => {
     })
   })
 
-  it('Immediate resend email', () => {
+  it('Resend email', () => {
     cy.intercept('POST', '/api/auth/registration/resend-email/').as('resend-email')
 
     cy.url().should('include', `${baseURL}/signup/email-validation`)

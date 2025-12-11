@@ -29,8 +29,8 @@ const LoginPage = () => {
     setToastMessage
   } = useAppStore()
   const { setUser } = useUserStore()
-  const router = useRouter()
   const isClient = useIsClient()
+  const router = useRouter()
 
 
   usePressKey('Enter', () => {

@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import PasswordRecoveryConfirmationPage from '@/screens/auth/PasswordRecoveryConfirmationPage'
 
 export const metadata: Metadata = {
@@ -14,6 +15,9 @@ interface Props {
 
 const Page = async ({ params }: Props) => {
   const { token, email } = await params
+
+  if(!token || !email) redirect('/login')
+
   return (
     <PasswordRecoveryConfirmationPage token={token} email={email} />
   )

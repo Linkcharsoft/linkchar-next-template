@@ -28,8 +28,8 @@ const SignupPage = () => {
     showLoadingModal,
     hideLoadingModal
   } = useAppStore()
-  const router = useRouter()
   const isClient = useIsClient()
+  const router = useRouter()
   const [generalError, setGeneralError] = useState<string | null>(null)
 
 

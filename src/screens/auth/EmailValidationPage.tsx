@@ -1,7 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
@@ -21,15 +20,9 @@ const EmailValidationPage = ({ email }: Props) => {
     hideLoadingModal,
     setToastMessage
   } = useAppStore()
-  const router = useRouter()
   const isClient = useIsClient()
   const [timer, setTimer] = useSessionStorage<number>('validation-resend-timer', 5)
 
-
-  // Redirect if there isnt email
-  useEffect(() => {
-    if (!email) router.replace('/login')
-  }, [email])
 
   // Timer logic
   useEffect(() => {
@@ -143,6 +136,7 @@ const EmailValidationPage = ({ email }: Props) => {
               className='w-full !font-semibold'
               onClick={() => handleResendEmail(DECODED_EMAIL)}
               disabled={timer > 0}
+              type='submit'
             >
               {timer > 0 ? `Wait ${timer}s to resend` : 'Click here to send again'}
             </CustomButton>

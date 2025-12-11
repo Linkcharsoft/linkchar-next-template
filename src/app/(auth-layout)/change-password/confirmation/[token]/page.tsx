@@ -12,6 +12,8 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { token } = await params
 
+  if(!token) redirect('/')
+
   return (
     <ChangePasswordConfirmationPage token={token} />
   )

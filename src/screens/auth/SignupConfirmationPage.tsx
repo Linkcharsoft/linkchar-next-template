@@ -2,7 +2,6 @@
 import { useFormik } from 'formik'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
 import { useEffect, useState } from 'react'
 import { useIsClient, useSessionStorage } from 'usehooks-ts'
@@ -34,7 +33,6 @@ const SignupConfirmationPage = ({ token } : Props) => {
     setToastMessage
   } = useAppStore()
   const isClient = useIsClient()
-  const router = useRouter()
   const [showEmails, setShowEmails] = useState<boolean>(false)
   const [timer, setTimer] = useSessionStorage<number>('confirmation-resend-timer', 0)
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
@@ -70,11 +68,6 @@ const SignupConfirmationPage = ({ token } : Props) => {
 
     verifyToken()
   }, [])
-
-  // Redirect if there isnt token
-  useEffect(() => {
-    if (!token) router.replace('/login')
-  }, [token])
 
   // Timer logic
   useEffect(() => {

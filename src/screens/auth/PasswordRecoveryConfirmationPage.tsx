@@ -72,11 +72,6 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
     checkUrlToken()
   }, [])
 
-  // Redirect if there isnt token or email
-  useEffect(() => {
-    if (!token || !email) router.replace('/login')
-  }, [token, email])
-
 
   const recoveryConfirmationFormik = useFormik<RecoveryPasswordConfirmationFormikType>({
     initialValues: {
@@ -126,7 +121,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
             life: 3000
           })
 
-          setTimeout(() => router.replace('/login'), 3000)
+          setTimeout(() => router.replace('/login'), 1000)
         } else {
           setToastMessage({
             severity: 'error',
