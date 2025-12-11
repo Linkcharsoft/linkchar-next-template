@@ -1,5 +1,7 @@
-import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
-import { checkInputError } from '../../support/helpers'
+import { AUTH_COOKIE_NAME, AUTH_EMAIL_SUBJECTS, AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
+import { checkInputError, checkPasswordErrors } from '../../support/helpers'
+
+const baseURL = Cypress.config().baseUrl
 
 describe('Sign Up: Errors ❌', () => {
   before(() => {
@@ -41,44 +43,9 @@ describe('Sign Up: Errors ❌', () => {
     })
   })
 
-  it('Password length', () => {
-    cy.get('@password-input').type('1234567')
-
-    cy.get('@submit-button').click()
-    checkInputError({
-      alias: '@password-input',
-      message: AUTH_INPUT_ERRORS['password-length']
-    })
-  })
-
-  it('Password only numeric', () => {
-    cy.get('@password-input').type('12345678')
-
-    cy.get('@submit-button').click()
-    checkInputError({
-      alias: '@password-input',
-      message: AUTH_INPUT_ERRORS['password-numeric']
-    })
-  })
-
-  it('Password one uppercase', () => {
-    cy.get('@password-input').type('1234567a')
-
-    cy.get('@submit-button').click()
-    checkInputError({
-      alias: '@password-input',
-      message: AUTH_INPUT_ERRORS['password-uppercase']
-    })
-  })
-
-  it('Password one symbol', () => {
-    cy.get('@password-input').type('1234567A')
-
-    cy.get('@submit-button').click()
-    checkInputError({
-      alias: '@password-input',
-      message: AUTH_INPUT_ERRORS['password-symbol']
-    })
+  checkPasswordErrors({
+    inputAlias: '@password-input',
+    submitAlias: '@submit-button'
   })
 
   it('Good password ', () => {
