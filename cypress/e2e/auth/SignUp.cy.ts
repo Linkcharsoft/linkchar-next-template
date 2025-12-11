@@ -1,5 +1,7 @@
+import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
 import checkInputError from '../../utils/checkInputError'
 import checkPasswordErrors from '../../utils/checkPasswordErrors'
+import extractValidationCodeFromEmail from '../../utils/extractValidationCodeFromEmail'
 
 const baseURL = Cypress.config().baseUrl
 
@@ -101,20 +103,10 @@ describe('Sign Up: Success ✅', () => {
 
     const inboxId = Cypress.env('inboxId')
     cy.getLastestEmail(inboxId).then((email) => {
-      expect(email.subject).to.include(AUTH_EMAIL_SUBJECTS['verify-email'])
-
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(email.body as string, 'text/html')
-
-      const link = doc.querySelector('a')?.getAttribute('href')
-      if (!link) {
-        throw new Error('No link found')
-      }
-
-      const linkParts = link.split('/')
-      const code = linkParts[linkParts.length - 2]
+      const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
+      Cypress.env('firstEmailValidationCode', code)
     })
   })
 
@@ -138,20 +130,11 @@ describe('Sign Up: Success ✅', () => {
 
     const inboxId = Cypress.env('inboxId')
     cy.getLastestEmail(inboxId).then((email) => {
-      expect(email.subject).to.include(AUTH_EMAIL_SUBJECTS['verify-email'])
+      const newCode = extractValidationCodeFromEmail(email)
+      cy.wrap(newCode).should('exist')
 
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(email.body as string, 'text/html')
-
-      const link = doc.querySelector('a')?.getAttribute('href')
-      if (!link) {
-        throw new Error('No link found')
-      }
-
-      const linkParts = link.split('/')
-      const code = linkParts[linkParts.length - 2]
-
-      cy.wrap(code).should('exist')
+      const firstCode = Cypress.env('firstEmailValidationCode')
+      expect(newCode).to.not.equal(firstCode)
     })
 
     cy.get('a[href="/login"]').click()
