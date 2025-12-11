@@ -88,8 +88,6 @@ describe('Sign Up: Navigation 🔗', () => {
   })
 
   it('Login', () => {
-    const baseURL = Cypress.config().baseUrl
-
     cy.get('a[href="/login"]').click()
 
     cy.url().should('equal', `${baseURL}/login`)
@@ -98,40 +96,107 @@ describe('Sign Up: Navigation 🔗', () => {
   })
 })
 
-// describe('Sign Up: Success ✅', () => {
-//   before(() => {
-//     cy.visit('/signup')
+describe('Sign Up: Success ✅', () => {
+  before(() => {
+    cy.visit('/signup')
 
-//     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
-//     cy.createInbox().then(({ id, emailAddress }) => {
-//       cy.wrap(id).as('inbox-id')
-//       cy.wrap(emailAddress).as('email-address')
-//     })
-//   })
+    cy.createInbox().then(({ id, emailAddress }) => {
+      Cypress.env('inboxId', id)
+      Cypress.env('emailAddress', emailAddress)
+    })
+  })
 
-//   beforeEach(() => {
-//     cy.get('input[name="email"]').as('email-input').clear()
-//     cy.get('input[name="password"]').as('password-input').clear()
-//     cy.get('button[type="submit"]').as('submit-button')
-//   })
+  it('Email and password', () => {
+    cy.intercept('POST', '/api/auth/registration').as('registration')
+    cy.get('input[name="email"]').as('email-input')
+    cy.get('input[name="password"]').as('password-input')
+    cy.get('button[type="submit"]').as('submit-button')
 
-//   it('Email and Password', () => {
-//     cy.intercept('POST', '/api/auth/registration').as('registration')
+    const emailAddress = Cypress.env('emailAddress')
+    cy.get('@email-input').type(emailAddress)
+    cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+    cy.get('@submit-button').click()
 
-//     cy.get('@email-address').then((email) => {
-//       cy.get('@email-input').type(email as string)
-//     })
-//     cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+    cy.wait('@registration').its('response.statusCode').should('eq', 201)
 
-//     cy.get('@submit-button').click()
+    const inboxId = Cypress.env('inboxId')
+    cy.getLastestEmail(inboxId).then((email) => {
+      expect(email.subject).to.include(AUTH_EMAIL_SUBJECTS['verify-email'])
 
-//     cy.wait('@registration').its('response.statusCode').should('eq', 201)
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(email.body as string, 'text/html')
 
-//     // Check email validation
-//   })
+      const link = doc.querySelector('a')?.getAttribute('href')
+      if (!link) {
+        throw new Error('No link found')
+      }
 
-//   it('Resend email validation', () => {
+      const linkParts = link.split('/')
+      const code = linkParts[linkParts.length - 2]
 
-//   })
-// })
+      cy.wrap(code).should('exist')
+    })
+  })
+
+  it('Immediate resend email', () => {
+    cy.intercept('POST', '/api/auth/registration/resend-email/').as('resend-email')
+
+    cy.url().should('include', `${baseURL}/signup/email-validation`)
+
+    cy.get('a[href="https://outlook.com/"]').should('exist')
+    cy.get('a[href="https://gmail.com/"]').should('exist')
+
+    cy.get('.CustomButton--Transparent').as('resend-button')
+    cy.get('@resend-button').should('not.be.disabled')
+
+    cy.get('@resend-button').click()
+    cy.wait('@resend-email').its('response.statusCode').should('eq', 200)
+
+    cy.get('@resend-button').should('be.disabled')
+
+    cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
+
+    const inboxId = Cypress.env('inboxId')
+    cy.getLastestEmail(inboxId).then((email) => {
+      expect(email.subject).to.include(AUTH_EMAIL_SUBJECTS['verify-email'])
+
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(email.body as string, 'text/html')
+
+      const link = doc.querySelector('a')?.getAttribute('href')
+      if (!link) {
+        throw new Error('No link found')
+      }
+
+      const linkParts = link.split('/')
+      const code = linkParts[linkParts.length - 2]
+
+      cy.wrap(code).should('exist')
+    })
+
+    cy.get('a[href="/login"]').click()
+
+    cy.url().should('equal', `${baseURL}/login`)
+  })
+
+  it('Try to login', () => {
+    cy.visit('/login')
+
+    cy.get('input[name="email"]').as('login-email-input')
+    cy.get('input[name="password"]').as('login-password-input')
+    cy.get('button[type="submit"]').as('login-submit-button')
+
+    const emailAddress = Cypress.env('emailAddress')
+    cy.get('@login-email-input').type(emailAddress)
+    cy.get('@login-password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+
+    cy.get('@login-submit-button').click()
+
+    checkInputError({
+      alias: '@login-email-input',
+      message: AUTH_INPUT_ERRORS['verify-email']
+    })
+  })
+})
