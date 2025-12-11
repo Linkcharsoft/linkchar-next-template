@@ -1,5 +1,5 @@
 import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
-import { checkInputError } from '../../support/helpers'
+import checkInputError from '../../utils/checkInputError'
 
 describe('Password Recovery: Errors ❌', () => {
   before(() => {

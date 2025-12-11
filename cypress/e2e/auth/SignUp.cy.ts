@@ -1,5 +1,5 @@
-import { AUTH_COOKIE_NAME, AUTH_EMAIL_SUBJECTS, AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
-import { checkInputError, checkPasswordErrors } from '../../support/helpers'
+import checkInputError from '../../utils/checkInputError'
+import checkPasswordErrors from '../../utils/checkPasswordErrors'
 
 const baseURL = Cypress.config().baseUrl
 
@@ -48,7 +48,7 @@ describe('Sign Up: Errors ❌', () => {
     submitAlias: '@submit-button'
   })
 
-  it('Good password ', () => {
+  it('Good password', () => {
     cy.get('@password-input').type('1234567A@')
 
     cy.get('@submit-button').click()
