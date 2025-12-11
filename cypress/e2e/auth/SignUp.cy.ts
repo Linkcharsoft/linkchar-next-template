@@ -72,12 +72,6 @@ describe('Sign Up: Errors ❌', () => {
 })
 
 describe('Sign Up: Navigation 🔗', () => {
-  beforeEach(() => {
-    cy.get('input[name="email"]').as('email-input').clear()
-    cy.get('input[name="password"]').as('password-input').clear()
-    cy.get('button[type="submit"]').as('submit-button')
-  })
-
   it('Login', () => {
     cy.get('a[href="/login"]').click()
 
