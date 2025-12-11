@@ -8,8 +8,8 @@ describe('Sign Up: Errors ❌', () => {
     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
     cy.createInbox().then(({ id, emailAddress }) => {
-      cy.wrap(id).as('inbox-id')
-      cy.wrap(emailAddress).as('email-address')
+      Cypress.env('inboxId', id)
+      Cypress.env('emailAddress', emailAddress)
     })
   })
 
@@ -109,8 +109,8 @@ describe('Sign Up: Navigation 🔗', () => {
     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
     cy.createInbox().then(({ id, emailAddress }) => {
-      cy.wrap(id).as('inbox-id')
-      cy.wrap(emailAddress).as('email-address')
+      Cypress.env('inboxId', id)
+      Cypress.env('emailAddress', emailAddress)
     })
   })
 
