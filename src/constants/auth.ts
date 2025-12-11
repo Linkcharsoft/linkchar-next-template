@@ -20,3 +20,7 @@ export const AUTH_INPUT_ERRORS = {
   'password-uppercase': 'Must contain at least one uppercase letter',
   'password-symbol': 'Must contain at least one symbol'
 }
+
+export const AUTH_EMAIL_SUBJECTS = {
+  'verify-email': 'Confirma tu e-mail en Django Base'
+}
