@@ -5,6 +5,7 @@ import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
+import { resendEmailConfirmation } from '@/api/users'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
@@ -86,12 +87,13 @@ const LoginPage = () => {
               detail: 'Redirecting to email validation page...',
               life: 5000
             })
-            setErrors({
-              email: AUTH_INPUT_ERRORS['verify-email'],
-            })
+            setErrors({ email: AUTH_INPUT_ERRORS['verify-email'] })
+
+            resendEmailConfirmation({ email: values.email })
+
             setTimeout(() => {
               router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
-            }, 500)
+            }, 1000)
           } else {
             setErrors({
               email: AUTH_INPUT_ERRORS['invalid-email-or-password'],
