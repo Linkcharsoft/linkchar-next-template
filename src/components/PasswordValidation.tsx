@@ -24,7 +24,7 @@ const PasswordValidation = ({ password }: Props) => {
               })}
             ></i>
           </div>
-          <span className="text-surface-700">{PASSWORD_VALIDATIONS.validations[type].label}</span>
+          <span className="text-surface-700 text-14">{PASSWORD_VALIDATIONS.validations[type].label}</span>
         </div>
       ))}
     </div>
