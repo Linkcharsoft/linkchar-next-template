@@ -56,7 +56,6 @@ const SignupPage = () => {
 
         for (const type of passwordValidations.types) {
           if (!passwordValidations.validations[type].value) {
-            console.log(passwordValidations.validations[type])
             errors.password = passwordValidations.validations[type].label
             break
           }
