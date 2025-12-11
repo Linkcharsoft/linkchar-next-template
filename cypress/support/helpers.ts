@@ -1,8 +1,4 @@
-type CheckInputErrorProps = {
-  alias: string
-  message?: string
-  error?: boolean
-}
+import { AUTH_INPUT_ERRORS } from '../../src/constants/auth'
 
 export const checkInputError = ({
   alias,
