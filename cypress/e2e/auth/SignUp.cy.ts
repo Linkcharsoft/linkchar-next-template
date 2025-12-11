@@ -70,17 +70,6 @@ describe('Sign Up: Errors ❌', () => {
 })
 
 describe('Sign Up: Navigation 🔗', () => {
-  before(() => {
-    cy.visit('/signup')
-
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
-
-    cy.createInbox().then(({ id, emailAddress }) => {
-      Cypress.env('inboxId', id)
-      Cypress.env('emailAddress', emailAddress)
-    })
-  })
-
   beforeEach(() => {
     cy.get('input[name="email"]').as('email-input').clear()
     cy.get('input[name="password"]').as('password-input').clear()
@@ -97,17 +86,6 @@ describe('Sign Up: Navigation 🔗', () => {
 })
 
 describe('Sign Up: Success ✅', () => {
-  before(() => {
-    cy.visit('/signup')
-
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
-
-    cy.createInbox().then(({ id, emailAddress }) => {
-      Cypress.env('inboxId', id)
-      Cypress.env('emailAddress', emailAddress)
-    })
-  })
-
   it('Email and password', () => {
     cy.intercept('POST', '/api/auth/registration').as('registration')
     cy.get('input[name="email"]').as('email-input')
