@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import EmailValidationPage from '@/screens/auth/EmailValidationPage'
+import validateEmail from '@/utils/validateEmail'
 
 export const metadata: Metadata = {
   title: 'Sign up - Email Validation'
@@ -13,7 +14,7 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { email } = await params
 
-  if(!email) redirect('/login')
+  if(!email || !validateEmail(email)) redirect('/login')
 
   return (
     <EmailValidationPage email={email} />

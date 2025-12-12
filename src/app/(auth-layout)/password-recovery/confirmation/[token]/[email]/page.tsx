@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import PasswordRecoveryConfirmationPage from '@/screens/auth/PasswordRecoveryConfirmationPage'
+import validateEmail from '@/utils/validateEmail'
 
 export const metadata: Metadata = {
   title: 'Password Recovery - Confirmation'
@@ -16,7 +17,7 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { token, email } = await params
 
-  if(!token || !email) redirect('/login')
+  if(!token || !email || !validateEmail(email)) redirect('/login')
 
   return (
     <PasswordRecoveryConfirmationPage token={token} email={email} />
