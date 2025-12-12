@@ -7,16 +7,16 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  params: Promise<{ token: string }>
+  params: Promise<{ key: string }>
 }
 
 const Page = async ({ params }: Props) => {
-  const { token } = await params
+  const { key } = await params
 
-  if(!token) redirect('/login')
+  if(!key) redirect('/login')
 
   return (
-    <SignupConfirmationPage token={token} />
+    <SignupConfirmationPage key={decodeURIComponent(key)} />
   )
 }
 

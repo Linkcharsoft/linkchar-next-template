@@ -52,12 +52,9 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
     })
 
     const checkUrlToken = async () => {
-      const decodedToken = decodeURIComponent(token)
-      const decodedEmail = decodeURIComponent(email)
-
       const { ok } = await checkPasswordToken({
-        email: decodedEmail,
-        token: decodedToken
+        email,
+        token
       })
 
       if (ok) {
@@ -103,13 +100,10 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         message: 'Please wait...'
       })
 
-      const decodedToken = decodeURIComponent(token)
-      const decodedEmail = decodeURIComponent(email)
-
       try {
         const { ok } = await passwordConfirm({
-          token: decodedToken,
-          email: decodedEmail,
+          token,
+          email,
           password
         })
 

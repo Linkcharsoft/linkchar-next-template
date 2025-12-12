@@ -53,11 +53,9 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     })
 
     const checkUrlToken = async () => {
-      const decodedToken = decodeURIComponent(token)
-
       const { ok } = await checkPasswordToken({
         email: user?.email as string,
-        token: decodedToken
+        token
       })
 
       if (ok) {
@@ -103,11 +101,9 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         message: 'Please wait...'
       })
 
-      const decodedToken = decodeURIComponent(token)
-
       try {
         const { ok } = await passwordConfirm({
-          token: decodedToken,
+          token,
           email: user?.email as string,
           password
         })

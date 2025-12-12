@@ -17,10 +17,11 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { token, email } = await params
 
-  if(!token || !email || !validateEmail(email)) redirect('/login')
+  const decodedEmail = decodeURIComponent(email)
+  if(!token || !email || !validateEmail(decodedEmail)) redirect('/login')
 
   return (
-    <PasswordRecoveryConfirmationPage token={token} email={email} />
+    <PasswordRecoveryConfirmationPage token={decodeURIComponent(token)} email={decodedEmail} />
   )
 }
 

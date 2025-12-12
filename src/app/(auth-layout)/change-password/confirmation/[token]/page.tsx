@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import ChangePasswordConfirmationPage from '@/screens/auth/ChangePasswordConfirmationPage'
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ const Page = async ({ params }: Props) => {
   if(!token) redirect('/')
 
   return (
-    <ChangePasswordConfirmationPage token={token} />
+    <ChangePasswordConfirmationPage token={decodeURIComponent(token)} />
   )
 }
 

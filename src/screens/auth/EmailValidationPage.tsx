@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useMemo } from 'react'
+import { useEffect } from 'react'
 import { useIsClient, useSessionStorage } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
@@ -42,10 +42,7 @@ const EmailValidationPage = ({ email }: Props) => {
   }, [setTimer, timer > 0])
 
 
-  const DECODED_EMAIL = useMemo(() => decodeURIComponent(email), [email])
-
-
-  const handleResendEmail = async (email: string) => {
+  const handleResendEmail = async () => {
     showLoadingModal({
       title: 'Resending email',
       message: 'Please wait...'
@@ -95,7 +92,7 @@ const EmailValidationPage = ({ email }: Props) => {
         </h1>
 
         <p className="text-center text-base font-normal text-surface-800">
-          We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{DECODED_EMAIL}</span> with a link to validate your account
+          We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
         </p>
 
 
@@ -134,7 +131,7 @@ const EmailValidationPage = ({ email }: Props) => {
             <CustomButton
               variant='transparent'
               className='w-full !font-semibold'
-              onClick={() => handleResendEmail(DECODED_EMAIL)}
+              onClick={handleResendEmail}
               disabled={timer > 0}
               type='submit'
             >

@@ -14,10 +14,11 @@ interface Props {
 const Page = async ({ params }: Props) => {
   const { email } = await params
 
-  if(!email || !validateEmail(email)) redirect('/login')
+  const decodedEmail = decodeURIComponent(email)
+  if(!email || !validateEmail(decodedEmail)) redirect('/login')
 
   return (
-    <EmailValidationPage email={email} />
+    <EmailValidationPage email={decodedEmail} />
   )
 }
 

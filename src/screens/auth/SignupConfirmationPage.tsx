@@ -17,7 +17,7 @@ import { useAppStore } from '@/stores/appStore'
 
 
 type Props = {
-  token: string
+  key: string
 }
 
 type SignupConfirmationFormikType = {
@@ -26,7 +26,7 @@ type SignupConfirmationFormikType = {
 type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
-const SignupConfirmationPage = ({ token } : Props) => {
+const SignupConfirmationPage = ({ key }: Props) => {
   const {
     showLoadingModal,
     hideLoadingModal,
@@ -45,7 +45,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
   })
 
 
-  // Verify token logic
+  // Verify key logic
   useEffect(() => {
     showLoadingModal({
       title: 'Verifying link',
@@ -53,9 +53,7 @@ const SignupConfirmationPage = ({ token } : Props) => {
     })
 
     const verifyToken = async () => {
-      const decodedToken = decodeURIComponent(token)
-
-      const { ok } = await emailConfirmation({ key: decodedToken })
+      const { ok } = await emailConfirmation({ key })
 
       if (ok) {
         setTokenStatus('valid')
