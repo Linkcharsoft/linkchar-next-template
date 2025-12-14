@@ -95,4 +95,17 @@ describe('Login: Success ✅', () => {
 
     cy.logout()
   })
+
+  it('New user login', function () {
+    const emailAddress = Cypress.env('emailAddress')
+
+    if (!emailAddress) {
+      this.skip()
+    }
+
+    cy.wrap(emailAddress).should('exist')
+
+    cy.login(emailAddress)
+    cy.logout()
+  })
 })
