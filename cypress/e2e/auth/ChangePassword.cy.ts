@@ -13,7 +13,6 @@ describe('Change Password: Navigation 🔗', () => {
   it('Redirects', () => {
     cy.visit('/change-password/confirmation')
     cy.url().should('equal', `${baseURL}/`)
-
     cy.visit('/change-password/confirmation/')
     cy.url().should('equal', `${baseURL}/`)
   })

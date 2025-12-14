@@ -37,14 +37,13 @@ describe('Email Validation: Navigation 🔗', () => {
   it('Redirects', () => {
     cy.visit('/signup/email-validation')
     cy.url().should('equal', `${baseURL}/login`)
-
     cy.visit('/signup/email-validation/')
     cy.url().should('equal', `${baseURL}/login`)
 
-    cy.visit(`/signup/email-validation/${Cypress.env('AUTH_DEFAULT_USER').replace('@', '')}`)
+    const email = Cypress.env('AUTH_DEFAULT_USER')
+    cy.visit(`/signup/email-validation/${email.replace('@', '')}`)
     cy.url().should('equal', `${baseURL}/login`)
-
-    cy.visit(`/signup/email-validation/${Cypress.env('AUTH_DEFAULT_USER')}`)
+    cy.visit(`/signup/email-validation/${email}`)
     cy.url().should('include', `${baseURL}/signup/email-validation/`)
   })
 
