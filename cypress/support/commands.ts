@@ -44,6 +44,8 @@ declare global {
   }
 }
 
+const baseURL = Cypress.config().baseUrl
+
 Cypress.Commands.add('login', (
   email: string = Cypress.env('AUTH_DEFAULT_USER'),
   password: string = Cypress.env('AUTH_DEFAULT_PASSWORD')
@@ -60,7 +62,6 @@ Cypress.Commands.add('login', (
 
   cy.wait('@login').its('response.statusCode').should('eq', 200)
 
-  const baseURL = Cypress.config().baseUrl
   cy.url().should('equal', `${baseURL}/`)
 
   cy.getCookie(AUTH_COOKIE_NAME).should('exist')
@@ -75,7 +76,6 @@ Cypress.Commands.add('logout', () => {
 
   cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
-  const baseURL = Cypress.config().baseUrl
   cy.url().should('equal', `${baseURL}/login`)
 })
 
