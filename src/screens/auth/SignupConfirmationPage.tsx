@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import { InputText } from 'primereact/inputtext'
 import { useEffect, useState } from 'react'
-import { useIsClient, useSessionStorage } from 'usehooks-ts'
+import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
@@ -12,6 +12,7 @@ import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
+import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 
@@ -34,8 +35,15 @@ const SignupConfirmationPage = ({ token }: Props) => {
   } = useAppStore()
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
-  const [timer, setTimer] = useSessionStorage<number>('confirmation-resend-timer', 0)
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
+  const {
+    timer,
+    startTimer,
+    timerIsRunning
+  } = usePersistentTimer({
+    storageKey: 'confirmation-resend-timer',
+    time: 30
+  })
 
 
   usePressKey('Enter', () => {
@@ -67,23 +75,6 @@ const SignupConfirmationPage = ({ token }: Props) => {
     verifyToken()
   }, [])
 
-  // Timer logic
-  useEffect(() => {
-    if (timer <= 0) return
-
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [setTimer, timer > 0])
-
 
   const invalidTokenFormik = useFormik<SignupConfirmationFormikType>({
     initialValues: {
@@ -110,7 +101,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
           })
 
           setShowEmails(true)
-          setTimer(30)
+          startTimer()
         } else {
           setToastMessage({
             severity: 'error',
@@ -210,10 +201,10 @@ const SignupConfirmationPage = ({ token }: Props) => {
             <CustomButton
               className="w-full"
               type="submit"
-              disabled={invalidTokenFormik.isSubmitting || timer > 0}
-              aria-disabled={invalidTokenFormik.isSubmitting || timer > 0}
+              disabled={invalidTokenFormik.isSubmitting || timerIsRunning}
+              aria-disabled={invalidTokenFormik.isSubmitting || timerIsRunning}
             >
-              {timer > 0 ? `Wait ${timer}s to resend` : 'Resend email'}
+              {timerIsRunning ? `Wait ${timer}s to resend` : 'Resend email'}
             </CustomButton>
           </>
         )}

@@ -3,8 +3,8 @@ import { useFormik } from 'formik'
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import { InputText } from 'primereact/inputtext'
-import { useEffect, useState } from 'react'
-import { useIsClient, useSessionStorage } from 'usehooks-ts'
+import { useState } from 'react'
+import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { passwordRecoveryChange } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
@@ -12,6 +12,7 @@ import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
+import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 
@@ -29,30 +30,19 @@ const PasswordRecoveryPage = () => {
   } = useAppStore()
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
-  const [timer, setTimer] = useSessionStorage<number>('recovery-resend-timer', 0)
+  const {
+    timer,
+    startTimer,
+    timerIsRunning
+  } = usePersistentTimer({
+    storageKey: 'recovery-resend-timer',
+    time: 30
+  })
 
 
   usePressKey('Enter', () => {
     passwordRecoveryFormik.handleSubmit()
   })
-
-
-  // Timer logic
-  useEffect(() => {
-    if (timer <= 0) return
-
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [setTimer, timer > 0])
 
 
   const passwordRecoveryFormik = useFormik<PasswordRecoveryFormikType>({
@@ -83,7 +73,7 @@ const PasswordRecoveryPage = () => {
           })
 
           setShowEmails(true)
-          setTimer(30)
+          startTimer()
         } else {
           setToastMessage({
             severity: 'error',
@@ -181,10 +171,10 @@ const PasswordRecoveryPage = () => {
           <CustomButton
             className="w-full"
             type="submit"
-            disabled={passwordRecoveryFormik.isSubmitting || timer > 0}
-            aria-disabled={passwordRecoveryFormik.isSubmitting || timer > 0}
+            disabled={passwordRecoveryFormik.isSubmitting || timerIsRunning}
+            aria-disabled={passwordRecoveryFormik.isSubmitting || timerIsRunning}
           >
-            {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
+            {timerIsRunning ? `Wait ${timer}s to resend` : 'Send email'}
           </CustomButton>
 
           <CustomButton

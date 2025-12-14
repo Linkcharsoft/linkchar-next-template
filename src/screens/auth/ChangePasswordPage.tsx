@@ -2,12 +2,13 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { useIsClient, useSessionStorage } from 'usehooks-ts'
+import { useState } from 'react'
+import { useIsClient } from 'usehooks-ts'
 import { passwordRecoveryChange } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
+import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import useUserStore from '@/stores/userStore'
@@ -24,30 +25,19 @@ const ChangePasswordPage = () => {
   const router = useRouter()
   const [buttonDisabled, setButtonDisabled] = useState<boolean>(false)
   const [showEmails, setShowEmails] = useState<boolean>(false)
-  const [timer, setTimer] = useSessionStorage<number>('change-resend-timer', 0)
+  const {
+    timer,
+    startTimer,
+    timerIsRunning
+  } = usePersistentTimer({
+    storageKey: 'change-resend-timer',
+    time: 30
+  })
 
 
   usePressKey('Enter', () => {
     if(!buttonDisabled) handleGetEmail()
   })
-
-
-  // Timer logic
-  useEffect(() => {
-    if (timer <= 0) return
-
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [setTimer, timer > 0])
 
 
   const handleGetEmail = async () => {
@@ -71,7 +61,7 @@ const ChangePasswordPage = () => {
         })
 
         setShowEmails(true)
-        setTimer(30)
+        startTimer()
       } else {
         setToastMessage({
           severity: 'error',
@@ -149,15 +139,15 @@ const ChangePasswordPage = () => {
           <CustomButton
             className="w-full"
             type='submit'
-            disabled={buttonDisabled || timer > 0}
-            aria-disabled={buttonDisabled || timer > 0}
+            disabled={buttonDisabled || timerIsRunning}
+            aria-disabled={buttonDisabled || timerIsRunning}
           >
-            {timer > 0 ? `Wait ${timer}s to resend` : 'Send email'}
+            {timerIsRunning ? `Wait ${timer}s to resend` : 'Send email'}
           </CustomButton>
 
           <CustomButton
             variant='transparent'
-            onClick={() => router.back()}
+            onClick={router.back}
             className='w-full'
             type='button'
             disabled={buttonDisabled}

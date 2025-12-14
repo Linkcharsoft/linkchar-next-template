@@ -1,11 +1,11 @@
 'use client'
 import Link from 'next/link'
-import { useEffect } from 'react'
-import { useIsClient, useSessionStorage } from 'usehooks-ts'
+import { useIsClient } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/users'
 import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
+import usePersistentTimer from '@/hooks/usePersistentTimer'
 import { useAppStore } from '@/stores/appStore'
 
 
@@ -21,25 +21,15 @@ const EmailValidationPage = ({ email }: Props) => {
     setToastMessage
   } = useAppStore()
   const isClient = useIsClient()
-  const [timer, setTimer] = useSessionStorage<number>('validation-resend-timer', 5)
-
-
-  // Timer logic
-  useEffect(() => {
-    if (timer <= 0) return
-
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [setTimer, timer > 0])
+  const {
+    timer,
+    startTimer,
+    timerIsRunning
+  } = usePersistentTimer({
+    storageKey: 'validation-resend-timer',
+    time: 30,
+    initialTime: 5
+  })
 
 
   const handleResendEmail = async () => {
@@ -58,7 +48,7 @@ const EmailValidationPage = ({ email }: Props) => {
           life: 3000
         })
 
-        setTimer(30)
+        startTimer()
       } else {
         setToastMessage({
           severity: 'error',
@@ -132,10 +122,10 @@ const EmailValidationPage = ({ email }: Props) => {
               variant='transparent'
               className='w-full !font-semibold'
               onClick={handleResendEmail}
-              disabled={timer > 0}
+              disabled={timerIsRunning}
               type='submit'
             >
-              {timer > 0 ? `Wait ${timer}s to resend` : 'Click here to send again'}
+              {timerIsRunning ? `Wait ${timer}s to resend` : 'Click here to send again'}
             </CustomButton>
           </div>
         </div>
