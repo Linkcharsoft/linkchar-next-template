@@ -15,7 +15,7 @@ declare global {
        * @example
        * cy.login()
        */
-      login()
+      login(email?: string, password?: string)
 
       /**
        * Logout user
@@ -44,15 +44,18 @@ declare global {
   }
 }
 
-Cypress.Commands.add('login', () => {
+Cypress.Commands.add('login', (
+  email: string = Cypress.env('AUTH_DEFAULT_USER'),
+  password: string = Cypress.env('AUTH_DEFAULT_PASSWORD')
+) => {
   cy.intercept('POST', '/api/auth/login').as('login')
 
   cy.visit('/login')
 
   cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
-  cy.get('input[name="email"]').type(Cypress.env('AUTH_DEFAULT_USER'))
-  cy.get('input[name="password"]').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+  cy.get('input[name="email"]').type(email)
+  cy.get('input[name="password"]').type(password)
   cy.get('button[type="submit"]').click()
 
   cy.wait('@login').its('response.statusCode').should('eq', 200)
