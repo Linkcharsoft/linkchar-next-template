@@ -42,7 +42,7 @@ const usePersistentTimer = ({
 } => {
   const intervalRef = useRef<number | null>(null)
   const [timer, setTimer] = useSessionStorage<number>(storageKey, initialTime)
-  const [timerIsRunning, setTimerIsRunning] = useState<boolean>(false)
+  const [timerIsRunning, setTimerIsRunning] = useState<boolean>(initialTime > 0 ? true : false)
 
   useEffect(() => {
     if (!timerIsRunning) return
