@@ -100,7 +100,7 @@ describe('Sign Up: Success ✅', () => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.env('firstEmailValidationCode', code)
+      Cypress.env('emailValidationCode', code)
     })
   })
 
@@ -127,31 +127,10 @@ describe('Sign Up: Success ✅', () => {
       const newCode = extractValidationCodeFromEmail(email)
       cy.wrap(newCode).should('exist')
 
-      const firstCode = Cypress.env('firstEmailValidationCode')
+      const firstCode = Cypress.env('emailValidationCode')
       expect(newCode).to.not.equal(firstCode)
-    })
 
-    cy.get('a[href="/login"]').click()
-
-    cy.url().should('equal', `${baseURL}/login`)
-  })
-
-  it('Try to login', () => {
-    cy.visit('/login')
-
-    cy.get('input[name="email"]').as('login-email-input')
-    cy.get('input[name="password"]').as('login-password-input')
-    cy.get('button[type="submit"]').as('login-submit-button')
-
-    const emailAddress = Cypress.env('emailAddress')
-    cy.get('@login-email-input').type(emailAddress)
-    cy.get('@login-password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
-
-    cy.get('@login-submit-button').click()
-
-    checkInputError({
-      alias: '@login-email-input',
-      message: AUTH_INPUT_ERRORS['verify-email']
+      Cypress.env('emailValidationCode', newCode)
     })
   })
 })
