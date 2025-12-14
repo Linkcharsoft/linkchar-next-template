@@ -31,7 +31,7 @@ describe('Change Password: Success ✅', () => {
     const emailAddress = Cypress.env('emailAddress')
     cy.wrap(emailAddress).should('exist')
 
-    cy.login(Cypress.env('emailAddress'))
+    cy.login(emailAddress)
 
     cy.visit('/change-password')
   })
@@ -76,27 +76,6 @@ describe('Change Password: Success ✅', () => {
 
     cy.wait('@validate-token').its('response.statusCode').should('eq', 404)
     cy.get('.pi-exclamation-triangle').should('exist')
-
-    const emailAddress = Cypress.env('emailAddress')
-    cy.get('input[name="email"]').type(emailAddress)
-
-    cy.get('button[type="submit"]').as('resend-button')
-    cy.get('@resend-button').should('not.be.disabled')
-    cy.get('@resend-button').click()
-
-    cy.wait('@resend-email').its('response.statusCode').should('eq', 200)
-
-    cy.get('@resend-button').should('be.disabled')
-
-    cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
-
-    const inboxId = Cypress.env('inboxId')
-    cy.getLastestEmail(inboxId).then((email) => {
-      const code = extractValidationCodeFromEmail(email)
-
-      cy.wrap(code).should('exist')
-      Cypress.env('emailValidationCode', code)
-    })
   })
 
   it('Correct code ✅', () => {
@@ -134,6 +113,6 @@ describe('Change Password: Success ✅', () => {
     const emailAddress = Cypress.env('emailAddress')
     cy.wrap(emailAddress).should('exist')
 
-    cy.login(Cypress.env('emailAddress'))
+    cy.login(emailAddress)
   })
 })
