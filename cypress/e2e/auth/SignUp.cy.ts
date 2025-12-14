@@ -128,6 +128,7 @@ describe('Sign Up: Success ✅', () => {
       cy.wrap(newCode).should('exist')
 
       const firstCode = Cypress.env('emailValidationCode')
+      cy.wrap(firstCode).should('exist')
       expect(newCode).to.not.equal(firstCode)
 
       Cypress.env('emailValidationCode', newCode)
