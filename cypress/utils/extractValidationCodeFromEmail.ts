@@ -8,9 +8,7 @@ const extractValidationCodeFromEmail = (email: Email): string => {
   const doc = parser.parseFromString(email.body as string, 'text/html')
 
   const link = doc.querySelector('a')?.getAttribute('href')
-  if (!link) {
-    throw new Error('No link found')
-  }
+  if (!link) throw new Error('No link found')
 
   const linkParts = link.split('/')
   const code = linkParts[linkParts.length - 2]
