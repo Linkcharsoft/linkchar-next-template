@@ -119,9 +119,8 @@ describe('Email Validation: Success ✅', () => {
     cy.wrap(code).should('exist')
     cy.visit(`/signup/confirmation/${code.slice(0, code.length - 1)}`)
 
-    cy.get('.pi-exclamation-triangle').should('exist')
-
     cy.wait('@validate-email').its('response.statusCode').should('eq', 404)
+    cy.get('.pi-exclamation-triangle').should('exist')
 
     const emailAddress = Cypress.env('emailAddress')
     cy.get('input[name="email"]').type(emailAddress)
@@ -152,9 +151,8 @@ describe('Email Validation: Success ✅', () => {
     cy.wrap(code).should('exist')
     cy.visit(`/signup/confirmation/${code}`)
 
-    cy.get('.pi-check-circle').should('exist')
-
     cy.wait('@validate-email').its('response.statusCode').should('eq', 200)
+    cy.get('.pi-check-circle').should('exist')
 
     cy.get('a[href="/login"]').click()
 
