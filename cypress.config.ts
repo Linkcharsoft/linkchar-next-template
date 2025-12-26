@@ -25,6 +25,6 @@ export default defineConfig({
       MAILSLURP_API_KEY: process.env.MAILSLURP_API_KEY,
       AUTH_DEFAULT_USER: process.env.AUTH_DEFAULT_USER,
       AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD
-    },
+    }
   }
 })

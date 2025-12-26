@@ -40,12 +40,13 @@ export async function middleware (req: NextRequest) {
     // ✅ If the user is authenticated and everything is fine, proceed with the request
     return NextResponse.next()
   } catch (error) {
-    console.error('Middleware error:', error)
     const authErrors = Object.values(AUTH_TOKEN_ERRORS)
 
     // 🔄 If there is no token, redirect to login
-    if(authErrors.includes(error.message) && !isAuthFlow) {
-      return NextResponse.redirect(new URL('/login', req.url))
+    if(authErrors.includes(error.message)) {
+      console.error('Middleware error:', error)
+
+      if(!isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))
     }
 
     return NextResponse.next()
