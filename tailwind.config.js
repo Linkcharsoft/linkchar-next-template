@@ -37,7 +37,7 @@ export const theme = {
 
 export const plugins = [
   plugin(({ addComponents }) => {
-    const sizes = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48]
+    const sizes = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64]
 
     const generateStyles = (namePrefix, fontWeight, fontStyle = 'normal', lineHeight = null) => {
       return Object.fromEntries(
