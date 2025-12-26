@@ -1,5 +1,7 @@
 import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
 import checkInputError from '../../utils/checkInputError'
+import checkPasswordErrors from '../../utils/checkPasswordErrors'
+import extractValidationCodeFromEmail from '../../utils/extractValidationCodeFromEmail'
 
 const baseURL = Cypress.config().baseUrl
 

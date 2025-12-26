@@ -1,3 +1,4 @@
+import checkInputError from '../../utils/checkInputError'
 import checkPasswordErrors from '../../utils/checkPasswordErrors'
 import extractValidationCodeFromEmail from '../../utils/extractValidationCodeFromEmail'
 
