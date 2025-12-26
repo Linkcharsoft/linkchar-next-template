@@ -71,10 +71,12 @@ const SignupPage = () => {
       })
 
       try {
+        const isTestUser = localStorage.getItem('test_user')
         const { ok, error } = await signup({
           email: values.email,
           password1: values.password,
-          password2: values.password
+          password2: values.password,
+          is_test_user: isTestUser === 'true' ? true : false
         })
 
         if (!ok) {

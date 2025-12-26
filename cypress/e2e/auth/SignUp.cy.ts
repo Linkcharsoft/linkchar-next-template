@@ -88,6 +88,10 @@ describe('Sign Up: Success ✅', () => {
     cy.get('input[name="password"]').as('password-input')
     cy.get('button[type="submit"]').as('submit-button')
 
+    cy.window().then((win) => {
+      win.localStorage.setItem('test_user', 'true')
+    })
+
     const emailAddress = Cypress.env('emailAddress')
     cy.get('@email-input').type(emailAddress)
     cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
@@ -101,6 +105,10 @@ describe('Sign Up: Success ✅', () => {
 
       cy.wrap(code).should('exist')
       Cypress.env('emailValidationCode', code)
+    })
+
+    cy.window().then((win) => {
+      win.localStorage.removeItem('test_user')
     })
   })
 

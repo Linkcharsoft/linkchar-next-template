@@ -48,7 +48,12 @@ export const refreshToken = async (body: { refresh: string }) => {
   })
 }
 
-export const signup = async (body: { email: string; password1: string, password2: string }) => {
+export const signup = async (body: {
+  email: string
+  password1: string
+  password2: string
+  is_test_user?: boolean
+}) => {
   return await customFetch<{
     detail: string
   }>({
