@@ -25,15 +25,15 @@ type FetchOptionsType = {
 
 
 /**
- * Wrapper personalizado de `fetch` que gestiona automáticamente:
- * 1. Construcción de URLs basadas en constantes de entorno.
- * 2. Inyección de tokens de autenticación.
- * 3. Refresco de tokens automático en caso de errores 401.
- * 4. Cierre de sesión si el refresco de token falla.
+ * A custom `fetch` wrapper that automatically handles:
+ * 1. URL construction based on environment constants.
+ * 2. Injection of authentication tokens.
+ * 3. Automatic token refresh in case of 401 (Unauthorized) errors.
+ * 4. User sign-out if the token refresh process fails.
  *
- * @template T - El tipo esperado para el objeto `data` en la respuesta.
- * @param {CustomFetchType} params - Configuración de la petición.
- * @returns {Promise<CustomFetchResponse<T>>} Un objeto que contiene la respuesta original, el estado de éxito y los datos/error.
+ * @template T - The expected type for the `data` object in the response.
+ * @param {CustomFetchType} params - The request configuration options.
+ * @returns {Promise<CustomFetchResponse<T>>} An object containing the original response, success status, and the parsed data or error.
  * * @example
  * ```typescript
  * const { data, ok } = await customFetch<{ name: string, email: string }>({
