@@ -211,7 +211,7 @@ const HomePage = () => {
         />
         <h1 className='text-6xl font-extrabold'>{ PRODUCT_NAME }</h1>
         <h3 className='text-2xl'>Coming Soon</h3>
-        <h4 className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://linkchar.com/" target="_blank" rel="noopener noreferrer">Linkchar</a></h4>
+        <h4 className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></h4>
 
         <script
           ref={fragmentRef}
