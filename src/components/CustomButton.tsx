@@ -40,6 +40,7 @@ const CustomButton = ({
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
     { 'CustomButton--Disabled': disabled },
+    { 'CustomButton--Link': href },
     className
   )
   const tooltipId = props['data-tooltip-id']
