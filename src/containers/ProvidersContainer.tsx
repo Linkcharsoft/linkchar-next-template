@@ -1,4 +1,5 @@
 'use client'
+import Clarity from '@microsoft/clarity'
 import { PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { ReactNode, useEffect } from 'react'
@@ -12,6 +13,7 @@ interface Props {
 const ProvidersContainer = ({ children }: Props) => {
   const { setUser } = useUserStore()
 
+
   useEffect(() => {
     (async () => {
       const session = await getServerUser()
@@ -19,6 +21,11 @@ const ProvidersContainer = ({ children }: Props) => {
       if(session) setUser(session)
     })()
   }, [])
+
+  useEffect(() => {
+    if(process.env.CLARITY_ID) Clarity.init(process.env.CLARITY_ID)
+  }, [])
+
 
   return (
     <PrimeReactProvider value={{ pt: Tailwind }}>

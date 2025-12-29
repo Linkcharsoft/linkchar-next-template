@@ -208,6 +208,7 @@ const HomePage = () => {
           alt={PRODUCT_NAME}
           title={PRODUCT_NAME}
           className="HomePage__Logo"
+          priority
         />
         <h1 className='text-6xl font-extrabold'>{ PRODUCT_NAME }</h1>
         <h3 className='text-2xl'>Coming Soon</h3>

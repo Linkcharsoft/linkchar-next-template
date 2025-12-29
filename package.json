@@ -13,6 +13,7 @@
     "test:run": "cypress run"
   },
   "dependencies": {
+    "@microsoft/clarity": "1.0.2",
     "@sentry/nextjs": "10.32.1",
     "classnames": "2.5.1",
     "dayjs": "1.11.19",
