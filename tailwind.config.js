@@ -31,6 +31,15 @@ export const theme = {
       14: '14px',
       12: '12px',
       10: '10px'
+    },
+    screens: {
+      '2xs': '375px',
+      xs: '480px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1420px'
     }
   }
 }
