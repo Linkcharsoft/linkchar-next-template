@@ -1,11 +1,10 @@
-import { Metadata, Viewport } from 'next'
-import { ReactNode } from 'react'
-import ProvidersContainer from '@/containers/ProvidersContainer'
-
 import '@/styles/index.sass'
+import { Metadata, Viewport } from 'next'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
+import { ReactNode } from 'react'
+import ProvidersContainer from '@/containers/ProvidersContainer'
 
 export const viewport: Viewport = {
   themeColor: [
