@@ -13,7 +13,6 @@ export async function POST () {
     const response = await refreshToken({
       refresh: session.refresh
     })
-    console.log(response)
 
     if(response.ok) {
       return NextResponse.json({

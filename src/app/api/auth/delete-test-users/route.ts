@@ -6,7 +6,7 @@ export async function DELETE () {
     const response = await fetch(`${API_URL}/api/users/delete-test-users/`, {
       method: 'DELETE'
     })
-    console.log(response)
+
     if(response.ok) {
       return NextResponse.json({
         message: 'Test users deleted'

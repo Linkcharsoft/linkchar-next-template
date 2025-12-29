@@ -175,7 +175,6 @@ const HomePage = () => {
 
       const domIsReady = () => {
         world = new World(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight)
-        // console.log(world)
         window.addEventListener('resize', handleWindowResize, false)
         document.addEventListener('mousemove', handleMouseMove, false)
         handleWindowResize()
@@ -210,7 +209,7 @@ const HomePage = () => {
           className="HomePage__Logo"
           priority
         />
-        <h1 className='text-6xl font-extrabold'>{ PRODUCT_NAME }</h1>
+        <h1 className='text-6xl font-extrabold xs'>{ PRODUCT_NAME }</h1>
         <h3 className='text-2xl'>Coming Soon</h3>
         <h4 className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></h4>
 
