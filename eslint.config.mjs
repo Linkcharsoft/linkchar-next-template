@@ -85,10 +85,20 @@ const config = [...fixupConfigRules(compat.extends(
         'type',
       ],
 
+      pathGroups: [
+        {
+          pattern: '**/*.+(css|scss|sass)',
+          group: 'external',
+          position: 'before',
+        }
+      ],
+
+      warnOnUnassignedImports: true,
+
       alphabetize: {
         order: 'asc',
         caseInsensitive: true,
-      },
+      }
     }],
 
     // React / TS
