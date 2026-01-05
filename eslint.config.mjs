@@ -95,11 +95,9 @@ const ESLintConfig = [
       ...react.configs['jsx-runtime'].rules,
       ...jsxA11y.configs.recommended.rules,
       'react/jsx-filename-extension': [1, { 'extensions': ['.jsx', '.tsx'] }],
-      // 'react/jsx-uses-react': 'off',
       'react/no-unstable-nested-components': 'error',
       'react/prop-types': 'off',
-      // 'react/react-in-jsx-scope': 'off',
-      'react-hooks/exhaustive-deps': 'warn',
+      // 'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/rules-of-hooks': 'error',
 
       // Next
