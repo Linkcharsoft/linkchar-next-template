@@ -6,11 +6,13 @@
     "start": "next dev",
     "build": "next build",
     "serve": "next start",
-    "lint": "next lint",
-    "pre-commit": "npm run build || exit 1",
+    "lint-check": "eslint .",
+    "type-check": "tsc --noEmit",
+    "check": "npm run lint-check && npm run type-check",
+    "pre-commit": "npm run check || exit 1",
     "prepare": "husky",
-    "test:open": "cypress open",
-    "test:run": "cypress run"
+    "test-open": "cypress open",
+    "test-run": "cypress run"
   },
   "dependencies": {
     "@microsoft/clarity": "1.0.2",
