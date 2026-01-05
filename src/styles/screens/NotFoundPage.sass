@@ -1,0 +1,68 @@
+.NotFoundPage
+  width: 100%
+  height: 100dvh
+  display: flex
+  flex-direction: column
+  justify-content: space-between
+  align-items: center
+  gap: 16px
+  @apply bg-black text-white
+  &__Logo
+    width: 256px
+    height: 256px
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5))
+  &__Link
+    border-radius: 8px
+    padding: 8px 24px
+    display: flex
+    justify-content: center
+    align-items: center
+    gap: 8px
+    font-weight: 500
+    text-align: center
+    transition: all 0.2s
+    @apply bg-purple-600 text-white hover:opacity-75 focus:shadow-sm
+
+  &__Waves-Container
+    width: 100%
+  &__Waves
+    position: relative
+    width: 100%
+    height: 15dvh
+    min-height: 100px
+    max-height: 150px
+  &__Waves-Parallax > use
+    animation: move-forever 125s cubic-bezier(.55,.5,.45,.5) infinite
+    &:nth-child(1)
+      animation-delay: -2s
+      animation-duration: 7s
+    &:nth-child(2)
+      animation-delay: -3s
+      animation-duration: 10s
+    &:nth-child(3)
+      animation-delay: -4s
+      animation-duration: 13s
+    &:nth-child(4)
+      animation-delay: -5s
+      animation-duration: 20s
+
+@media (max-width: 768px)
+  .NotFoundPage
+    &__Logo
+      width: 128px
+      height: 128px
+    &__Waves
+      height: 80px
+      min-height: unset
+
+@media (max-width: 576px)
+  .NotFoundPage
+    &__Waves
+      height: 60px
+
+@keyframes move-forever
+  0%
+    transform: translate3d(-90px,0,0)
+
+  100%
+    transform: translate3d(85px,0,0)
