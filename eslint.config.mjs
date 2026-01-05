@@ -13,7 +13,7 @@ import stylistic from '@stylistic/eslint-plugin'
 const ESLintConfig = [
   // --- Ignores ---
   {
-    ignores: ['node_modules/', 'dist/', 'build/', '.next/'],
+    ignores: ['node_modules/', 'dist/', 'build/', '.next/', '**/*.d.ts'],
   },
   // --- Base Recommended JS Rules ---
   js.configs.recommended,
@@ -80,7 +80,6 @@ const ESLintConfig = [
           order: 'asc',
           caseInsensitive: true
         },
-        'newlines-between': 'always',
         warnOnUnassignedImports: true,
         pathGroups: [
           {

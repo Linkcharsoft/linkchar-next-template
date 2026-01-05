@@ -10,8 +10,8 @@ export const getMyUser = async (token: string) => {
   })
 }
 
-export const updateUserProfile = async (token: string, body: any) => {
-  return await customFetch<any>({  // type this according to the need
+export const updateUserProfile = async (token: string, body: Partial<UserType>) => {
+  return await customFetch({
     path: '/auth/user/',
     method: 'PATCH',
     token,
@@ -67,14 +67,14 @@ export const passwordRecoveryChange = async (body: {
   request_type: 'change' | 'reset'
   email: string
 }) => {
-  return await customFetch<any>({  // type this according to the need
+  return await customFetch({
     path: '/auth/password/recovery/',
     method: 'POST',
     body
   })
 }
 
-export const checkPasswordToken = async (body: {  token: string, email: string }) => {
+export const checkPasswordToken = async (body: { token: string, email: string }) => {
   return await customFetch({
     path: '/auth/password/recovery/check-token/',
     method: 'POST',

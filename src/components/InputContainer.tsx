@@ -1,6 +1,6 @@
-import { ReactNode } from 'react'
 import InputError from './InputError'
 import Label from './Label'
+import type { ReactNode } from 'react'
 
 interface Props {
   label: string

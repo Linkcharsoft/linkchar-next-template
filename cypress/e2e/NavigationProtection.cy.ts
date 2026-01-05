@@ -2,7 +2,7 @@ describe('Navigation and Route Protection', () => {
   // const baseUrl = Cypress.config('baseUrl')
   // const protectedRoute = `${baseUrl}/`
   // const loginRoute = `${baseUrl}/login`
-  
+
   // before(() => {
   //   // Load fixture data if needed, e.g., user credentials
   //   cy.fixture('userData').then(function (data) {

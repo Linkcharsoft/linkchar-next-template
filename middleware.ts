@@ -1,6 +1,7 @@
-import { NextResponse , NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
+import type { NextRequest } from 'next/server'
 
 const AUTH_PATHS = new Set([
   '/login',

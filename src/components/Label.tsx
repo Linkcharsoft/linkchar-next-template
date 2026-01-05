@@ -1,4 +1,5 @@
-import { HTMLProps, memo } from 'react'
+import { memo } from 'react'
+import type { HTMLProps } from 'react'
 
 const Label = (props: HTMLProps<HTMLLabelElement>) => {
   return (

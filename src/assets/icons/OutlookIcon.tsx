@@ -1,4 +1,5 @@
-import { SVGProps, memo } from 'react'
+import { memo } from 'react'
+import type { SVGProps } from 'react'
 
 const OutlookIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg

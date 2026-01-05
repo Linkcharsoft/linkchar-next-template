@@ -2,9 +2,10 @@
 import Clarity from '@microsoft/clarity'
 import { PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
-import { ReactNode, useEffect } from 'react'
+import { useEffect } from 'react'
 import useUserStore from '@/stores/userStore'
 import { getServerUser } from '@/utils/auth'
+import type { ReactNode } from 'react'
 
 interface Props {
   children: ReactNode

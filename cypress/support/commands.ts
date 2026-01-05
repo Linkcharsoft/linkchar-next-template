@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 /// <reference types="cypress" />
-import { MailSlurp, InboxDto, Email } from 'mailslurp-client'
 import { AUTH_BACKEND_EMAIL_ADDRESS, AUTH_COOKIE_NAME } from '../../src/constants/auth'
+import type { MailSlurp, InboxDto, Email } from 'mailslurp-client'
 
 type InboxType = {
   id: string

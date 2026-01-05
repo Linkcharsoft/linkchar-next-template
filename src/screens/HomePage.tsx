@@ -11,10 +11,10 @@ const PRODUCT_NAME = 'Linkchar'
 
 // Borrar el contenido de este componente al desarrollar la app
 const HomePage = () => {
-  const containerRef = useRef<any>(null)
+  const containerRef = useRef<HTMLElement>(null)
   const scrollRef = useRef(null)
-  const vertexRef = useRef<any>(null)
-  const fragmentRef = useRef<any>(null)
+  const vertexRef = useRef<HTMLScriptElement>(null)
+  const fragmentRef = useRef<HTMLScriptElement>(null)
 
 
   function oscilateTime (time) {
@@ -75,7 +75,7 @@ const HomePage = () => {
           // this.renderer.setPixelRatio(window.devicePixelRatio)
 
           this.renderer.setSize(width, height)
-          this.container = containerRef.current
+          this.container = containerRef.current as HTMLElement
           this.scene = new THREE.Scene()
           this.width = width
           this.height = height
@@ -188,8 +188,8 @@ const HomePage = () => {
       const handleMouseMove = (e) => {
         mousePos.x = e.clientX
         mousePos.y = e.clientY
-        mousePos.px = mousePos.x / containerRef.current?.offsetWidth
-        mousePos.py = 1.0 - mousePos.y / containerRef.current?.offsetHeight
+        mousePos.px = mousePos.x / (containerRef.current as HTMLElement)?.offsetWidth
+        mousePos.py = 1.0 - mousePos.y / (containerRef.current as HTMLElement)?.offsetHeight
         world.mouseMove(mousePos)
       }
 

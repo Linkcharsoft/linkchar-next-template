@@ -1,5 +1,5 @@
-import { Email } from 'mailslurp-client'
 import { AUTH_EMAIL_SUBJECTS } from '../../src/constants/auth'
+import type { Email } from 'mailslurp-client'
 
 const extractValidationCodeFromEmail = (email: Email): string => {
   expect(email.subject).to.include(AUTH_EMAIL_SUBJECTS['verify-email'])

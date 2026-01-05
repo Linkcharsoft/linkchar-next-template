@@ -1,9 +1,10 @@
 import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { login } from '@/api/users'
 import { AUTH_COOKIE_NAME } from '@/constants/auth'
-import { SessionType } from '@/types/auth'
 import { encryptSession } from '@/utils/crypto'
+import type { SessionType } from '@/types/auth'
+import type { NextRequest } from 'next/server'
 
 export async function POST (req: NextRequest) {
   try {

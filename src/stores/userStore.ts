@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { UserType } from '@/types/auth'
+import type { UserType } from '@/types/auth'
 
 type UserStoreType = {
   user?: UserType

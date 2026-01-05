@@ -1,8 +1,8 @@
 import Image from 'next/image'
-import { ReactNode } from 'react'
 import Logo from '@/assets/images/logo.svg'
 import LoadingModal from '@/components/modals/LoadingModal'
 import ToastMessages from '@/components/modals/ToastMessages'
+import type { ReactNode } from 'react'
 
 
 interface Props {

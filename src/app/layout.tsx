@@ -1,10 +1,10 @@
 import '@/styles/index.sass'
-import { Metadata, Viewport } from 'next'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
-import { ReactNode } from 'react'
 import ProvidersContainer from '@/containers/ProvidersContainer'
+import type { Metadata, Viewport } from 'next'
+import type { ReactNode } from 'react'
 
 const SITE_URL = new URL(process.env.DOMAIN || 'https://linkchar.com')
 
@@ -70,8 +70,7 @@ export const metadata: Metadata = {
         alt: 'Inferencia AI Solutions'
       }
     ],
-    locale: 'en_US',
-    authors: ['Inferencia AI Solutions']
+    locale: 'en_US'
   },
   twitter: {
     card: 'summary_large_image',

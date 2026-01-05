@@ -5,7 +5,7 @@ type CustomFetchType = {
   token?: string
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: object
-  params?: string | URLSearchParams | Record<string, string> | string[][] | any
+  params?: string | URLSearchParams | Record<string, string> | string[][]
   headers?: Record<string, string>
   strapi?: boolean
 }

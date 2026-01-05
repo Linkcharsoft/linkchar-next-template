@@ -1,6 +1,6 @@
 'use client'
-import { ToastMessage } from 'primereact/toast'
 import { create } from 'zustand'
+import type { ToastMessage } from 'primereact/toast'
 
 type LoadingModalState = {
   show: boolean

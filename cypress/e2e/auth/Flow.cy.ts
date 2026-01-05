@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 import './SignUp.cy'
 import './EmailValidation.cy'
 import './Login.cy'
