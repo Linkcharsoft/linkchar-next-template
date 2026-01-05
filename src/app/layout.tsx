@@ -34,6 +34,7 @@ export const metadata: Metadata = {
 
   // Authors
   authors: [
+    { name: 'Inferencia AI Solutions', url: 'https://www.linkedin.com/company/inferencia-ai/posts/' },
     { name: 'Lucas Ojeda De Sousa (Lukway)', url: 'https://www.linkedin.com/in/lukway/' },
     { name: 'Lucas Ezequiel Pereyra', url: 'https://www.linkedin.com/in/lucas-pereyra-dw/' },
     // { name: 'Luca Cittá Giordano', url: 'https://www.linkedin.com/in/lucacittagiordano/' },

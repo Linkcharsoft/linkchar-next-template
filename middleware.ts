@@ -33,6 +33,7 @@ export async function middleware (req: NextRequest) {
     if(!authCookie && !isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))
 
     const token = await getAccessToken()
+
     // 🔄 If there is token and tries to access a auth path, redirect to the authenticated home path
     if(token && isAuthFlow) {
       return NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
