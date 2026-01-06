@@ -9,8 +9,7 @@
     "lint-check": "eslint .",
     "type-check": "tsc --noEmit",
     "check": "npm run lint-check && npm run type-check",
-    "pre-commit": "npm run check || exit 1",
-    "😏 prepare": "husky",
+    "prepare": "husky",
     "test-open": "cypress open",
     "test-run": "cypress run"
   },
