@@ -1,0 +1,34 @@
+name: CI (Checks & Tests)
+
+on:
+  push:
+    branches: [main, develop, feature/general-improvements]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Correr Linter y Typescript
+        run: npm run check
+
+      - name: Correr Tests de Cypress (E2E)
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run build
+          start: npm run serve
+          wait-on: "http://localhost:3000"
