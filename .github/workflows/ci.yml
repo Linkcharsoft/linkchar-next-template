@@ -2,7 +2,7 @@ name: CI (Checks & Tests)
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/general-improvements]
   pull_request:
     branches: [main]
 
