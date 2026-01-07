@@ -25,10 +25,18 @@ export const getServerSession = async () => {
   }
 }
 
-export const getAccessToken = async () => {
-  const session = await getServerSession()
+export const getAccessToken = async (): Promise<string | undefined> => {
+  let token
 
-  return session.access
+  try {
+    const session = await getServerSession()
+    token = session.access
+  } catch (error) {
+    const message = error instanceof Error ? error.message : AUTH_TOKEN_ERRORS['general']
+    throw new Error(message)
+  }
+
+  return token
 }
 
 export const getServerUser = async (): Promise<UserType | null> => {
