@@ -6,6 +6,7 @@
     "start": "next dev",
     "build": "next build",
     "serve": "next start",
+    "clean": "pnpm dlx rimraf .next node_modules pnpm-lock.yaml",
     "lint-check": "eslint .",
     "type-check": "tsc --noEmit",
     "check": "npm run lint-check && npm run type-check",
