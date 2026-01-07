@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "strict": false,
     "allowSyntheticDefaultImports": true,
     "noFallthroughCasesInSwitch": true,
@@ -37,6 +37,7 @@
   },
   "include": [
     ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
     "src/",
     "middleware.ts",
     "env.d.ts"
