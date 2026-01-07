@@ -1,11 +1,11 @@
 declare namespace NodeJS {
   interface ProcessEnv {
-    API_URL: string;
-    MEDIA_URL: string;
+    NEXT_PUBLIC_API_URL: string;
+    NEXT_PUBLIC_MEDIA_URL: string;
 
-    CLARITY_ID: string;
+    NEXT_PUBLIC_CLARITY_ID: string;
 
-    IS_PRODUCTION: string;
+    NEXT_PUBLIC_IS_PRODUCTION: string;
 
 
     AUTH_SECRET: string;

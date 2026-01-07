@@ -24,10 +24,10 @@ export default defineConfig({
     waitForAnimations: true,
     experimentalWebKitSupport: true, // Enable WebKit support
     env: {
-      API_URL: process.env.API_URL,
-      MAILSLURP_API_KEY: process.env.MAILSLURP_API_KEY,
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
       AUTH_DEFAULT_USER: process.env.AUTH_DEFAULT_USER,
-      AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD
+      AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD,
+      MAILSLURP_API_KEY: process.env.MAILSLURP_API_KEY
     }
   },
   fixturesFolder: 'src/cypress/fixtures'

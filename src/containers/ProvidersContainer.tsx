@@ -24,7 +24,7 @@ const ProvidersContainer = ({ children }: Props) => {
   }, [])
 
   useEffect(() => {
-    if(process.env.CLARITY_ID) Clarity.init(process.env.CLARITY_ID)
+    if(process.env.NEXT_PUBLIC_CLARITY_ID) Clarity.init(process.env.NEXT_PUBLIC_CLARITY_ID)
   }, [])
 
 

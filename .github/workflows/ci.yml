@@ -14,10 +14,10 @@ jobs:
 
     env:
       # --- Client side variables (Public) ---
-      API_URL: ${{ vars.API_URL }}
-      MEDIA_URL: ${{ vars.MEDIA_URL }}
-      CLARITY_ID: ${{ vars.CLARITY_ID }}
-      IS_PRODUCTION: ${{ vars.IS_PRODUCTION }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_MEDIA_URL: ${{ vars.NEXT_PUBLIC_MEDIA_URL }}
+      NEXT_PUBLIC_CLARITY_ID: ${{ vars.NEXT_PUBLIC_CLARITY_ID }}
+      NEXT_PUBLIC_IS_PRODUCTION: ${{ vars.NEXT_PUBLIC_IS_PRODUCTION }}
 
       # --- Server side variables (Secret) ---
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}

@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   //   remotePatterns: [
   //     {
   //       protocol: 'https',
-  //       hostname: new URL(process.env.MEDIA_URL).host,
+  //       hostname: new URL(process.env.NEXT_PUBLIC_MEDIA_URL).host,
   //       port: '',
   //       pathname: '/**',
   //     },

@@ -5,7 +5,7 @@
 
 import * as Sentry from '@sentry/nextjs'
 
-if(process.env.IS_PRODUCTION === 'true') {
+if(process.env.NEXT_PUBLIC_IS_PRODUCTION === 'true') {
   Sentry.init({
     dsn: '', // complete with your sentry dsn
 
