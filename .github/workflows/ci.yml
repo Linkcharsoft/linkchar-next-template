@@ -10,6 +10,19 @@ jobs:
   quality-check:
     runs-on: ubuntu-latest
 
+    env:
+      # --- Client side variables ---
+      API_URL: ${{ vars.API_URL }}
+      MEDIA_URL: ${{ vars.MEDIA_URL }}
+      CLARITY_ID: ${{ vars.CLARITY_ID }}
+      IS_PRODUCTION: ${{ vars.IS_PRODUCTION }}
+
+      # --- Server side variables ---
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      AUTH_DEFAULT_USER: ${{ secrets.AUTH_DEFAULT_USER }}
+      AUTH_DEFAULT_PASSWORD: ${{ secrets.AUTH_DEFAULT_PASSWORD }}
+      MAILSLURP_API_KEY: ${{ secrets.MAILSLURP_API_KEY }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
