@@ -47,6 +47,18 @@ jobs:
 
       - name: Run Cypress (E2E)
         uses: cypress-io/github-action@v6
+        env:
+          # --- Client side variables ---
+          API_URL: ${{ vars.API_URL }}
+          MEDIA_URL: ${{ vars.MEDIA_URL }}
+          CLARITY_ID: ${{ vars.CLARITY_ID }}
+          IS_PRODUCTION: ${{ vars.IS_PRODUCTION }}
+
+          # --- Server side variables ---
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_DEFAULT_USER: ${{ secrets.AUTH_DEFAULT_USER }}
+          AUTH_DEFAULT_PASSWORD: ${{ secrets.AUTH_DEFAULT_PASSWORD }}
+          MAILSLURP_API_KEY: ${{ secrets.MAILSLURP_API_KEY }}
         with:
           install: false
           build: pnpm run build
