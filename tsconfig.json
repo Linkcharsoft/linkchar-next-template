@@ -39,7 +39,8 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "src/",
-    "middleware.ts",
+    "proxy.ts",
+    "next.config.ts",
     "env.d.ts"
   ],
   "exclude": [
