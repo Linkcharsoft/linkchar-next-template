@@ -118,7 +118,7 @@ const ESLintConfig = [
   },
   // --- Cypress Config ---
   {
-    files: ['cypress/**/*.{ts,tsx}', '**/*.cy.{ts,tsx}'],
+    files: ['src/cypress/**/*.{ts,tsx}'],
     languageOptions: {
       globals: {
         ...globals.browser,

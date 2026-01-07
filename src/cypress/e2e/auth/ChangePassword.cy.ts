@@ -1,6 +1,6 @@
-import checkInputError from '../../utils/checkInputError'
-import checkPasswordErrors from '../../utils/checkPasswordErrors'
-import extractValidationCodeFromEmail from '../../utils/extractValidationCodeFromEmail'
+import checkInputError from '@/cypress/utils/checkInputError'
+import checkPasswordErrors from '@/cypress/utils/checkPasswordErrors'
+import extractValidationCodeFromEmail from '@/cypress/utils/extractValidationCodeFromEmail'
 
 const baseURL = Cypress.config().baseUrl
 

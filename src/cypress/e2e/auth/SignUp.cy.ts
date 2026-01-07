@@ -1,7 +1,7 @@
-import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
-import checkInputError from '../../utils/checkInputError'
-import checkPasswordErrors from '../../utils/checkPasswordErrors'
-import extractValidationCodeFromEmail from '../../utils/extractValidationCodeFromEmail'
+import { AUTH_COOKIE_NAME, AUTH_INPUT_ERRORS } from '@/constants/auth'
+import checkInputError from '@/cypress/utils/checkInputError'
+import checkPasswordErrors from '@/cypress/utils/checkPasswordErrors'
+import extractValidationCodeFromEmail from '@/cypress/utils/extractValidationCodeFromEmail'
 
 const baseURL = Cypress.config().baseUrl
 
@@ -12,6 +12,7 @@ describe('Sign Up: Errors ❌', () => {
     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
     cy.createInbox().then(({ id, emailAddress }) => {
+      cy.log(emailAddress)
       Cypress.env('inboxId', id)
       Cypress.env('emailAddress', emailAddress)
     })

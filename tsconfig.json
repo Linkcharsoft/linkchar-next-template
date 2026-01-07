@@ -21,7 +21,6 @@
     "noFallthroughCasesInSwitch": true,
     "incremental": true,
     "typeRoots": [
-      "./types",
       "./node_modules/@types"
     ],
     "paths": {
@@ -29,9 +28,6 @@
         "./src/*"
       ]
     },
-    "types": [
-      "cypress"
-    ],
     "plugins": [
       {
         "name": "next"
@@ -40,14 +36,14 @@
     "strictNullChecks": true
   },
   "include": [
-    "src/",
-    "cypress/**/*.ts",
-    "middleware.ts",
     ".next/types/**/*.ts",
+    "src/",
+    "middleware.ts",
     "env.d.ts"
   ],
   "exclude": [
     ".next/types/**/*.ts",
-    "./node_modules"
+    "node_modules",
+    "src/cypress"
   ]
 }

@@ -8,6 +8,9 @@ export default defineConfig({
   video: false,
   screenshotOnRunFailure: false,
   e2e: {
+    specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}',
+    supportFile: 'src/cypress/support/e2e.{ts,tsx}',
+
     baseUrl: 'http://localhost:3000',
     viewportWidth: 1920,
     viewportHeight: 1080,
@@ -26,5 +29,6 @@ export default defineConfig({
       AUTH_DEFAULT_USER: process.env.AUTH_DEFAULT_USER,
       AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD
     }
-  }
+  },
+  fixturesFolder: 'src/cypress/fixtures'
 })

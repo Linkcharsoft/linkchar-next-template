@@ -1,5 +1,5 @@
-import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '../../../src/constants/auth'
-import checkInputError from '../../utils/checkInputError'
+import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '@/constants/auth'
+import checkInputError from '@/cypress/utils/checkInputError'
 
 const baseURL = Cypress.config().baseUrl
 

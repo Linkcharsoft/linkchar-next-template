@@ -1,5 +1,5 @@
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import checkInputError from './checkInputError'
-import { AUTH_INPUT_ERRORS } from '../../src/constants/auth'
 
 const PASSWORD_TESTS = [
   {

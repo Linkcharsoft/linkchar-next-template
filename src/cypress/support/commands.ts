@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /// <reference types="cypress" />
-import { AUTH_BACKEND_EMAIL_ADDRESS, AUTH_COOKIE_NAME } from '../../src/constants/auth'
+import { AUTH_BACKEND_EMAIL_ADDRESS, AUTH_COOKIE_NAME } from '@/constants/auth'
 import type { MailSlurp, InboxDto, Email } from 'mailslurp-client'
 
 type InboxType = {
@@ -81,7 +81,7 @@ Cypress.Commands.add('logout', () => {
 })
 
 Cypress.Commands.add('createInbox', () => {
-  const FILE_NAME = 'cypress/fixtures/auth-user.json'
+  const FILE_NAME = 'src/cypress/fixtures/auth-user.json'
 
   cy.readFile(FILE_NAME, { log: false })
     .then((data: InboxType) => {
