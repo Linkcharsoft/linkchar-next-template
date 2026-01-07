@@ -15,7 +15,7 @@ const AUTHENTICATED_HOME_PATH: string = '/'
 
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i
 
-export async function middleware (req: NextRequest) {
+export async function proxy (req: NextRequest) {
   const { pathname } = req.nextUrl
 
   // ⛔ Ignore static resources
