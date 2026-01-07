@@ -10,6 +10,8 @@ jobs:
   quality-check:
     runs-on: ubuntu-latest
 
+    environment: "Env"
+
     env:
       # --- Client side variables ---
       API_URL: ${{ vars.API_URL }}
