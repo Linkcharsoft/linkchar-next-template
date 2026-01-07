@@ -8,9 +8,9 @@ const nextConfig = {
   },
   env: {
     API_URL: process.env.API_URL,
-    AUTH_SECRET: process.env.AUTH_SECRET,
-    CLARITY_ID: process.env.CLARITY_ID
-    // MEDIA_URL: process.env.MEDIA_URL,
+    MEDIA_URL: process.env.MEDIA_URL,
+    CLARITY_ID: process.env.CLARITY_ID,
+    IS_PRODUCTION: process.env.IS_PRODUCTION,
     // STRAPI_URL: process.env.STRAPI_URL,
     // STRAPI_MEDIA_URL: process.env.STRAPI_MEDIA_URL,
   }
