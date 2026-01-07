@@ -2,7 +2,7 @@ name: CI (Checks & Tests)
 
 on:
   push:
-    branches: [main, develop, feature/general-improvements]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -13,13 +13,13 @@ jobs:
     environment: "Env"
 
     env:
-      # --- Client side variables ---
+      # --- Client side variables (Public) ---
       API_URL: ${{ vars.API_URL }}
       MEDIA_URL: ${{ vars.MEDIA_URL }}
       CLARITY_ID: ${{ vars.CLARITY_ID }}
       IS_PRODUCTION: ${{ vars.IS_PRODUCTION }}
 
-      # --- Server side variables ---
+      # --- Server side variables (Secret) ---
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       AUTH_DEFAULT_USER: ${{ secrets.AUTH_DEFAULT_USER }}
       AUTH_DEFAULT_PASSWORD: ${{ secrets.AUTH_DEFAULT_PASSWORD }}
