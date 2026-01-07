@@ -41,28 +41,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Instalar Binario de Cypress
+      - name: Install Cypress Binary
         run: pnpm exec cypress install
 
       - name: Run ESLint & Typescript
         run: pnpm run check
 
-      - name: Run Cypress (E2E)
-        uses: cypress-io/github-action@v6
-        env:
-          # --- Client side variables ---
-          API_URL: ${{ vars.API_URL }}
-          MEDIA_URL: ${{ vars.MEDIA_URL }}
-          CLARITY_ID: ${{ vars.CLARITY_ID }}
-          IS_PRODUCTION: ${{ vars.IS_PRODUCTION }}
+      - name: Run build
+        run: pnpm run build
 
-          # --- Server side variables ---
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_DEFAULT_USER: ${{ secrets.AUTH_DEFAULT_USER }}
-          AUTH_DEFAULT_PASSWORD: ${{ secrets.AUTH_DEFAULT_PASSWORD }}
-          MAILSLURP_API_KEY: ${{ secrets.MAILSLURP_API_KEY }}
-        with:
-          install: false
-          build: pnpm run build
-          start: pnpm run serve
-          wait-on: "http://localhost:3000"
+      ## Comment "Run build" step if you are going to use the e2e step
+      # - name: Run Cypress (E2E)
+      #   uses: cypress-io/github-action@v6
+      #   with:
+      #     install: false
+      #     build: pnpm run build
+      #     start: pnpm run serve
+      #     wait-on: "http://localhost:3000"
