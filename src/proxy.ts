@@ -17,6 +17,7 @@ const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|wo
 
 export async function proxy (req: NextRequest) {
   const { pathname } = req.nextUrl
+  console.log(pathname)
 
   // ⛔ Ignore static resources
   if (STATIC_RESOURCES_REGEX.test(pathname)) return NextResponse.next()
@@ -29,6 +30,7 @@ export async function proxy (req: NextRequest) {
 
   try {
     const authCookie = req.cookies.get(AUTH_COOKIE_NAME)
+    console.log(authCookie)
     // 🔄 If there is no auth cookie and tries to acces a protected path, redirect to login
     if(!authCookie && !isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))
 
