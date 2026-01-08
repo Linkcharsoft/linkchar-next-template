@@ -1,5 +1,6 @@
 'use client'
 import Clarity from '@microsoft/clarity'
+import { domAnimation, LazyMotion } from 'framer-motion'
 import { PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect } from 'react'
@@ -30,7 +31,9 @@ const ProvidersContainer = ({ children }: Props) => {
 
   return (
     <PrimeReactProvider value={{ pt: Tailwind }}>
-      { children }
+      <LazyMotion features={domAnimation} strict>
+        { children }
+      </LazyMotion>
     </PrimeReactProvider>
   )
 }

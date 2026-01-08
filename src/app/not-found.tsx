@@ -1,5 +1,5 @@
 'use client'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import Logo from '@/assets/images/logo.svg'
@@ -27,7 +27,7 @@ const NotFoundPage = () => {
         </Link>
       </div>
 
-      <motion.div
+      <m.div
         className="NotFoundPage__Waves-Container"
         initial={{
           willChange: 'opacity, transform',
@@ -83,7 +83,7 @@ const NotFoundPage = () => {
             <use xlinkHref="#gentle-wave" x="48" y="0" fill="url(#grad-4)" opacity={0.25}/>
           </g>
         </svg>
-      </motion.div>
+      </m.div>
     </div>
   )
 }

@@ -122,7 +122,21 @@ const ESLintConfig = [
 
       // Tailwind
       ...tailwind.configs.recommended.rules,
-      'tailwindcss/no-custom-classname': 'off'
+      'tailwindcss/no-custom-classname': 'off',
+
+      // Framer motion
+      'no-restricted-imports': [
+        'error',
+        {
+          'paths': [
+            {
+              'name': 'framer-motion',
+              'importNames': ['motion'],
+              'message': 'Please use \'m\' in conjunction with LazyMotion to improve performance.'
+            }
+          ]
+        }
+      ]
     },
   },
   // --- Dependencies ---

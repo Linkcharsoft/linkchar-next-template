@@ -1,5 +1,5 @@
 'use client'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m } from 'framer-motion'
 
 interface Props {
   message: string | undefined
@@ -9,14 +9,14 @@ const InputError = ({ message }: Props) => {
   return (
     <AnimatePresence>
       {message && (
-        <motion.div
+        <m.div
           className="InputError fw-medium flex items-center gap-2 text-sm text-red-600"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
         >
           <i className="pi pi-exclamation-circle text-red-600"></i>
           { message }
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )

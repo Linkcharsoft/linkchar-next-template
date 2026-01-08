@@ -1,5 +1,5 @@
 'use client'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m } from 'framer-motion'
 import { memo } from 'react'
 import { useAppStore } from '@/stores/appStore'
 import Loader from '../Loader'
@@ -10,7 +10,7 @@ const LoadingModal = () => {
   return (
     <AnimatePresence>
       {loadingModal.show && (
-        <motion.div
+        <m.div
           className="LoadingModal"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -33,7 +33,7 @@ const LoadingModal = () => {
               </p>
             )}
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )

@@ -1,5 +1,5 @@
 'use client'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -110,9 +110,9 @@ const ChangePasswordPage = () => {
 
         <AnimatePresence>
           {showEmails && (
-            <motion.div
+            <m.div
               className="flex items-center justify-center gap-8"
-              initial={{ height: 0,opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.5 }}
             >
@@ -131,7 +131,7 @@ const ChangePasswordPage = () => {
               >
                 <GmailIcon/>
               </Link>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 

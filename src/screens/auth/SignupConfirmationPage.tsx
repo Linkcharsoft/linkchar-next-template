@@ -1,6 +1,6 @@
 'use client'
 import { useFormik } from 'formik'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { InputText } from 'primereact/inputtext'
 import { useEffect, useState } from 'react'
@@ -152,9 +152,9 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
               <AnimatePresence>
                 {showEmails && (
-                  <motion.div
+                  <m.div
                     className="flex items-center justify-center gap-8"
-                    initial={{ height: 0,opacity: 0 }}
+                    initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     transition={{ duration: 0.3, delay: 0.5 }}
                   >
@@ -173,7 +173,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
                     >
                       <GmailIcon/>
                     </Link>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
