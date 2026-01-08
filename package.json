@@ -61,6 +61,7 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "7.0.1",
+    "eslint-plugin-tailwindcss": "3.18.2",
     "globals": "17.0.0",
     "husky": "9.1.7",
     "mailslurp-client": "16.0.0",

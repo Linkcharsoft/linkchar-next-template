@@ -1,14 +1,15 @@
 import js from '@eslint/js'
+import nextPlugin from '@next/eslint-plugin-next'
+import stylistic from '@stylistic/eslint-plugin'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
+import cypressPlugin from 'eslint-plugin-cypress'
 import importPlugin from 'eslint-plugin-import'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
-import cypressPlugin from 'eslint-plugin-cypress'
-import nextPlugin from '@next/eslint-plugin-next'
+import tailwind from 'eslint-plugin-tailwindcss'
 import globals from 'globals'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
-import stylistic from '@stylistic/eslint-plugin'
 
 const ESLintConfig = [
   // --- Ignores ---
@@ -19,7 +20,7 @@ const ESLintConfig = [
   js.configs.recommended,
   // --- Main Project Rules ---
   {
-    files: ['**/*.{ts,tsx,js,jsx}'],
+    files: ['**/*.{ts,tsx,js,mjs,jsx}'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 'latest',
@@ -42,7 +43,8 @@ const ESLintConfig = [
       import: importPlugin,
       '@next/next': nextPlugin,
       react,
-      stylistic
+      stylistic,
+      tailwindcss: tailwind
     },
     settings: {
       react: { version: 'detect' },
@@ -113,7 +115,12 @@ const ESLintConfig = [
       // '@typescript-eslint/no-unused-vars': ['warn', {
       //   argsIgnorePattern: '^_',
       //   varsIgnorePattern: '^_'
+      //   caughtErrorsIgnorePattern: "^_",
       // }],
+
+      // Tailwind
+      ...tailwind.configs.recommended.rules,
+      'tailwindcss/no-custom-classname': 'off'
     },
   },
   // --- Cypress Config ---
