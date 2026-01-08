@@ -143,7 +143,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
+            <i className="pi pi-exclamation-triangle text-center text-48 text-yellow-500"/>
 
             <div className="flex flex-col gap-6">
               <p className="text-center text-base font-normal text-surface-800">
@@ -153,7 +153,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
               <AnimatePresence>
                 {showEmails && (
                   <motion.div
-                    className="flex justify-center items-center gap-8"
+                    className="flex items-center justify-center gap-8"
                     initial={{ height: 0,opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     transition={{ duration: 0.3, delay: 0.5 }}
@@ -211,7 +211,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'valid') && (
           <>
-            <i className="pi pi-check-circle text-green-600 text-[48px] text-center"/>
+            <i className="pi pi-check-circle text-center text-48 text-green-600"/>
 
             <p className="text-center text-base font-normal text-surface-800">
               Account successfully verified!

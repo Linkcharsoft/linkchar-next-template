@@ -9,7 +9,7 @@ const NotFoundPage = () => {
     <div className='NotFoundPage'>
       <header></header>
 
-      <div className="px-4 flex flex-col justify-center items-center gap-6 text-center">
+      <div className="flex flex-col items-center justify-center gap-6 px-4 text-center">
         <Image
           src={Logo}
           alt='Logo'

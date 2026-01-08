@@ -15,7 +15,7 @@ const PasswordValidation = ({ password }: Props) => {
           key={`Password-Validation-Type-${index}`}
           className="flex items-center gap-2"
         >
-          <div className="w-4 flex justify-center items-center">
+          <div className="flex w-4 items-center justify-center">
             <i
               className={classNames('pi', {
                 'pi-circle-fill text-surface-700 text-10': !password,
@@ -24,7 +24,7 @@ const PasswordValidation = ({ password }: Props) => {
               })}
             ></i>
           </div>
-          <span className="text-surface-700 text-14">{PASSWORD_VALIDATIONS.validations[type].label}</span>
+          <span className="text-14 text-surface-700">{PASSWORD_VALIDATIONS.validations[type].label}</span>
         </div>
       ))}
     </div>

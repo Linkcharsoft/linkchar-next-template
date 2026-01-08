@@ -111,7 +111,7 @@ const ChangePasswordPage = () => {
         <AnimatePresence>
           {showEmails && (
             <motion.div
-              className="flex justify-center items-center gap-8"
+              className="flex items-center justify-center gap-8"
               initial={{ height: 0,opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               transition={{ duration: 0.3, delay: 0.5 }}
@@ -135,7 +135,7 @@ const ChangePasswordPage = () => {
           )}
         </AnimatePresence>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="flex w-full flex-col gap-4">
           <CustomButton
             className="w-full"
             type='submit'

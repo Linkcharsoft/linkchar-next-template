@@ -19,7 +19,7 @@ const AuthLayout = ({ children }: Props) => {
         <ToastMessages />
       </section>
 
-      <section className="h-full w-[55%] bg-black flex justify-center items-center">
+      <section className="flex h-full w-[55%] items-center justify-center bg-black">
         <Image
           src={Logo}
           width={256}

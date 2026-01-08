@@ -25,7 +25,7 @@ export default function StateModal () {
   }
 
   return (
-    <div className="card flex justify-content-center">
+    <div className="card justify-content-center flex">
       <Dialog
         header="Header"
         visible={modalState.show}

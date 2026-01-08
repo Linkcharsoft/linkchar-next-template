@@ -158,7 +158,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <i className="pi pi-exclamation-triangle text-yellow-500 text-[48px] text-center"/>
+            <i className="pi pi-exclamation-triangle text-center text-48 text-yellow-500"/>
 
             <p className="text-center text-base font-normal text-surface-800">
               The link you&apos;ve used is no longer available

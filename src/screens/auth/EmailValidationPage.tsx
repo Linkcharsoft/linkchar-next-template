@@ -75,18 +75,18 @@ const EmailValidationPage = ({ email }: Props) => {
   return (
     <main className="AuthLayout">
       <section className="AuthLayout__Section">
-        <i className="pi pi-envelope text-blue-600 text-[48px] text-center" />
+        <i className="pi pi-envelope text-center text-48 text-blue-600" />
 
         <h1 className="AuthLayout__Title">
           Validate your email!
         </h1>
 
         <p className="text-center text-base font-normal text-surface-800">
-          We sent you an email to <span className="text-surface-900 font-semibold" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
+          We sent you an email to <span className="font-semibold text-surface-900" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
         </p>
 
 
-        <div className="flex justify-center items-center gap-8">
+        <div className="flex items-center justify-center gap-8">
           <Link
             className='hover:opacity-75'
             href='https://outlook.com/'
@@ -104,7 +104,7 @@ const EmailValidationPage = ({ email }: Props) => {
           </Link>
         </div>
 
-        <div className="w-full flex flex-col gap-6">
+        <div className="flex w-full flex-col gap-6">
           <CustomButton
             href='/login'
             replace
@@ -113,7 +113,7 @@ const EmailValidationPage = ({ email }: Props) => {
             Go to log in
           </CustomButton>
 
-          <div className="w-full flex flex-col justify-center items-center gap-2">
+          <div className="flex w-full flex-col items-center justify-center gap-2">
             <p className="font-normal text-surface-800">
               Didn&apos;t receive anything?
             </p>

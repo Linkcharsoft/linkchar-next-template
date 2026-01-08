@@ -39,7 +39,7 @@ const TestPage = ({ user }) => {
             // keyfilter='email'
           />
         </div>
-        <div className="w-full flex flex-col gap-2">
+        <div className="flex w-full flex-col gap-2">
           <Label htmlFor="password">Password</Label>
           <Password
             name="password"

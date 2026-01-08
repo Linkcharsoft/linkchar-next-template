@@ -179,7 +179,7 @@ const SignupPage = () => {
           <InputError message={generalError ?? ''} />
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="flex w-full flex-col gap-4">
           <CustomButton
             className="w-full"
             onClick={e => {

@@ -4,7 +4,7 @@ import type { HTMLProps } from 'react'
 const Label = (props: HTMLProps<HTMLLabelElement>) => {
   return (
     <label
-      className="text-surface-700 text-base font-semibold not-italic leading-normal"
+      className="text-base font-semibold not-italic leading-normal text-surface-700"
       {...props}
     >
       {props.children}
