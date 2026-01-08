@@ -7,6 +7,7 @@
     "build": "next build",
     "serve": "next start",
     "clean": "pnpm dlx rimraf .next node_modules pnpm-lock.yaml",
+    "nuke": "pnpm run clean && pnpm install && pnpm run build",
     "lint-check": "eslint .",
     "type-check": "tsc --noEmit",
     "check": "pnpm run lint-check && pnpm run type-check",
