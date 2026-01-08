@@ -2,8 +2,8 @@
   "name": "linkchar-next-template",
   "version": "0.11.0",
   "private": true,
+  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a",
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "prepare": "husky",
     "start": "next dev",
     "build": "next build",
@@ -69,7 +69,6 @@
     "husky": "9.1.7",
     "jsonc-eslint-parser": "2.4.2",
     "mailslurp-client": "16.0.0",
-    "only-allow": "1.2.2",
     "playwright-webkit": "1.57.0",
     "postcss": "8.5.6",
     "sass": "1.97.2",
@@ -90,6 +89,7 @@
   },
   "engines": {
     "node": "^22.21.0",
+    "npm": ">=10.9.0",
     "pnpm": ">=10.27.0"
   },
   "pnpm": {
@@ -103,6 +103,5 @@
       "sharp",
       "unrs-resolver"
     ]
-  },
-  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a"
+  }
 }
