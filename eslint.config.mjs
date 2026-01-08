@@ -6,10 +6,12 @@ import tsParser from '@typescript-eslint/parser'
 import cypressPlugin from 'eslint-plugin-cypress'
 import importPlugin from 'eslint-plugin-import'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
+import nodeDeps from 'eslint-plugin-node-dependencies'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import tailwind from 'eslint-plugin-tailwindcss'
 import globals from 'globals'
+import jsoncParser from 'jsonc-eslint-parser'
 
 const ESLintConfig = [
   // --- Ignores ---
@@ -20,7 +22,7 @@ const ESLintConfig = [
   js.configs.recommended,
   // --- Main Project Rules ---
   {
-    files: ['**/*.{ts,tsx,js,mjs,jsx}'],
+    files: ['**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
       parser: tsParser,
       ecmaVersion: 'latest',
@@ -123,7 +125,25 @@ const ESLintConfig = [
       'tailwindcss/no-custom-classname': 'off'
     },
   },
-  // --- Cypress Config ---
+  // --- Dependencies ---
+  {
+    files: ['package.json'],
+    languageOptions: {
+      parser: jsoncParser
+    },
+    plugins: {
+      'node-dependencies': nodeDeps
+    },
+    rules: {
+      'node-dependencies/absolute-version': ['error', {
+        'dependencies': 'always',
+        'devDependencies': 'always',
+        'peerDependencies': 'always',
+        'optionalDependencies': 'always'
+      }]
+    }
+  },
+  // --- Cypress Rules ---
   {
     files: ['src/cypress/**/*.{ts,tsx}'],
     languageOptions: {
