@@ -12,5 +12,8 @@ declare namespace NodeJS {
     AUTH_DEFAULT_USER: string;
     AUTH_DEFAULT_PASSWORD: string;
     MAILSLURP_API_KEY: string;
+
+
+    SENTRY_DSN: string
   }
 }

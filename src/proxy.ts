@@ -11,6 +11,10 @@ const AUTH_PATHS = new Set([
   '/password-recovery',
 ])
 
+const PUBLIC_PATHS = new Set([
+  '/sentry-example-page',
+])
+
 const AUTHENTICATED_HOME_PATH: string = '/'
 
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i
@@ -24,6 +28,8 @@ export async function proxy (req: NextRequest) {
   if (pathname.startsWith('/api')) return NextResponse.next()
   // ⛔ Ignore Next.js chunks
   if (pathname.startsWith('/_next')) return NextResponse.next()
+  // ⛔ Ignore public paths
+  if ([...PUBLIC_PATHS].some(path => pathname.includes(path))) return NextResponse.next()
 
   const isAuthFlow = [...AUTH_PATHS].some(path => pathname.includes(path))
 
