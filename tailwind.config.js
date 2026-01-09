@@ -18,6 +18,8 @@ export const theme = {
       'surface-900': '#212121',
     },
     fontSize: {
+      64: '64px',
+      56: '56px',
       48: '48px',
       44: '44px',
       40: '40px',
