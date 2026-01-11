@@ -6,7 +6,7 @@ import ProvidersContainer from '@/containers/ProvidersContainer'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
-const SITE_URL = new URL(process.env.DOMAIN || 'https://linkchar.com')
+const SITE_URL = new URL(process.env.NEXT_PUBLIC_DOMAIN || 'https://linkchar.com')
 
 export const viewport: Viewport = {
   themeColor: [
