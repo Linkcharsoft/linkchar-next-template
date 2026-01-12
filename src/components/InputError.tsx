@@ -1,5 +1,6 @@
 'use client'
 import { AnimatePresence, m } from 'framer-motion'
+import { memo } from 'react'
 
 interface Props {
   message: string | undefined
@@ -22,4 +23,4 @@ const InputError = ({ message }: Props) => {
   )
 }
 
-export default InputError
+export default memo(InputError)
