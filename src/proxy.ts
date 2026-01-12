@@ -3,6 +3,7 @@ import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
 import type { NextRequest } from 'next/server'
 
+const AUTHENTICATED_HOME_PATH: string = '/dashboard'
 const AUTH_PATHS = new Set([
   '/login',
   '/signup',
@@ -11,7 +12,9 @@ const AUTH_PATHS = new Set([
   '/password-recovery',
 ])
 
-const AUTHENTICATED_HOME_PATH: string = '/'
+const PUBLIC_PATHS = new Set([
+  '/',
+])
 
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i
 
@@ -24,6 +27,8 @@ export async function proxy (req: NextRequest) {
   if (pathname.startsWith('/api')) return NextResponse.next()
   // ⛔ Ignore Next.js chunks
   if (pathname.startsWith('/_next')) return NextResponse.next()
+  // ⛔ Ignore public paths
+  if ([...PUBLIC_PATHS].some(path => path === pathname)) return NextResponse.next()
 
   const isAuthFlow = [...AUTH_PATHS].some(path => pathname.includes(path))
 
