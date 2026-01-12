@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { logout } from '@/api/users'
+import { logout } from '@/api/auth'
 import { AUTH_COOKIE_NAME } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 

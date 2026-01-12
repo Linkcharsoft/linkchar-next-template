@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { login } from '@/api/users'
+import { login } from '@/api/auth'
 import { AUTH_COOKIE_NAME } from '@/constants/auth'
 import { encryptSession } from '@/utils/crypto'
 import type { SessionType } from '@/types/auth'
