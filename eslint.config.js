@@ -91,8 +91,9 @@ const ESLintConfig = [
             group: 'external',
             position: 'before'
           }
-        ]
+        ],
       }],
+      'import/no-unresolved': 'error',
 
       // React & Web (A11y)
       ...react.configs.recommended.rules,
