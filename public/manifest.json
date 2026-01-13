@@ -1,90 +1,60 @@
 {
-  "name": "Linkchar Next Template",
-  "short_name": "Linkchar Next Template",
-  "description": "Linkchar Next Template - Created by Lucas Ojeda De Sousa (Lukway)",
+  "name": "Inferencia Next Template",
+  "short_name": "Inferencia Next Template",
+  "description": "Inferencia Next Template",
   "icons": [
     {
       "src": "/favicon.ico",
       "type": "image/x-ico"
     },
     {
-      "src": "/favicon16.ico",
+      "src": "/favicon16.png",
       "sizes": "16x16",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon32.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon32.png",
       "sizes": "32x32",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon36.ico",
-      "sizes": "36x36",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon48.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon48.png",
       "sizes": "48x48",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon57.ico",
-      "sizes": "57x57",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon60.ico",
-      "sizes": "60x60",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon72.ico",
-      "sizes": "72x72",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon76.ico",
-      "sizes": "76x76",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon96.ico",
-      "sizes": "96x96",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon114.ico",
-      "sizes": "114x114",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon120.ico",
-      "sizes": "120x120",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon128.ico",
-      "sizes": "128x128",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon144.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon144.png",
       "sizes": "144x144",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon152.ico",
-      "sizes": "152x152",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon180.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon180.png",
       "sizes": "180x180",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon192.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon192.png",
       "sizes": "192x192",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon256.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon256.png",
       "sizes": "256x256",
-      "type": "image/x-ico"
-    }, {
-      "src": "/favicon512.ico",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon512.png",
       "sizes": "512x512",
-      "type": "image/x-ico",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
   "start_url": "/",
   "scope": "/",
-  "display_override": ["standalone", "fullscreen"],
+  "display_override": [
+    "standalone",
+    "fullscreen"
+  ],
   "display": "standalone",
   "orientation": "portrait",
   "lang": "en-US",
