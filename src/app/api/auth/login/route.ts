@@ -46,16 +46,16 @@ export async function POST (req: NextRequest) {
         sameSite: 'strict',
         priority: 'high',
         expires: refreshExpiration,
-        maxAge,
+        maxAge
       })
 
       return NextResponse.json(response.data.user, {
-        status: 200,
+        status: 200
       })
     } else {
       const status = response?.response?.status ?? 400
       return NextResponse.json(response.error, {
-        status,
+        status
       })
     }
   } catch (error) {

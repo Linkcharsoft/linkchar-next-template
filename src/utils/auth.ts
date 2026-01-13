@@ -52,9 +52,9 @@ export const getServerUser = async (): Promise<UserType | null> => {
   const res = await fetch(`${origin}/api/auth/me/`, {
     method: 'GET',
     headers: {
-      Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`,
+      Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`
     },
-    cache: 'no-store',
+    cache: 'no-store'
   })
 
   if (!res.ok) return null

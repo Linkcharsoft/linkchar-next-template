@@ -15,7 +15,7 @@ export const theme = {
       'surface-600': '#757575',
       'surface-700': '#616161',
       'surface-800': '#424242',
-      'surface-900': '#212121',
+      'surface-900': '#212121'
     },
     fontSize: {
       64: '64px',
@@ -84,7 +84,7 @@ export const plugins = [
       ...generateStyles('text-regular', '400'),
 
       /* Light (300) */
-      ...generateStyles('text-light', '300'),
+      ...generateStyles('text-light', '300')
     })
   })
 ]

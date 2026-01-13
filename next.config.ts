@@ -5,13 +5,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production'
   },
   logging: {
     fetches: {
-      fullUrl: true,
-    },
-  },
+      fullUrl: true
+    }
+  }
 
   // --- Images config example ---
   // images: {

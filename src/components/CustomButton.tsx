@@ -17,12 +17,12 @@ interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
 const VARIANT_CLASSES = {
   primary: 'CustomButton--Primary',
   white: 'CustomButton--White',
-  transparent: 'CustomButton--Transparent',
+  transparent: 'CustomButton--Transparent'
 }
 const SIZE_CLASSES = {
   small: 'CustomButton--Small',
   medium: 'CustomButton--Medium',
-  large: 'CustomButton--Large',
+  large: 'CustomButton--Large'
 }
 
 const CustomButton = ({

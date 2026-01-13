@@ -79,7 +79,7 @@ const usePersistentTimer = ({
     timer,
     startTimer,
     stopTimer,
-    timerIsRunning: timer > 0,
+    timerIsRunning: timer > 0
   }
 }
 

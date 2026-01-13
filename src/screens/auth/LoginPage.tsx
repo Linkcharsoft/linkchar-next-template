@@ -51,7 +51,7 @@ const LoginPage = () => {
     onSubmit: async (values, { setErrors }) => {
       showLoadingModal({
         title: 'Logging in',
-        message: 'Please wait...',
+        message: 'Please wait...'
       })
 
       try {

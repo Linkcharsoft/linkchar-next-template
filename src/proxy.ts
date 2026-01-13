@@ -9,11 +9,11 @@ const AUTH_PATHS = new Set([
   '/signup',
   '/signup/email-validation',
   '/signup/confirmation',
-  '/password-recovery',
+  '/password-recovery'
 ])
 
 const PUBLIC_PATHS = new Set([
-  '/',
+  '/'
 ])
 
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i

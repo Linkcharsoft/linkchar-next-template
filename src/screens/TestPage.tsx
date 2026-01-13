@@ -69,7 +69,7 @@ const TestPage = ({ user }) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
-            },
+            }
           })
 
           console.log(result)
@@ -90,7 +90,7 @@ const TestPage = ({ user }) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
-            },
+            }
           })
 
           console.log(result)
