@@ -43,7 +43,7 @@
     "env.d.ts"
   ],
   "exclude": [
-    ".next/types/**/*.ts",
+    ".next/**/*.ts",
     "node_modules",
     "src/cypress"
   ]
