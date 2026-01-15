@@ -9,7 +9,7 @@ import type { ButtonProps as OriginalButtonProps } from 'primereact/button'
 
 interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
   variant?: 'primary' | 'white' | 'transparent'
-  size?: 'small' | 'medium' | 'large'
+  size?: 'detail' | 'small' | 'medium' | 'large'
   href?: Route
   replace?: boolean | undefined
 }
@@ -20,9 +20,10 @@ const VARIANT_CLASSES = {
   transparent: 'CustomButton--Transparent'
 }
 const SIZE_CLASSES = {
-  small: 'CustomButton--Small',
-  medium: 'CustomButton--Medium',
-  large: 'CustomButton--Large'
+  detail: 'CustomButton--Detail', // 32px
+  small: 'CustomButton--Small', // 38px
+  medium: 'CustomButton--Medium', // 44px
+  large: 'CustomButton--Large' // 50px
 }
 
 const CustomButton = ({
