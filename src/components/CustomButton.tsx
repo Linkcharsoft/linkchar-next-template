@@ -14,12 +14,16 @@ interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
   replace?: boolean | undefined
 }
 
-const VARIANT_CLASSES = {
+const VARIANT_CLASSES: {
+  [key in NonNullable<ButtonProps['variant']>]: string
+} = {
   primary: 'CustomButton--Primary',
   white: 'CustomButton--White',
   transparent: 'CustomButton--Transparent'
 }
-const SIZE_CLASSES = {
+const SIZE_CLASSES: {
+  [key in NonNullable<ButtonProps['size']>]: string
+} = {
   detail: 'CustomButton--Detail', // 32px
   small: 'CustomButton--Small', // 38px
   medium: 'CustomButton--Medium', // 44px
