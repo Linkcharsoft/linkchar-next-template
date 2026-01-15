@@ -5,21 +5,25 @@ import type { Route } from 'next'
 import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
 
 type useTableParamsReturn<T> = {
-  params: T & MandatoryParams
+  params: T & PaginationParams
   stringParams: string
   first: number
-  sortProps?: {
+  sortProps: {
     sortField?: string
     sortOrder?: SortOrder
     onSort?: (event: DataTableStateEvent) => void
   }
-  setParams: (newFilters: Partial<T & MandatoryParams>) => void
-  setParam: <K extends keyof (T & MandatoryParams)>(key: K, value: (T & MandatoryParams)[K]) => void
-  setPagination: (newPagination: MandatoryParams) => void
+  setParams: (newFilters: Partial<T & PaginationParams>) => void
+  setParam: <K extends keyof (T & PaginationParams)>(key: K, value: (T & PaginationParams)[K]) => void
+  setPagination: (newPagination: PaginationParams) => void
   resetParams: () => void
 }
 
-type MandatoryParams = {
+type SearchParams = {
+  [key: string]: string | string[] | undefined
+}
+
+type PaginationParams = {
   page: number
   page_size: number
 }
@@ -29,17 +33,21 @@ type Primitives = string | number | boolean | null
  * Hook to synchronize filter and pagination state with the URL in Next.js App Router.
  * Provides parameters ready for use with PrimeReact's DataTable and Paginator components.
  * @template DefaultParams - Interface for custom filter parameters.
- * @param {DefaultParams & Partial<MandatoryParams>} defaults - Default values.
- * If a value is a `number` or `boolean`, the hook will automatically parse the URL value to that type and return it within the params object.
+ * @param {Object} config - The hook configuration object.
+ * @param {SearchParamsProps} config.searchParams - The asynchronous search parameters provided by the Next.js Page component.
+ * By passing these directly, the hook avoids using `useSearchParams()`, which prevents the component from
+ * triggering a Suspense boundary and allows for faster, more predictable state synchronization during SSR and hydration.
+ * @param {DefaultParams & Partial<PaginationParams>} config.defaults - Default values for filters and pagination.
+ * Values are auto-parsed to number or boolean based on these types.
  *
- * @returns {useTableParamsReturn} An object containing the following properties and methods:
+ * @returns {useTableParamsReturn<DefaultParams>} An object containing the following properties and methods:
  * - `params`: Object combining `page`, `page_size`, and custom filters with preserved types (merges URLSearchParams and DefaultParams).
  * - `stringParams`: Current query string (e.g., "page=1&search=hello"), ready for API requests (fetch/SWR).
  * - `first`: Reactive zero-based index of the first row to be displayed. (Required for PrimeReact's Paginator).
  * - `sortProps`: If the 'ordering' filter is used, this object contains 'sortField', 'sortOrder', and 'onSort' for PrimeReact's DataTable.
  * - `setParams`: `(newParams: Partial<TableParams>) => void` - Updates multiple filters at once. Automatically resets page to 1 (unless only the page is being changed).
  * - `setParam`: `(key: keyof TableParams, value: Primitives) => void` - Helper to update a single parameter.
- * - `setPagination`: `(pagination: MandatoryParams) => void` - Helper to update page and page_size simultaneously.
+ * - `setPagination`: `(pagination: PaginationParams) => void` - Helper to update page and page_size simultaneously.
  * - `resetParams`: `() => void` - Clears the URL and restores values to the initial `defaults`.
  *
  * @example
@@ -54,10 +62,13 @@ type Primitives = string | number | boolean | null
  *   setPagination,
  *   resetParams
  * } = useTableParams({
- *   search: '',      // string
- *   ordering: '',    // string
- *   minPrice: 0,     // number
- *   isActive: true   // boolean
+ *   searchParams,
+ *   defaults: {
+ *     search: '',      // string
+ *     ordering: '',    // string
+ *     minPrice: 0,     // number
+ *     isActive: true   // boolean
+ *   }
  * })
  *
  * // API Request usage
@@ -89,29 +100,49 @@ type Primitives = string | number | boolean | null
  * />
  **/
 
-export function useTableParams<DefaultParams extends Record<string, Primitives>> (
-  defaults: DefaultParams & Partial<MandatoryParams>
-): useTableParamsReturn<DefaultParams> {
-  type TableParams = DefaultParams & MandatoryParams
+export function useTableParams<DefaultParams extends Record<string, Primitives>> ({
+  searchParams,
+  defaults
+}: {
+  searchParams: SearchParams,
+  defaults: DefaultParams & Partial<PaginationParams>
+}): useTableParamsReturn<DefaultParams> {
+  type TableParams = DefaultParams & PaginationParams
 
-  const searchParams = useSearchParams()
   const pathname = usePathname()
   const { replace } = useRouter()
 
-  // 1. Setup default params
+  // 1. Parse search params as URLSearchParams object
+  const urlParams: URLSearchParams = useMemo(() => {
+    const params = new URLSearchParams()
+
+    if(searchParams) {
+      Object.entries(searchParams).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach(v => params.append(key, v))
+        } else if (value !== undefined) { // !TODO
+          params.set(key, value)
+        }
+      })
+    }
+
+    return params
+  }, [searchParams])
+
+  // 2. Setup default params
   const DEFAULT_PARAMS: TableParams = useMemo(() => ({
     page: 1,
     page_size: 10,
     ...defaults
   }), [JSON.stringify(defaults)])
 
-  // 2. Current params: (URL search params + Default params + Auto-Parsing)
+  // 3. Current params: (URL search params + Default params + Auto-Parsing)
   const PARAMS: TableParams = useMemo(() => {
     const currentParams: TableParams = { ...DEFAULT_PARAMS }
 
     Object.keys(DEFAULT_PARAMS).forEach((k) => {
-      const urlValue = searchParams.get(k)
       const key = k as keyof TableParams
+      const urlValue = urlParams.get(k)
 
       if (urlValue !== null) {
         const defaultValue = DEFAULT_PARAMS[key]
@@ -132,27 +163,31 @@ export function useTableParams<DefaultParams extends Record<string, Primitives>>
     })
 
     return currentParams
-  }, [searchParams, DEFAULT_PARAMS])
+  }, [urlParams, DEFAULT_PARAMS])
 
-  // 3. Update params
+  // 4. Update params
   const setParams = useCallback(
     (newFilters: Partial<TableParams>) => {
-      const urlParams = new URLSearchParams(searchParams.toString())
+      const params = new URLSearchParams(urlParams.toString())
 
-      if (newFilters.page === undefined) urlParams.set('page', '1')
+      const isOnlyPageChange = Object.keys(newFilters).length === 1 && 'page' in newFilters
+
+      if (!isOnlyPageChange && !newFilters.page) {
+        params.set('page', '1')
+      }
 
       Object.entries(newFilters).forEach(([key, value]) => {
         const valueIsValid = value !== undefined && value !== null && value !== ''
         if (valueIsValid) {
-          urlParams.set(key, String(value))
+          params.set(key, String(value))
         } else {
-          urlParams.delete(key)
+          params.delete(key)
         }
       })
 
-      replace(`${pathname}?${urlParams.toString()}` as Route, { scroll: false })
+      replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
     },
-    [searchParams, pathname, replace]
+    [urlParams, pathname, replace]
   )
 
   // Function helpers
@@ -165,24 +200,24 @@ export function useTableParams<DefaultParams extends Record<string, Primitives>>
     },
     [setParams]
   )
-  const setPagination = useCallback((pagination: MandatoryParams) => setParams(pagination as Partial<TableParams>), [setParams])
+  const setPagination = useCallback((pagination: PaginationParams) => setParams(pagination as Partial<TableParams>), [setParams])
   const resetParams = useCallback(() => {
-    const urlParams = new URLSearchParams()
+    const params = new URLSearchParams()
 
     Object.entries(DEFAULT_PARAMS).forEach(([key, value]) => {
       const valueIsValid = value !== undefined && value !== null && value !== ''
       if (valueIsValid) {
-        urlParams.set(key, String(value))
+        params.set(key, String(value))
       }
     })
 
-    replace(`${pathname}?${urlParams.toString()}` as Route, { scroll: false })
+    replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
   }, [pathname, replace, DEFAULT_PARAMS])
 
   // PrimeReact helpers
-  const FIRST: number = (PARAMS.page - 1) * PARAMS.page_size
+  const first: useTableParamsReturn<DefaultParams>['first'] = (PARAMS.page - 1) * PARAMS.page_size
 
-  const SORT_PROPS: useTableParamsReturn<DefaultParams>['sortProps'] = useMemo(() => {
+  const sortProps: useTableParamsReturn<DefaultParams>['sortProps'] = useMemo(() => {
     if (!('ordering' in PARAMS)) return {}
 
     const ordering = String(PARAMS.ordering || '')
@@ -204,13 +239,13 @@ export function useTableParams<DefaultParams extends Record<string, Primitives>>
         setParam(key, newValue as TableParams[typeof key])
       }
     }
-  }, [PARAMS.ordering, setParam])
+  }, [PARAMS.ordering, DEFAULT_PARAMS.ordering, setParam])
 
   return {
     params: PARAMS,
-    stringParams: searchParams.toString(),
-    first: FIRST,
-    sortProps: SORT_PROPS,
+    stringParams: urlParams.toString(),
+    first,
+    sortProps,
     setParams,
     setParam,
     setPagination,
