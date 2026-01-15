@@ -74,7 +74,7 @@ const CustomButton = ({
       </Button>
 
       {tooltipId && (
-        <Tooltip id={tooltipId} />
+        <Tooltip className='z-10 text-14 !opacity-100' id={tooltipId} />
       )}
     </>
   )
