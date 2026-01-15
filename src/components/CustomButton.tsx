@@ -4,13 +4,13 @@ import { Button } from 'primereact/button'
 import { classNames } from 'primereact/utils'
 import { memo } from 'react'
 import { Tooltip } from 'react-tooltip'
-import type { Url } from 'next/dist/shared/lib/router/router'
+import type { Route } from 'next'
 import type { ButtonProps as OriginalButtonProps } from 'primereact/button'
 
 interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
   variant?: 'primary' | 'white' | 'transparent'
   size?: 'small' | 'medium' | 'large'
-  href?: Url
+  href?: Route
   replace?: boolean | undefined
 }
 
