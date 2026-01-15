@@ -1,5 +1,5 @@
 'use client'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useMemo } from 'react'
 import type { Route } from 'next'
 import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
