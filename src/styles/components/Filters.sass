@@ -1,0 +1,40 @@
+.Filters
+  width: fit-content
+  position: relative
+  display: flex
+  align-items: center
+  &__Dropdown
+    width: 362px
+    box-shadow: 0px 1px 10px 0px rgba(0, 0, 0, 0.10)
+    border-radius: 10px
+    border: 1px solid rgba(0, 0, 0, 0.10)
+    padding: 16px
+    background: #FFF
+    display: flex
+    flex-direction: column
+    align-items: flex-start
+    gap: 16px
+    position: absolute
+    top: calc(100% + 8px)
+    right: 0
+    z-index: 10
+  &__Item
+    display: flex
+    padding: 4px 12px
+    justify-content: center
+    align-items: center
+    gap: 8px
+    border-radius: 30px
+    border: 1px solid rgba(0, 0, 0, 0.10)
+    background: var(--surface-50, #FAFAFA)
+    transition: all 0.3s ease
+    &:hover
+      opacity: .75
+    &.Selected
+      background: var(--surface-300, #E0E0E0)
+      &:hover
+        opacity: 1
+  &__Circle
+    width: 10px
+    height: 10px
+    border-radius: 10px
