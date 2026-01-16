@@ -149,15 +149,32 @@ export function useTableParams<DefaultParams extends Record<string, Primitives>>
 
         const target = currentParams as Record<string, Primitives>
 
-        switch (typeof defaultValue) {
-          case 'number':
-            target[k] = Number(urlValue)
-            break
-          case 'boolean':
-            target[k] = urlValue === 'true'
-            break
-          default:
-            target[k] = urlValue
+        if (Array.isArray(defaultValue)) {
+          const urlValues = urlParams.getAll(k)
+
+          if (urlValues.length > 0) {
+            switch (typeof defaultValue[0]) {
+              case 'number':
+                target[k] = urlValues.map(Number)
+                break
+              case 'boolean':
+                target[k] = urlValues.map(v => v === 'true')
+                break
+              default:
+                target[k] = urlValues
+            }
+          }
+        } else {
+          switch (typeof defaultValue) {
+            case 'number':
+              target[k] = Number(urlValue)
+              break
+            case 'boolean':
+              target[k] = urlValue === 'true'
+              break
+            default:
+              target[k] = urlValue
+          }
         }
       }
     })
@@ -178,8 +195,14 @@ export function useTableParams<DefaultParams extends Record<string, Primitives>>
 
       Object.entries(newFilters).forEach(([key, value]) => {
         const valueIsValid = value !== undefined && value !== null && value !== ''
+
         if (valueIsValid) {
-          params.set(key, String(value))
+          if (Array.isArray(value)) {
+            params.delete(key)
+            value.forEach(v => params.append(key, String(v)))
+          } else {
+            params.set(key, String(value))
+          }
         } else {
           params.delete(key)
         }
@@ -207,7 +230,11 @@ export function useTableParams<DefaultParams extends Record<string, Primitives>>
     Object.entries(DEFAULT_PARAMS).forEach(([key, value]) => {
       const valueIsValid = value !== undefined && value !== null && value !== ''
       if (valueIsValid) {
-        params.set(key, String(value))
+        if(Array.isArray(value)) {
+          if(value.length > 0) value.forEach(v => params.append(key, String(v)))
+        } else {
+          params.set(key, String(value))
+        }
       }
     })
 
