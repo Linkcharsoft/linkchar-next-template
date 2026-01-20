@@ -6,35 +6,54 @@ import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
 
 type PrimitiveUniqueValues = string | number | boolean | null
 type PrimitiveMultipleValues = string[] | number[] | boolean[]
-type PrimitiveValues = PrimitiveUniqueValues | PrimitiveMultipleValues
 type PrimitiveTypes = 'string' | 'number' | 'boolean'
 
 type SearchParams = {
   [key: string]: string | string[] | undefined
 }
-type DefaultParams = {
-  [key: string]: {
-    type: PrimitiveTypes,
-    value?: PrimitiveUniqueValues,
-    isArray?: false
-  } | {
-    type: PrimitiveTypes,
-    value?: PrimitiveMultipleValues,
-    isArray: true
-  }
-}
-type PaginationParams = {
-  [key in 'page' | 'page_size']: {
-    value: number,
-    type: 'number',
-    isArray?: false
-  }
-}
-type TableParams = DefaultParams & PaginationParams
-type ReturnedParams = Record<keyof TableParams, PrimitiveValues>
 
-type useTableParamsReturn = {
-  params: ReturnedParams
+type ParamConfig = {
+  type: PrimitiveTypes,
+  value?: PrimitiveUniqueValues,
+  isArray?: false
+} | {
+  type: PrimitiveTypes,
+  value?: PrimitiveMultipleValues,
+  isArray: true
+}
+
+type PaginationConfig = {
+  page: {
+    type: 'number',
+    value: number,
+    isArray?: false
+  },
+  page_size: {
+    type: 'number',
+    value: number,
+    isArray?: false
+  }
+}
+
+type ParamsMap = Record<string, ParamConfig>
+
+type ExtractParamType<Param extends ParamConfig> =
+  Param extends { isArray: true, type: 'number' } ? number[]
+    // : Param extends { isArray: true, type: 'boolean' } ? boolean[]
+    : Param extends { isArray: true, type: 'string' } ? string[]
+      : Param extends { type: 'number' } ? number
+        : Param extends { type: 'boolean' } ? boolean
+          : string | null
+
+type ReturnedParams<Param extends ParamsMap> = {
+  [ParamKey in keyof Param]: ExtractParamType<Param[ParamKey]>
+} & {
+  page: number
+  page_size: number
+}
+
+type useTableParamsReturn<Param extends ParamsMap> = {
+  params: ReturnedParams<Param>
   stringParams: string
   first: number
   sortProps: {
@@ -42,8 +61,8 @@ type useTableParamsReturn = {
     sortOrder?: SortOrder
     onSort?: (event: DataTableStateEvent) => void
   }
-  setParams: (newParams: Partial<ReturnedParams>) => void
-  setParam: (key: keyof TableParams, value: PrimitiveValues) => void
+  setParams: (newParams: Partial<ReturnedParams<Param>>) => void
+  setParam: <ParamKey extends keyof ReturnedParams<Param>>(key: ParamKey, value: ReturnedParams<Param>[ParamKey]) => void
   setPagination: (pagination: { page: number, page_size: number }) => void
   resetParams: () => void
 }
@@ -64,7 +83,7 @@ type useTableParamsReturn = {
  * - `stringParams`: Current query string (e.g., "page=1&search=hello"), ready for API requests (fetch/SWR).
  * - `first`: Reactive zero-based index of the first row to be displayed. (Required for PrimeReact's Paginator).
  * - `sortProps`: If the 'ordering' filter is used, this object contains 'sortField', 'sortOrder', and 'onSort' for PrimeReact's DataTable.
- * - `setParams`: `(newParams: Partial<ReturnedParams>) => void` - Updates multiple filters at once. Automatically resets page to 1 (unless only the page is being changed).
+ * - `setParams`: `(newParams: Partial<ReturnedParams<T>>) => void` - Updates multiple filters at once. Automatically resets page to 1 (unless only the page is being changed).
  * - `setParam`: `(key: keyof TableParams, value: PrimitiveValues) => void` - Helper to update a single parameter.
  * - `setPagination`: `(pagination: { page: number, page_size: number }) => void` - Helper to update page and page_size simultaneously.
  * - `resetParams`: `() => void` - Clears the URL and restores values to the initial `defaultParams`.
@@ -131,13 +150,13 @@ type useTableParamsReturn = {
  * />
  **/
 
-export function useTableParams ({
+export function useTableParams<DefaultParams extends ParamsMap> ({
   searchParams,
   defaultParams
 }: {
   searchParams: SearchParams,
-  defaultParams: DefaultParams & Partial<PaginationParams>
-}): useTableParamsReturn {
+  defaultParams: DefaultParams & Partial<PaginationConfig>
+}): useTableParamsReturn<DefaultParams> {
   const pathname = usePathname()
   const { replace } = useRouter()
 
@@ -149,7 +168,7 @@ export function useTableParams ({
       Object.entries(searchParams).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           value.forEach(v => params.append(key, v))
-        } else if (value !== undefined) { // !TODO
+        } else if (value !== undefined) {
           params.set(key, value)
         }
       })
@@ -159,7 +178,7 @@ export function useTableParams ({
   }, [searchParams])
 
   // 2. Setup default params
-  const DEFAULT_PARAMS: TableParams = useMemo(() => ({
+  const DEFAULT_PARAMS: ParamsMap & PaginationConfig = useMemo(() => ({
     page: {
       value: 1,
       type: 'number'
@@ -172,19 +191,17 @@ export function useTableParams ({
   }), [JSON.stringify(defaultParams)])
 
   // 3. Current params: (URL search params + Default params + Auto-Parsing)
-  const PARAMS: ReturnedParams = useMemo(() => {
-    const currentParams: ReturnedParams = {}
+  const PARAMS: ReturnedParams<DefaultParams> = useMemo(() => {
+    const currentParams: object = {}
 
     Object.keys(DEFAULT_PARAMS).forEach((k) => {
-      const paramKey = k as keyof TableParams
-      const paramType = DEFAULT_PARAMS[paramKey].type
-      const paramIsArray = DEFAULT_PARAMS[paramKey].isArray
+      const defaultParam = DEFAULT_PARAMS[k]
 
-      if (paramIsArray) {
+      if (defaultParam.isArray) {
         const paramValues = urlParams.getAll(k)
 
         if (paramValues.length > 0) {
-          switch (paramType) {
+          switch (defaultParam.type) {
             case 'number':
               currentParams[k] = paramValues.map(Number)
               break
@@ -201,7 +218,7 @@ export function useTableParams ({
         const paramValue = urlParams.get(k)
 
         if(paramValue !== null) {
-          switch (paramType) {
+          switch (defaultParam.type) {
             case 'number':
               currentParams[k] = Number(paramValue)
               break
@@ -212,26 +229,27 @@ export function useTableParams ({
               currentParams[k] = paramValue
           }
         } else {
-          currentParams[k] = DEFAULT_PARAMS[paramKey].value as PrimitiveUniqueValues
+          currentParams[k] = defaultParam.value as PrimitiveUniqueValues
         }
       }
     })
 
-    return currentParams
+    return currentParams as ReturnedParams<DefaultParams>
   }, [urlParams, DEFAULT_PARAMS])
 
   // 4. Update params
   const setParams = useCallback(
-    (newParams: Partial<ReturnedParams>) => {
+    (newParams: Partial<ReturnedParams<DefaultParams>>) => {
       const params = new URLSearchParams(urlParams.toString())
 
       const isOnlyPageChange = Object.keys(newParams).length === 1 && 'page' in newParams
-
       if (!isOnlyPageChange && !newParams.page) {
         params.set('page', '1')
       }
 
       Object.entries(newParams).forEach(([key, value]) => {
+        if(!(key in DEFAULT_PARAMS)) throw new Error(`[${key}] is not defined in defaultParams`)
+
         const valueIsValid = value !== undefined && value !== null && value !== ''
 
         if (valueIsValid) {
@@ -244,7 +262,7 @@ export function useTableParams ({
         } else {
           if(key === 'page' || key === 'page_size') return
 
-          const hasDefault = DEFAULT_PARAMS[key as keyof TableParams].value
+          const hasDefault = DEFAULT_PARAMS[key].value
 
           if (hasDefault !== undefined) {
             params.set(key, '')
@@ -261,30 +279,30 @@ export function useTableParams ({
 
   // Function helpers
   const setParam = useCallback(
-    (key: keyof TableParams, value: PrimitiveValues) => {
-      const newParams: Partial<ReturnedParams> = {}
+    <K extends keyof ReturnedParams<DefaultParams>>(key: K, value: ReturnedParams<DefaultParams>[K]) => {
+      const newParams: Partial<ReturnedParams<DefaultParams>> = {}
       newParams[key] = value
 
       setParams(newParams)
     },
     [setParams]
   )
-  const setPagination = useCallback((pagination: { page: number, page_size: number }) => setParams(pagination as Partial<ReturnedParams>), [setParams])
+  const setPagination = useCallback((pagination: { page: number, page_size: number }) => setParams(pagination as Partial<ReturnedParams<DefaultParams>>), [setParams])
   const resetParams = useCallback(() => {
     const params = new URLSearchParams()
 
     Object.entries(DEFAULT_PARAMS).forEach(([key, param]) => {
-      const paramValue = param.value
+      const defaultValue = param.value
 
-      if(paramValue !== undefined && paramValue !== null && paramValue !== '') {
-        if(Array.isArray(paramValue)) {
-          const valueIsValid = paramValue.length > 0
+      if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
+        if(Array.isArray(defaultValue)) {
+          const valueIsValid = defaultValue.length > 0
 
           if (valueIsValid) {
-            paramValue.forEach(v => params.append(key, String(v)))
+            defaultValue.forEach(v => params.append(key, String(v)))
           }
         } else {
-          params.set(key, String(paramValue))
+          params.set(key, String(defaultValue))
         }
       }
     })
@@ -293,9 +311,9 @@ export function useTableParams ({
   }, [pathname, replace, DEFAULT_PARAMS])
 
   // PrimeReact helpers
-  const first: useTableParamsReturn['first'] = ((PARAMS.page as number) - 1) * (PARAMS.page_size as number)
+  const first = ((PARAMS.page as number) - 1) * (PARAMS.page_size as number)
 
-  const sortProps: useTableParamsReturn['sortProps'] = useMemo(() => {
+  const sortProps = useMemo(() => {
     if (!('ordering' in DEFAULT_PARAMS)) return {}
 
     const ordering = String(PARAMS.ordering || '')
@@ -305,17 +323,16 @@ export function useTableParams ({
       sortField: ordering ? ordering.replace(/^-/, '') : undefined,
       sortOrder: (ordering ? (isDesc ? -1 : 1) : undefined) as SortOrder,
       onSort: (event: DataTableStateEvent) => {
-        const key = 'ordering' as keyof TableParams
-        console.log(event)
+        const key = 'ordering' as keyof ReturnedParams<DefaultParams>
 
         if (!event.sortField) {
-          setParam(key, '' as PrimitiveValues)
+          setParam(key, '' as ReturnedParams<DefaultParams>[typeof key])
           return
         }
 
         const direction = event.sortOrder === -1 ? '-' : ''
         const newValue = `${direction}${event.sortField}`
-        setParam(key, newValue as PrimitiveValues)
+        setParam(key, newValue as ReturnedParams<DefaultParams>[typeof key])
       }
     }
   }, [PARAMS.ordering, DEFAULT_PARAMS.ordering, setParam])
