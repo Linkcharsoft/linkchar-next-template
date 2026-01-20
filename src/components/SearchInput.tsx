@@ -2,13 +2,13 @@
 import { IconField } from 'primereact/iconfield'
 import { InputIcon } from 'primereact/inputicon'
 import { InputText } from 'primereact/inputtext'
-import { memo, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 
 interface Props {
   initialValue: string
   placeholder?: string
-  onChange: (value: string) => void
+  onChange: (value?: string) => void
   disabled?: boolean
   className?: string
 }
@@ -23,6 +23,10 @@ const SearchInput = ({
   const [searchValue, setSearchValue] = useState<string>(initialValue)
 
   const debouncedUpdateSearch = useDebounceCallback(onChange, 500)
+
+  useEffect(() => {
+    if(initialValue === undefined) setSearchValue('')
+  }, [initialValue])
 
   return (
     <IconField iconPosition="right">
@@ -51,7 +55,7 @@ const SearchInput = ({
           className="pi pi-times cursor-pointer hover:opacity-75"
           onClick={() => {
             setSearchValue('')
-            onChange('')
+            onChange()
           }}
         />
       ) : (
