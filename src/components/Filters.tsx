@@ -106,11 +106,20 @@ const MULTISELECT_PT: MultiSelectPassThroughOptions = {
   }
 }
 const DROPDOWN_PT: DropdownPassThroughOptions = {
+  header: {
+    className: 'Filter__Dropdown-Header'
+  },
+  filterContainer: {
+    className: 'Filter__Dropdown-Filter'
+  },
   wrapper: {
     className: 'Filter__Dropdown-Wrapper'
   },
   list: {
     className: 'Filter__Dropdown-List'
+  },
+  item: {
+    className: 'Filter__Dropdown-Item'
   }
 }
 
