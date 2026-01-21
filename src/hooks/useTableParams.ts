@@ -84,7 +84,7 @@ type useTableParamsReturn<Param extends ParamsMap> = {
 
 /**
  * Hook to synchronize typed filter, sorting and pagination state with the URL using Next.js App Router.
- * Provides parameters ready for use with PrimeReact's DataTable and Paginator components.
+ * Provides parameters ready for use with PrimeReact's DataTable and Paginator components, and for the custom SearchInput and Filters components.
  * @template DefaultParams - Map of parameter configurations (type, default value and array behavior)
  * @param {Object} config - The hook configuration object.
  * @param {SearchParams} config.searchParams - Search parameters provided by the Next.js App Router Page component.
@@ -142,6 +142,31 @@ type useTableParamsReturn<Param extends ParamsMap> = {
  *   token ? `/api/data/?${stringParams}` : null,
  *   (path) => getData(path, token)
  * )
+ *
+ * // SearchInput and Filters usage
+ * <SearchInput
+ *   initialValue={params.search}
+ *   onChange={(value) => setParam('search', value)}
+ * />
+ *
+ * <Filters
+ *   filters={{
+ *     type: 'pill',
+ *     title: 'Min price',
+ *     options: [
+ *       {
+ *         label: '100',
+ *         value: 100
+ *       }, {
+ *         label: '1000',
+ *         value: 1000
+ *       }
+ *     ],
+ *     selected: params.minPrice,
+ *     onChange: (value) => setParam('minPrice', value)
+ *   }}
+ *   cleanFilters={resetParams} // or clearParams
+ * />
  *
  * // PrimeReact DataTable and Paginator usage
  * <DataTable
