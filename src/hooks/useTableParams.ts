@@ -244,7 +244,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
         if (paramValues.length > 0) {
           switch (defaultParam.type) {
             case 'number':
-              currentParams[k] = paramValues.map(Number)
+              currentParams[k] = paramValues.filter(v => v !== '').map(Number)
               break
             default:
               currentParams[k] = paramValues
