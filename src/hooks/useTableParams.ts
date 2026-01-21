@@ -5,19 +5,18 @@ import type { Route } from 'next'
 import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
 
 type PrimitiveUniqueValues = string | number | boolean | undefined
-type PrimitiveMultipleValues = string[] | number[] | boolean[]
-type PrimitiveTypes = 'string' | 'number' | 'boolean'
+type PrimitiveMultipleValues = string[] | number[]
 
 type SearchParams = {
   [key: string]: string | string[] | undefined
 }
 
 type ParamConfig = {
-  type: PrimitiveTypes,
+  type: 'string' | 'number' | 'boolean',
   value?: PrimitiveUniqueValues,
   isArray?: false
 } | {
-  type: PrimitiveTypes,
+  type: 'string' | 'number',
   value?: PrimitiveMultipleValues,
   isArray: true
 }
@@ -204,9 +203,6 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
           switch (defaultParam.type) {
             case 'number':
               currentParams[k] = paramValues.map(Number)
-              break
-            case 'boolean':
-              currentParams[k] = paramValues.filter(v => v !== '').map(v => v === 'true')
               break
             default:
               currentParams[k] = paramValues
