@@ -7,11 +7,12 @@ import CustomButton from './CustomButton'
 import Label from './Label'
 import type { RefObject } from 'react'
 
+// Types
 type FilterBase<T> = T & ({
   title: string
   selected: string | number | boolean | undefined
   multiple?: false
-  onChange: (value: string | number | boolean) => void
+  onChange: (value: string | number | boolean | undefined) => void
 } | {
   title: string
   selected: (string | number)[]
@@ -42,10 +43,11 @@ type Filter = FilterBase<PillFilter>
 export interface FilterItem {
   filters: Filter[]
   cleanFilters: () => void
-  disabled: boolean
+  disabled?: boolean
 }
 
-const motionProps = {
+// Constants
+const MOTION_PROPS = {
   initial: { opacity: 0, y: -8 },
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 }
@@ -59,13 +61,19 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
 
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
-    filters.forEach((filter) => {
+    for (const filter of filters) {
       if (filter.type === 'pill' || filter.type === 'dropdown') {
-        if (filter.selected !== undefined && filter.selected !== null) {
-          return count += 1
+        if(filter.multiple) {
+          if(filter.selected.length > 0) count += 1
+        } else {
+          if (
+            filter.selected !== undefined &&
+            filter.selected !== null
+          )
+            count += 1
         }
       }
-    })
+    }
     return count
   }, [filters])
 
@@ -93,8 +101,8 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
       <AnimatePresence>
         {showFilters && (
           <m.div
-            className="Filters__Dropdown"
-            {...motionProps}
+            className="Filters__Container"
+            {...MOTION_PROPS}
             transition={{ duration: 0.15 }}
           >
             <div className="flex w-full items-center justify-between gap-4">
@@ -119,6 +127,7 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
 
                   {(filter.multiple && filter.selected.length > 1) && (
                     <button
+                      type='button'
                       className='size-6 items-center justify-center hover:opacity-75'
                       onClick={() => filter.onChange([])}
                     >
@@ -130,7 +139,8 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
                   {(filter.type === 'pill')
                   && filter.options.map((option, optionIndex) => (
                     <button
-                      key={`FilterItem-${optionIndex}`}
+                      type='button'
+                      key={`FilterItem-${index}-${optionIndex}`}
                       className={classNames('Filters__Item', {
                         'Disabled': filter.multiple ? !filter.selected.includes(option.value) : filter.selected !== option.value,
                         'Selected': filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
@@ -144,7 +154,7 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
                           }
                         } else {
                           if (filter.selected === option.value) {
-                            filter.onChange('')
+                            filter.onChange(undefined)
                           } else {
                             filter.onChange(option.value)
                           }
