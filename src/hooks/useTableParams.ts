@@ -216,10 +216,10 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
         if(paramValue !== null) {
           switch (defaultParam.type) {
             case 'number':
-              currentParams[k] = Number(paramValue)
+              currentParams[k] = paramValue !== '' ? Number(paramValue) : undefined
               break
             case 'boolean':
-              currentParams[k] = paramValue !== '' ? paramValue === 'true' : null
+              currentParams[k] = paramValue !== '' ? paramValue === 'true' : undefined
               break
             default:
               currentParams[k] = paramValue
