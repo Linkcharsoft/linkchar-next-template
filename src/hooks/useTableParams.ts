@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react'
 import type { Route } from 'next'
 import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
 
-type PrimitiveUniqueValues = string | number | boolean | null
+type PrimitiveUniqueValues = string | number | boolean | undefined
 type PrimitiveMultipleValues = string[] | number[] | boolean[]
 type PrimitiveTypes = 'string' | 'number' | 'boolean'
 
@@ -43,7 +43,7 @@ type ExtractParamType<Param extends ParamConfig> =
     : Param extends { isArray: true, type: 'string' } ? string[]
       : Param extends { type: 'number' } ? number
         : Param extends { type: 'boolean' } ? boolean
-          : string | null
+          : string | undefined
 
 type ReturnedParams<Param extends ParamsMap> = {
   [ParamKey in keyof Param]: ExtractParamType<Param[ParamKey]>

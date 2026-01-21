@@ -6,7 +6,7 @@ import { memo, useEffect, useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 
 interface Props {
-  initialValue: string
+  initialValue?: string
   placeholder?: string
   onChange: (value?: string) => void
   disabled?: boolean
@@ -20,7 +20,7 @@ const SearchInput = ({
   disabled,
   className
 }: Props) => {
-  const [searchValue, setSearchValue] = useState<string>(initialValue)
+  const [searchValue, setSearchValue] = useState<string>(initialValue || '')
 
   const debouncedUpdateSearch = useDebounceCallback(onChange, 500)
 
