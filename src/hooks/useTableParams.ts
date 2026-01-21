@@ -4,22 +4,37 @@ import { useCallback, useMemo } from 'react'
 import type { Route } from 'next'
 import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
 
-type PrimitiveUniqueValues = string | number | boolean | undefined
-type PrimitiveMultipleValues = string[] | number[]
-
 type SearchParams = {
   [key: string]: string | string[] | undefined
 }
 
-type ParamConfig = {
-  type: 'string' | 'number' | 'boolean',
-  value?: PrimitiveUniqueValues,
-  isArray?: false
+type UniqueValueConfig = {
+  type: 'string'
+  value?: string
 } | {
-  type: 'string' | 'number',
-  value?: PrimitiveMultipleValues,
-  isArray: true
+  type: 'number'
+  value?: number
+} | {
+  type: 'boolean'
+  value?: boolean
 }
+type MultipleValueConfig = {
+  type: 'string'
+  value?: string[]
+} | {
+  type: 'number'
+  value?: number[]
+}
+
+type ParamConfig = (
+  UniqueValueConfig & {
+    isArray?: false
+  }
+) | (
+  MultipleValueConfig & {
+    isArray: true
+  }
+)
 
 type PaginationConfig = {
   page: {
@@ -225,7 +240,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
               currentParams[k] = paramValue
           }
         } else {
-          currentParams[k] = defaultParam.value as PrimitiveUniqueValues
+          currentParams[k] = defaultParam.value
         }
       }
     })
