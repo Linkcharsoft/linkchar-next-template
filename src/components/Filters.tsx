@@ -61,7 +61,7 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
     let count = 0
     filters.forEach((filter) => {
       if (filter.type === 'pill' || filter.type === 'dropdown') {
-        if (filter.selected) {
+        if (filter.selected !== undefined && filter.selected !== null) {
           return count += 1
         }
       }
