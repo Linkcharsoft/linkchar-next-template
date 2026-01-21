@@ -79,6 +79,7 @@ type useTableParamsReturn<Param extends ParamsMap> = {
   setParam: <ParamKey extends keyof ReturnedParams<Param>>(key: ParamKey, value: ReturnedParams<Param>[ParamKey]) => void
   setPagination: (pagination: { page: number, page_size: number }) => void
   resetParams: () => void
+  clearParams: () => void
 }
 
 /**
@@ -101,6 +102,7 @@ type useTableParamsReturn<Param extends ParamsMap> = {
  * - `setParam`: `<K extends keyof ReturnedParams<DefaultParams>>(key: K, value: ReturnedParams<DefaultParams>[K]) => void` - Helper to update a single parameter while preserving its inferred type.
  * - `setPagination`: `(pagination: { page: number, page_size: number }) => void` - Helper to update page and page_size simultaneously.
  * - `resetParams`: `() => void` - Clears the URL and restores values to the initial `defaultParams`.
+ * - `clearParams`: `() => void` - Clears the URL.
  *
  * @example
  * // Define parameter configuration (type + default value)
@@ -320,6 +322,19 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
 
     replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
   }, [pathname, replace, DEFAULT_PARAMS])
+  const clearParams = useCallback(() => {
+    const params = new URLSearchParams()
+
+    Object.entries(DEFAULT_PARAMS).forEach(([key, param]) => {
+      const defaultValue = param.value
+
+      if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
+        params.set(key, '')
+      }
+    })
+
+    replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
+  }, [pathname, replace, DEFAULT_PARAMS])
 
   // PrimeReact helpers
   const first = ((PARAMS.page as number) - 1) * (PARAMS.page_size as number)
@@ -356,6 +371,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
     setParams,
     setParam,
     setPagination,
-    resetParams
+    resetParams,
+    clearParams
   }
 }
