@@ -1,6 +1,5 @@
 'use client'
 import { m, AnimatePresence } from 'framer-motion'
-import { Dropdown } from 'primereact/dropdown'
 import { classNames } from 'primereact/utils'
 import { useMemo, useRef, useState } from 'react'
 import { useOnClickOutside } from 'usehooks-ts'
@@ -8,28 +7,40 @@ import CustomButton from './CustomButton'
 import Label from './Label'
 import type { RefObject } from 'react'
 
-type ItemBase<T> = T & ({
+type FilterBase<T> = T & ({
   title: string
-  selected: string
+  selected: string | number | boolean | undefined
   multiple?: false
-  onChange: (value: string) => void
+  onChange: (value: string | number | boolean) => void
 } | {
   title: string
-  selected: string[]
+  selected: (string | number)[]
   multiple: true
-  onChange: (value: string[]) => void
+  onChange: (value: (string | number)[]) => void
 })
-type Item = ItemBase<{
+
+type PillFilter = {
   type: 'pill'
+} & ({
   options: {
     label: string
-    value: string
-    color: string
+    value: string | number | boolean
+    color?: string
   }[]
-}>
+  multiple?: false
+} | {
+  options: {
+    label: string
+    value: string | number
+    color?: string
+  }[]
+  multiple: true
+})
+
+type Filter = FilterBase<PillFilter>
 
 export interface FilterItem {
-  filters: Item[]
+  filters: Filter[]
   cleanFilters: () => void
   disabled: boolean
 }
