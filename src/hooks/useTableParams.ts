@@ -82,14 +82,14 @@ type useTableParamsReturn<Param extends ParamsMap> = {
 }
 
 /**
- * Hook to synchronize filter and pagination state with the URL in Next.js App Router.
+ * Hook to synchronize typed filter, sorting and pagination state with the URL using Next.js App Router.
  * Provides parameters ready for use with PrimeReact's DataTable and Paginator components.
- * @template DefaultParams - Interface for custom filter parameters.
+ * @template DefaultParams - Map of parameter configurations (type, default value and array behavior)
  * @param {Object} config - The hook configuration object.
- * @param {SearchParams} config.searchParams - The asynchronous search parameters provided by the Next.js Page component.
+ * @param {SearchParams} config.searchParams - Search parameters provided by the Next.js App Router Page component.
  * By passing these directly, the hook avoids using `useSearchParams()`, which prevents the component from
  * triggering a Suspense boundary and allows for faster, more predictable state synchronization during SSR and hydration.
- * @param {DefaultParams & Partial<PaginationParams>} config.defaultParams - Default values for filters and pagination.
+ * @param {DefaultParams & Partial<PaginationConfig>} config.defaultParams - Default values for filters and pagination.
  * Values are auto-parsed to string, number or boolean based on filter types.
  *
  * @returns {useTableParamsReturn<DefaultParams>} An object containing the following properties and methods:
@@ -97,13 +97,13 @@ type useTableParamsReturn<Param extends ParamsMap> = {
  * - `stringParams`: Current query string (e.g., "page=1&search=hello"), ready for API requests (fetch/SWR).
  * - `first`: Reactive zero-based index of the first row to be displayed. (Required for PrimeReact's Paginator).
  * - `sortProps`: If the 'ordering' filter is used, this object contains 'sortField', 'sortOrder', and 'onSort' for PrimeReact's DataTable.
- * - `setParams`: `(newParams: Partial<ReturnedParams<T>>) => void` - Updates multiple filters at once. Automatically resets page to 1 (unless only the page is being changed).
- * - `setParam`: `(key: keyof TableParams, value: PrimitiveValues) => void` - Helper to update a single parameter.
+ * - `setParams`: `(newParams: Partial<ReturnedParams<DefaultParams>>) => void` - Updates multiple filters at once. Automatically resets page to 1 (unless only the page is being changed).
+ * - `setParam`: `<K extends keyof ReturnedParams<DefaultParams>>(key: K, value: ReturnedParams<DefaultParams>[K]) => void` - Helper to update a single parameter while preserving its inferred type.
  * - `setPagination`: `(pagination: { page: number, page_size: number }) => void` - Helper to update page and page_size simultaneously.
  * - `resetParams`: `() => void` - Clears the URL and restores values to the initial `defaultParams`.
  *
  * @example
- * // Filter definition
+ * // Define parameter configuration (type + default value)
  * const {
  *   params,
  *   stringParams,
