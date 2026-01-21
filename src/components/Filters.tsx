@@ -1,10 +1,14 @@
 'use client'
 import { m, AnimatePresence } from 'framer-motion'
+import { Dropdown } from 'primereact/dropdown'
+import { MultiSelect } from 'primereact/multiselect'
 import { classNames } from 'primereact/utils'
 import { useMemo, useRef, useState } from 'react'
 import { useOnClickOutside } from 'usehooks-ts'
 import CustomButton from './CustomButton'
 import Label from './Label'
+import type { DropdownPassThroughOptions } from 'primereact/dropdown'
+import type { MultiSelectPassThroughOptions } from 'primereact/multiselect'
 import type { RefObject } from 'react'
 
 // Types
@@ -38,7 +42,26 @@ type PillFilter = {
   multiple: true
 })
 
-type Filter = FilterBase<PillFilter>
+type DropdownFilter = {
+  type: 'dropdown'
+  placeholder?: string
+  loading?: boolean
+  disabled?: boolean
+} & ({
+  options: {
+    label: string
+    value: string | number | boolean
+  }[]
+  multiple?: false
+} | {
+  options: {
+    label: string
+    value: string | number
+  }[]
+  multiple: true
+})
+
+type Filter = FilterBase< PillFilter | DropdownFilter>
 
 export interface FilterItem {
   filters: Filter[]
@@ -52,8 +75,46 @@ const MOTION_PROPS = {
   animate: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -8 }
 }
+const MULTISELECT_PT: MultiSelectPassThroughOptions = {
+  panel: {
+    className: 'Filter__MultiSelect-Panel'
+  },
+  header: {
+    className: 'Filter__MultiSelect-Header'
+  },
+  headerCheckbox: {
+    box: {
+      className: 'Filter__MultiSelect-Checkbox'
+    }
+  },
+  filterContainer: {
+    className: 'Filter__MultiSelect-Filter'
+  },
+  wrapper: {
+    className: 'Filter__MultiSelect-Wrapper'
+  },
+  list: {
+    className: 'Filter__MultiSelect-List'
+  },
+  item: {
+    className: 'Filter__MultiSelect-Item'
+  },
+  checkbox: {
+    box: {
+      className: 'Filter__MultiSelect-Checkbox'
+    }
+  }
+}
+const DROPDOWN_PT: DropdownPassThroughOptions = {
+  wrapper: {
+    className: 'Filter__Dropdown-Wrapper'
+  },
+  list: {
+    className: 'Filter__Dropdown-List'
+  }
+}
 
-const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
+const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
 
@@ -170,6 +231,37 @@ const Filters = ({ filters, cleanFilters, disabled }: FilterItem) => {
                       <span className="text-4">{option.label}</span>
                     </button>
                   ))}
+
+                  {filter.type === 'dropdown' && (
+                    <>
+                      {filter.multiple ? (
+                        <MultiSelect
+                          placeholder={filter.placeholder}
+                          value={filter.selected}
+                          onChange={(e) => filter.onChange(e.value)}
+                          options={filter.options}
+                          loading={filter.loading}
+                          filter
+                          showClear={filter.selected.length > 0}
+                          disabled={filter.disabled || filter.loading}
+                          pt={MULTISELECT_PT}
+                        />
+                      ) : (
+                        <Dropdown
+                          className='w-full'
+                          placeholder={filter.placeholder}
+                          value={filter.selected}
+                          onChange={(e) => filter.onChange(e.value)}
+                          options={filter.options}
+                          loading={filter.loading}
+                          filter
+                          showClear={Boolean(filter.selected)}
+                          disabled={filter.disabled || filter.loading}
+                          pt={DROPDOWN_PT}
+                        />
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             ))}
