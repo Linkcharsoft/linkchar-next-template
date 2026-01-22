@@ -1,5 +1,7 @@
 'use client'
+import dayjs from 'dayjs'
 import { m, AnimatePresence } from 'framer-motion'
+import { Calendar } from 'primereact/calendar'
 import { Dropdown } from 'primereact/dropdown'
 import { MultiSelect } from 'primereact/multiselect'
 import { classNames } from 'primereact/utils'
@@ -49,7 +51,13 @@ type DropdownFilter = FilterBase & {
   disabled?: boolean
 } & SelectionMode<UniqueTypes>
 
-type Filter = PillFilter | DropdownFilter
+type DateFilter = FilterBase & {
+  type: 'date'
+  locale?: 'en' | 'es'
+  placeholder?: string
+} & SelectionMode<string>
+
+type Filter = PillFilter | DropdownFilter | DateFilter
 export interface FilterItem {
   filters: Filter[]
   cleanFilters: () => void
@@ -119,7 +127,7 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
     for (const filter of filters) {
-      if (filter.type === 'pill' || filter.type === 'dropdown') {
+      if (filter.type === 'pill' || filter.type === 'dropdown' || filter.type === 'date') {
         if(filter.multiple) {
           if(filter.selected.length > 0) count += 1
         } else {
@@ -192,6 +200,23 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                           type='button'
                           className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
                           onClick={() => filter.onChange([])}
+                        >
+                          <i className="pi pi-times text-14"></i>
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  {filter.type === 'date' && (
+                    <>
+                      {(filter.multiple && filter.selected.length > 0) || filter.selected && (
+                        <button
+                          type='button'
+                          className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
+                          onClick={() => {
+                            if(filter.multiple) filter.onChange([])
+                            else filter.onChange(undefined)
+                          }}
                         >
                           <i className="pi pi-times text-14"></i>
                         </button>
@@ -277,6 +302,33 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                         />
                       )}
                     </>
+                  )}
+
+                  {filter.type === 'date' && (
+                    <Calendar
+                      id={`filter-${index}`}
+                      className='w-full'
+                      placeholder={filter.placeholder || 'Select a date'}
+                      value={filter.multiple
+                        ? filter.selected.map(s => dayjs(s).toDate())
+                        : filter.selected
+                          ? dayjs(filter.selected).toDate()
+                          : null
+                      }
+                      onChange={(e) => {
+                        console.log(e)
+                        if(filter.multiple) {
+                          if(!e.value) filter.onChange([])
+                          else filter.onChange((e.value as Date[]).map(v => dayjs(v).format('YYYY-MM-DD')))
+                        } else {
+                          if(!e.value) filter.onChange(undefined)
+                          else filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))
+                        }
+                      }}
+                      selectionMode={filter.multiple ? 'multiple' : 'single'}
+                      dateFormat={filter.locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+                      locale={filter.locale}
+                    />
                   )}
                 </div>
               </div>
