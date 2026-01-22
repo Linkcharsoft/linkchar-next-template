@@ -209,7 +209,7 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
 
                   {filter.type === 'date' && (
                     <>
-                      {(filter.multiple && filter.selected.length > 0) || filter.selected && (
+                      {((filter.multiple && filter.selected.length > 0) || (!filter.multiple && filter.selected)) && (
                         <button
                           type='button'
                           className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
