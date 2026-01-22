@@ -198,14 +198,18 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                 >
                   { filter.title }
 
-                  {(filter.multiple && filter.selected.length > 1) && (
-                    <button
-                      type='button'
-                      className='size-6 items-center justify-center hover:opacity-75'
-                      onClick={() => filter.onChange([])}
-                    >
-                      <i className="pi pi-times text-14"></i>
-                    </button>
+                  {(filter.type === 'pill') && (
+                    <>
+                      {(filter.multiple && filter.selected.length > 1) && (
+                        <button
+                          type='button'
+                          className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
+                          onClick={() => filter.onChange([])}
+                        >
+                          <i className="pi pi-times text-14"></i>
+                        </button>
+                      )}
+                    </>
                   )}
                 </Label>
 
