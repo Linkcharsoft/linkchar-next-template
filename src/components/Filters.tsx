@@ -12,57 +12,44 @@ import type { MultiSelectPassThroughOptions } from 'primereact/multiselect'
 import type { RefObject } from 'react'
 
 // Types
-type FilterBase<T> = T & ({
-  title: string
-  selected: string | number | boolean | undefined
-  multiple?: false
-  onChange: (value: string | number | boolean | undefined) => void
-} | {
-  title: string
-  selected: (string | number)[]
-  multiple: true
-  onChange: (value: (string | number)[]) => void
-})
+type PrimitiveTypes = string | number | boolean
+type UniqueTypes = string | number
 
-type PillFilter = {
+type FilterBase = {
+  title: string
+}
+
+type SelectionMode<T> = {
+  multiple?: false
+  selected: T | undefined
+  onChange: (value: T | undefined) => void // TODO: Make the value returned by onChange infer the type based on options.value
+} | {
+  multiple: true
+  selected: T[]
+  onChange: (value: T[]) => void
+}
+
+type PillFilter = FilterBase & {
   type: 'pill'
-} & ({
   options: {
     label: string
-    value: string | number | boolean
+    value: PrimitiveTypes
     color?: string
   }[]
-  multiple?: false
-} | {
-  options: {
-    label: string
-    value: string | number
-    color?: string
-  }[]
-  multiple: true
-})
+} & SelectionMode<PrimitiveTypes>
 
-type DropdownFilter = {
+type DropdownFilter = FilterBase & {
   type: 'dropdown'
+  options: {
+    label: string
+    value: UniqueTypes
+  }[]
   placeholder?: string
   loading?: boolean
   disabled?: boolean
-} & ({
-  options: {
-    label: string
-    value: string | number | boolean
-  }[]
-  multiple?: false
-} | {
-  options: {
-    label: string
-    value: string | number
-  }[]
-  multiple: true
-})
+} & SelectionMode<UniqueTypes>
 
-type Filter = FilterBase< PillFilter | DropdownFilter>
-
+type Filter = PillFilter | DropdownFilter
 export interface FilterItem {
   filters: Filter[]
   cleanFilters: () => void
