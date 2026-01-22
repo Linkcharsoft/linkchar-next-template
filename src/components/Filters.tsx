@@ -192,7 +192,10 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                 key={`Filter-${index}`}
                 className="flex w-full flex-col items-start gap-2"
               >
-                <Label className='flex w-full items-center justify-between gap-2 font-medium'>
+                <Label
+                  htmlFor={`filter-${index}`}
+                  className='flex w-full items-center justify-between gap-2 font-medium'
+                >
                   { filter.title }
 
                   {(filter.multiple && filter.selected.length > 1) && (
@@ -211,6 +214,7 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                   {(filter.type === 'pill')
                   && filter.options.map((option, optionIndex) => (
                     <button
+                      id={`filter-${index}`}
                       type='button'
                       key={`FilterItem-${index}-${optionIndex}`}
                       className={classNames('Filters__Item', {
@@ -255,7 +259,12 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                           filter
                           showClear={filter.selected.length > 0}
                           disabled={filter.disabled || filter.loading}
-                          pt={MULTISELECT_PT}
+                          pt={{
+                            ...MULTISELECT_PT,
+                            input: {
+                              id: `filter-${index}`
+                            }
+                          }}
                         />
                       ) : (
                         <Dropdown
@@ -268,7 +277,12 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                           filter
                           showClear={Boolean(filter.selected)}
                           disabled={filter.disabled || filter.loading}
-                          pt={DROPDOWN_PT}
+                          pt={{
+                            ...DROPDOWN_PT,
+                            input: {
+                              id: `filter-${index}`
+                            }
+                          }}
                         />
                       )}
                     </>
