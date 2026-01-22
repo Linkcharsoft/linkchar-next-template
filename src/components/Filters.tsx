@@ -205,6 +205,8 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                     </button>
                   )}
                 </Label>
+
+
                 <div className="align-center flex w-full flex-wrap gap-2">
                   {(filter.type === 'pill')
                   && filter.options.map((option, optionIndex) => (
@@ -245,7 +247,7 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                     <>
                       {filter.multiple ? (
                         <MultiSelect
-                          placeholder={filter.placeholder}
+                          placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
                           value={filter.selected}
                           onChange={(e) => filter.onChange(e.value)}
                           options={filter.options}
@@ -258,7 +260,7 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                       ) : (
                         <Dropdown
                           className='w-full'
-                          placeholder={filter.placeholder}
+                          placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
                           value={filter.selected}
                           onChange={(e) => filter.onChange(e.value)}
                           options={filter.options}
