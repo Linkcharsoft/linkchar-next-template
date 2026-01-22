@@ -353,8 +353,13 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
     Object.entries(DEFAULT_PARAMS).forEach(([key, param]) => {
       const defaultValue = param.value
 
-      if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
-        params.set(key, '')
+      if(key === 'page' || key === 'page_size') {
+        params.set(key, String(defaultValue))
+        return
+      } else {
+        if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
+          params.set(key, '')
+        }
       }
     })
 
