@@ -135,7 +135,9 @@ const Filters = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
 
-  // useOnClickOutside(containerRef as RefObject<HTMLDivElement>, () => setShowFilters(false))
+  useOnClickOutside(containerRef as RefObject<HTMLDivElement>, () => {
+    if(filters.every(filter => filter.type === 'pill')) setShowFilters(false)
+  })
 
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
