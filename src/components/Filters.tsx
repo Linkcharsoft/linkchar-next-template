@@ -59,7 +59,9 @@ type DateFilter = FilterBase & {
 type DateRangeFilter = FilterBase & {
   type: 'date-range'
   placeholder?: string
-} & SelectionMode<{ from?: string, to?: string }>
+  selected: { from: string | undefined, to: string | undefined }
+  onChange: (value: { from: string | undefined, to: string | undefined }) => void
+}
 
 type Filter = PillFilter | DropdownFilter | DateFilter | DateRangeFilter
 
@@ -317,7 +319,6 @@ const Filters = ({
 
                   {filter.type === 'date' && (
                     <Calendar
-                      id={`filter-${index}`}
                       className='w-full'
                       placeholder={filter.placeholder || 'Select a date'}
                       value={filter.multiple
@@ -340,6 +341,46 @@ const Filters = ({
                       selectionMode={filter.multiple ? 'multiple' : 'single'}
                       dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
                       locale={locale}
+                      // pt={{
+                      //   input: {
+                      //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
+                      //   }
+                      // }}
+                    />
+                  )}
+
+                  {filter.type === 'date-range' && (
+                    <Calendar
+                      className='w-full'
+                      placeholder={filter.placeholder || 'Select a date range'}
+                      value={filter.selected.from || filter.selected.to
+                        ? [
+                          filter.selected.from ? dayjs(filter.selected.from).toDate() : null,
+                          filter.selected.to ? dayjs(filter.selected.to).toDate() : null
+                        ]
+                        : null
+                      }
+                      onChange={(e) => {
+                        if(e.value) {
+                          filter.onChange({
+                            from: e.value[0] ? dayjs(e.value[0] as Date).format('YYYY-MM-DD') : undefined,
+                            to: e.value[1] ? dayjs(e.value[1] as Date).format('YYYY-MM-DD') : undefined
+                          })
+                        } else {
+                          filter.onChange({
+                            from: undefined,
+                            to: undefined
+                          })
+                        }
+                      }}
+                      selectionMode='range'
+                      dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+                      locale={locale}
+                      // pt={{
+                      //   input: {
+                      //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
+                      //   }
+                      // }}
                     />
                   )}
                 </div>
