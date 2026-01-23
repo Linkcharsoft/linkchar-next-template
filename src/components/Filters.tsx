@@ -57,7 +57,14 @@ type DateFilter = FilterBase & {
   placeholder?: string
 } & SelectionMode<string>
 
-type Filter = PillFilter | DropdownFilter | DateFilter
+type DateRangeFilter = FilterBase & {
+  type: 'date-range'
+  locale?: 'en' | 'es'
+  placeholder?: string
+} & SelectionMode<{ from?: string, to?: string }>
+
+type Filter = PillFilter | DropdownFilter | DateFilter | DateRangeFilter
+
 export interface FilterItem {
   filters: Filter[]
   cleanFilters: () => void
@@ -122,7 +129,7 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
 
-  useOnClickOutside(containerRef as RefObject<HTMLDivElement>, () => setShowFilters(false))
+  // useOnClickOutside(containerRef as RefObject<HTMLDivElement>, () => setShowFilters(false))
 
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
@@ -316,10 +323,11 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                           : null
                       }
                       onChange={(e) => {
-                        console.log(e)
                         if(filter.multiple) {
                           if(!e.value) filter.onChange([])
-                          else filter.onChange((e.value as Date[]).map(v => dayjs(v).format('YYYY-MM-DD')))
+                          else filter.onChange((e.value as Date[])
+                            .sort((a, b) => a.getTime() - b.getTime())
+                            .map(v => dayjs(v).format('YYYY-MM-DD')))
                         } else {
                           if(!e.value) filter.onChange(undefined)
                           else filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))
