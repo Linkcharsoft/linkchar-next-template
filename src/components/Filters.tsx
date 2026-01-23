@@ -244,6 +244,20 @@ const Filters = ({
                       )}
                     </>
                   )}
+
+                  {filter.type === 'date-range' && (
+                    <>
+                      {(filter.selected.from || filter.selected.to) && (
+                        <button
+                          type='button'
+                          className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
+                          onClick={() => filter.onChange({ from: undefined, to: undefined })}
+                        >
+                          <i className="pi pi-times text-14"></i>
+                        </button>
+                      )}
+                    </>
+                  )}
                 </Label>
 
 
