@@ -53,13 +53,11 @@ type DropdownFilter = FilterBase & {
 
 type DateFilter = FilterBase & {
   type: 'date'
-  locale?: 'en' | 'es'
   placeholder?: string
 } & SelectionMode<string>
 
 type DateRangeFilter = FilterBase & {
   type: 'date-range'
-  locale?: 'en' | 'es'
   placeholder?: string
 } & SelectionMode<{ from?: string, to?: string }>
 
@@ -68,6 +66,7 @@ type Filter = PillFilter | DropdownFilter | DateFilter | DateRangeFilter
 export interface FilterItem {
   filters: Filter[]
   cleanFilters: () => void
+  locale?: 'en' | 'es'
   disabled?: boolean
 }
 
@@ -125,7 +124,12 @@ const DROPDOWN_PT: DropdownPassThroughOptions = {
   }
 }
 
-const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
+const Filters = ({
+  filters,
+  cleanFilters,
+  locale = 'en',
+  disabled = false
+}: FilterItem) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
 
@@ -334,8 +338,8 @@ const Filters = ({ filters, cleanFilters, disabled = false }: FilterItem) => {
                         }
                       }}
                       selectionMode={filter.multiple ? 'multiple' : 'single'}
-                      dateFormat={filter.locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
-                      locale={filter.locale}
+                      dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+                      locale={locale}
                     />
                   )}
                 </div>
