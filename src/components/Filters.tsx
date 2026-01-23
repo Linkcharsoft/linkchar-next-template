@@ -141,6 +141,7 @@ const Filters = ({
 
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
+
     for (const filter of filters) {
       if (filter.type === 'pill' || filter.type === 'dropdown' || filter.type === 'date') {
         if(filter.multiple) {
@@ -148,12 +149,17 @@ const Filters = ({
         } else {
           if (
             filter.selected !== undefined &&
-            filter.selected !== null
+            filter.selected !== null &&
+            filter.selected !== ''
           )
             count += 1
         }
       }
+      if(filter.type === 'date-range') {
+        if(filter.selected.from || filter.selected.to) count += 1
+      }
     }
+
     return count
   }, [filters])
 
