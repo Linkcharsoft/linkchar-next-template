@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server'
-import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
+import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
 import type { NextRequest } from 'next/server'
 
-const AUTHENTICATED_HOME_PATH: string = '/dashboard'
 const AUTH_PATHS = new Set([
   '/login',
   '/signup',
   '/signup/email-validation',
   '/signup/confirmation',
-  '/password-recovery'
+  '/password-recovery',
+  '/password-recovery/confirmation'
 ])
 
 const PUBLIC_PATHS = new Set([

@@ -8,7 +8,7 @@ import * as Yup from 'yup'
 import { resendEmailConfirmation } from '@/api/auth'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
-import { AUTH_INPUT_ERRORS } from '@/constants/auth'
+import { AUTH_INPUT_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import { useAppStore } from '@/stores/appStore'
 import useUserStore from '@/stores/userStore'
@@ -18,8 +18,6 @@ type LoginFormikType = {
   email: string
   password: string
 }
-
-const SUCCES_REDIRECT = '/'
 
 
 const LoginPage = () => {
@@ -70,7 +68,7 @@ const LoginPage = () => {
           const user = await response.json()
 
           setUser(user)
-          router.replace(SUCCES_REDIRECT)
+          router.replace(AUTHENTICATED_HOME_PATH)
 
           setToastMessage({
             severity: 'success',
