@@ -18,9 +18,8 @@ const ProvidersContainer = ({ children }: Props) => {
 
   useEffect(() => {
     (async () => {
-      const session = await getServerUser()
-
-      if(session) setUser(session)
+      const user = await getServerUser()
+      if(user) setUser(user)
     })()
   }, [])
 
