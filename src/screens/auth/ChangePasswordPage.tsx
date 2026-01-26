@@ -16,9 +16,9 @@ import useUserStore from '@/stores/userStore'
 
 const ChangePasswordPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const { user } = useUserStore()
   const isClient = useIsClient()
@@ -41,9 +41,9 @@ const ChangePasswordPage = () => {
 
 
   const handleGetEmail = async () => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Sending email',
-      message: 'Plase wait...'
+      content: 'Plase wait...'
     })
     setButtonDisabled(true)
 
@@ -54,23 +54,22 @@ const ChangePasswordPage = () => {
       })
 
       if (ok) {
-        setToastMessage({
+        setNotification({
           severity: 'success',
-          summary: 'Email sent! Please check your inbox',
-          life: 3000
+          summary: 'Email sent! Please check your inbox'
         })
 
         setShowEmails(true)
         startTimer()
       } else {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error sending email, please try again later',
           life: 5000
         })
       }
     } catch (error) {
-      setToastMessage({
+      setNotification({
         severity: 'error',
         summary: 'Error sending email, please try again later',
         life: 5000
@@ -78,7 +77,7 @@ const ChangePasswordPage = () => {
       // ! Sentry
       console.error(`Error: ${error.message}`)
     } finally {
-      hideLoadingModal()
+      closeModal('loadingModal')
       setButtonDisabled(false)
     }
   }

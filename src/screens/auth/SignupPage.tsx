@@ -25,8 +25,8 @@ type SignupFormikType = {
 
 const SignupPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal
+    openModal,
+    closeModal
   } = useModalStore()
   const isClient = useIsClient()
   const router = useRouter()
@@ -65,9 +65,9 @@ const SignupPage = () => {
       return errors
     },
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Signing up',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
@@ -105,7 +105,7 @@ const SignupPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

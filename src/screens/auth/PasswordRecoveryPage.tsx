@@ -24,9 +24,9 @@ type PasswordRecoveryFormikType = {
 
 const PasswordRecoveryPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
@@ -54,9 +54,9 @@ const PasswordRecoveryPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async ({ email }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Sending email',
-        message: 'Plase wait...'
+        content: 'Plase wait...'
       })
 
       try {
@@ -66,23 +66,22 @@ const PasswordRecoveryPage = () => {
         })
 
         if (ok) {
-          setToastMessage({
+          setNotification({
             severity: 'success',
-            summary: 'Email sent! Please check your inbox',
-            life: 3000
+            summary: 'Email sent! Please check your inbox'
           })
 
           setShowEmails(true)
           startTimer()
         } else {
-          setToastMessage({
+          setNotification({
             severity: 'error',
             summary: 'Error sending email, please try again later',
             life: 5000
           })
         }
       } catch (error) {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error sending email, please try again later',
           life: 5000
@@ -90,7 +89,7 @@ const PasswordRecoveryPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

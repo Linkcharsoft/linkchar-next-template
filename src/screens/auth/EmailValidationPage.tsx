@@ -16,9 +16,9 @@ type Props = {
 
 const EmailValidationPage = ({ email }: Props) => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const isClient = useIsClient()
   const {
@@ -33,31 +33,30 @@ const EmailValidationPage = ({ email }: Props) => {
 
 
   const handleResendEmail = async () => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Resending email',
-      message: 'Please wait...'
+      content: 'Please wait...'
     })
 
     try {
       const { ok } = await resendEmailConfirmation({ email })
 
       if (ok) {
-        setToastMessage({
+        setNotification({
           severity: 'success',
-          summary: 'Email sent! Please check your inbox',
-          life: 3000
+          summary: 'Email sent! Please check your inbox'
         })
 
         startTimer()
       } else {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error sending email, please try again later',
           life: 5000
         })
       }
     } catch (error) {
-      setToastMessage({
+      setNotification({
         severity: 'error',
         summary: 'Error sending email, please try again later',
         life: 5000
@@ -65,7 +64,7 @@ const EmailValidationPage = ({ email }: Props) => {
       // ! Sentry
       console.error(`Error: ${error.message}`)
     } finally {
-      hideLoadingModal()
+      closeModal('loadingModal')
     }
   }
 

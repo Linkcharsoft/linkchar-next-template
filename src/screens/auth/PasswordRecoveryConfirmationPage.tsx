@@ -28,9 +28,9 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const isClient = useIsClient()
   const router = useRouter()
@@ -46,9 +46,9 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
   // Verify token logic
   useEffect(() => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Verifying link',
-      message: 'Please wait...'
+      content: 'Please wait...'
     })
 
     const checkUrlToken = async () => {
@@ -63,7 +63,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         setTokenStatus('invalid')
       }
 
-      hideLoadingModal()
+      closeModal('loadingModal')
     }
 
     checkUrlToken()
@@ -95,9 +95,9 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
       return errors
     },
     onSubmit: async ({ password }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Changing password',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
@@ -108,23 +108,22 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         })
 
         if (ok) {
-          setToastMessage({
+          setNotification({
             severity: 'success',
             summary: 'Password changed successfully!',
-            detail: 'Redirecting to login page...',
-            life: 3000
+            detail: 'Redirecting to login page...'
           })
 
           setTimeout(() => router.replace('/login'), 1000)
         } else {
-          setToastMessage({
+          setNotification({
             severity: 'error',
             summary: 'Error changing password, please try again later',
             life: 5000
           })
         }
       } catch (error) {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error changing password, please try again later',
           life: 5000
@@ -132,7 +131,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

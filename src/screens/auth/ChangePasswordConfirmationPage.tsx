@@ -28,9 +28,9 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 const ChangePasswordConfirmationPage = ({ token }: Props) => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const { user } = useUserStore()
   const isClient = useIsClient()
@@ -47,9 +47,9 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
   // Verify token logic
   useEffect(() => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Verifying link',
-      message: 'Please wait...'
+      content: 'Please wait...'
     })
 
     const checkUrlToken = async () => {
@@ -64,7 +64,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         setTokenStatus('invalid')
       }
 
-      hideLoadingModal()
+      closeModal('loadingModal')
     }
 
     if(user) checkUrlToken()
@@ -96,9 +96,9 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       return errors
     },
     onSubmit: async ({ password }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Changing password',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
@@ -109,23 +109,22 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         })
 
         if (ok) {
-          setToastMessage({
+          setNotification({
             severity: 'success',
             summary: 'Password changed successfully!',
-            detail: 'Redirecting to home page...',
-            life: 3000
+            detail: 'Redirecting to home page...'
           })
 
           setTimeout(() => router.replace('/'), 3000)
         } else {
-          setToastMessage({
+          setNotification({
             severity: 'error',
             summary: 'Error changing password, please try again later',
             life: 5000
           })
         }
       } catch (error) {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error changing password, please try again later',
           life: 5000
@@ -133,7 +132,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         // ! Sentry
         console.error(`Error: ${error}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

@@ -29,9 +29,9 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 const SignupConfirmationPage = ({ token }: Props) => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
@@ -55,9 +55,9 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
   // Verify token logic
   useEffect(() => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Verifying link',
-      message: 'Please wait...'
+      content: 'Please wait...'
     })
 
     const verifyToken = async () => {
@@ -69,7 +69,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
         setTokenStatus('invalid')
       }
 
-      hideLoadingModal()
+      closeModal('loadingModal')
     }
 
     verifyToken()
@@ -85,16 +85,16 @@ const SignupConfirmationPage = ({ token }: Props) => {
       email: Yup.string().email(AUTH_INPUT_ERRORS['invalid-email']).required(AUTH_INPUT_ERRORS.required)
     }),
     onSubmit: async ({ email }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Resending email',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
         const { ok } = await resendEmailConfirmation({ email })
 
         if (ok) {
-          setToastMessage({
+          setNotification({
             severity: 'success',
             summary: 'Email sent! Please check your inbox',
             life: 3000
@@ -103,14 +103,14 @@ const SignupConfirmationPage = ({ token }: Props) => {
           setShowEmails(true)
           startTimer()
         } else {
-          setToastMessage({
+          setNotification({
             severity: 'error',
             summary: 'Error sending email, please try again later',
             life: 5000
           })
         }
       } catch (error) {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error sending email, please try again later',
           life: 5000
@@ -118,7 +118,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

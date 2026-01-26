@@ -22,9 +22,9 @@ type LoginFormikType = {
 
 const LoginPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
+    openModal,
+    closeModal,
+    setNotification
   } = useModalStore()
   const { setUser } = useUserStore()
   const isClient = useIsClient()
@@ -47,9 +47,9 @@ const LoginPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Logging in',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
@@ -70,16 +70,15 @@ const LoginPage = () => {
           setUser(user)
           router.replace(AUTHENTICATED_HOME_PATH)
 
-          setToastMessage({
+          setNotification({
             severity: 'success',
-            summary: 'Login successful',
-            life: 3000
+            summary: 'Login successful'
           })
         } else {
           const errors = await response.json()
 
           if(errors.non_field_errors?.[0]?.includes('mail is not verified')) {
-            setToastMessage({
+            setNotification({
               severity: 'error',
               summary: 'Email not verified',
               detail: 'Redirecting to email validation page...',
@@ -107,7 +106,7 @@ const LoginPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })
