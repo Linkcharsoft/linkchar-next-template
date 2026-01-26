@@ -5,4 +5,4 @@ export type PaginatedResponse<T> = {
   results: T
 }
 
-export type StateTypes = 'success' | 'info' | 'warning' | 'error'
+export type StateTypes = 'success' | 'info' | 'warn' | 'error'

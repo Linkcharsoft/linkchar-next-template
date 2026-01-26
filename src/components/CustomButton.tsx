@@ -25,7 +25,7 @@ const VARIANT_CLASSES: {
   // State Variants
   success: 'CustomButton--Success',
   info: 'CustomButton--Info',
-  warning: 'CustomButton--Warning',
+  warn: 'CustomButton--Warn',
   error: 'CustomButton--Error'
 }
 const SIZE_CLASSES: {

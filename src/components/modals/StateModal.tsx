@@ -2,11 +2,14 @@
 import { Dialog } from 'primereact/dialog'
 import useModalStore from '@/stores/modalStore'
 import CustomButton from '../CustomButton'
+import type { StateTypes } from '@/types/general'
 
-const TYPE_ICON = {
+const TYPE_ICON: {
+  [K in StateTypes]: string
+} = {
   success: 'pi pi-check-circle text-green-500',
   info: 'pi pi-info-circle text-blue-500',
-  warning: 'pi pi-exclamation-triangle text-orange-500',
+  warn: 'pi pi-exclamation-triangle text-orange-500',
   error: 'pi pi-times-circle text-red-500'
 }
 
