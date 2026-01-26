@@ -2,7 +2,7 @@ import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
-import ProvidersContainer from '@/containers/ProvidersContainer'
+import ProvidersContainer from '@/providers/ProvidersContainer'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
