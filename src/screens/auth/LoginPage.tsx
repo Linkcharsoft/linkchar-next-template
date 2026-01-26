@@ -10,7 +10,7 @@ import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import useUserStore from '@/stores/userStore'
 
 
@@ -25,7 +25,7 @@ const LoginPage = () => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppStore()
+  } = useModalStore()
   const { setUser } = useUserStore()
   const isClient = useIsClient()
   const router = useRouter()

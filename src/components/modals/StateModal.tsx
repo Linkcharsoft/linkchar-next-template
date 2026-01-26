@@ -1,12 +1,12 @@
 'use client'
 import { Button } from 'primereact/button'
 import { Dialog } from 'primereact/dialog'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 
 /* DOCS: https://primereact.org/dialog/ */
 
 export default function StateModal () {
-  const { modalState, hideModalState } = useAppStore()
+  const { modalState, hideModalState } = useModalStore()
 
   /* THIS IS A EXAMPLE COLORS AND ICONS */
 

@@ -11,7 +11,7 @@ import InputContainer from '@/components/InputContainer'
 import PasswordValidation from '@/components/PasswordValidation'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import useUserStore from '@/stores/userStore'
 import validatePassword from '@/utils/validatePassword'
 
@@ -31,7 +31,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppStore()
+  } = useModalStore()
   const { user } = useUserStore()
   const isClient = useIsClient()
   const router = useRouter()

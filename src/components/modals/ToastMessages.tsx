@@ -1,11 +1,11 @@
 'use client'
 import { Toast } from 'primereact/toast'
 import { useEffect, useRef } from 'react'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 
 const ToastMessages = () => {
   const toastRef = useRef<Toast>(null)
-  const { toastMessage, setToastMessage } = useAppStore()
+  const { toastMessage, setToastMessage } = useModalStore()
 
   useEffect(() => {
     if (toastMessage.summary) {

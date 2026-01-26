@@ -13,7 +13,7 @@ import InputError from '@/components/InputError'
 import PasswordValidation from '@/components/PasswordValidation'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import validatePassword from '@/utils/validatePassword'
 
 
@@ -27,7 +27,7 @@ const SignupPage = () => {
   const {
     showLoadingModal,
     hideLoadingModal
-  } = useAppStore()
+  } = useModalStore()
   const isClient = useIsClient()
   const router = useRouter()
   const [generalError, setGeneralError] = useState<string | null>(null)

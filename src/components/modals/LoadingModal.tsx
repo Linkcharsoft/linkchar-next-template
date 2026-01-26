@@ -1,11 +1,11 @@
 'use client'
 import { AnimatePresence, m } from 'framer-motion'
 import { memo } from 'react'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import Loader from '../Loader'
 
 const LoadingModal = () => {
-  const { loadingModal } = useAppStore()
+  const { loadingModal } = useModalStore()
 
   return (
     <AnimatePresence>

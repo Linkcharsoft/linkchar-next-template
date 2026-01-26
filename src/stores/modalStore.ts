@@ -29,7 +29,7 @@ interface AppState {
 }
 
 // Create Zustand store
-export const useAppStore = create<AppState>((set) => ({
+const useModalStore = create<AppState>((set) => ({
   loadingModal: {
     show: false,
     title: 'Titulo',
@@ -86,3 +86,5 @@ export const useAppStore = create<AppState>((set) => ({
       toastMessage: message
     }))
 }))
+
+export default useModalStore

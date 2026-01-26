@@ -10,7 +10,7 @@ import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import useUserStore from '@/stores/userStore'
 
 
@@ -19,7 +19,7 @@ const ChangePasswordPage = () => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppStore()
+  } = useModalStore()
   const { user } = useUserStore()
   const isClient = useIsClient()
   const router = useRouter()

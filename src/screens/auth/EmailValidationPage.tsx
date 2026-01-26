@@ -6,7 +6,7 @@ import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 
 
 type Props = {
@@ -19,7 +19,7 @@ const EmailValidationPage = ({ email }: Props) => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppStore()
+  } = useModalStore()
   const isClient = useIsClient()
   const {
     timer,

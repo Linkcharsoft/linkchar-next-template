@@ -14,7 +14,7 @@ import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 
 
 type Props = {
@@ -32,7 +32,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
     showLoadingModal,
     hideLoadingModal,
     setToastMessage
-  } = useAppStore()
+  } = useModalStore()
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
