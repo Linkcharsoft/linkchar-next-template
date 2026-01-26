@@ -1,89 +1,118 @@
 'use client'
 import { create } from 'zustand'
+import type { StateTypes } from '@/types/general'
 import type { ToastMessage } from 'primereact/toast'
 
-type LoadingModalState = {
+// * Base Type
+type ModalStateBase<T> = T & {
   show: boolean
+}
+
+// * Modal Types
+type LoadingModal = {
   title: string
-  message: string
+  subtitle?: string
+  content?: string
 }
-
-type ModalState = {
-  show: boolean
-  type: 'success' | 'info' | 'warning' | 'error'
-  header: string
+type StateModal = {
+  type: StateTypes
+  title: string
+  subtitle?: string
   content: string
+  button?: {
+    label?: string
+    action: () => void
+  }
 }
 
-interface AppState {
-  loadingModal: LoadingModalState
-  showLoadingModal: (params: Omit<LoadingModalState, 'show'>) => void
-  hideLoadingModal: () => void
-
-  modalState: ModalState
-  showModalState: (type: 'success' | 'info' | 'warning' | 'error', header: string, content: string) => void
-  hideModalState: () => void
-
-  toastMessage: ToastMessage
-  setToastMessage: (message: ToastMessage) => void
+// * Modal payloads
+type ModalPayloads = {
+  loadingModal: LoadingModal
+  stateModal: StateModal
 }
 
-// Create Zustand store
-const useModalStore = create<AppState>((set) => ({
+// * Modal map
+type ModalStateMap = {
+  [key in keyof ModalPayloads]: ModalStateBase<ModalPayloads[key]>
+}
+
+interface ModalStore {
+  modals: ModalStateMap
+  openModal: <K extends keyof ModalPayloads>(key: K, payload: Omit<ModalPayloads[K], 'show'>) => void
+  closeModal: <K extends keyof ModalPayloads>(key: K) => void
+  // closeAllModals: () => void
+
+  notification: ToastMessage
+  setNotification: (notification: {
+    severity: Exclude<ToastMessage['severity'], 'secondary' | 'contrast'>
+    summary: ToastMessage['summary']
+    detail?: ToastMessage['detail']
+    life?: number
+    sticky?: boolean
+  }) => void
+}
+
+const initialModals: ModalStateMap = {
   loadingModal: {
     show: false,
-    title: 'Titulo',
-    message: 'Mensaje'
-  },
-  showLoadingModal: ({ title = '', message = '' }) =>
-    set(() => ({
-      loadingModal: {
-        show: true,
-        title,
-        message
-      }
-    })),
-  hideLoadingModal: () => setTimeout(() =>
-    set(() => ({
-      loadingModal: {
-        show: false,
-        title: '',
-        message: ''
-      }
-    })), 500),
-
-  modalState: {
-    show: false,
-    type: 'success',
-    header: '',
+    title: '',
+    subtitle: '',
     content: ''
   },
-  showModalState: (type, header, content) =>
-    set(() => ({
-      modalState: {
-        show: true,
-        type,
-        header,
-        content
-      }
-    })),
-  hideModalState: () =>
-    set(() => ({
-      modalState: {
-        show: false,
-        type: 'success',
-        header: '',
-        content: ''
-      }
-    })),
+  stateModal: {
+    show: false,
+    type: 'success',
+    title: '',
+    subtitle: '',
+    content: ''
+  }
+}
 
-  toastMessage: {
+const useModalStore = create<ModalStore>((set) => ({
+  modals: initialModals,
+  openModal: (key, payload) =>
+    set((state) => ({
+      modals: {
+        ...state.modals,
+        [key]: {
+          ...state.modals[key],
+          ...payload,
+          show: true
+        }
+      }
+    })),
+  closeModal: (key) =>
+    set((state) => ({
+      modals: {
+        ...state.modals,
+        [key]: {
+          ...state.modals[key],
+          show: false
+        }
+      }
+    })),
+  // closeAllModals: () => {
+  //   set((state) => ({
+  //     modals: Object.keys(state.modals).reduce((acc, curr) => {
+  //       acc[curr as keyof ModalStateMap] = {
+  //         ...state.modals[curr as keyof ModalStateMap],
+  //         show: false
+  //       }
+  //       return acc
+  //     }, {} as ModalStateMap)
+  //   }))
+  // }
+
+  notification: {
     severity: 'info',
     summary: ''
   },
-  setToastMessage: (message) =>
+  setNotification: (notification) =>
     set(() => ({
-      toastMessage: message
+      notification: {
+        ...notification,
+        life: notification.life ?? 3000
+      }
     }))
 }))
 
