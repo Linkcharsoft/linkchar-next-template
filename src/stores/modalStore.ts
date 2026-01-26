@@ -104,7 +104,7 @@ const useModalStore = create<ModalStore>((set) => ({
   // }
 
   notification: {
-    severity: 'info',
+    severity: undefined,
     summary: ''
   },
   setNotification: (notification) =>
