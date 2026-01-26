@@ -6,6 +6,7 @@ import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect } from 'react'
 import useUserStore from '@/stores/userStore'
 import { getServerUser } from '@/utils/auth'
+import ModalsProvider from './ModalsProvider'
 import type { ReactNode } from 'react'
 
 interface Props {
@@ -45,6 +46,8 @@ const ProvidersContainer = ({ children }: Props) => {
       <LazyMotion features={domAnimation} strict>
         { children }
       </LazyMotion>
+
+      <ModalsProvider/>
     </PrimeReactProvider>
   )
 }
