@@ -4,11 +4,12 @@ import { Button } from 'primereact/button'
 import { classNames } from 'primereact/utils'
 import { memo } from 'react'
 import { Tooltip } from 'react-tooltip'
+import type { StateTypes } from '@/types/general'
 import type { Route } from 'next'
 import type { ButtonProps as OriginalButtonProps } from 'primereact/button'
 
 interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
-  variant?: 'primary' | 'white' | 'transparent'
+  variant?: 'primary' | 'white' | 'transparent' | StateTypes
   size?: 'detail' | 'small' | 'medium' | 'large'
   href?: Route
   replace?: boolean | undefined
@@ -19,7 +20,13 @@ const VARIANT_CLASSES: {
 } = {
   primary: 'CustomButton--Primary',
   white: 'CustomButton--White',
-  transparent: 'CustomButton--Transparent'
+  transparent: 'CustomButton--Transparent',
+
+  // State Variants
+  success: 'CustomButton--Success',
+  info: 'CustomButton--Info',
+  warning: 'CustomButton--Warning',
+  error: 'CustomButton--Error'
 }
 const SIZE_CLASSES: {
   [key in NonNullable<ButtonProps['size']>]: string

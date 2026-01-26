@@ -31,6 +31,18 @@
   &--Transparent
     @apply bg-transparent text-surface-900 border-none hover:opacity-75 focus:shadow-none // hover:bg-surface-100
 
+  // State variants
+  &--Success, &--Info, &--Warning, &--Error
+    @apply text-white border-none hover:opacity-75 focus:shadow-sm
+  &--Success
+    @apply bg-green-500
+  &--Info
+    @apply bg-blue-500
+  &--Warning
+    @apply bg-orange-500
+  &--Error
+    @apply bg-red-600
+
   // Sizes
   &--Detail
     height: 32px
