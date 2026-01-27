@@ -6,8 +6,10 @@ import { Dropdown } from 'primereact/dropdown'
 import { MultiSelect } from 'primereact/multiselect'
 import { classNames } from 'primereact/utils'
 import { useMemo, useRef, useState } from 'react'
+import { useMediaQuery } from 'usehooks-ts'
 import CustomButton from './CustomButton'
 import Label from './Label'
+import type { TargetAndTransition } from 'framer-motion'
 import type { DropdownPassThroughOptions } from 'primereact/dropdown'
 import type { MultiSelectPassThroughOptions } from 'primereact/multiselect'
 
@@ -63,6 +65,12 @@ type DateRangeFilter = FilterBase & {
 
 type Filter = PillFilter | DropdownFilter | DateFilter | DateRangeFilter
 
+type MotionProps = {
+  initial: TargetAndTransition
+  animate: TargetAndTransition
+  exit: TargetAndTransition
+}
+
 export interface FilterItem {
   filters: Filter[]
   cleanFilters: () => void
@@ -71,10 +79,15 @@ export interface FilterItem {
 }
 
 // Constants
-const MOTION_PROPS = {
-  initial: { opacity: 0, y: -8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 }
+const DESKTOP_MOTION_PROPS: MotionProps = {
+  initial: { opacity: 0, transform: 'translateY(-8px)' },
+  animate: { opacity: 1, transform: 'translateY(0)' },
+  exit: { opacity: 0, transform: 'translateY(-8px)' }
+}
+const MOBILE_MOTION_PROPS: MotionProps = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 }
 }
 const MULTISELECT_PT: MultiSelectPassThroughOptions = {
   panel: {
@@ -132,6 +145,7 @@ const Filters = ({
 }: FilterItem) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
@@ -156,6 +170,8 @@ const Filters = ({
 
     return count
   }, [filters])
+
+  const MOTION_PROPS = isMobile ? MOBILE_MOTION_PROPS : DESKTOP_MOTION_PROPS
 
   return (
     <div ref={containerRef} className="Filters">
