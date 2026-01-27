@@ -196,247 +196,260 @@ const Filters = ({
 
       <AnimatePresence>
         {showFilters && (
-          <m.div
-            className="Filters__Container"
-            {...MOTION_PROPS}
-            transition={{ duration: 0.15 }}
-          >
-            <div className="flex w-full items-center justify-between gap-4">
-              <span className="text-semibold-16">Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
+          <>
+            <div
+              className="Filters__Bg"
+              onClick={() => setShowFilters(false)}
+              onKeyDown={(e) => {
+                if(e.key === 'Escape') {
+                  setShowFilters(false)
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            ></div>
+            <m.div
+              className="Filters__Container"
+              {...MOTION_PROPS}
+              transition={{ duration: 0.15 }}
+            >
+              <div className="flex w-full items-center justify-between gap-4">
+                <span className="text-semibold-16">Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
 
-              <div className="flex items-center gap-2">
-                <CustomButton
-                  variant='transparent'
-                  size='detail'
-                  onClick={cleanFilters}
-                  data-tooltip-id={ACTIVE_FILTERS === 0 ? 'no-filters' : undefined}
-                  data-tooltip-content='No filters to reset'
-                  disabled={disabled || ACTIVE_FILTERS === 0}
-                >
-                  <i className="pi pi-trash text-14" />
-                </CustomButton>
-                <CustomButton
-                  variant='transparent'
-                  size='detail'
-                  onClick={() => setShowFilters(false)}
-                  disabled={disabled}
-                >
-                  <i className="pi pi-times text-14" />
-                </CustomButton>
-              </div>
-            </div>
-
-            {filters.map((filter, index) => (
-              <div
-                key={`Filter-${index}`}
-                className="flex w-full flex-col items-start gap-2"
-              >
-                <div className="flex w-full items-center justify-between gap-2">
-                  <Label htmlFor={`filter-${index}`}>
-                    { filter.title }
-                  </Label>
-
-                  {(filter.type === 'pill') && (
-                    <>
-                      {(filter.multiple && filter.selected.length > 1) && (
-                        <CustomButton
-                          variant='transparent'
-                          size='detail'
-                          className='hover:text-red-500'
-                          onClick={() => filter.onChange([])}
-                          disabled={disabled}
-                        >
-                          <i className="pi pi-times text-14"></i>
-                        </CustomButton>
-                      )}
-                    </>
-                  )}
-
-                  {filter.type === 'date' && (
-                    <>
-                      {((filter.multiple && filter.selected.length > 0) || (!filter.multiple && filter.selected)) && (
-                        <CustomButton
-                          variant='transparent'
-                          size='detail'
-                          className='hover:text-red-500'
-                          onClick={() => {
-                            if(filter.multiple) filter.onChange([])
-                            else filter.onChange(undefined)
-                          }}
-                          disabled={disabled}
-                        >
-                          <i className="pi pi-times text-14"></i>
-                        </CustomButton>
-                      )}
-                    </>
-                  )}
-
-                  {filter.type === 'date-range' && (
-                    <>
-                      {(filter.selected.from || filter.selected.to) && (
-                        <CustomButton
-                          variant='transparent'
-                          size='detail'
-                          className='hover:text-red-500'
-                          onClick={() => filter.onChange({ from: undefined, to: undefined })}
-                          disabled={disabled}
-                        >
-                          <i className="pi pi-times text-14"></i>
-                        </CustomButton>
-                      )}
-                    </>
-                  )}
+                <div className="flex items-center gap-2">
+                  <CustomButton
+                    variant='transparent'
+                    size='detail'
+                    onClick={cleanFilters}
+                    data-tooltip-id={ACTIVE_FILTERS === 0 ? 'no-filters' : undefined}
+                    data-tooltip-content='No filters to reset'
+                    disabled={disabled || ACTIVE_FILTERS === 0}
+                  >
+                    <i className="pi pi-trash text-14" />
+                  </CustomButton>
+                  <CustomButton
+                    variant='transparent'
+                    size='detail'
+                    onClick={() => setShowFilters(false)}
+                    disabled={disabled}
+                  >
+                    <i className="pi pi-times text-14" />
+                  </CustomButton>
                 </div>
+              </div>
+
+              {filters.map((filter, index) => (
+                <div
+                  key={`Filter-${index}`}
+                  className="flex w-full flex-col items-start gap-2"
+                >
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <Label htmlFor={`filter-${index}`}>
+                      { filter.title }
+                    </Label>
+
+                    {(filter.type === 'pill') && (
+                      <>
+                        {(filter.multiple && filter.selected.length > 1) && (
+                          <CustomButton
+                            variant='transparent'
+                            size='detail'
+                            className='hover:text-red-500'
+                            onClick={() => filter.onChange([])}
+                            disabled={disabled}
+                          >
+                            <i className="pi pi-times text-14"></i>
+                          </CustomButton>
+                        )}
+                      </>
+                    )}
+
+                    {filter.type === 'date' && (
+                      <>
+                        {((filter.multiple && filter.selected.length > 0) || (!filter.multiple && filter.selected)) && (
+                          <CustomButton
+                            variant='transparent'
+                            size='detail'
+                            className='hover:text-red-500'
+                            onClick={() => {
+                              if(filter.multiple) filter.onChange([])
+                              else filter.onChange(undefined)
+                            }}
+                            disabled={disabled}
+                          >
+                            <i className="pi pi-times text-14"></i>
+                          </CustomButton>
+                        )}
+                      </>
+                    )}
+
+                    {filter.type === 'date-range' && (
+                      <>
+                        {(filter.selected.from || filter.selected.to) && (
+                          <CustomButton
+                            variant='transparent'
+                            size='detail'
+                            className='hover:text-red-500'
+                            onClick={() => filter.onChange({ from: undefined, to: undefined })}
+                            disabled={disabled}
+                          >
+                            <i className="pi pi-times text-14"></i>
+                          </CustomButton>
+                        )}
+                      </>
+                    )}
+                  </div>
 
 
-                <div className="align-center flex w-full flex-wrap gap-2">
-                  {(filter.type === 'pill')
-                  && filter.options.map((option, optionIndex) => (
-                    <button
-                      id={`filter-${index}`}
-                      type='button'
-                      key={`FilterItem-${index}-${optionIndex}`}
-                      className={classNames('Filters__Item', {
-                        'Disabled': filter.multiple ? !filter.selected.includes(option.value) : filter.selected !== option.value,
-                        'Selected': filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
-                      })}
-                      onClick={() => {
-                        if(filter.multiple) {
-                          if(filter.selected.includes(option.value)) {
-                            filter.onChange(filter.selected.length > 1 ? filter.selected.filter(v => v !== option.value) : [])
+                  <div className="align-center flex w-full flex-wrap gap-2">
+                    {(filter.type === 'pill')
+                    && filter.options.map((option, optionIndex) => (
+                      <button
+                        id={`filter-${index}`}
+                        type='button'
+                        key={`FilterItem-${index}-${optionIndex}`}
+                        className={classNames('Filters__Item', {
+                          'Disabled': filter.multiple ? !filter.selected.includes(option.value) : filter.selected !== option.value,
+                          'Selected': filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
+                        })}
+                        onClick={() => {
+                          if(filter.multiple) {
+                            if(filter.selected.includes(option.value)) {
+                              filter.onChange(filter.selected.length > 1 ? filter.selected.filter(v => v !== option.value) : [])
+                            } else {
+                              filter.onChange([...filter.selected, option.value])
+                            }
                           } else {
-                            filter.onChange([...filter.selected, option.value])
+                            if (filter.selected === option.value) {
+                              filter.onChange(undefined)
+                            } else {
+                              filter.onChange(option.value)
+                            }
                           }
-                        } else {
-                          if (filter.selected === option.value) {
-                            filter.onChange(undefined)
-                          } else {
-                            filter.onChange(option.value)
-                          }
+                        }}
+                      >
+                        {option.color && (
+                          <div
+                            className="Filters__Circle"
+                            style={{ backgroundColor: option.color }}
+                          />
+                        )}
+                        <span className="text-14">{option.label}</span>
+                      </button>
+                    ))}
+
+                    {filter.type === 'dropdown' && (
+                      <>
+                        {filter.multiple ? (
+                          <MultiSelect
+                            placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
+                            value={filter.selected}
+                            onChange={(e) => filter.onChange(e.value)}
+                            options={filter.options}
+                            loading={filter.loading}
+                            filter
+                            showClear={filter.selected.length > 0}
+                            disabled={filter.disabled || filter.loading}
+                            pt={{
+                              ...MULTISELECT_PT,
+                              input: {
+                                id: `filter-${index}`
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Dropdown
+                            className='w-full'
+                            placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
+                            value={filter.selected}
+                            onChange={(e) => filter.onChange(e.value)}
+                            options={filter.options}
+                            loading={filter.loading}
+                            filter
+                            showClear={Boolean(filter.selected)}
+                            disabled={filter.disabled || filter.loading}
+                            pt={{
+                              ...DROPDOWN_PT,
+                              input: {
+                                id: `filter-${index}`
+                              }
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+
+                    {filter.type === 'date' && (
+                      <Calendar
+                        className='w-full'
+                        placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
+                        value={filter.multiple
+                          ? filter.selected.map(s => dayjs(s).toDate())
+                          : filter.selected
+                            ? dayjs(filter.selected).toDate()
+                            : null
                         }
-                      }}
-                    >
-                      {option.color && (
-                        <div
-                          className="Filters__Circle"
-                          style={{ backgroundColor: option.color }}
-                        />
-                      )}
-                      <span className="text-14">{option.label}</span>
-                    </button>
-                  ))}
+                        onChange={(e) => {
+                          if(filter.multiple) {
+                            if(!e.value) filter.onChange([])
+                            else filter.onChange((e.value as Date[])
+                              .sort((a, b) => a.getTime() - b.getTime())
+                              .map(v => dayjs(v).format('YYYY-MM-DD')))
+                          } else {
+                            if(!e.value) filter.onChange(undefined)
+                            else filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))
+                          }
+                        }}
+                        selectionMode={filter.multiple ? 'multiple' : 'single'}
+                        dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+                        locale={locale}
+                        // pt={{
+                        //   input: {
+                        //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
+                        //   }
+                        // }}
+                      />
+                    )}
 
-                  {filter.type === 'dropdown' && (
-                    <>
-                      {filter.multiple ? (
-                        <MultiSelect
-                          placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
-                          value={filter.selected}
-                          onChange={(e) => filter.onChange(e.value)}
-                          options={filter.options}
-                          loading={filter.loading}
-                          filter
-                          showClear={filter.selected.length > 0}
-                          disabled={filter.disabled || filter.loading}
-                          pt={{
-                            ...MULTISELECT_PT,
-                            input: {
-                              id: `filter-${index}`
-                            }
-                          }}
-                        />
-                      ) : (
-                        <Dropdown
-                          className='w-full'
-                          placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
-                          value={filter.selected}
-                          onChange={(e) => filter.onChange(e.value)}
-                          options={filter.options}
-                          loading={filter.loading}
-                          filter
-                          showClear={Boolean(filter.selected)}
-                          disabled={filter.disabled || filter.loading}
-                          pt={{
-                            ...DROPDOWN_PT,
-                            input: {
-                              id: `filter-${index}`
-                            }
-                          }}
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {filter.type === 'date' && (
-                    <Calendar
-                      className='w-full'
-                      placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
-                      value={filter.multiple
-                        ? filter.selected.map(s => dayjs(s).toDate())
-                        : filter.selected
-                          ? dayjs(filter.selected).toDate()
+                    {filter.type === 'date-range' && (
+                      <Calendar
+                        className='w-full'
+                        placeholder={filter.placeholder || 'Select a date range'}
+                        value={filter.selected.from || filter.selected.to
+                          ? [
+                            filter.selected.from ? dayjs(filter.selected.from).toDate() : null,
+                            filter.selected.to ? dayjs(filter.selected.to).toDate() : null
+                          ]
                           : null
-                      }
-                      onChange={(e) => {
-                        if(filter.multiple) {
-                          if(!e.value) filter.onChange([])
-                          else filter.onChange((e.value as Date[])
-                            .sort((a, b) => a.getTime() - b.getTime())
-                            .map(v => dayjs(v).format('YYYY-MM-DD')))
-                        } else {
-                          if(!e.value) filter.onChange(undefined)
-                          else filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))
                         }
-                      }}
-                      selectionMode={filter.multiple ? 'multiple' : 'single'}
-                      dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
-                      locale={locale}
-                      // pt={{
-                      //   input: {
-                      //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
-                      //   }
-                      // }}
-                    />
-                  )}
-
-                  {filter.type === 'date-range' && (
-                    <Calendar
-                      className='w-full'
-                      placeholder={filter.placeholder || 'Select a date range'}
-                      value={filter.selected.from || filter.selected.to
-                        ? [
-                          filter.selected.from ? dayjs(filter.selected.from).toDate() : null,
-                          filter.selected.to ? dayjs(filter.selected.to).toDate() : null
-                        ]
-                        : null
-                      }
-                      onChange={(e) => {
-                        if(e.value) {
-                          filter.onChange({
-                            from: e.value[0] ? dayjs(e.value[0] as Date).format('YYYY-MM-DD') : undefined,
-                            to: e.value[1] ? dayjs(e.value[1] as Date).format('YYYY-MM-DD') : undefined
-                          })
-                        } else {
-                          filter.onChange({
-                            from: undefined,
-                            to: undefined
-                          })
-                        }
-                      }}
-                      selectionMode='range'
-                      dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
-                      locale={locale}
-                      // pt={{
-                      //   input: {
-                      //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
-                      //   }
-                      // }}
-                    />
-                  )}
+                        onChange={(e) => {
+                          if(e.value) {
+                            filter.onChange({
+                              from: e.value[0] ? dayjs(e.value[0] as Date).format('YYYY-MM-DD') : undefined,
+                              to: e.value[1] ? dayjs(e.value[1] as Date).format('YYYY-MM-DD') : undefined
+                            })
+                          } else {
+                            filter.onChange({
+                              from: undefined,
+                              to: undefined
+                            })
+                          }
+                        }}
+                        selectionMode='range'
+                        dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+                        locale={locale}
+                        // pt={{
+                        //   input: {
+                        //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
+                        //   }
+                        // }}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </m.div>
+              ))}
+            </m.div>
+          </>
         )}
       </AnimatePresence>
     </div>
