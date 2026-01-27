@@ -40,7 +40,7 @@ interface ModalStore {
   modals: ModalStateMap
   openModal: <K extends keyof ModalPayloads>(key: K, payload: Omit<ModalPayloads[K], 'show'>) => void
   closeModal: <K extends keyof ModalPayloads>(key: K) => void
-  // closeAllModals: () => void
+  closeAllModals: () => void
 
   notification: ToastMessage
   setNotification: (notification: {
@@ -91,17 +91,18 @@ const useModalStore = create<ModalStore>((set) => ({
         }
       }
     })),
-  // closeAllModals: () => {
-  //   set((state) => ({
-  //     modals: Object.keys(state.modals).reduce((acc, curr) => {
-  //       acc[curr as keyof ModalStateMap] = {
-  //         ...state.modals[curr as keyof ModalStateMap],
-  //         show: false
-  //       }
-  //       return acc
-  //     }, {} as ModalStateMap)
-  //   }))
-  // }
+  closeAllModals: () => {
+    set((state) => ({
+      modals: Object.fromEntries(
+        (Object.entries(state.modals) as [keyof ModalStateMap, ModalStateMap[keyof ModalStateMap]][]).map(
+          ([key, value]) => [
+            key,
+            { ...value, show: false }
+          ]
+        )
+      ) as ModalStateMap
+    }))
+  },
 
   notification: {
     severity: undefined,
