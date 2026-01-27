@@ -254,7 +254,7 @@ const Filters = ({
                           <CustomButton
                             variant='transparent'
                             size='detail'
-                            className='hover:text-red-500'
+                            className='hover:text-red-600'
                             onClick={() => filter.onChange([])}
                             disabled={disabled}
                           >
@@ -270,7 +270,7 @@ const Filters = ({
                           <CustomButton
                             variant='transparent'
                             size='detail'
-                            className='hover:text-red-500'
+                            className='hover:text-red-600'
                             onClick={() => {
                               if(filter.multiple) filter.onChange([])
                               else filter.onChange(undefined)
@@ -289,7 +289,7 @@ const Filters = ({
                           <CustomButton
                             variant='transparent'
                             size='detail'
-                            className='hover:text-red-500'
+                            className='hover:text-red-600'
                             onClick={() => filter.onChange({ from: undefined, to: undefined })}
                             disabled={disabled}
                           >

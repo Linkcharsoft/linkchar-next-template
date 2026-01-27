@@ -7,10 +7,10 @@ import type { StateTypes } from '@/types/general'
 const TYPE_ICON: {
   [K in StateTypes]: string
 } = {
-  success: 'pi pi-check-circle text-green-500',
-  info: 'pi pi-info-circle text-blue-500',
-  warn: 'pi pi-exclamation-triangle text-orange-500',
-  error: 'pi pi-times-circle text-red-500'
+  success: 'pi pi-check-circle text-green-600',
+  info: 'pi pi-info-circle text-blue-600',
+  warn: 'pi pi-exclamation-triangle text-orange-600',
+  error: 'pi pi-times-circle text-red-600'
 }
 
 export default function StateModal () {
