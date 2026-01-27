@@ -52,14 +52,14 @@ const SearchInput = ({
 
       {searchValue ? (
         <InputIcon
-          className="pi pi-times cursor-pointer hover:opacity-75"
+          className="pi pi-times cursor-pointer text-14 hover:text-red-600 hover:opacity-75"
           onClick={() => {
             setSearchValue('')
             onChange()
           }}
         />
       ) : (
-        <InputIcon className="pi pi-search text-3" />
+        <InputIcon className="pi pi-search text-14" />
       )}
     </IconField>
   )

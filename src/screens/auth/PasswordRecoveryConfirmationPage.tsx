@@ -159,7 +159,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
             <i className="pi pi-exclamation-triangle text-center text-48 text-yellow-500"/>
 
             <div className="flex flex-col gap-4">
-              <p className="text-center text-base font-normal text-surface-800">
+              <p className="text-regular-16 text-center text-surface-800">
                 The link you&apos;ve used is no longer available
               </p>
             </div>

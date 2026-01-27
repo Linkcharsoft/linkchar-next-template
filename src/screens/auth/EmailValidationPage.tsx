@@ -80,7 +80,7 @@ const EmailValidationPage = ({ email }: Props) => {
           Validate your email!
         </h1>
 
-        <p className="text-center text-base font-normal text-surface-800">
+        <p className="text-regular-16 text-center text-surface-800">
           We sent you an email to <span className="font-semibold text-surface-900" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
         </p>
 

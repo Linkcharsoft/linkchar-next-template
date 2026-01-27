@@ -111,10 +111,10 @@ const PasswordRecoveryPage = () => {
         </h1>
 
         <div className="flex w-full flex-col gap-4">
-          <p className="text-center text-base font-normal leading-5 text-surface-800">
+          <p className="text-regular-16 text-center leading-5 text-surface-800">
             We will send you an email with a link to change your password
           </p>
-          <p className="text-center text-base font-normal leading-5 text-surface-800">
+          <p className="text-regular-16 text-center leading-5 text-surface-800">
             Make sure to check the spam folder
           </p>
         </div>

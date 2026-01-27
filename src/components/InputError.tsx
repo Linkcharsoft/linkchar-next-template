@@ -11,7 +11,7 @@ const InputError = ({ message }: Props) => {
     <AnimatePresence>
       {message && (
         <m.div
-          className="InputError fw-medium flex items-center gap-2 text-sm text-red-600"
+          className="InputError text-medium-14 flex items-center gap-2 text-red-600"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
         >

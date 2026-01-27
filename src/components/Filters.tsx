@@ -202,7 +202,7 @@ const Filters = ({
             transition={{ duration: 0.15 }}
           >
             <div className="flex w-full items-center justify-between gap-4">
-              <span className="text-4 font-bold">Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
+              <span className="text-semibold-16">Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
 
               <div className="flex items-center gap-2">
                 <CustomButton
@@ -322,7 +322,7 @@ const Filters = ({
                           style={{ backgroundColor: option.color }}
                         />
                       )}
-                      <span className="text-4">{option.label}</span>
+                      <span className="text-14">{option.label}</span>
                     </button>
                   ))}
 

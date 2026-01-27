@@ -159,7 +159,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
           <>
             <i className="pi pi-exclamation-triangle text-center text-48 text-yellow-500"/>
 
-            <p className="text-center text-base font-normal text-surface-800">
+            <p className="text-regular-16 text-center text-surface-800">
               The link you&apos;ve used is no longer available
             </p>
 
