@@ -15,7 +15,7 @@ interface Props {
 
 const SearchInput = ({
   initialValue,
-  placeholder = 'Buscar...',
+  placeholder = 'Search...',
   onChange,
   disabled,
   className

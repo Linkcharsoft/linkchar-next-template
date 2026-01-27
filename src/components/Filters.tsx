@@ -181,7 +181,7 @@ const Filters = ({
         disabled={disabled}
       >
         <i className="pi pi-trash text-14" />
-        <span className="hidden text-14 2xl:inline">Limpiar filtros</span>
+        <span className="hidden text-14 2xl:inline">Clean filters</span>
       </CustomButton>
       <CustomButton
         variant='transparent'
@@ -190,7 +190,7 @@ const Filters = ({
       >
         <i className="pi pi-filter text-14"></i>
         <span className='hidden text-14 2xl:inline'>
-          Filtros {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}
+          Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}
         </span>
       </CustomButton>
 
@@ -202,13 +202,15 @@ const Filters = ({
             transition={{ duration: 0.15 }}
           >
             <div className="flex w-full items-center justify-between gap-4">
-              <span className="text-4 font-bold">Filtros {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
+              <span className="text-4 font-bold">Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
 
               <div className="flex items-center gap-2">
                 <CustomButton
                   variant='transparent'
                   size='detail'
                   onClick={cleanFilters}
+                  data-tooltip-id={ACTIVE_FILTERS === 0 ? 'no-filters' : undefined}
+                  data-tooltip-content='No filters to reset'
                   disabled={disabled || ACTIVE_FILTERS === 0}
                 >
                   <i className="pi pi-trash text-14" />
