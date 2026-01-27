@@ -231,11 +231,10 @@ const Filters = ({
                 key={`Filter-${index}`}
                 className="flex w-full flex-col items-start gap-2"
               >
-                <Label
-                  htmlFor={`filter-${index}`}
-                  className='flex w-full items-center justify-between gap-2 font-medium'
-                >
-                  { filter.title }
+                <div className="flex w-full items-center justify-between gap-2">
+                  <Label htmlFor={`filter-${index}`}>
+                    { filter.title }
+                  </Label>
 
                   {(filter.type === 'pill') && (
                     <>
@@ -287,7 +286,7 @@ const Filters = ({
                       )}
                     </>
                   )}
-                </Label>
+                </div>
 
 
                 <div className="align-center flex w-full flex-wrap gap-2">
