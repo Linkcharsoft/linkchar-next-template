@@ -352,7 +352,7 @@ const Filters = ({
                   {filter.type === 'date' && (
                     <Calendar
                       className='w-full'
-                      placeholder={filter.placeholder || 'Select a date'}
+                      placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
                       value={filter.multiple
                         ? filter.selected.map(s => dayjs(s).toDate())
                         : filter.selected
