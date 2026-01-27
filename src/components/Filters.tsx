@@ -203,14 +203,25 @@ const Filters = ({
           >
             <div className="flex w-full items-center justify-between gap-4">
               <span className="text-4 font-bold">Filtros {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}</span>
-              <CustomButton
-                variant='transparent'
-                size='detail'
-                onClick={cleanFilters}
-                disabled={disabled || ACTIVE_FILTERS === 0}
-              >
-                <i className="pi pi-trash text-14" />
-              </CustomButton>
+
+              <div className="flex items-center gap-2">
+                <CustomButton
+                  variant='transparent'
+                  size='detail'
+                  onClick={cleanFilters}
+                  disabled={disabled || ACTIVE_FILTERS === 0}
+                >
+                  <i className="pi pi-trash text-14" />
+                </CustomButton>
+                <CustomButton
+                  variant='transparent'
+                  size='detail'
+                  onClick={() => setShowFilters(false)}
+                  disabled={disabled}
+                >
+                  <i className="pi pi-times text-14" />
+                </CustomButton>
+              </div>
             </div>
 
             {filters.map((filter, index) => (
@@ -227,13 +238,15 @@ const Filters = ({
                   {(filter.type === 'pill') && (
                     <>
                       {(filter.multiple && filter.selected.length > 1) && (
-                        <button
-                          type='button'
-                          className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
+                        <CustomButton
+                          variant='transparent'
+                          size='detail'
+                          className='hover:text-red-500'
                           onClick={() => filter.onChange([])}
+                          disabled={disabled}
                         >
                           <i className="pi pi-times text-14"></i>
-                        </button>
+                        </CustomButton>
                       )}
                     </>
                   )}
@@ -241,16 +254,18 @@ const Filters = ({
                   {filter.type === 'date' && (
                     <>
                       {((filter.multiple && filter.selected.length > 0) || (!filter.multiple && filter.selected)) && (
-                        <button
-                          type='button'
-                          className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
+                        <CustomButton
+                          variant='transparent'
+                          size='detail'
+                          className='hover:text-red-500'
                           onClick={() => {
                             if(filter.multiple) filter.onChange([])
                             else filter.onChange(undefined)
                           }}
+                          disabled={disabled}
                         >
                           <i className="pi pi-times text-14"></i>
-                        </button>
+                        </CustomButton>
                       )}
                     </>
                   )}
@@ -258,13 +273,15 @@ const Filters = ({
                   {filter.type === 'date-range' && (
                     <>
                       {(filter.selected.from || filter.selected.to) && (
-                        <button
-                          type='button'
-                          className='size-6 items-center justify-center hover:text-red-500 hover:opacity-75'
+                        <CustomButton
+                          variant='transparent'
+                          size='detail'
+                          className='hover:text-red-500'
                           onClick={() => filter.onChange({ from: undefined, to: undefined })}
+                          disabled={disabled}
                         >
                           <i className="pi pi-times text-14"></i>
-                        </button>
+                        </CustomButton>
                       )}
                     </>
                   )}
