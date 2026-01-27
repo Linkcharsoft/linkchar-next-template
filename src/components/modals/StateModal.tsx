@@ -4,7 +4,7 @@ import useModalStore from '@/stores/modalStore'
 import CustomButton from '../CustomButton'
 import type { StateTypes } from '@/types/general'
 
-const TYPE_ICON: {
+const STATE_ICONS: {
   [K in StateTypes]: string
 } = {
   success: 'pi pi-check-circle text-green-600',
@@ -39,7 +39,7 @@ export default function StateModal () {
       }}
     >
       <div className="flex flex-col items-center gap-6">
-        <i className={`${TYPE_ICON[stateModal.type]} text-32`}/>
+        <i className={`${STATE_ICONS[stateModal.type]} text-32`}/>
 
         <div className="flex flex-col items-center gap-2 text-center">
           {stateModal.subtitle && (
