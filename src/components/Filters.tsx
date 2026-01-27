@@ -6,12 +6,10 @@ import { Dropdown } from 'primereact/dropdown'
 import { MultiSelect } from 'primereact/multiselect'
 import { classNames } from 'primereact/utils'
 import { useMemo, useRef, useState } from 'react'
-import { useOnClickOutside } from 'usehooks-ts'
 import CustomButton from './CustomButton'
 import Label from './Label'
 import type { DropdownPassThroughOptions } from 'primereact/dropdown'
 import type { MultiSelectPassThroughOptions } from 'primereact/multiselect'
-import type { RefObject } from 'react'
 
 // Types
 type PrimitiveTypes = string | number | boolean
@@ -134,10 +132,6 @@ const Filters = ({
 }: FilterItem) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
-
-  useOnClickOutside(containerRef as RefObject<HTMLDivElement>, () => {
-    if(filters.every(filter => filter.type === 'pill')) setShowFilters(false)
-  })
 
   const ACTIVE_FILTERS = useMemo(() => {
     let count = 0
