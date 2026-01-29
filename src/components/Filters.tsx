@@ -248,7 +248,7 @@ const Filters = ({
                       { filter.title }
                     </Label>
 
-                    {(filter.type === 'pill') && (
+                    {(filter.type === 'pill' || filter.type === 'dropdown') && (
                       <>
                         {(filter.multiple && filter.selected.length > 1) && (
                           <CustomButton
