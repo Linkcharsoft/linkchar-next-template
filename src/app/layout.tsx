@@ -146,7 +146,7 @@ interface Props {
   children: ReactNode
 }
 
-export default function Layout ({ children }: Props) {
+const Layout = async ({ children }: Props) => {
   return (
     <html lang="en">
       <head>
@@ -170,3 +170,5 @@ export default function Layout ({ children }: Props) {
     </html>
   )
 }
+
+export default Layout
