@@ -1,7 +1,8 @@
+import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { login } from '@/api/auth'
-import { AUTH_COOKIE_NAME } from '@/constants/auth'
+import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME } from '@/constants/auth'
 import { encryptSession } from '@/utils/crypto'
 import type { SessionType } from '@/types/auth'
 import type { NextRequest } from 'next/server'
@@ -48,6 +49,15 @@ export async function POST (req: NextRequest) {
         expires: refreshExpiration,
         maxAge
       })
+      cookieStore.set(AUTH_LISTENER_NAME, Date.now().toString(), {
+        httpOnly: false,
+        secure: true,
+        path: '/',
+        sameSite: 'strict',
+        priority: 'high'
+      })
+
+      revalidatePath('/', 'layout')
 
       return NextResponse.json(response.data.user, {
         status: 200

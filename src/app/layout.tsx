@@ -3,6 +3,7 @@ import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
 import ProvidersContainer from '@/providers/ProvidersContainer'
+import { getAccessToken, getServerUser } from '@/utils/auth'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
@@ -147,6 +148,16 @@ interface Props {
 }
 
 const Layout = async ({ children }: Props) => {
+  let token
+  let user
+
+  try {
+    token = await getAccessToken()
+    user = await getServerUser()
+  } catch (error) {
+    console.error(error)
+  }
+
   return (
     <html lang="en">
       <head>
@@ -163,7 +174,7 @@ const Layout = async ({ children }: Props) => {
         />
       </head>
       <body>
-        <ProvidersContainer>
+        <ProvidersContainer token={token} user={user}>
           { children }
         </ProvidersContainer>
       </body>

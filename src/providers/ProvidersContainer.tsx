@@ -1,33 +1,65 @@
 'use client'
 import Clarity from '@microsoft/clarity'
 import { domAnimation, LazyMotion } from 'framer-motion'
+import { usePathname, useRouter } from 'next/navigation'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { AUTH_LISTENER_NAME } from '@/constants/auth'
 import useUserStore from '@/stores/userStore'
-import { getServerUser } from '@/utils/auth'
 import ModalsProvider from './ModalsProvider'
+import type { UserType } from '@/types/auth'
 import type { ReactNode } from 'react'
 
 interface Props {
+  token?: string
+  user?: UserType
   children: ReactNode
 }
 
-const ProvidersContainer = ({ children }: Props) => {
-  const { setUser } = useUserStore()
+const getCookie = (name: string): string | null => {
+  const nameLenPlus = (name.length + 1)
+  return document.cookie
+    .split(';')
+    .map(c => c.trim())
+    .filter(cookie => cookie.substring(0, nameLenPlus) === `${name}=`)
+    .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || null
+}
+
+const ProvidersContainer = ({ token, user, children }: Props) => {
+  const { setToken, setUser } = useUserStore()
+  const authListener = useRef<string | null>(getCookie(AUTH_LISTENER_NAME))
+  const router = useRouter()
+  const pathname = usePathname()
 
 
+  // User data setup
   useEffect(() => {
-    (async () => {
-      const user = await getServerUser()
-      if(user) setUser(user)
-    })()
-  }, [])
+    if(token) setToken(token)
+    if(user) setUser(user)
+  }, [token, user])
 
+  // Auth cookie listener
+  useEffect(() => {
+    if (authListener.current === null) {
+      authListener.current = getCookie(AUTH_LISTENER_NAME)
+    }
+
+    const currentListener = getCookie(AUTH_LISTENER_NAME)
+
+    if (currentListener !== authListener.current) {
+      authListener.current = currentListener
+
+      router.refresh()
+    }
+  }, [pathname])
+
+  // Clarity setup
   useEffect(() => {
     if(process.env.NEXT_PUBLIC_CLARITY_ID) Clarity.init(process.env.NEXT_PUBLIC_CLARITY_ID)
   }, [])
 
+  // PrimeReact ES locale setup
   useEffect(() => {
     addLocale('es', {
       firstDayOfWeek: 1,
@@ -40,6 +72,7 @@ const ProvidersContainer = ({ children }: Props) => {
       clear: 'Limpiar'
     })
   }, [])
+
 
   return (
     <PrimeReactProvider value={{ pt: Tailwind }}>

@@ -11,7 +11,6 @@ import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
-import useUserStore from '@/stores/userStore'
 
 
 type LoginFormikType = {
@@ -26,7 +25,6 @@ const LoginPage = () => {
     closeModal,
     setNotification
   } = useModalStore()
-  const { setUser } = useUserStore()
   const isClient = useIsClient()
   const router = useRouter()
 
@@ -65,9 +63,6 @@ const LoginPage = () => {
         })
 
         if(response.ok) {
-          const user = await response.json()
-
-          setUser(user)
           router.replace(AUTHENTICATED_HOME_PATH)
 
           setNotification({
