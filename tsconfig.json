@@ -37,9 +37,10 @@
   },
   "include": [
     ".next/dev/types/**/*.ts",
-    "src/",
+    ".next/types/**/*.ts",
+    "env.d.ts",
     "next.config.ts",
-    "env.d.ts"
+    "src/"
   ],
   "exclude": [
     "node_modules",
