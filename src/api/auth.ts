@@ -72,6 +72,26 @@ export const signup = async (body: {
   })
 }
 
+export const emailConfirmation = async (body: {
+  key: string;
+}) => {
+  return await customFetch({
+    path: '/auth/registration/verify-email/',
+    method: 'POST',
+    body
+  })
+}
+
+export const resendEmailConfirmation = async (body: {
+  email: string;
+}) => {
+  return await customFetch({
+    path: '/auth/registration/resend-email/',
+    method: 'POST',
+    body
+  })
+}
+
 export const passwordRecoveryChange = async (body: {
   request_type: 'change' | 'reset'
   email: string
@@ -98,26 +118,6 @@ export const passwordConfirm = async (body: {
 }) => {
   return await customFetch({
     path: '/auth/password/recovery/confirm/',
-    method: 'POST',
-    body
-  })
-}
-
-export const emailConfirmation = async (body: {
-  key: string;
-}) => {
-  return await customFetch({
-    path: '/auth/registration/verify-email/',
-    method: 'POST',
-    body
-  })
-}
-
-export const resendEmailConfirmation = async (body: {
-  email: string;
-}) => {
-  return await customFetch({
-    path: '/auth/registration/resend-email/',
     method: 'POST',
     body
   })
