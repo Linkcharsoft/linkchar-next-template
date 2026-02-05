@@ -28,7 +28,7 @@ const getCookie = (name: string): string | null => {
 
 const ProvidersContainer = ({ token, user, children }: Props) => {
   const { setToken, setUser } = useUserStore()
-  const authListener = useRef<string | null>(getCookie(AUTH_LISTENER_NAME))
+  const authListener = useRef<string | null>(null)
   const router = useRouter()
   const pathname = usePathname()
 
