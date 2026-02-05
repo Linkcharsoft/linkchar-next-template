@@ -1,4 +1,10 @@
+import type { Route } from 'next'
+
+export const AUTHENTICATED_HOME_PATH: Route = '/dashboard'
+
 export const AUTH_COOKIE_NAME = 'linkchar-session'
+
+export const AUTH_LISTENER_NAME = 'linkchar-listener'
 
 export const AUTH_BACKEND_EMAIL_ADDRESS = 'base@linkchar.com'
 

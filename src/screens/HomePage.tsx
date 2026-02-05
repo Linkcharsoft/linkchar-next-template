@@ -28,7 +28,7 @@ const HomePage = () => {
   useEffect(() => {
     if(scrollRef.current) {
       const lenis = new Lenis({
-        wrapper: scrollRef.current,
+        wrapper: scrollRef.current
       })
 
       const raf = (time) => {
@@ -109,7 +109,7 @@ const HomePage = () => {
               uDisplacement: { type: 'f', value: 1 },
               uMousePosition: { type: 'v2', value: new THREE.Vector2(1.5, 3.5) },
               iResolution: { type: 'v2', value: new THREE.Vector2(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight) },
-              scroll: { type: 'f', value: 0 },
+              scroll: { type: 'f', value: 0 }
             }
           })
           this.planeGeometry = new THREE.PlaneGeometry(2, 4, 1, 1)
@@ -209,8 +209,8 @@ const HomePage = () => {
           className="HomePage__Logo"
           priority
         />
-        <h1 className='text-6xl font-extrabold'>{ PRODUCT_NAME }</h1>
-        <h3 className='text-2xl'>Coming Soon</h3>
+        <h1 className='text-extrabold-64'>{ PRODUCT_NAME }</h1>
+        <h3 className='text-24'>Coming Soon</h3>
         <h4 className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></h4>
 
         <script
@@ -255,7 +255,7 @@ const HomePage = () => {
             void main() {
                   mainImage(gl_FragColor, gl_FragCoord.xy);
             }
-            `,
+            `
           }}
         />
         <script
@@ -274,7 +274,7 @@ const HomePage = () => {
               vec4 pos = vec4(position, 1.0);
               gl_Position = pos;
             }
-            `,
+            `
           }}
         />
       </main>

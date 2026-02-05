@@ -1,12 +1,12 @@
 'use client'
 import Link from 'next/link'
 import { useIsClient } from 'usehooks-ts'
-import { resendEmailConfirmation } from '@/api/users'
+import { resendEmailConfirmation } from '@/api/auth'
 import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 
 
 type Props = {
@@ -16,10 +16,10 @@ type Props = {
 
 const EmailValidationPage = ({ email }: Props) => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
-  } = useAppStore()
+    openModal,
+    closeModal,
+    setNotification
+  } = useModalStore()
   const isClient = useIsClient()
   const {
     timer,
@@ -33,31 +33,30 @@ const EmailValidationPage = ({ email }: Props) => {
 
 
   const handleResendEmail = async () => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Resending email',
-      message: 'Please wait...'
+      content: 'Please wait...'
     })
 
     try {
       const { ok } = await resendEmailConfirmation({ email })
 
       if (ok) {
-        setToastMessage({
+        setNotification({
           severity: 'success',
-          summary: 'Email sent! Please check your inbox',
-          life: 3000
+          summary: 'Email sent! Please check your inbox'
         })
 
         startTimer()
       } else {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error sending email, please try again later',
           life: 5000
         })
       }
     } catch (error) {
-      setToastMessage({
+      setNotification({
         severity: 'error',
         summary: 'Error sending email, please try again later',
         life: 5000
@@ -65,7 +64,7 @@ const EmailValidationPage = ({ email }: Props) => {
       // ! Sentry
       console.error(`Error: ${error.message}`)
     } finally {
-      hideLoadingModal()
+      closeModal('loadingModal')
     }
   }
 
@@ -81,7 +80,7 @@ const EmailValidationPage = ({ email }: Props) => {
           Validate your email!
         </h1>
 
-        <p className="text-center text-base font-normal text-surface-800">
+        <p className="text-regular-16 text-center text-surface-800">
           We sent you an email to <span className="font-semibold text-surface-900" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
         </p>
 

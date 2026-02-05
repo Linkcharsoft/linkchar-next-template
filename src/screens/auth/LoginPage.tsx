@@ -5,13 +5,12 @@ import { InputText } from 'primereact/inputtext'
 import { Password } from 'primereact/password'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
-import { resendEmailConfirmation } from '@/api/users'
+import { resendEmailConfirmation } from '@/api/auth'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
-import { AUTH_INPUT_ERRORS } from '@/constants/auth'
+import { AUTH_INPUT_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
-import useUserStore from '@/stores/userStore'
+import useModalStore from '@/stores/modalStore'
 
 
 type LoginFormikType = {
@@ -19,16 +18,13 @@ type LoginFormikType = {
   password: string
 }
 
-const SUCCES_REDIRECT = '/'
-
 
 const LoginPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
-  } = useAppStore()
-  const { setUser } = useUserStore()
+    openModal,
+    closeModal,
+    setNotification
+  } = useModalStore()
   const isClient = useIsClient()
   const router = useRouter()
 
@@ -49,9 +45,9 @@ const LoginPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Logging in',
-        message: 'Please wait...',
+        content: 'Please wait...'
       })
 
       try {
@@ -67,21 +63,17 @@ const LoginPage = () => {
         })
 
         if(response.ok) {
-          const user = await response.json()
+          router.replace(AUTHENTICATED_HOME_PATH)
 
-          setUser(user)
-          router.replace(SUCCES_REDIRECT)
-
-          setToastMessage({
+          setNotification({
             severity: 'success',
-            summary: 'Login successful',
-            life: 3000
+            summary: 'Login successful'
           })
         } else {
           const errors = await response.json()
 
           if(errors.non_field_errors?.[0]?.includes('mail is not verified')) {
-            setToastMessage({
+            setNotification({
               severity: 'error',
               summary: 'Email not verified',
               detail: 'Redirecting to email validation page...',
@@ -109,7 +101,7 @@ const LoginPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

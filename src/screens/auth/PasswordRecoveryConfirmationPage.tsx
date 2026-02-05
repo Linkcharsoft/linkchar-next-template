@@ -5,13 +5,13 @@ import { Password } from 'primereact/password'
 import { useEffect, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
-import { checkPasswordToken, passwordConfirm } from '@/api/users'
+import { checkPasswordToken, passwordConfirm } from '@/api/auth'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import PasswordValidation from '@/components/PasswordValidation'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import validatePassword from '@/utils/validatePassword'
 
 
@@ -28,10 +28,10 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
-  } = useAppStore()
+    openModal,
+    closeModal,
+    setNotification
+  } = useModalStore()
   const isClient = useIsClient()
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
@@ -46,9 +46,9 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
   // Verify token logic
   useEffect(() => {
-    showLoadingModal({
+    openModal('loadingModal', {
       title: 'Verifying link',
-      message: 'Please wait...'
+      content: 'Please wait...'
     })
 
     const checkUrlToken = async () => {
@@ -63,7 +63,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         setTokenStatus('invalid')
       }
 
-      hideLoadingModal()
+      closeModal('loadingModal')
     }
 
     checkUrlToken()
@@ -95,9 +95,9 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
       return errors
     },
     onSubmit: async ({ password }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Changing password',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
@@ -108,23 +108,22 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         })
 
         if (ok) {
-          setToastMessage({
+          setNotification({
             severity: 'success',
             summary: 'Password changed successfully!',
-            detail: 'Redirecting to login page...',
-            life: 3000
+            detail: 'Redirecting to login page...'
           })
 
           setTimeout(() => router.replace('/login'), 1000)
         } else {
-          setToastMessage({
+          setNotification({
             severity: 'error',
             summary: 'Error changing password, please try again later',
             life: 5000
           })
         }
       } catch (error) {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error changing password, please try again later',
           life: 5000
@@ -132,7 +131,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })
@@ -157,10 +156,10 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <i className="pi pi-exclamation-triangle text-center text-48 text-yellow-500"/>
+            <i className="pi pi-exclamation-triangle text-center text-48 text-orange-600"/>
 
             <div className="flex flex-col gap-4">
-              <p className="text-center text-base font-normal text-surface-800">
+              <p className="text-regular-16 text-center text-surface-800">
                 The link you&apos;ve used is no longer available
               </p>
             </div>

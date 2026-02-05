@@ -6,7 +6,7 @@ import { InputText } from 'primereact/inputtext'
 import { useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
-import { passwordRecoveryChange } from '@/api/users'
+import { passwordRecoveryChange } from '@/api/auth'
 import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton'
@@ -14,7 +14,7 @@ import InputContainer from '@/components/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 
 
 type PasswordRecoveryFormikType = {
@@ -24,10 +24,10 @@ type PasswordRecoveryFormikType = {
 
 const PasswordRecoveryPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal,
-    setToastMessage
-  } = useAppStore()
+    openModal,
+    closeModal,
+    setNotification
+  } = useModalStore()
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
   const {
@@ -54,9 +54,9 @@ const PasswordRecoveryPage = () => {
     }),
     validateOnChange: false,
     onSubmit: async ({ email }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Sending email',
-        message: 'Plase wait...'
+        content: 'Plase wait...'
       })
 
       try {
@@ -66,23 +66,22 @@ const PasswordRecoveryPage = () => {
         })
 
         if (ok) {
-          setToastMessage({
+          setNotification({
             severity: 'success',
-            summary: 'Email sent! Please check your inbox',
-            life: 3000
+            summary: 'Email sent! Please check your inbox'
           })
 
           setShowEmails(true)
           startTimer()
         } else {
-          setToastMessage({
+          setNotification({
             severity: 'error',
             summary: 'Error sending email, please try again later',
             life: 5000
           })
         }
       } catch (error) {
-        setToastMessage({
+        setNotification({
           severity: 'error',
           summary: 'Error sending email, please try again later',
           life: 5000
@@ -90,7 +89,7 @@ const PasswordRecoveryPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })
@@ -112,10 +111,10 @@ const PasswordRecoveryPage = () => {
         </h1>
 
         <div className="flex w-full flex-col gap-4">
-          <p className="text-center text-base font-normal leading-5 text-surface-800">
+          <p className="text-regular-16 text-center leading-5 text-surface-800">
             We will send you an email with a link to change your password
           </p>
-          <p className="text-center text-base font-normal leading-5 text-surface-800">
+          <p className="text-regular-16 text-center leading-5 text-surface-800">
             Make sure to check the spam folder
           </p>
         </div>

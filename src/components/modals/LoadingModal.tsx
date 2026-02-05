@@ -1,11 +1,11 @@
 'use client'
 import { AnimatePresence, m } from 'framer-motion'
 import { memo } from 'react'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import Loader from '../Loader'
 
 const LoadingModal = () => {
-  const { loadingModal } = useAppStore()
+  const { modals: { loadingModal } } = useModalStore()
 
   return (
     <AnimatePresence>
@@ -16,22 +16,28 @@ const LoadingModal = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="mx-8 flex max-w-[700px] flex-col items-center gap-4">
+          <div className="mx-8 flex max-w-[700px] flex-col items-center gap-6">
             <div className='relative'>
               <Loader/>
             </div>
 
-            {loadingModal.title && (
-              <p className="text-center text-2xl font-bold text-surface-800">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-bold-24 text-center text-surface-800">
                 {loadingModal.title}
               </p>
-            )}
 
-            {loadingModal.message && (
-              <p className="text-center text-surface-800">
-                {loadingModal.message}
-              </p>
-            )}
+              {loadingModal.subtitle && (
+                <p className="text-medium-18 text-center text-surface-800">
+                  {loadingModal.subtitle}
+                </p>
+              )}
+
+              {loadingModal.content && (
+                <p className="text-center text-surface-800">
+                  {loadingModal.content}
+                </p>
+              )}
+            </div>
           </div>
         </m.div>
       )}

@@ -2,11 +2,12 @@ import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
-import ProvidersContainer from '@/containers/ProvidersContainer'
+import ProvidersContainer from '@/providers/ProvidersContainer'
+import { getAccessToken, getServerUser } from '@/utils/auth'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
-const SITE_URL = new URL(process.env.DOMAIN || 'https://linkchar.com')
+const SITE_URL = new URL(process.env.NEXT_PUBLIC_DOMAIN || 'https://linkchar.com')
 
 export const viewport: Viewport = {
   themeColor: [
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
   authors: [
     { name: 'Inferencia AI Solutions', url: 'https://www.linkedin.com/company/inferencia-ai/posts/' },
     { name: 'Lucas Ojeda De Sousa (Lukway)', url: 'https://www.linkedin.com/in/lukway/' },
-    { name: 'Lucas Ezequiel Pereyra', url: 'https://www.linkedin.com/in/lucas-pereyra-dw/' },
+    { name: 'Lucas Ezequiel Pereyra', url: 'https://www.linkedin.com/in/lucas-pereyra-dw/' }
     // { name: 'Luca Cittá Giordano', url: 'https://www.linkedin.com/in/lucacittagiordano/' },
     // { name: 'Francesco Silvetti', url: 'https://www.linkedin.com/in/francescosilvetti/' },
     // { name: 'Melanie Cavanna', url: 'https://www.linkedin.com/in/melanie-cavanna-921716170/' },
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
   // URLs & alternates
   manifest: '/manifest.json',
   alternates: {
-    canonical: '/',
+    canonical: '/'
     // languages: {
     //   'en-US': '/en/',
     //   'es-AR': '/es/
@@ -146,7 +147,17 @@ interface Props {
   children: ReactNode
 }
 
-export default function Layout ({ children }: Props) {
+const Layout = async ({ children }: Props) => {
+  let token
+  let user
+
+  try {
+    token = await getAccessToken()
+    user = await getServerUser()
+  } catch (error) {
+    console.error(error)
+  }
+
   return (
     <html lang="en">
       <head>
@@ -158,15 +169,17 @@ export default function Layout ({ children }: Props) {
               style.innerHTML = '@layer tailwind-base, primereact, tailwind-utilities;'
               style.setAttribute('type', 'text/css')
               document.querySelector('head').prepend(style)
-            `,
+            `
           }}
         />
       </head>
       <body>
-        <ProvidersContainer>
+        <ProvidersContainer token={token} user={user}>
           { children }
         </ProvidersContainer>
       </body>
     </html>
   )
 }
+
+export default Layout

@@ -4,25 +4,37 @@ import { Button } from 'primereact/button'
 import { classNames } from 'primereact/utils'
 import { memo } from 'react'
 import { Tooltip } from 'react-tooltip'
-import type { Url } from 'next/dist/shared/lib/router/router'
+import type { StateTypes } from '@/types/general'
+import type { Route } from 'next'
 import type { ButtonProps as OriginalButtonProps } from 'primereact/button'
 
 interface ButtonProps extends Omit<OriginalButtonProps, 'size'> {
-  variant?: 'primary' | 'white' | 'transparent'
-  size?: 'small' | 'medium' | 'large'
-  href?: Url
+  variant?: 'primary' | 'white' | 'transparent' | StateTypes
+  size?: 'detail' | 'small' | 'medium' | 'large'
+  href?: Route
   replace?: boolean | undefined
 }
 
-const VARIANT_CLASSES = {
+const VARIANT_CLASSES: {
+  [key in NonNullable<ButtonProps['variant']>]: string
+} = {
   primary: 'CustomButton--Primary',
   white: 'CustomButton--White',
   transparent: 'CustomButton--Transparent',
+
+  // State Variants
+  success: 'CustomButton--Success',
+  info: 'CustomButton--Info',
+  warn: 'CustomButton--Warn',
+  error: 'CustomButton--Error'
 }
-const SIZE_CLASSES = {
-  small: 'CustomButton--Small',
-  medium: 'CustomButton--Medium',
-  large: 'CustomButton--Large',
+const SIZE_CLASSES: {
+  [key in NonNullable<ButtonProps['size']>]: string
+} = {
+  detail: 'CustomButton--Detail', // 32px
+  small: 'CustomButton--Small', // 38px
+  medium: 'CustomButton--Medium', // 44px
+  large: 'CustomButton--Large' // 50px
 }
 
 const CustomButton = ({
@@ -74,7 +86,7 @@ const CustomButton = ({
       </Button>
 
       {tooltipId && (
-        <Tooltip id={tooltipId} />
+        <Tooltip className='z-10 text-14 !opacity-100' id={tooltipId} />
       )}
     </>
   )

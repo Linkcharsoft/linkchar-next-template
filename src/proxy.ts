@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
+import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
 import type { NextRequest } from 'next/server'
 
@@ -9,13 +9,13 @@ const AUTH_PATHS = new Set([
   '/signup/email-validation',
   '/signup/confirmation',
   '/password-recovery',
+  '/password-recovery/confirmation'
 ])
 
 const PUBLIC_PATHS = new Set([
-  '/sentry-example-page',
+  '/',
+  '/sentry-example-page' // Delete
 ])
-
-const AUTHENTICATED_HOME_PATH: string = '/'
 
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|pdf|zip|map)$/i
 
@@ -29,7 +29,8 @@ export async function proxy (req: NextRequest) {
   // ⛔ Ignore Next.js chunks
   if (pathname.startsWith('/_next')) return NextResponse.next()
   // ⛔ Ignore public paths
-  if ([...PUBLIC_PATHS].some(path => pathname.includes(path))) return NextResponse.next()
+  // if ([...PUBLIC_PATHS].some(path => pathname.includes(path))) return NextResponse.next()
+  if ([...PUBLIC_PATHS].some(path => path === pathname)) return NextResponse.next()
 
   const isAuthFlow = [...AUTH_PATHS].some(path => pathname.includes(path))
 

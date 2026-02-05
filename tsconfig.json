@@ -36,14 +36,13 @@
     "strictNullChecks": true
   },
   "include": [
-    ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "src/",
+    ".next/types/**/*.ts",
+    "env.d.ts",
     "next.config.ts",
-    "env.d.ts"
+    "src/"
   ],
   "exclude": [
-    ".next/types/**/*.ts",
     "node_modules",
     "src/cypress"
   ]

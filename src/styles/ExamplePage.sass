@@ -1,0 +1,42 @@
+.ExamplePage
+  width: 100%
+  height: 100%
+  display: grid
+  grid-template: 60px 1fr / 1fr
+  &__Content
+    width: 100%
+    height: 100%
+    display: grid
+    grid-template: 70px 1fr 60px / 1fr
+  &__Filters
+    width: 100%
+    max-width: 100svw
+    height: 100%
+    padding: 0px 24px
+    display: flex
+    justify-content: space-between
+    align-items: center
+    gap: 16px
+    @apply bg-neutral-200 text-surface-900
+    &--Mobile
+      @extend .ExamplePage__Filters
+      flex-direction: column
+      display: none
+      gap: 8px
+  .Table
+    height: calc(100vh - 70px - 60px - 60px) // Header - Filter - Paginator
+
+@media (max-width: 992px)
+  .ExamplePage
+    &__Content
+      width: 100%
+      height: 100%
+      display: grid
+      grid-template: 100px 1fr 60px / 1fr
+    &__Filters
+      display: none
+      &--Mobile
+        padding: 12px 16px
+        display: flex
+    .Table
+      height: calc(100vh - 100px - 70px - 60px) // Header - Filter - Paginator

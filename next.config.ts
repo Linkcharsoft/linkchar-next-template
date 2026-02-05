@@ -6,13 +6,13 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === 'production'
   },
   logging: {
     fetches: {
-      fullUrl: true,
-    },
-  },
+      fullUrl: true
+    }
+  }
 
   // --- Images config example ---
   // images: {
@@ -83,7 +83,7 @@ export default withSentryConfig(nextConfig, {
     // Tree-shaking options for reducing bundle size
     treeshake: {
       // Automatically tree-shake Sentry logger statements to reduce bundle size
-      removeDebugLogging: true,
-    },
+      removeDebugLogging: true
+    }
   }
 })

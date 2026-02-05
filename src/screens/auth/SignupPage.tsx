@@ -6,14 +6,14 @@ import { Password } from 'primereact/password'
 import { useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
-import { signup } from '@/api/users'
+import { signup } from '@/api/auth'
 import CustomButton from '@/components/CustomButton'
 import InputContainer from '@/components/InputContainer'
 import InputError from '@/components/InputError'
 import PasswordValidation from '@/components/PasswordValidation'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
-import { useAppStore } from '@/stores/appStore'
+import useModalStore from '@/stores/modalStore'
 import validatePassword from '@/utils/validatePassword'
 
 
@@ -25,9 +25,9 @@ type SignupFormikType = {
 
 const SignupPage = () => {
   const {
-    showLoadingModal,
-    hideLoadingModal
-  } = useAppStore()
+    openModal,
+    closeModal
+  } = useModalStore()
   const isClient = useIsClient()
   const router = useRouter()
   const [generalError, setGeneralError] = useState<string | null>(null)
@@ -65,9 +65,9 @@ const SignupPage = () => {
       return errors
     },
     onSubmit: async (values, { setErrors }) => {
-      showLoadingModal({
+      openModal('loadingModal', {
         title: 'Signing up',
-        message: 'Please wait...'
+        content: 'Please wait...'
       })
 
       try {
@@ -105,7 +105,7 @@ const SignupPage = () => {
         // ! Sentry
         console.error(`Error: ${error.message}`)
       } finally {
-        hideLoadingModal()
+        closeModal('loadingModal')
       }
     }
   })

@@ -75,17 +75,17 @@ export default function Page () {
             await Sentry.startSpan(
               {
                 name: 'Example Frontend/Backend Span',
-                op: 'test',
+                op: 'test'
               },
               async () => {
                 const res = await fetch('/api/sentry-example-api')
                 if (!res.ok) {
                   setHasSentError(true)
                 }
-              },
+              }
             )
             throw new SentryExampleFrontendError(
-              'This error is raised on the frontend of the example page.',
+              'This error is raised on the frontend of the example page.'
             )
           }}
           disabled={!isConnected}

@@ -1,5 +1,6 @@
 'use client'
 import { AnimatePresence, m } from 'framer-motion'
+import { memo } from 'react'
 
 interface Props {
   message: string | undefined
@@ -10,7 +11,7 @@ const InputError = ({ message }: Props) => {
     <AnimatePresence>
       {message && (
         <m.div
-          className="InputError fw-medium flex items-center gap-2 text-sm text-red-600"
+          className="InputError text-medium-14 flex items-center gap-2 text-red-600"
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
         >
@@ -22,4 +23,4 @@ const InputError = ({ message }: Props) => {
   )
 }
 
-export default InputError
+export default memo(InputError)

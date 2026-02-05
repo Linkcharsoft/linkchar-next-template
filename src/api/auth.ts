@@ -4,15 +4,24 @@ import type { AuthType, UserType } from '@/types/auth'
 // User
 export const getMyUser = async (token: string) => {
   return await customFetch<UserType>({
-    path: '/auth/user/',
+    path: '/users/me/',
     method: 'GET',
     token
   })
 }
 
-export const updateUserProfile = async (token: string, body: Partial<UserType>) => {
+export const updateMyUser = async (token: string, body: Partial<UserType>) => {
   return await customFetch({
-    path: '/auth/user/',
+    path: '/users/me/',
+    method: 'PATCH',
+    token,
+    body
+  })
+}
+
+export const completeRegister = async (token: string, body: Partial<UserType>) => {
+  return await customFetch({
+    path: '/users/complete-register/',
     method: 'PATCH',
     token,
     body
@@ -63,6 +72,26 @@ export const signup = async (body: {
   })
 }
 
+export const emailConfirmation = async (body: {
+  key: string;
+}) => {
+  return await customFetch({
+    path: '/auth/registration/verify-email/',
+    method: 'POST',
+    body
+  })
+}
+
+export const resendEmailConfirmation = async (body: {
+  email: string;
+}) => {
+  return await customFetch({
+    path: '/auth/registration/resend-email/',
+    method: 'POST',
+    body
+  })
+}
+
 export const passwordRecoveryChange = async (body: {
   request_type: 'change' | 'reset'
   email: string
@@ -89,26 +118,6 @@ export const passwordConfirm = async (body: {
 }) => {
   return await customFetch({
     path: '/auth/password/recovery/confirm/',
-    method: 'POST',
-    body
-  })
-}
-
-export const emailConfirmation = async (body: {
-  key: string;
-}) => {
-  return await customFetch({
-    path: '/auth/registration/verify-email/',
-    method: 'POST',
-    body
-  })
-}
-
-export const resendEmailConfirmation = async (body: {
-  email: string;
-}) => {
-  return await customFetch({
-    path: '/auth/registration/resend-email/',
     method: 'POST',
     body
   })

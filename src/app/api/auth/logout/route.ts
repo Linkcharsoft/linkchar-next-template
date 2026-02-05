@@ -1,7 +1,8 @@
+import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { logout } from '@/api/users'
-import { AUTH_COOKIE_NAME } from '@/constants/auth'
+import { logout } from '@/api/auth'
+import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 
 export async function POST () {
@@ -15,6 +16,8 @@ export async function POST () {
     const response = await logout(session.access)
 
     if(response.ok) {
+      revalidatePath('/', 'layout')
+
       return NextResponse.json({
         message: 'Logout successful'
       }, {
@@ -37,5 +40,6 @@ export async function POST () {
     const cookieStore = await cookies()
 
     cookieStore.delete(AUTH_COOKIE_NAME)
+    cookieStore.delete(AUTH_LISTENER_NAME)
   }
 }

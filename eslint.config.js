@@ -16,7 +16,7 @@ import jsoncParser from 'jsonc-eslint-parser'
 const ESLintConfig = [
   // --- Ignores ---
   {
-    ignores: ['node_modules/', 'dist/', 'build/', '.next/', '**/*.d.ts'],
+    ignores: ['node_modules/', 'dist/', 'build/', '.next/', '**/*.d.ts']
   },
   // --- Base Recommended JS Rules ---
   js.configs.recommended,
@@ -59,6 +59,7 @@ const ESLintConfig = [
     rules: {
       // @stylistic
       'stylistic/array-bracket-spacing': ['warn', 'never'],
+      'stylistic/comma-dangle': ['error', 'never'],
       'stylistic/indent': ['error', 2, { SwitchCase: 1 }],
       'stylistic/no-multi-spaces': 'error',
       'stylistic/no-trailing-spaces': 'error',
@@ -93,6 +94,7 @@ const ESLintConfig = [
           }
         ]
       }],
+      'import/no-unresolved': 'error',
 
       // React & Web (A11y)
       ...react.configs.recommended.rules,
@@ -137,7 +139,7 @@ const ESLintConfig = [
           ]
         }
       ]
-    },
+    }
   },
   // --- Dependencies ---
   {
@@ -171,7 +173,7 @@ const ESLintConfig = [
       ...cypressPlugin.configs.recommended.rules,
       'cypress/unsafe-to-chain-command': 'off'
     }
-  },
+  }
   // // --- Config Files ---
   // {
   //   files: ['*.config.js', '*.config.ts', 'next.config.js', 'cypress.config.ts'],
