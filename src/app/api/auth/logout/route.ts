@@ -16,15 +16,6 @@ export async function POST () {
     const response = await logout(session.access)
 
     if(response.ok) {
-      const cookieStore = await cookies()
-      cookieStore.set(AUTH_LISTENER_NAME, Date.now().toString(), {
-        httpOnly: false,
-        secure: true,
-        path: '/',
-        sameSite: 'strict',
-        priority: 'high'
-      })
-
       revalidatePath('/', 'layout')
 
       return NextResponse.json({
@@ -49,5 +40,6 @@ export async function POST () {
     const cookieStore = await cookies()
 
     cookieStore.delete(AUTH_COOKIE_NAME)
+    cookieStore.delete(AUTH_LISTENER_NAME)
   }
 }
