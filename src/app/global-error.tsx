@@ -9,7 +9,13 @@ export default function GlobalError ({
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
-    Sentry.captureException(error)
+    const eventId = Sentry.captureException(error, {
+      level: 'fatal'
+    })
+
+    if (process.env.NODE_ENV === 'development') {
+      Sentry.showReportDialog({ eventId })
+    }
   }, [error])
 
   return (
