@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
   //   ]
   // }
 
-  // --- ⚠️ Do not use in production ⚠️ ---
+  // --- ⚠️ Don't use in production ⚠️ ---
   // experimental: {
   //   optimizePackageImports: ['primereact', 'primeicons', 'three', 'framer-motion'],
   //   turbopackFileSystemCacheForDev: true,
@@ -57,6 +57,8 @@ export default withSentryConfig(nextConfig, {
   org: 'linkchar-y5',
 
   project: 'test-next-16',
+
+  authToken: process.env.SENTRY_AUTH_TOKEN,
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
