@@ -12,7 +12,7 @@
     "prepare": "husky",
     "start": "next dev",
     "build": "next build",
-    "serve": "next start",
+    "serve": "next build && next start",
     "clean": "pnpm dlx rimraf .next node_modules pnpm-lock.yaml",
     "nuke": "pnpm run clean && pnpm install && pnpm run build",
     "lint-check": "eslint .",
