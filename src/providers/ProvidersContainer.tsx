@@ -1,5 +1,6 @@
 'use client'
 import Clarity from '@microsoft/clarity'
+import * as Sentry from '@sentry/nextjs'
 import { domAnimation, LazyMotion } from 'framer-motion'
 import { usePathname, useRouter } from 'next/navigation'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
@@ -36,7 +37,14 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
   // User data setup
   useEffect(() => {
     if(token) setToken(token)
-    if(user) setUser(user)
+    if(user) {
+      setUser(user)
+      Sentry.setUser({
+        id: user.id,
+        email: user.email,
+        username: `${user.first_name} ${user.last_name}`
+      })
+    }
   }, [token, user])
 
   // Auth cookie listener
