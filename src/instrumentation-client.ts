@@ -3,8 +3,25 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs'
+import { APP_ENV } from './constants'
 
-const isProd = process.env.NODE_ENV === 'production'
+const isDev = APP_ENV === 'development'
+const isStaging = APP_ENV === 'staging'
+const isProd = APP_ENV === 'production'
+
+const values = {
+  // Local: 0% | Staging: 100% | Prod: 10%
+  traces: isDev ? 0 : isStaging ? 1.0 : 0.1,
+
+  // Local: 0% | Staging: 100% | Prod: 10%
+  replaysSession: isDev ? 0 : isStaging ? 1.0 : 0.1,
+
+  // Local: 0% | Staging: 100% | Prod: 100%
+  replaysError: isDev ? 0 : 1.0,
+
+  // Debug: Only on staging
+  debug: isStaging
+}
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -18,22 +35,21 @@ Sentry.init({
   ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: isProd ? 0.1 : 1.0,
+  tracesSampleRate: values.traces,
   // Enable logs to be sent to Sentry
-  enableLogs: true,
+  enableLogs: !isDev,
+  // Enable debug mode in development to see more detailed logs from the Sentry SDK.
+  debug: values.debug,
 
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
   // in development and sample at a lower rate in production
-  replaysSessionSampleRate: isProd ? 0.1 : 1.0,
+  replaysSessionSampleRate: values.replaysSession,
 
   // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
+  replaysOnErrorSampleRate: values.replaysError,
 
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: !isProd,
-
-  // Enable debug mode in development to see more detailed logs from the Sentry SDK.
-  debug: !isProd
+  sendDefaultPii: isStaging
 })
