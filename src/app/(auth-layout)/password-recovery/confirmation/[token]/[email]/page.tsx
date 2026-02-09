@@ -1,7 +1,7 @@
-import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import PasswordRecoveryConfirmationPage from '@/screens/auth/PasswordRecoveryConfirmationPage'
 import validateEmail from '@/utils/validateEmail'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Password Recovery - Confirmation'

@@ -4,3 +4,5 @@ export type PaginatedResponse<T> = {
   previous: string | null
   results: T
 }
+
+export type StateTypes = 'success' | 'info' | 'warn' | 'error'

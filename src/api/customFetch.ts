@@ -1,11 +1,11 @@
-import { API_URL, STRAPI_URL } from '@/constants'
+import { NEXT_PUBLIC_API_URL, STRAPI_URL } from '@/constants'
 
 type CustomFetchType = {
   path: string
   token?: string
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: object
-  params?: string | URLSearchParams | Record<string, string> | string[][] | any
+  params?: string | URLSearchParams | Record<string, string> | string[][]
   headers?: Record<string, string>
   strapi?: boolean
 }
@@ -54,7 +54,7 @@ export const customFetch = async <T extends object>({
   headers = { 'Content-Type': 'application/json' },
   strapi = false
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
-  const urlPath = new URL(`/api${path}`, strapi ? STRAPI_URL : API_URL)
+  const urlPath = new URL(`/api${path}`, strapi ? STRAPI_URL : NEXT_PUBLIC_API_URL)
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
   const requestHeaders = new Headers(headers)
@@ -122,7 +122,7 @@ const refreshToken = async (): Promise<string | null> => {
   //   const refresh = await getSession()
   //   if (!refresh) return null
 
-  //   const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
+  //   const res = await fetch(`${NEXT_PUBLIC_API_URL}/api/auth/token/refresh/`, {
   //     method: 'POST',
   //     headers: { 'Content-Type': 'application/json' },
   //     body: JSON.stringify({ refresh: refresh.user.refresh })

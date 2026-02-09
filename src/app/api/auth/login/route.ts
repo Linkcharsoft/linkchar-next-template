@@ -1,9 +1,11 @@
+import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
-import { login } from '@/api/users'
-import { AUTH_COOKIE_NAME } from '@/constants/auth'
-import { SessionType } from '@/types/auth'
+import { NextResponse } from 'next/server'
+import { login } from '@/api/auth'
+import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME } from '@/constants/auth'
 import { encryptSession } from '@/utils/crypto'
+import type { SessionType } from '@/types/auth'
+import type { NextRequest } from 'next/server'
 
 export async function POST (req: NextRequest) {
   try {
@@ -45,16 +47,25 @@ export async function POST (req: NextRequest) {
         sameSite: 'strict',
         priority: 'high',
         expires: refreshExpiration,
-        maxAge,
+        maxAge
+      })
+      cookieStore.set(AUTH_LISTENER_NAME, Date.now().toString(), {
+        httpOnly: false,
+        secure: true,
+        path: '/',
+        sameSite: 'strict',
+        priority: 'high'
       })
 
+      revalidatePath('/', 'layout')
+
       return NextResponse.json(response.data.user, {
-        status: 200,
+        status: 200
       })
     } else {
       const status = response?.response?.status ?? 400
       return NextResponse.json(response.error, {
-        status,
+        status
       })
     }
   } catch (error) {

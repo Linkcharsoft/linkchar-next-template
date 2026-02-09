@@ -1,6 +1,6 @@
-import { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import SignupConfirmationPage from '@/screens/auth/SignupConfirmationPage'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Sign up - Confirmation'

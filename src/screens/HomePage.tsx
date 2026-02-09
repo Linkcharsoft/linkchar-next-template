@@ -11,10 +11,10 @@ const PRODUCT_NAME = 'Linkchar'
 
 // Borrar el contenido de este componente al desarrollar la app
 const HomePage = () => {
-  const containerRef = useRef<any>(null)
+  const containerRef = useRef<HTMLElement>(null)
   const scrollRef = useRef(null)
-  const vertexRef = useRef<any>(null)
-  const fragmentRef = useRef<any>(null)
+  const vertexRef = useRef<HTMLScriptElement>(null)
+  const fragmentRef = useRef<HTMLScriptElement>(null)
 
 
   function oscilateTime (time) {
@@ -28,7 +28,7 @@ const HomePage = () => {
   useEffect(() => {
     if(scrollRef.current) {
       const lenis = new Lenis({
-        wrapper: scrollRef.current,
+        wrapper: scrollRef.current
       })
 
       const raf = (time) => {
@@ -75,7 +75,7 @@ const HomePage = () => {
           // this.renderer.setPixelRatio(window.devicePixelRatio)
 
           this.renderer.setSize(width, height)
-          this.container = containerRef.current
+          this.container = containerRef.current as HTMLElement
           this.scene = new THREE.Scene()
           this.width = width
           this.height = height
@@ -109,7 +109,7 @@ const HomePage = () => {
               uDisplacement: { type: 'f', value: 1 },
               uMousePosition: { type: 'v2', value: new THREE.Vector2(1.5, 3.5) },
               iResolution: { type: 'v2', value: new THREE.Vector2(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight) },
-              scroll: { type: 'f', value: 0 },
+              scroll: { type: 'f', value: 0 }
             }
           })
           this.planeGeometry = new THREE.PlaneGeometry(2, 4, 1, 1)
@@ -175,7 +175,6 @@ const HomePage = () => {
 
       const domIsReady = () => {
         world = new World(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight)
-        // console.log(world)
         window.addEventListener('resize', handleWindowResize, false)
         document.addEventListener('mousemove', handleMouseMove, false)
         handleWindowResize()
@@ -189,8 +188,8 @@ const HomePage = () => {
       const handleMouseMove = (e) => {
         mousePos.x = e.clientX
         mousePos.y = e.clientY
-        mousePos.px = mousePos.x / containerRef.current?.offsetWidth
-        mousePos.py = 1.0 - mousePos.y / containerRef.current?.offsetHeight
+        mousePos.px = mousePos.x / (containerRef.current as HTMLElement)?.offsetWidth
+        mousePos.py = 1.0 - mousePos.y / (containerRef.current as HTMLElement)?.offsetHeight
         world.mouseMove(mousePos)
       }
 
@@ -208,10 +207,11 @@ const HomePage = () => {
           alt={PRODUCT_NAME}
           title={PRODUCT_NAME}
           className="HomePage__Logo"
+          priority
         />
-        <h1 className='text-6xl font-extrabold'>{ PRODUCT_NAME }</h1>
-        <h3 className='text-2xl'>Coming Soon</h3>
-        <h4 className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://linkchar.com/" target="_blank" rel="noopener noreferrer">Linkchar</a></h4>
+        <h1 className='text-extrabold-64'>{ PRODUCT_NAME }</h1>
+        <h3 className='text-24'>Coming Soon</h3>
+        <h4 className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></h4>
 
         <script
           ref={fragmentRef}
@@ -255,7 +255,7 @@ const HomePage = () => {
             void main() {
                   mainImage(gl_FragColor, gl_FragCoord.xy);
             }
-            `,
+            `
           }}
         />
         <script
@@ -274,7 +274,7 @@ const HomePage = () => {
               vec4 pos = vec4(position, 1.0);
               gl_Position = pos;
             }
-            `,
+            `
           }}
         />
       </main>

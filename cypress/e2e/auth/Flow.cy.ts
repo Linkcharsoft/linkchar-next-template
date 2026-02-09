@@ -1,6 +1,0 @@
-import './SignUp.cy'
-import './EmailValidation.cy'
-import './Login.cy'
-// import './ChangePassword.cy'
-// import './PasswordRecovery.cy'
-import './DeleteTestUser.cy'

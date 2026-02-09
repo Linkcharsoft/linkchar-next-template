@@ -1,4 +1,5 @@
 import { classNames } from 'primereact/utils'
+import { memo } from 'react'
 import validatePassword from '@/utils/validatePassword'
 
 interface Props {
@@ -15,20 +16,20 @@ const PasswordValidation = ({ password }: Props) => {
           key={`Password-Validation-Type-${index}`}
           className="flex items-center gap-2"
         >
-          <div className="w-4 flex justify-center items-center">
+          <div className="flex w-4 items-center justify-center">
             <i
               className={classNames('pi', {
                 'pi-circle-fill text-surface-700 text-10': !password,
                 'pi-check text-green-600': password && PASSWORD_VALIDATIONS.validations[type].value,
-                'pi-times text-red-600': password && !PASSWORD_VALIDATIONS.validations[type].value,
+                'pi-times text-red-600': password && !PASSWORD_VALIDATIONS.validations[type].value
               })}
             ></i>
           </div>
-          <span className="text-surface-700 text-14">{PASSWORD_VALIDATIONS.validations[type].label}</span>
+          <span className="text-14 text-surface-700">{PASSWORD_VALIDATIONS.validations[type].label}</span>
         </div>
       ))}
     </div>
   )
 }
 
-export default PasswordValidation
+export default memo(PasswordValidation)

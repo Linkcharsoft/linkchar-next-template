@@ -1,8 +1,9 @@
 'use server'
 import { cookies } from 'next/headers'
 import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
-import { UserType } from '@/types/auth'
 import { decryptSession } from './crypto'
+import type { UserType } from '@/types/auth'
+
 
 export const getServerSession = async () => {
   try {
@@ -39,10 +40,10 @@ export const getAccessToken = async (): Promise<string | undefined> => {
   return token
 }
 
-export const getServerUser = async (): Promise<UserType | null> => {
+export const getServerUser = async (): Promise<UserType | undefined> => {
   const origin = process.env.__NEXT_PRIVATE_ORIGIN
 
-  if(!origin) return null
+  if(!origin) return undefined
   // throw new Error('Origin not defined. Are you calling getServerUser on the server?')
 
   const cookieStore = await cookies()
@@ -51,12 +52,12 @@ export const getServerUser = async (): Promise<UserType | null> => {
   const res = await fetch(`${origin}/api/auth/me/`, {
     method: 'GET',
     headers: {
-      Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`,
+      Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`
     },
-    cache: 'no-store',
+    cache: 'no-store'
   })
 
-  if (!res.ok) return null
+  if (!res.ok) return undefined
 
   return res.json()
 }

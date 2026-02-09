@@ -15,9 +15,11 @@ export const theme = {
       'surface-600': '#757575',
       'surface-700': '#616161',
       'surface-800': '#424242',
-      'surface-900': '#212121',
+      'surface-900': '#212121'
     },
     fontSize: {
+      64: '64px',
+      56: '56px',
       48: '48px',
       44: '44px',
       40: '40px',
@@ -31,13 +33,22 @@ export const theme = {
       14: '14px',
       12: '12px',
       10: '10px'
+    },
+    screens: {
+      '2xs': '375px',
+      xs: '480px',
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1420px'
     }
   }
 }
 
 export const plugins = [
   plugin(({ addComponents }) => {
-    const sizes = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48]
+    const sizes = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 56, 64]
 
     const generateStyles = (namePrefix, fontWeight, fontStyle = 'normal', lineHeight = null) => {
       return Object.fromEntries(
@@ -73,7 +84,7 @@ export const plugins = [
       ...generateStyles('text-regular', '400'),
 
       /* Light (300) */
-      ...generateStyles('text-light', '300'),
+      ...generateStyles('text-light', '300')
     })
   })
 ]

@@ -1,6 +1,7 @@
-import { ReactNode } from 'react'
+import { memo } from 'react'
 import InputError from './InputError'
 import Label from './Label'
+import type { ReactNode } from 'react'
 
 interface Props {
   label: string
@@ -24,4 +25,4 @@ const InputContainer = ({
   )
 }
 
-export default InputContainer
+export default memo(InputContainer)

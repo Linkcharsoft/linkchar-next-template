@@ -1,0 +1,60 @@
+name: CI (Checks & Tests)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+
+    environment: "Env"
+
+    env:
+      # --- Client side variables (Public) ---
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_MEDIA_URL: ${{ vars.NEXT_PUBLIC_MEDIA_URL }}
+      NEXT_PUBLIC_CLARITY_ID: ${{ vars.NEXT_PUBLIC_CLARITY_ID }}
+      NEXT_PUBLIC_APP_ENV: ${{ vars.NEXT_PUBLIC_APP_ENV }}
+
+      # --- Server side variables (Secret) ---
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      AUTH_DEFAULT_USER: ${{ secrets.AUTH_DEFAULT_USER }}
+      AUTH_DEFAULT_PASSWORD: ${{ secrets.AUTH_DEFAULT_PASSWORD }}
+      MAILSLURP_API_KEY: ${{ secrets.MAILSLURP_API_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Config Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Cypress Binary
+        run: pnpm exec cypress install
+
+      - name: Run ESLint & Typescript
+        run: pnpm run check
+
+      - name: Run build
+        run: pnpm run build
+
+      ## Comment "Run build" step if you are going to use the e2e step
+      # - name: Run Cypress (E2E)
+      #   uses: cypress-io/github-action@v6
+      #   with:
+      #     install: false
+      #     build: pnpm run build
+      #     start: pnpm run serve
+      #     wait-on: "http://localhost:3000"

@@ -1,22 +1,27 @@
 .CustomButton
   &.p-button
-    justify-content: center
-    align-items: center
-    gap: 8px
+    border-radius: 8px
     padding: 8px 24px
-    font-weight: 500
-    text-align: center
-    transition: all 0.2s
-  a
-    width: 100%
-    height: 100%
     display: flex
     justify-content: center
     align-items: center
     gap: 8px
-    position: absolute
-    top: 0
-    left: 0
+    font-weight: 500
+    text-align: center
+    transition: all 0.2s
+
+  // Link
+  &--Link
+    &.p-button
+      padding: 0 !important
+    a
+      width: 100%
+      height: 100%
+      padding: 8px 24px
+      display: inline-flex
+      justify-content: center
+      align-items: center
+      gap: 8px
 
   // Variants
   &--Primary
@@ -26,7 +31,23 @@
   &--Transparent
     @apply bg-transparent text-surface-900 border-none hover:opacity-75 focus:shadow-none // hover:bg-surface-100
 
+  // State variants
+  &--Success, &--Info, &--Warn, &--Error
+    @apply text-white border-none hover:opacity-75 focus:shadow-sm
+  &--Success
+    @apply bg-green-600
+  &--Info
+    @apply bg-blue-600
+  &--Warn
+    @apply bg-orange-600
+  &--Error
+    @apply bg-red-600
+
   // Sizes
+  &--Detail
+    height: 32px
+    &.p-button
+      padding: 8px
   &--Small
     height: 38px
   &--Medium
