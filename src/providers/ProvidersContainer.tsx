@@ -39,6 +39,8 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
     if(token) setToken(token)
     if(user) {
       setUser(user)
+
+      // Set sentry user context on client side
       Sentry.setUser({
         id: user.id,
         email: user.email,
@@ -57,6 +59,8 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
     if (currentListener !== authListener.current) {
       authListener.current = currentListener
+
+      console.warn('\n\nAuth cookie change detected, refreshing...\n\n')
 
       router.refresh()
     }

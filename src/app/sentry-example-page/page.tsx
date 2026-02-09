@@ -3,6 +3,7 @@
 import * as Sentry from '@sentry/nextjs'
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
+import CustomButton from '@/components/CustomButton'
 
 class SentryExampleFrontendError extends Error {
   constructor (message: string | undefined) {
@@ -12,8 +13,8 @@ class SentryExampleFrontendError extends Error {
 }
 
 export default function Page () {
-  const [hasSentError, setHasSentError] = useState(false)
-  const [isConnected, setIsConnected] = useState(true)
+  const [isConnected, setIsConnected] = useState<boolean>(true)
+  const [showBreak, setShowBreak] = useState<boolean>(false)
 
   useEffect(() => {
     Sentry.logger.info('Sentry example page loaded')
@@ -27,7 +28,7 @@ export default function Page () {
   return (
     <div>
       <Head>
-        <title>sentry-example-page</title>
+        <title>Sentry Example Page</title>
         <meta name="description" content="Test Sentry for your Next.js app!" />
       </Head>
 
@@ -46,30 +47,17 @@ export default function Page () {
             fill="currentcolor"
           />
         </svg>
-        <h1>sentry-example-page</h1>
+        <h1 className='text-24'>sentry-example-page</h1>
 
         <p className="description">
-          Click the button below, and view the sample error on the Sentry{' '}
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://linkchar-y5.sentry.io/issues/?project=4510681095077888"
-          >
-            Issues Page
-          </a>
-          . For more details about setting up Sentry,{' '}
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href="https://docs.sentry.io/platforms/javascript/guides/nextjs/"
-          >
-            read our docs
-          </a>
-          .
+          Click the buttons below to trigger different types of errors and see how they appear in Sentry. You can also check your connectivity status with Sentry
         </p>
 
-        <button
-          type="button"
+        <p className="description" style={{ maxWidth: '100%' }}>❌ Delete this page and his route handler after testing it. It is for testing purposes only ❌</p>
+
+        <CustomButton
+          variant='primary'
+          className='mt-8'
           onClick={async () => {
             Sentry.logger.info('User clicked the button, throwing a sample error')
             await Sentry.startSpan(
@@ -78,34 +66,38 @@ export default function Page () {
                 op: 'test'
               },
               async () => {
-                const res = await fetch('/api/sentry-example-api')
-                if (!res.ok) {
-                  setHasSentError(true)
-                }
+                await fetch('/api/sentry-example-api')
               }
             )
-            throw new SentryExampleFrontendError(
-              'This error is raised on the frontend of the example page.'
-            )
+            throw new SentryExampleFrontendError('Server Error Test: ' + new Date().toISOString())
           }}
           disabled={!isConnected}
         >
-          <span>Throw Sample Error</span>
-        </button>
+          ⚠️ Server Error ⚠️
+        </CustomButton>
 
-        {hasSentError ? (
-          <p className="success">Error sent to Sentry.</p>
-        ) : !isConnected ? (
-          <div className="connectivity-error">
-            <p>
-              It looks like network requests to Sentry are being blocked, which
-              will prevent errors from being captured. Try disabling your
-              ad-blocker to complete the test.
-            </p>
-          </div>
-        ) : (
-          <div className="success_placeholder" />
-        )}
+        <CustomButton
+          variant='primary'
+          onClick={() => {
+            throw new SentryExampleFrontendError('Client Error Test: ' + new Date().toISOString())
+          }}
+        >
+          ⚠️ Client Error ⚠️
+        </CustomButton>
+
+        <CustomButton
+          variant='primary'
+          onClick={() => {
+            setShowBreak(true)
+          }}
+        >
+          ⚠️ Client Break ⚠️
+        </CustomButton>
+
+        {showBreak && (() => {
+          // Esto aparecerá en Sentry con el tag "mechanism: handled"
+          throw new SentryExampleFrontendError('Client Break Test: ' + new Date().toISOString())
+        })()}
 
         <div className="flex-spacer" />
       </main>
@@ -127,7 +119,6 @@ export default function Page () {
           border-radius: 4px;
           background-color: rgba(24, 20, 35, 0.03);
           font-family: monospace;
-          font-size: 20px;
           line-height: 1.2;
         }
 
@@ -153,7 +144,6 @@ export default function Page () {
           background-color: #553DB8;
           border: none;
           padding: 0;
-          margin-top: 4px;
 
           & > span {
             display: inline-block;
