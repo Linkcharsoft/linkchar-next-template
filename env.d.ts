@@ -6,7 +6,7 @@ declare namespace NodeJS {
 
     NEXT_PUBLIC_CLARITY_ID: string;
 
-    NEXT_PUBLIC_IS_PRODUCTION: string;
+    NEXT_PUBLIC_APP_ENV: 'development' | 'staging' | 'production';
 
 
     AUTH_SECRET: string;
