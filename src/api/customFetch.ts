@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { NEXT_PUBLIC_API_URL, STRAPI_URL } from '@/constants'
 
 type CustomFetchType = {
@@ -72,33 +73,14 @@ export const customFetch = async <T extends object>({
   let response = await fetch(urlPath.toString(), fetchOptions)
 
   if (response.status === 401) {
-    const newAccessToken = await refreshToken()
+    try {
+      const newAccessToken = await handleRefreshToken()
 
-    if (newAccessToken) {
-      requestHeaders.set('Authorization', `Bearer ${newAccessToken}`)
-      fetchOptions.headers = requestHeaders
-
-      response = await fetch(urlPath.toString(), fetchOptions)
-
-      if (response.ok) {
-        let data: T = {} as T
-        if (response.status !== 204) data = await response.json()
-
-        if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
-          delete (data as any).meta
-          data = (data as any)?.data
-        }
-
-        return {
-          response,
-          ok: response.ok,
-          data: response.ok ? data : ({} as T),
-          error: response.ok ? null : data
-        }
-      }
+      return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers, strapi })
+    } catch (error) {
+      console.error(error)
+      handleUnauthorizedLogout()
     }
-
-    handleSignOut()
   }
 
   let data: T = {} as T
@@ -117,28 +99,34 @@ export const customFetch = async <T extends object>({
   }
 }
 
-const refreshToken = async (): Promise<string | null> => {
-  // try {
-  //   const refresh = await getSession()
-  //   if (!refresh) return null
+const handleRefreshToken = async (): Promise<string | undefined> => {
+  let refreshedToken
 
-  //   const res = await fetch(`${NEXT_PUBLIC_API_URL}/api/auth/token/refresh/`, {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({ refresh: refresh.user.refresh })
-  //   })
+  try {
+    const res = await fetch('/api/auth/refresh', {
+      method: 'POST'
+    })
 
-  //   if (!res.ok) throw new Error('Token refresh failed')
+    if (!res.ok) throw new Error('Token refresh failed')
 
-  //   const refreshedTokens = await res.json()
-  //   return refreshedTokens.access
-  // } catch (error) {
-  //   console.error('Error refreshing token:', error)
-  //   return null
-  // }
-  return null
+    const data = await res.json()
+
+    refreshedToken = data.token
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error refreshing token'
+    throw new Error(message)
+  }
+
+  return refreshedToken
 }
 
-const handleSignOut = () => {
-  // signOut({ callbackUrl: '/login' })
+const handleUnauthorizedLogout = async () => {
+  await fetch('/api/auth/logout', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+
+  redirect('/login')
 }

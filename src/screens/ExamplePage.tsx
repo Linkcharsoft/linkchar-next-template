@@ -451,7 +451,7 @@ const ExamplePage = ({ searchParams }) => {
 
         <DataTable
           className="Table"
-          dataKey="pk"
+          dataKey="id"
           scrollable
           scrollHeight='100%'
           value={employeesData?.data?.results}

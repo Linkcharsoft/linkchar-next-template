@@ -1,5 +1,5 @@
 import { customFetch } from './customFetch'
-import type { AuthType, UserType } from '@/types/auth'
+import type { AuthType, SessionType, UserType } from '@/types/auth'
 
 // User
 export const getMyUser = async (token: string) => {
@@ -49,8 +49,9 @@ export const logout = async (token: string) => {
   })
 }
 
+type RefreshTokenResponse = Pick<SessionType, 'access' | 'access_expiration'>
 export const refreshToken = async (body: { refresh: string }) => {
-  return await customFetch({
+  return await customFetch<RefreshTokenResponse>({
     path: '/auth/token/refresh/',
     method: 'POST',
     body
