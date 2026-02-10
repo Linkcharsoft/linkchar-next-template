@@ -2,7 +2,7 @@
 import Clarity from '@microsoft/clarity'
 import * as Sentry from '@sentry/nextjs'
 import { domAnimation, LazyMotion } from 'framer-motion'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect, useRef } from 'react'
@@ -18,20 +18,10 @@ interface Props {
   children: ReactNode
 }
 
-const getCookie = (name: string): string | null => {
-  const nameLenPlus = (name.length + 1)
-  return document.cookie
-    .split(';')
-    .map(c => c.trim())
-    .filter(cookie => cookie.substring(0, nameLenPlus) === `${name}=`)
-    .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || null
-}
-
 const ProvidersContainer = ({ token, user, children }: Props) => {
   const { setToken, setUser } = useUserStore()
   const authListener = useRef<string | null>(null)
   const router = useRouter()
-  const pathname = usePathname()
 
 
   // User data setup
@@ -51,20 +41,31 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
   // Auth cookie listener
   useEffect(() => {
-    if (authListener.current === null) {
-      authListener.current = getCookie(AUTH_LISTENER_NAME)
+    const getCookie = (name: string): string | null => {
+      const nameLenPlus = (name.length + 1)
+      return document.cookie
+        .split(';')
+        .map(c => c.trim())
+        .filter(cookie => cookie.substring(0, nameLenPlus) === `${name}=`)
+        .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || null
     }
 
-    const currentListener = getCookie(AUTH_LISTENER_NAME)
+    authListener.current = getCookie(AUTH_LISTENER_NAME) || null
 
-    if (currentListener !== authListener.current) {
-      authListener.current = currentListener
+    const intervalId = setInterval(() => {
+      const currentListener = getCookie(AUTH_LISTENER_NAME) || null
 
-      console.warn('\n\nAuth cookie change detected, refreshing...\n\n')
+      if (currentListener !== authListener.current) {
+        console.warn('\n\nAuth cookie change detected, refreshing...\n\n')
 
-      router.refresh()
-    }
-  }, [pathname])
+        authListener.current = currentListener
+
+        router.refresh()
+      }
+    }, 1000)
+
+    return () => clearInterval(intervalId)
+  }, [])
 
   // Clarity setup
   useEffect(() => {
