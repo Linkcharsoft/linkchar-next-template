@@ -1,5 +1,7 @@
 .Waves
   width: 100%
+  opacity: 0
+  animation: appear 5s .6s ease forwards
   &__SVG
     position: relative
     width: 100%
@@ -31,6 +33,12 @@
   .Waves
     &__SVG
       height: 60px
+
+@keyframes appear
+  0%
+    opacity: 0
+  100%
+    opacity: 1
 
 @keyframes move-forever
   0%

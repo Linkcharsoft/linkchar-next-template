@@ -1,26 +1,6 @@
-'use client'
-import { m } from 'framer-motion'
-
 const Waves = () => {
   return (
-    <m.div
-      className="Waves"
-      initial={{
-        willChange: 'opacity, transform',
-        opacity: 0
-      }}
-      whileInView={{
-        opacity: 1
-      }}
-      transition={{
-        duration: 0.8,
-        delay: 0.2
-      }}
-      viewport={{
-        once: true,
-        amount: 0.4
-      }}
-    >
+    <div className="Waves">
       <svg
         className='Waves__SVG'
         xmlns="http://www.w3.org/2000/svg"
@@ -59,7 +39,7 @@ const Waves = () => {
           <use xlinkHref="#gentle-wave" x="48" y="0" fill="url(#grad-4)" opacity={0.25}/>
         </g>
       </svg>
-    </m.div>
+    </div>
   )
 }
 

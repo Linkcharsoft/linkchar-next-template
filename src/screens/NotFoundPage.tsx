@@ -17,7 +17,7 @@ const NotFoundPage = () => {
           priority
         />
         <h1 className='text-bold-32 md:text-bold-56'>Page Not Found</h1>
-        <p className='text-regular-16 md:text-regular-18'>We&apos;re sorry, the page you&apos;re looking for doesn&apos;t exist or has been moved.</p>
+        <p className='text-regular-16 md:text-regular-18'>We&apos;re sorry, the page you&apos;re looking for doesn&apos;t exist or has been moved</p>
         <Link
           className='NotFoundPage__Link'
           href="/"
