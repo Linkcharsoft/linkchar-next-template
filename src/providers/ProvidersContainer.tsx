@@ -3,6 +3,7 @@ import Clarity from '@microsoft/clarity'
 import * as Sentry from '@sentry/nextjs'
 import { domAnimation, LazyMotion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { es } from 'primelocale/es.json'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect, useRef } from 'react'
@@ -17,6 +18,9 @@ interface Props {
   user?: UserType
   children: ReactNode
 }
+
+// PrimeReact ES locale setup
+addLocale('es', es)
 
 const ProvidersContainer = ({ token, user, children }: Props) => {
   const { setToken, setUser } = useUserStore()
@@ -70,20 +74,6 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
   // Clarity setup
   useEffect(() => {
     if(process.env.NEXT_PUBLIC_CLARITY_ID) Clarity.init(process.env.NEXT_PUBLIC_CLARITY_ID)
-  }, [])
-
-  // PrimeReact ES locale setup
-  useEffect(() => {
-    addLocale('es', {
-      firstDayOfWeek: 1,
-      dayNames: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
-      dayNamesShort: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
-      dayNamesMin: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
-      monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
-      monthNamesShort: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-      today: 'Hoy',
-      clear: 'Limpiar'
-    })
   }, [])
 
 
