@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { NEXT_PUBLIC_API_URL } from '@/constants'
+import { API_URL } from '@/constants'
 
 export async function DELETE () {
   try {
-    const response = await fetch(`${NEXT_PUBLIC_API_URL}/api/users/delete-test-users/`, {
+    const response = await fetch(`${API_URL}/api/users/delete-test-users/`, {
       method: 'DELETE'
     })
 

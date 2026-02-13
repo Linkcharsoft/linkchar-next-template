@@ -1,14 +1,13 @@
 import { redirect } from 'next/navigation'
-import { NEXT_PUBLIC_API_URL, STRAPI_URL } from '@/constants'
+import { API_URL } from '@/constants'
 
 type CustomFetchType = {
   path: string
   token?: string
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-  body?: object
+  body?: object | FormData
   params?: string | URLSearchParams | Record<string, string> | string[][]
   headers?: Record<string, string>
-  strapi?: boolean
 }
 
 type CustomFetchResponse<T extends object> = {
@@ -52,43 +51,59 @@ export const customFetch = async <T extends object>({
   method,
   body,
   params,
-  headers = { 'Content-Type': 'application/json' },
-  strapi = false
+  headers = { 'Content-Type': 'application/json' }
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
-  const urlPath = new URL(`/api${path}`, strapi ? STRAPI_URL : NEXT_PUBLIC_API_URL)
+  // URL
+  const urlPath = new URL(`/api${path}`, API_URL)
+
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
+  // Headers
   const requestHeaders = new Headers(headers)
   if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
 
+  if (body instanceof FormData) {
+    requestHeaders.delete('Content-Type')
+  }
+
+  // Body
   const fetchOptions: FetchOptionsType = {
     method,
     headers: requestHeaders,
     body: undefined
   }
 
-  if (body && !(body instanceof FormData)) fetchOptions.body = JSON.stringify(body)
-  else fetchOptions.body = body
+  if (body && !(body instanceof FormData)) {
+    fetchOptions.body = JSON.stringify(body)
+  } else {
+    fetchOptions.body = body as FormData | undefined
+  }
 
+  // Fetch
   let response = await fetch(urlPath.toString(), fetchOptions)
 
   if (response.status === 401) {
     try {
       const newAccessToken = await handleRefreshToken()
 
-      return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers, strapi })
+      return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers })
     } catch (error) {
       console.error(error)
-      handleUnauthorizedLogout()
+      await handleUnauthorizedLogout()
     }
   }
 
   let data: T = {} as T
-  if (response.status !== 204) data = await response.json()
 
-  if (strapi && 'meta' in data && Object.keys((data as any).meta).length === 0) {
-    delete (data as any).meta
-    data = (data as any)?.data
+  if (response.status !== 204) {
+    try {
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      }
+    } catch (e) {
+      console.warn('The response was not a JSON', e)
+    }
   }
 
   return {
@@ -100,8 +115,6 @@ export const customFetch = async <T extends object>({
 }
 
 const handleRefreshToken = async (): Promise<string | undefined> => {
-  let refreshedToken
-
   try {
     const res = await fetch('/api/auth/refresh', {
       method: 'POST'
@@ -111,22 +124,22 @@ const handleRefreshToken = async (): Promise<string | undefined> => {
 
     const data = await res.json()
 
-    refreshedToken = data.token
+    return data.token
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Error refreshing token'
     throw new Error(message)
   }
-
-  return refreshedToken
 }
 
 const handleUnauthorizedLogout = async () => {
-  await fetch('/api/auth/logout', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-
-  redirect('/login')
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+  } catch (e) {
+    console.error('Error on logout', e)
+  } finally {
+    redirect('/login')
+  }
 }
