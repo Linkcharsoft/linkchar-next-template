@@ -10,6 +10,8 @@ const isStaging = APP_ENV === 'staging'
 const isProd = APP_ENV === 'production'
 
 const values = {
+  enabled: !isDev, // Disable Sentry on dev
+
   // Local: 0% | Staging: 100% | Prod: 10%
   traces: isDev ? 0 : isStaging ? 1.0 : 0.1,
 

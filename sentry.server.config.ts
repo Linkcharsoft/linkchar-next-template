@@ -9,6 +9,8 @@ const isDev = APP_ENV === 'development'
 const isStaging = APP_ENV === 'staging'
 
 Sentry.init({
+  enabled: !isDev, // Disable Sentry on dev
+
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
