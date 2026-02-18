@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production'
+    removeConsole: process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production'
   },
   logging: {
     fetches: {

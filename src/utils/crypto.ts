@@ -1,16 +1,15 @@
 import { cookies } from 'next/headers'
 import 'server-only'
+import { AUTH_SECRET } from '@/constants'
 import { AUTH_COOKIE_NAME } from '@/constants/auth'
 import type { SessionType } from '@/types/auth'
 
-
-const AUTH_SECRET = process.env.AUTH_SECRET
 if (!AUTH_SECRET) throw new Error('Missing AUTH_SECRET')
 if (AUTH_SECRET.length !== 32) throw new Error('AUTH_SECRET must be 32 characters long')
 
 const ENCRYPTION_KEY = crypto.subtle.importKey(
   'raw',
-  new TextEncoder().encode(process.env.AUTH_SECRET!),
+  new TextEncoder().encode(AUTH_SECRET),
   'AES-GCM',
   true,
   ['encrypt', 'decrypt']

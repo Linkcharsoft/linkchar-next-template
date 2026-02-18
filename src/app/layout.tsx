@@ -2,12 +2,13 @@ import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
+import { DOMAIN } from '@/constants'
 import ProvidersContainer from '@/providers/ProvidersContainer'
 import { getAccessToken, getServerUser } from '@/utils/auth'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
-const SITE_URL = new URL(process.env.NEXT_PUBLIC_DOMAIN || 'https://linkchar.com')
+const SITE_URL = new URL(DOMAIN || 'https://linkchar.com')
 
 export const viewport: Viewport = {
   themeColor: [

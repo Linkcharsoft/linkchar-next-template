@@ -7,6 +7,7 @@ import { es } from 'primelocale/es.json'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect, useRef } from 'react'
+import { CLARITY_ID } from '@/constants'
 import { AUTH_LISTENER_NAME } from '@/constants/auth'
 import useUserStore from '@/stores/userStore'
 import ModalsProvider from './ModalsProvider'
@@ -73,7 +74,7 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
   // Clarity setup
   useEffect(() => {
-    if(process.env.NEXT_PUBLIC_CLARITY_ID) Clarity.init(process.env.NEXT_PUBLIC_CLARITY_ID)
+    if(CLARITY_ID) Clarity.init(CLARITY_ID)
   }, [])
 
 
