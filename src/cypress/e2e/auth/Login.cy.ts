@@ -97,7 +97,7 @@ describe('Login: Success ✅', () => {
   })
 
   it('New user login', function () {
-    const emailAddress = Cypress.env('emailAddress')
+    const emailAddress = Cypress.expose('emailAddress')
 
     if (!emailAddress) {
       this.skip()

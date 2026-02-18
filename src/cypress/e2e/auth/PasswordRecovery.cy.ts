@@ -62,7 +62,7 @@ describe('Password Recovery: Navigation 🔗', () => {
     cy.visit(`/password-recovery/confirmation/${randomCode}/`)
     cy.url().should('equal', `${baseURL}/login`)
 
-    const email = Cypress.env('AUTH_DEFAULT_USER')
+    const email = Cypress.expose('AUTH_DEFAULT_USER')
     cy.visit(`/password-recovery/confirmation/${email.replace('@', '')}`)
     cy.url().should('equal', `${baseURL}/login`)
     cy.visit(`/password-recovery/confirmation/${email}`)
@@ -88,7 +88,7 @@ describe('Password Recovery: Success ✅', () => {
   it('Send email', () => {
     cy.intercept('POST', '/api/auth/password/recovery/').as('send-email')
 
-    const emailAddress = Cypress.env('emailAddress')
+    const emailAddress = Cypress.expose('emailAddress')
     cy.wrap(emailAddress).should('exist')
     cy.get('input[name="email"]').type(emailAddress)
 
@@ -109,19 +109,19 @@ describe('Password Recovery: Success ✅', () => {
 
     cy.get('@send-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.env('inboxId')
+    const inboxId = Cypress.expose('inboxId')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.env('passwordRecoveryCode', code)
+      Cypress.expose('passwordRecoveryCode', code)
     })
   })
 
   it('Incorrect code ❌', () => {
     cy.intercept('POST', '/api/auth/password/recovery/check-token/').as('validate-token')
 
-    const code = Cypress.env('passwordRecoveryCode')
+    const code = Cypress.expose('passwordRecoveryCode')
     cy.wrap(code).should('exist')
     cy.visit(`/password-recovery/confirmation/${code.slice(0, code.length - 1)}`)
 
@@ -133,7 +133,7 @@ describe('Password Recovery: Success ✅', () => {
     cy.intercept('POST', '/api/auth/password/recovery/check-token/').as('validate-token')
     cy.intercept('POST', '/api/auth/password/recovery/confirm/').as('change-password')
 
-    const code = Cypress.env('passwordRecoveryCode')
+    const code = Cypress.expose('passwordRecoveryCode')
     cy.wrap(code).should('exist')
     cy.visit(`/password-recovery/confirmation/${code}`)
 
@@ -148,7 +148,7 @@ describe('Password Recovery: Success ✅', () => {
       submitAlias: '@submit-button'
     })
 
-    cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+    cy.get('@password-input').type(Cypress.expose('AUTH_DEFAULT_PASSWORD'))
     cy.get('@submit-button').click()
     checkInputError({
       alias: '@password-input',
@@ -159,7 +159,7 @@ describe('Password Recovery: Success ✅', () => {
   })
 
   it('Test password', () => {
-    const emailAddress = Cypress.env('emailAddress')
+    const emailAddress = Cypress.expose('emailAddress')
     cy.wrap(emailAddress).should('exist')
 
     cy.login(emailAddress)

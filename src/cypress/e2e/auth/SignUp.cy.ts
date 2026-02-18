@@ -13,8 +13,8 @@ describe('Sign Up: Errors ❌', () => {
 
     cy.createInbox().then(({ id, emailAddress }) => {
       cy.log(emailAddress)
-      Cypress.env('inboxId', id)
-      Cypress.env('emailAddress', emailAddress)
+      Cypress.expose('inboxId', id)
+      Cypress.expose('emailAddress', emailAddress)
     })
   })
 
@@ -62,8 +62,8 @@ describe('Sign Up: Errors ❌', () => {
   })
 
   it('Existing user', () => {
-    cy.get('@email-input').type(Cypress.env('AUTH_DEFAULT_USER'))
-    cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+    cy.get('@email-input').type(Cypress.expose('AUTH_DEFAULT_USER'))
+    cy.get('@password-input').type(Cypress.expose('AUTH_DEFAULT_PASSWORD'))
 
     cy.get('@submit-button').click()
     checkInputError({
@@ -93,19 +93,19 @@ describe('Sign Up: Success ✅', () => {
       win.localStorage.setItem('test_user', 'true')
     })
 
-    const emailAddress = Cypress.env('emailAddress')
+    const emailAddress = Cypress.expose('emailAddress')
     cy.get('@email-input').type(emailAddress)
-    cy.get('@password-input').type(Cypress.env('AUTH_DEFAULT_PASSWORD'))
+    cy.get('@password-input').type(Cypress.expose('AUTH_DEFAULT_PASSWORD'))
     cy.get('@submit-button').click()
 
     cy.wait('@registration').its('response.statusCode').should('eq', 201)
 
-    const inboxId = Cypress.env('inboxId')
+    const inboxId = Cypress.expose('inboxId')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.env('emailValidationCode', code)
+      Cypress.expose('emailValidationCode', code)
     })
 
     cy.window().then((win) => {
@@ -131,16 +131,16 @@ describe('Sign Up: Success ✅', () => {
 
     cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.env('inboxId')
+    const inboxId = Cypress.expose('inboxId')
     cy.getLastestEmail(inboxId).then((email) => {
       const newCode = extractValidationCodeFromEmail(email)
       cy.wrap(newCode).should('exist')
 
-      const firstCode = Cypress.env('emailValidationCode')
+      const firstCode = Cypress.expose('emailValidationCode')
       cy.wrap(firstCode).should('exist')
       expect(newCode).to.not.equal(firstCode)
 
-      Cypress.env('emailValidationCode', newCode)
+      Cypress.expose('emailValidationCode', newCode)
     })
   })
 })

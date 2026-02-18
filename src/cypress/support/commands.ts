@@ -48,8 +48,8 @@ declare global {
 const baseURL = Cypress.config().baseUrl
 
 Cypress.Commands.add('login', (
-  email: string = Cypress.env('AUTH_DEFAULT_USER'),
-  password: string = Cypress.env('AUTH_DEFAULT_PASSWORD')
+  email: string = Cypress.expose('AUTH_DEFAULT_USER'),
+  password: string = Cypress.expose('AUTH_DEFAULT_PASSWORD')
 ) => {
   cy.intercept('POST', '/api/auth/login').as('login')
 
