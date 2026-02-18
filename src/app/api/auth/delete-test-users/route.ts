@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { API_URL } from '@/constants'
+import { API_URL } from '@/constants/env'
 
 export async function DELETE () {
   try {

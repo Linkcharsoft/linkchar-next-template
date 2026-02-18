@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { API_URL } from '@/constants'
+import { API_URL } from '@/constants/env'
 
 type CustomFetchType = {
   path: string

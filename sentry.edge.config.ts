@@ -4,7 +4,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs'
-import { APP_ENV } from '@/constants'
+import { APP_ENV } from '@/constants/env'
 
 const isDev = APP_ENV === 'development'
 const isStaging = APP_ENV === 'staging'

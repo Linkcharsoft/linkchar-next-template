@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import 'server-only'
-import { AUTH_SECRET } from '@/constants'
 import { AUTH_COOKIE_NAME } from '@/constants/auth'
+import { AUTH_SECRET } from '@/constants/env'
 import type { SessionType } from '@/types/auth'
 
 if (!AUTH_SECRET) throw new Error('Missing AUTH_SECRET')
