@@ -88,7 +88,7 @@ describe('Password Recovery: Success ✅', () => {
   it('Send email', () => {
     cy.intercept('POST', '/api/auth/password/recovery/').as('send-email')
 
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.wrap(emailAddress).should('exist')
     cy.get('input[name="email"]').type(emailAddress)
 
@@ -109,19 +109,19 @@ describe('Password Recovery: Success ✅', () => {
 
     cy.get('@send-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.expose('inboxId')
+    const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.expose('passwordRecoveryCode', code)
+      Cypress.expose('PASSWORD_RECOVERY_CODE', code)
     })
   })
 
   it('Incorrect code ❌', () => {
     cy.intercept('POST', '/api/auth/password/recovery/check-token/').as('validate-token')
 
-    const code = Cypress.expose('passwordRecoveryCode')
+    const code = Cypress.expose('PASSWORD_RECOVERY_CODE')
     cy.wrap(code).should('exist')
     cy.visit(`/password-recovery/confirmation/${code.slice(0, code.length - 1)}`)
 
@@ -133,7 +133,7 @@ describe('Password Recovery: Success ✅', () => {
     cy.intercept('POST', '/api/auth/password/recovery/check-token/').as('validate-token')
     cy.intercept('POST', '/api/auth/password/recovery/confirm/').as('change-password')
 
-    const code = Cypress.expose('passwordRecoveryCode')
+    const code = Cypress.expose('PASSWORD_RECOVERY_CODE')
     cy.wrap(code).should('exist')
     cy.visit(`/password-recovery/confirmation/${code}`)
 
@@ -159,7 +159,7 @@ describe('Password Recovery: Success ✅', () => {
   })
 
   it('Test password', () => {
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.wrap(emailAddress).should('exist')
 
     cy.login(emailAddress)

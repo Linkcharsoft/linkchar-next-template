@@ -6,8 +6,6 @@ const baseURL = Cypress.config().baseUrl
 
 describe('Email Validation: Errors ❌', () => {
   before(() => {
-    cy.clearAllSessionStorage()
-
     const randomCode = Math.random().toString(36).slice(2, 24)
     cy.visit(`/signup/confirmation/${randomCode}`)
 
@@ -16,8 +14,8 @@ describe('Email Validation: Errors ❌', () => {
     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
     cy.createInbox().then(({ id, emailAddress }) => {
-      Cypress.expose('inboxId', id)
-      Cypress.expose('emailAddress', emailAddress)
+      Cypress.expose('INBOX_ID', id)
+      Cypress.expose('EMAIL_ADDRESS', emailAddress)
     })
   })
 
@@ -66,7 +64,7 @@ describe('Email Validation: Success ✅', () => {
     cy.get('input[name="password"]').as('password-input')
     cy.get('button[type="submit"]').as('submit-button')
 
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.get('@email-input').type(emailAddress)
     cy.get('@password-input').type(Cypress.expose('AUTH_DEFAULT_PASSWORD'))
 
@@ -79,7 +77,6 @@ describe('Email Validation: Success ✅', () => {
 
     cy.wait('@resend-email').its('response.statusCode').should('eq', 200)
 
-    cy.log(emailAddress)
     cy.url().should('equal', `${baseURL}/signup/email-validation/${encodeURIComponent(emailAddress)}`)
   })
 
@@ -97,12 +94,12 @@ describe('Email Validation: Success ✅', () => {
 
     cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.expose('inboxId')
+    const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.expose('emailValidationCode', code)
+      Cypress.expose('EMAIL_VALIDATION_CODE', code)
     })
 
     cy.get('a[href="/login"]').click()
@@ -114,14 +111,14 @@ describe('Email Validation: Success ✅', () => {
     cy.intercept('POST', '/api/auth/registration/resend-email/').as('resend-email')
     cy.intercept('POST', '/api/auth/registration/verify-email/').as('validate-email')
 
-    const code = Cypress.expose('emailValidationCode')
+    const code = Cypress.expose('EMAIL_VALIDATION_CODE')
     cy.wrap(code).should('exist')
     cy.visit(`/signup/confirmation/${code.slice(0, code.length - 1)}`)
 
     cy.wait('@validate-email').its('response.statusCode').should('eq', 404)
     cy.get('.pi-exclamation-triangle').should('exist')
 
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.get('input[name="email"]').type(emailAddress)
 
     cy.get('button[type="submit"]').as('resend-button')
@@ -134,19 +131,19 @@ describe('Email Validation: Success ✅', () => {
 
     cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.expose('inboxId')
+    const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.expose('emailValidationCode', code)
+      Cypress.expose('EMAIL_VALIDATION_CODE', code)
     })
   })
 
   it('Correct code ✅', () => {
     cy.intercept('POST', '/api/auth/registration/verify-email/').as('validate-email')
 
-    const code = Cypress.expose('emailValidationCode')
+    const code = Cypress.expose('EMAIL_VALIDATION_CODE')
     cy.wrap(code).should('exist')
     cy.visit(`/signup/confirmation/${code}`)
 

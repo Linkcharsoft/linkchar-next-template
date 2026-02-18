@@ -22,13 +22,14 @@ export default defineConfig({
     testIsolation: false,
     // chromeWebSecurity: false,
     waitForAnimations: true,
-    experimentalWebKitSupport: true, // Enable WebKit support
-    env: {
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-      AUTH_DEFAULT_USER: process.env.AUTH_DEFAULT_USER,
-      AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD,
-      MAILSLURP_API_KEY: process.env.MAILSLURP_API_KEY
-    }
+    experimentalWebKitSupport: true // Enable WebKit support
   },
-  fixturesFolder: 'src/cypress/fixtures'
+  fixturesFolder: 'src/cypress/fixtures',
+  expose: {
+    AUTH_DEFAULT_USER: process.env.AUTH_DEFAULT_USER,
+    AUTH_DEFAULT_PASSWORD: process.env.AUTH_DEFAULT_PASSWORD
+  },
+  env: {
+    MAILSLURP_API_KEY: process.env.MAILSLURP_API_KEY
+  }
 })

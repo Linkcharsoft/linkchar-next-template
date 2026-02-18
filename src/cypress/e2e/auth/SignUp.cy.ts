@@ -12,9 +12,8 @@ describe('Sign Up: Errors ❌', () => {
     cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
 
     cy.createInbox().then(({ id, emailAddress }) => {
-      cy.log(emailAddress)
-      Cypress.expose('inboxId', id)
-      Cypress.expose('emailAddress', emailAddress)
+      Cypress.expose('INBOX_ID', id)
+      Cypress.expose('EMAIL_ADDRESS', emailAddress)
     })
   })
 
@@ -93,19 +92,19 @@ describe('Sign Up: Success ✅', () => {
       win.localStorage.setItem('test_user', 'true')
     })
 
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.get('@email-input').type(emailAddress)
     cy.get('@password-input').type(Cypress.expose('AUTH_DEFAULT_PASSWORD'))
     cy.get('@submit-button').click()
 
     cy.wait('@registration').its('response.statusCode').should('eq', 201)
 
-    const inboxId = Cypress.expose('inboxId')
+    const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.expose('emailValidationCode', code)
+      Cypress.expose('EMAIL_VALIDATION_CODE', code)
     })
 
     cy.window().then((win) => {
@@ -131,16 +130,16 @@ describe('Sign Up: Success ✅', () => {
 
     cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.expose('inboxId')
+    const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
       const newCode = extractValidationCodeFromEmail(email)
       cy.wrap(newCode).should('exist')
 
-      const firstCode = Cypress.expose('emailValidationCode')
+      const firstCode = Cypress.expose('EMAIL_VALIDATION_CODE')
       cy.wrap(firstCode).should('exist')
       expect(newCode).to.not.equal(firstCode)
 
-      Cypress.expose('emailValidationCode', newCode)
+      Cypress.expose('EMAIL_VALIDATION_CODE', newCode)
     })
   })
 })

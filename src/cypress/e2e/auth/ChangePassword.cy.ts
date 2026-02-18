@@ -29,7 +29,7 @@ describe('Change Password: Navigation 🔗', () => {
 
 describe('Change Password: Success ✅', () => {
   before(() => {
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.wrap(emailAddress).should('exist')
 
     cy.login(emailAddress)
@@ -45,7 +45,7 @@ describe('Change Password: Success ✅', () => {
 
     cy.get('@send-button').click()
     cy.wait('@send-email').then(({ response, request }) => {
-      const emailAddress = Cypress.expose('emailAddress')
+      const emailAddress = Cypress.expose('EMAIL_ADDRESS')
       cy.wrap(emailAddress).should('exist')
 
       expect(response?.statusCode).to.eq(200)
@@ -59,19 +59,19 @@ describe('Change Password: Success ✅', () => {
 
     cy.get('@send-button', { timeout: 35000 }).should('not.be.disabled')
 
-    const inboxId = Cypress.expose('inboxId')
+    const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
       const code = extractValidationCodeFromEmail(email)
 
       cy.wrap(code).should('exist')
-      Cypress.expose('changePasswordCode', code)
+      Cypress.expose('CHANGE_PASSWORD_CODE', code)
     })
   })
 
   it('Incorrect code ❌', () => {
     cy.intercept('POST', '/api/auth/password/recovery/check-token/').as('validate-token')
 
-    const code = Cypress.expose('changePasswordCode')
+    const code = Cypress.expose('CHANGE_PASSWORD_CODE')
     cy.wrap(code).should('exist')
     cy.visit(`/change-password/confirmation/${code.slice(0, code.length - 1)}`)
 
@@ -83,7 +83,7 @@ describe('Change Password: Success ✅', () => {
     cy.intercept('POST', '/api/auth/password/recovery/check-token/').as('validate-token')
     cy.intercept('POST', '/api/auth/password/recovery/confirm/').as('change-password')
 
-    const code = Cypress.expose('changePasswordCode')
+    const code = Cypress.expose('CHANGE_PASSWORD_CODE')
     cy.wrap(code).should('exist')
     cy.visit(`/change-password/confirmation/${code}`)
 
@@ -111,7 +111,7 @@ describe('Change Password: Success ✅', () => {
   it('Test password', () => {
     cy.logout()
 
-    const emailAddress = Cypress.expose('emailAddress')
+    const emailAddress = Cypress.expose('EMAIL_ADDRESS')
     cy.wrap(emailAddress).should('exist')
 
     cy.login(emailAddress)

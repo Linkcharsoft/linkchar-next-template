@@ -42,7 +42,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
     timerIsRunning
   } = usePersistentTimer({
     storageKey: 'confirmation-resend-timer',
-    time: 30
+    time: 0
   })
 
 
