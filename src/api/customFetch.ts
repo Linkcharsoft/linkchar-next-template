@@ -86,6 +86,8 @@ export const customFetch = async <T extends object>({
     try {
       const newAccessToken = await handleRefreshToken()
 
+      if(!newAccessToken) throw new Error('No access token returned from refresh')
+
       return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers })
     } catch (error) {
       console.error(error)
