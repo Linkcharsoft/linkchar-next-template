@@ -112,7 +112,7 @@ const useModalStore = create<ModalStore>((set) => ({
     set(() => ({
       notification: {
         ...notification,
-        life: notification.life ?? 3000
+        life: notification.life ?? 5000
       }
     }))
 }))
