@@ -114,15 +114,36 @@ export const customFetch = async <T extends object>({
   }
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_DOMAIN
+
 const handleRefreshToken = async (): Promise<string | undefined> => {
   try {
-    const res = await fetch('/api/auth/refresh', {
+    // eslint-disable-next-line no-undef
+    const fetchOptions: RequestInit = {
       method: 'POST'
-    })
+    }
 
-    if (!res.ok) throw new Error('Token refresh failed')
+    if (typeof window === 'undefined') {
+      const { cookies } = await import('next/headers')
+      const cookieStore = await cookies()
+      const allCookies = cookieStore.getAll()
+      const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+
+      if (cookieHeader) {
+        fetchOptions.headers = {
+          ...fetchOptions.headers,
+          'Cookie': cookieHeader
+        }
+      }
+    } else {
+      fetchOptions.credentials = 'include'
+    }
+
+    const res = await fetch(`${BASE_URL}/api/auth/refresh`, fetchOptions)
 
     const data = await res.json()
+
+    if (!res.ok) throw new Error(`Error refreshing token: ${data.message}`)
 
     return data.token
   } catch (error) {
@@ -133,9 +154,8 @@ const handleRefreshToken = async (): Promise<string | undefined> => {
 
 const handleUnauthorizedLogout = async () => {
   try {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+    await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: 'POST'
     })
   } catch (e) {
     console.error('Error on logout', e)

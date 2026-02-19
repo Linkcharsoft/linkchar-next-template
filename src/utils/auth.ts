@@ -41,15 +41,14 @@ export const getAccessToken = async (): Promise<string | undefined> => {
 }
 
 export const getServerUser = async (): Promise<UserType | undefined> => {
-  const origin = process.env.__NEXT_PRIVATE_ORIGIN
+  const BASE_URL = process.env.NEXT_PUBLIC_DOMAIN
 
-  if(!origin) return undefined
-  // throw new Error('Origin not defined. Are you calling getServerUser on the server?')
+  if(!BASE_URL) throw new Error('Domain not found')
 
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME)?.value ?? ''
 
-  const res = await fetch(`${origin}/api/auth/me/`, {
+  const res = await fetch(`${BASE_URL}/api/auth/me/`, {
     method: 'GET',
     headers: {
       Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`
