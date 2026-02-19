@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /// <reference types="cypress" />
-import { AUTH_BACKEND_EMAIL_ADDRESS, AUTH_COOKIE_NAME, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
+import { AUTH_BACKEND_EMAIL_ADDRESS, SESSION_COOKIE_NAME, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import type { MailSlurp, InboxDto, Email } from 'mailslurp-client'
 
 type InboxType = {
@@ -55,7 +55,7 @@ Cypress.Commands.add('login', (
 
   cy.visit('/login')
 
-  cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+  cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
 
   cy.get('input[name="email"]').type(email)
   cy.get('input[name="password"]').type(password)
@@ -65,17 +65,17 @@ Cypress.Commands.add('login', (
 
   cy.url().should('equal', `${baseURL}${AUTHENTICATED_HOME_PATH}`)
 
-  cy.getCookie(AUTH_COOKIE_NAME).should('exist')
+  cy.getCookie(SESSION_COOKIE_NAME).should('exist')
 })
 
 Cypress.Commands.add('logout', () => {
-  cy.clearCookie(AUTH_COOKIE_NAME)
+  cy.clearCookie(SESSION_COOKIE_NAME)
 
   cy.visit('/login')
 
   cy.url().reload()
 
-  cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+  cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
 
   cy.url().should('equal', `${baseURL}/login`)
 })

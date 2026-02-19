@@ -1,4 +1,4 @@
-import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '@/constants/auth'
+import { SESSION_COOKIE_NAME , AUTH_INPUT_ERRORS } from '@/constants/auth'
 import checkInputError from '@/cypress/utils/checkInputError'
 
 const baseURL = Cypress.config().baseUrl
@@ -7,7 +7,7 @@ describe('Login: Errors ❌', () => {
   before(() => {
     cy.visit('/login')
 
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
   })
 
   beforeEach(() => {
@@ -63,7 +63,7 @@ describe('Login: Navigation 🔗', () => {
   before(() => {
     cy.visit('/login')
 
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
   })
 
   beforeEach(() => {

@@ -7,7 +7,7 @@ import { es } from 'primelocale/es.json'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect, useRef } from 'react'
-import { AUTH_LISTENER_NAME } from '@/constants/auth'
+import { LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { CLARITY_ID } from '@/constants/env'
 import useUserStore from '@/stores/userStore'
 import ModalsProvider from './ModalsProvider'
@@ -55,10 +55,10 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
         .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || null
     }
 
-    authListener.current = getCookie(AUTH_LISTENER_NAME) || null
+    authListener.current = getCookie(LISTENER_COOKIE_NAME) || null
 
     const intervalId = setInterval(() => {
-      const currentListener = getCookie(AUTH_LISTENER_NAME) || null
+      const currentListener = getCookie(LISTENER_COOKIE_NAME) || null
 
       if (currentListener !== authListener.current) {
         console.warn('\n\nAuth cookie change detected, refreshing...\n\n')

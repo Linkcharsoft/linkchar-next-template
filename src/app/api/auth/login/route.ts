@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { login } from '@/api/auth'
-import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { encryptSession } from '@/utils/crypto'
 import type { SessionType } from '@/types/auth'
 import type { NextRequest } from 'next/server'
@@ -40,7 +40,7 @@ export async function POST (req: NextRequest) {
 
       // Set session cookie
       const cookieStore = await cookies()
-      cookieStore.set(AUTH_COOKIE_NAME, encryptedSession, {
+      cookieStore.set(SESSION_COOKIE_NAME, encryptedSession, {
         httpOnly: true,
         secure: true,
         path: '/',
@@ -49,7 +49,7 @@ export async function POST (req: NextRequest) {
         expires: refreshExpiration,
         maxAge
       })
-      cookieStore.set(AUTH_LISTENER_NAME, Date.now().toString(), {
+      cookieStore.set(LISTENER_COOKIE_NAME, Date.now().toString(), {
         httpOnly: false,
         secure: true,
         path: '/',

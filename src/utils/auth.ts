@@ -1,6 +1,6 @@
 'use server'
 import { cookies } from 'next/headers'
-import { AUTH_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, AUTH_TOKEN_ERRORS } from '@/constants/auth'
 import { decryptSession } from './crypto'
 import type { UserType } from '@/types/auth'
 
@@ -8,7 +8,7 @@ import type { UserType } from '@/types/auth'
 export const getServerSession = async () => {
   try {
     const cookieStore = await cookies()
-    const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME)?.value
+    const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value
 
     if(!sessionCookie) {
       throw new Error(AUTH_TOKEN_ERRORS['not-found'])
@@ -46,12 +46,12 @@ export const getServerUser = async (): Promise<UserType | undefined> => {
   if(!BASE_URL) throw new Error('Domain not found')
 
   const cookieStore = await cookies()
-  const sessionCookie = cookieStore.get(AUTH_COOKIE_NAME)?.value ?? ''
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? ''
 
   const res = await fetch(`${BASE_URL}/api/auth/me/`, {
     method: 'GET',
     headers: {
-      Cookie: `${AUTH_COOKIE_NAME}=${sessionCookie}`
+      Cookie: `${SESSION_COOKIE_NAME}=${sessionCookie}`
     },
     cache: 'no-store'
   })

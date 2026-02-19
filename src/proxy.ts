@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME, AUTH_TOKEN_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_TOKEN_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
 import type { NextRequest } from 'next/server'
 
@@ -35,14 +35,14 @@ export async function proxy (req: NextRequest) {
   const isAuthFlow = [...AUTH_PATHS].some(path => pathname.includes(path))
 
   try {
-    const authCookie = req.cookies.get(AUTH_COOKIE_NAME)
-    const listenerCookie = req.cookies.get(AUTH_LISTENER_NAME)
+    const authCookie = req.cookies.get(SESSION_COOKIE_NAME)
+    const listenerCookie = req.cookies.get(LISTENER_COOKIE_NAME)
 
     // 🔄 Check if both auth cookies exist or not - if one exists and the other doesn't, delete both
     if ((authCookie && !listenerCookie) || (!authCookie && listenerCookie)) {
       const response = NextResponse.redirect(new URL('/login', req.url))
-      response.cookies.delete(AUTH_COOKIE_NAME)
-      response.cookies.delete(AUTH_LISTENER_NAME)
+      response.cookies.delete(SESSION_COOKIE_NAME)
+      response.cookies.delete(LISTENER_COOKIE_NAME)
       return response
     }
 

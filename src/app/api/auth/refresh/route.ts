@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { refreshToken } from '@/api/auth'
-import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 import { encryptSession } from '@/utils/crypto'
 import type { SessionType } from '@/types/auth'
@@ -32,7 +32,7 @@ export async function POST () {
       const maxAge = Math.floor((refreshExpiration.getTime() - Date.now()) / 1000)
 
       // Set updated session cookie
-      cookieStore.set(AUTH_COOKIE_NAME, encryptedSession, {
+      cookieStore.set(SESSION_COOKIE_NAME, encryptedSession, {
         httpOnly: true,
         secure: true,
         path: '/',
@@ -41,7 +41,7 @@ export async function POST () {
         expires: refreshExpiration,
         maxAge
       })
-      cookieStore.set(AUTH_LISTENER_NAME, Date.now().toString(), {
+      cookieStore.set(LISTENER_COOKIE_NAME, Date.now().toString(), {
         httpOnly: false,
         secure: true,
         path: '/',

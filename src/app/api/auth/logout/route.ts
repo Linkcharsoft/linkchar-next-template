@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { logout } from '@/api/auth'
-import { AUTH_COOKIE_NAME, AUTH_LISTENER_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 
 export async function POST () {
@@ -31,7 +31,7 @@ export async function POST () {
   } finally {
     const cookieStore = await cookies()
 
-    cookieStore.delete(AUTH_COOKIE_NAME)
-    cookieStore.delete(AUTH_LISTENER_NAME)
+    cookieStore.delete(SESSION_COOKIE_NAME)
+    cookieStore.delete(LISTENER_COOKIE_NAME)
   }
 }

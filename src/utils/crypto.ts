@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import 'server-only'
-import { AUTH_COOKIE_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME } from '@/constants/auth'
 import { AUTH_SECRET } from '@/constants/env'
 import type { SessionType } from '@/types/auth'
 
@@ -55,7 +55,7 @@ export async function decryptSession (session: string): Promise<SessionType | nu
   } catch (error) {
     if(error.message === 'The operation failed for an operation-specific reason') {
       const cookieStore = await cookies()
-      cookieStore.delete(AUTH_COOKIE_NAME)
+      cookieStore.delete(SESSION_COOKIE_NAME)
 
       throw new Error('Failed to decrypt session')
     }

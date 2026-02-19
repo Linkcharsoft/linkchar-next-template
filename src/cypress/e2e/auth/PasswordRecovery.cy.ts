@@ -1,4 +1,4 @@
-import { AUTH_COOKIE_NAME , AUTH_INPUT_ERRORS } from '@/constants/auth'
+import { SESSION_COOKIE_NAME , AUTH_INPUT_ERRORS } from '@/constants/auth'
 import checkInputError from '@/cypress/utils/checkInputError'
 import checkPasswordErrors from '@/cypress/utils/checkPasswordErrors'
 import extractValidationCodeFromEmail from '@/cypress/utils/extractValidationCodeFromEmail'
@@ -9,7 +9,7 @@ describe('Password Recovery: Errors ❌', () => {
   before(() => {
     cy.visit('/password-recovery')
 
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
   })
 
   beforeEach(() => {
@@ -42,7 +42,7 @@ describe('Password Recovery: Navigation 🔗', () => {
   before(() => {
     cy.visit('/password-recovery')
 
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
   })
 
   beforeEach(() => {
@@ -82,7 +82,7 @@ describe('Password Recovery: Success ✅', () => {
   before(() => {
     cy.visit('/password-recovery')
 
-    cy.getCookie(AUTH_COOKIE_NAME).should('not.exist')
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
   })
 
   it('Send email', () => {
