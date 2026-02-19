@@ -62,9 +62,7 @@ export const customFetch = async <T extends object>({
   const requestHeaders = new Headers(headers)
   if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
 
-  if (body instanceof FormData) {
-    requestHeaders.delete('Content-Type')
-  }
+  if (body instanceof FormData) requestHeaders.delete('Content-Type')
 
   // Body
   const fetchOptions: FetchOptionsType = {

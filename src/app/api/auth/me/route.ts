@@ -1,7 +1,5 @@
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { getMyUser } from '@/api/auth'
-import { AUTH_COOKIE_NAME } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 
 export async function GET () {
@@ -15,19 +13,9 @@ export async function GET () {
         status: 200
       })
     } else {
-      const cookieStore = await cookies()
-      cookieStore.delete(AUTH_COOKIE_NAME)
-
-      return NextResponse.json({
-        message: 'User not found'
-      }, {
-        status: 400
-      })
+      throw new Error('User not found')
     }
   } catch (error) {
-    const cookieStore = await cookies()
-    cookieStore.delete(AUTH_COOKIE_NAME)
-
     const message = error instanceof Error ? error.message : 'Unexpected error'
     return NextResponse.json(
       { message },

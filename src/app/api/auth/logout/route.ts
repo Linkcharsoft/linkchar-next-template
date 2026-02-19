@@ -9,10 +9,6 @@ export async function POST () {
   try {
     const session = await getServerSession()
 
-    if (!session?.access) {
-      return NextResponse.json({ message: 'No access token' }, { status: 400 })
-    }
-
     const response = await logout(session.access)
 
     if(response.ok) {
@@ -24,11 +20,7 @@ export async function POST () {
         status: 200
       })
     } else {
-      return NextResponse.json({
-        message: 'Logout failed'
-      }, {
-        status: 400
-      })
+      throw new Error('Logout failed')
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error'

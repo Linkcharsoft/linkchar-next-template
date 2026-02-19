@@ -14,11 +14,7 @@ export async function DELETE () {
         status: 200
       })
     } else {
-      return NextResponse.json({
-        message: 'Test users not deleted'
-      }, {
-        status: 400
-      })
+      throw new Error('Test users not deleted')
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unexpected error'

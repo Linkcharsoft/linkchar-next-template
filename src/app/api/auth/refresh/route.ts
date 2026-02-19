@@ -32,7 +32,6 @@ export async function POST () {
       const maxAge = Math.floor((refreshExpiration.getTime() - Date.now()) / 1000)
 
       // Set updated session cookie
-      const cookieStore = await cookies()
       cookieStore.set(AUTH_COOKIE_NAME, encryptedSession, {
         httpOnly: true,
         secure: true,
@@ -59,17 +58,9 @@ export async function POST () {
         status: 200
       })
     } else {
-      cookieStore.delete(AUTH_COOKIE_NAME)
-
-      return NextResponse.json({
-        message: 'Refresh token failed'
-      }, {
-        status: 401
-      })
+      throw new Error('Error refreshing token')
     }
   } catch (error) {
-    cookieStore.delete(AUTH_COOKIE_NAME)
-
     return NextResponse.json({
       message: error.message
     }, {
