@@ -3,11 +3,9 @@ import Logo from '@/assets/images/logo.svg'
 import LoadingModal from '@/components/modals/LoadingModal'
 import type { ReactNode } from 'react'
 
-
 interface Props {
   children: ReactNode
 }
-
 
 const AuthLayout = ({ children }: Props) => {
   return (

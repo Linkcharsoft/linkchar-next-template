@@ -21,7 +21,6 @@ const ExamplePage = ({ searchParams }) => {
   const router = useRouter()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-
   const {
     params,
     stringParams,

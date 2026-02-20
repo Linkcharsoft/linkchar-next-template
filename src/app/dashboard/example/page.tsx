@@ -6,12 +6,16 @@ export const metadata: Metadata = {
   title: 'Example Page'
 }
 
-const Page = async ({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) => {
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+const Page = async ({ searchParams }: Props) => {
   const params = await searchParams
   const user = await getServerUser()
 
-  console.log('User')
-  console.table(user)
+  console.log('-----  User  -----')
+  console.log(user)
 
   return (
     <ExamplePage searchParams={params}/>
