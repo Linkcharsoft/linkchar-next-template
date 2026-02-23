@@ -1,8 +1,10 @@
 'use client'
 import { useRouter } from 'next/navigation'
+import { Avatar } from 'primereact/avatar'
 import { Column } from 'primereact/column'
 import { DataTable } from 'primereact/datatable'
 import { Paginator } from 'primereact/paginator'
+import { useState } from 'react'
 import useSWR from 'swr'
 import { useMediaQuery } from 'usehooks-ts'
 import { getTestData } from '@/api/example'
@@ -17,9 +19,10 @@ import type { FilterItem } from '@/components/Filters'
 
 const ExamplePage = ({ searchParams }) => {
   const { setNotification, openModal } = useModalStore()
-  const { token } = useUserStore()
+  const { token, user } = useUserStore()
   const router = useRouter()
   const isMobile = useMediaQuery('(max-width: 768px)')
+  const [example, setExample] = useState<'status' | 'table' | null>(null)
 
   const {
     params,
@@ -305,232 +308,313 @@ const ExamplePage = ({ searchParams }) => {
 
   return (
     <main className='ExamplePage'>
-      <section className='flex w-full items-center justify-between px-6 py-2'>
-        <div className="flex items-center gap-2">
-          <span className='text-bold-16'>Notifications</span>
+      <header className='flex w-full items-center justify-between border-b-2 px-6'>
+        {!example
+          ? <div></div>
+          : <CustomButton
+            variant='transparent'
+            size='detail'
+            onClick={() => setExample(null)}
+          >
+            <i className="pi pi-chevron-left"></i>
+          </CustomButton>
+        }
 
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col text-right">
+            <span className='text-bold-14'>{ user?.first_name } { user?.last_name }</span>
+
+            <span className='text-medium-12'>{ user?.email }</span>
+          </div>
+          <Avatar
+            icon='pi pi-user'
+            className='size-11 bg-purple-500 text-white'
+            shape='circle'
+            size='large'
+          />
           <CustomButton
-            variant='success'
-            onClick={() => setNotification({
-              severity: 'success',
-              summary: 'Summary 1',
-              detail: 'Detail 1'
-            })}
-          >Success</CustomButton>
-          <CustomButton
-            variant='info'
-            onClick={() => setNotification({
-              severity: 'info',
-              summary: 'Summary 2',
-              detail: 'Detail 2'
-            })}
-          >Info</CustomButton>
-          <CustomButton
-            variant='warn'
-            onClick={() => setNotification({
-              severity: 'warn',
-              summary: 'Summary 3',
-              detail: 'Detail 3'
-            })}
-          >Warn</CustomButton>
-          <CustomButton
-            variant='error'
-            onClick={() => setNotification({
-              severity: 'error',
-              summary: 'Summary 4',
-              detail: 'Detail 4'
-            })}
-          >Error</CustomButton>
+            variant='primary'
+            onClick={async () => {
+              await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              })
+
+              router.replace('/login')
+            }}
+          >
+            Logout
+          </CustomButton>
         </div>
+      </header>
 
-        <div className="flex items-center gap-2">
-          <span className='text-bold-16'>States Modal</span>
+      {!example && (
+        <section className='ExamplePage__Select'>
+          <div className="flex size-full flex-col items-center justify-center gap-8">
+            <div className="flex flex-col items-center gap-4">
+              <span className='text-bold-24'>What example do you want to see?</span>
 
-          <CustomButton
-            variant='success'
-            onClick={() => openModal('stateModal', {
-              type: 'success',
-              title: 'Summary 1',
-              subtitle: 'Subtitle 1',
-              content: 'Detail 1'
-            })}
-          >Success</CustomButton>
-          <CustomButton
-            variant='info'
-            onClick={() => openModal('stateModal', {
-              type: 'info',
-              title: 'Summary 2',
-              subtitle: 'Subtitle 2',
-              content: 'Detail 2'
-            })}
-          >Info</CustomButton>
-          <CustomButton
-            variant='warn'
-            onClick={() => openModal('stateModal', {
-              type: 'warn',
-              title: 'Summary 3',
-              subtitle: 'Subtitle 3',
-              content: 'Detail 3'
-            })}
-          >Warn</CustomButton>
-          <CustomButton
-            variant='error'
-            onClick={() => openModal('stateModal', {
-              type: 'error',
-              title: 'Summary 4',
-              subtitle: 'Subtitle 4',
-              content: 'Detail 4'
-            })}
-          >Error</CustomButton>
-        </div>
-
-        <CustomButton
-          variant='primary'
-          onClick={async () => {
-            await fetch('/api/auth/logout', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            })
-
-            router.replace('/login')
-          }}
-        >Logout</CustomButton>
-      </section>
-
-      <section className="ExamplePage__Content">
-        <header className="ExamplePage__Filters">
-          <div className="flex items-center gap-4 xl:gap-5">
-            <span className="text-primary text-bold-16 hidden xl:inline">Test Table</span>
-
-            <SearchInput
-              initialValue={params.search}
-              onChange={(value) => setParam('search', value)}
-              disabled={employeesIsLoading}
-            />
-
-            <div className="flex items-center gap-2">
-              <span className="text-bold-14">{employeesData?.data.count || 0}</span>
-              <span>Results</span>
+              <div className="flex items-center gap-2">
+                <CustomButton
+                  variant='info'
+                  className='w-[200px]'
+                  onClick={() => setExample('status')}
+                >
+                  State Modals
+                </CustomButton>
+                <CustomButton
+                  variant='info'
+                  className='w-[200px]'
+                  onClick={() => setExample('table')}
+                >
+                  Table
+                </CustomButton>
+              </div>
             </div>
           </div>
+        </section>
+      )}
 
-          <Filters
-            filters={FILTERS}
-            cleanFilters={resetParams}
-            locale='es'
-            disabled={employeesIsLoading}
-          />
-        </header>
+      {example === 'status' && (
+        <section className='ExamplePage__States'>
+          <div className="flex size-full flex-col items-center justify-center gap-8">
+            <div className="flex flex-col items-center gap-4">
+              <span className='text-bold-24'>Notifications</span>
 
-        <header className="ExamplePage__Filters--Mobile">
-          <div className="flex items-center gap-2">
-            <SearchInput
-              initialValue={params.search}
-              onChange={(value) => setParam('search', value)}
-              disabled={employeesIsLoading}
-            />
+              <div className="flex items-center gap-2">
+                <CustomButton
+                  variant='success'
+                  onClick={() => setNotification({
+                    severity: 'success',
+                    summary: 'Summary 1',
+                    detail: 'Detail 1'
+                  })}
+                >
+                  Success
+                </CustomButton>
+                <CustomButton
+                  variant='info'
+                  onClick={() => setNotification({
+                    severity: 'info',
+                    summary: 'Summary 2',
+                    detail: 'Detail 2'
+                  })}
+                >
+                  Info
+                </CustomButton>
+                <CustomButton
+                  variant='warn'
+                  onClick={() => setNotification({
+                    severity: 'warn',
+                    summary: 'Summary 3',
+                    detail: 'Detail 3'
+                  })}
+                >
+                  Warn
+                </CustomButton>
+                <CustomButton
+                  variant='error'
+                  onClick={() => setNotification({
+                    severity: 'error',
+                    summary: 'Summary 4',
+                    detail: 'Detail 4'
+                  })}
+                >
+                  Error
+                </CustomButton>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-4">
+              <span className='text-bold-24'>States Modal</span>
+
+              <div className="flex items-center gap-2">
+                <CustomButton
+                  variant='success'
+                  onClick={() => openModal('stateModal', {
+                    type: 'success',
+                    title: 'Summary 1',
+                    subtitle: 'Subtitle 1',
+                    content: 'Detail 1'
+                  })}
+                >
+                  Success
+                </CustomButton>
+                <CustomButton
+                  variant='info'
+                  onClick={() => openModal('stateModal', {
+                    type: 'info',
+                    title: 'Summary 2',
+                    subtitle: 'Subtitle 2',
+                    content: 'Detail 2'
+                  })}
+                >
+                  Info
+                </CustomButton>
+                <CustomButton
+                  variant='warn'
+                  onClick={() => openModal('stateModal', {
+                    type: 'warn',
+                    title: 'Summary 3',
+                    subtitle: 'Subtitle 3',
+                    content: 'Detail 3'
+                  })}
+                >
+                  Warn
+                </CustomButton>
+                <CustomButton
+                  variant='error'
+                  onClick={() => openModal('stateModal', {
+                    type: 'error',
+                    title: 'Summary 4',
+                    subtitle: 'Subtitle 4',
+                    content: 'Detail 4'
+                  })}
+                >
+                  Error
+                </CustomButton>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {example === 'table' && (
+        <section className="ExamplePage__Content">
+          <header className="ExamplePage__Filters">
+            <div className="flex items-center gap-4 xl:gap-5">
+              <span className="text-primary text-bold-16 hidden xl:inline">Test Table</span>
+
+              <SearchInput
+                initialValue={params.search}
+                onChange={(value) => setParam('search', value)}
+                disabled={employeesIsLoading}
+              />
+
+              <div className="flex items-center gap-2">
+                <span className="text-bold-14">{employeesData?.data.count || 0}</span>
+                <span>Results</span>
+              </div>
+            </div>
+
             <Filters
               filters={FILTERS}
               cleanFilters={resetParams}
               locale='es'
               disabled={employeesIsLoading}
             />
-          </div>
+          </header>
 
-          <div className="flex flex-col items-center gap-2">
+          <header className="ExamplePage__Filters--Mobile">
             <div className="flex items-center gap-2">
-              <span className="text-bold-14">{employeesData?.data.count || 0}</span>
-              <span>Resultados</span>
+              <SearchInput
+                initialValue={params.search}
+                onChange={(value) => setParam('search', value)}
+                disabled={employeesIsLoading}
+              />
+              <Filters
+                filters={FILTERS}
+                cleanFilters={resetParams}
+                locale='es'
+                disabled={employeesIsLoading}
+              />
             </div>
-          </div>
-        </header>
 
-        <DataTable
-          className="Table"
-          dataKey="id"
-          scrollable
-          scrollHeight='100%'
-          value={employeesData?.data?.results}
-          rows={params.page_size}
-          emptyMessage={
-            <div className='flex size-full flex-col items-center justify-center gap-4'>
-              <i className="pi pi-search text-28"></i>
-              <span className='text-bold-16'>No se encontraron trabajadores</span>
-              <CustomButton
-                variant='primary'
-                onClick={resetParams}
-              >
-                <i className="pi pi-trash text-14" />
-                <span className="text-14">Limpiar filtros</span>
-              </CustomButton>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-bold-14">{employeesData?.data.count || 0}</span>
+                <span>Resultados</span>
+              </div>
             </div>
-          }
-          loading={employeesIsLoading}
-          sortField={sortProps?.sortField}
-          sortOrder={sortProps?.sortOrder}
-          onSort={sortProps?.onSort}
-          removableSort
-        >
-          <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
+          </header>
 
-          <Column
-            field="id"
-            header="ID"
-            sortable
-          />
-
-          <Column
-            field="verb"
-            header="Verb"
-            sortable
-          />
-
-          <Column
-            field="description"
-            header="Description"
-            sortable
-          />
-
-          <Column
-            field="timestamp"
-            header="Timestamp"
-            sortable
-          />
-        </DataTable>
-
-        {(Number(employeesData?.data?.count) > 0) && (
-          <Paginator
-            className='Paginator'
-            first={first}
+          <DataTable
+            className="Table"
+            dataKey="id"
+            scrollable
+            scrollHeight='100%'
+            value={employeesData?.data?.results}
             rows={params.page_size}
-            totalRecords={employeesData?.data.count}
-            rowsPerPageOptions={[10, 20, 30]}
-            onPageChange={(e) => {
-              setPagination({
-                page: e.page + 1,
-                page_size: e.rows
-              })
-            }}
-            pt={{
-              root: {
-                className: 'bg-transparent p-0 flex-nowrap'
-              },
-              RPPDropdown: {
-                root: {
-                  className: '!w-[80px]'
-                }
-              }
-            }}
-            template={isMobile
-              ? 'PrevPageLink CurrentPageReport NextPageLink RowsPerPageDropdown'
-              : 'FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown'
+            emptyMessage={
+              <div className='flex size-full flex-col items-center justify-center gap-4'>
+                <i className="pi pi-search text-28"></i>
+                <span className='text-bold-16'>No se encontraron trabajadores</span>
+                <CustomButton
+                  variant='primary'
+                  onClick={resetParams}
+                >
+                  <i className="pi pi-trash text-14" />
+                  <span className="text-14">Limpiar filtros</span>
+                </CustomButton>
+              </div>
             }
-            currentPageReportTemplate={'{currentPage} de {totalPages}'}
-          />
-        )}
-      </section>
+            loading={employeesIsLoading}
+            sortField={sortProps?.sortField}
+            sortOrder={sortProps?.sortOrder}
+            onSort={sortProps?.onSort}
+            removableSort
+          >
+            <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
+
+            <Column
+              field="id"
+              header="ID"
+              sortable
+            />
+
+            <Column
+              field="verb"
+              header="Verb"
+              sortable
+            />
+
+            <Column
+              field="description"
+              header="Description"
+              sortable
+            />
+
+            <Column
+              field="timestamp"
+              header="Timestamp"
+              sortable
+            />
+          </DataTable>
+
+          {(Number(employeesData?.data?.count) > 0) && (
+            <Paginator
+              className='Paginator'
+              first={first}
+              rows={params.page_size}
+              totalRecords={employeesData?.data.count}
+              rowsPerPageOptions={[10, 20, 30]}
+              onPageChange={(e) => {
+                setPagination({
+                  page: e.page + 1,
+                  page_size: e.rows
+                })
+              }}
+              pt={{
+                root: {
+                  className: 'bg-transparent p-0 flex-nowrap'
+                },
+                RPPDropdown: {
+                  root: {
+                    className: '!w-[80px]'
+                  }
+                }
+              }}
+              template={isMobile
+                ? 'PrevPageLink CurrentPageReport NextPageLink RowsPerPageDropdown'
+                : 'FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown'
+              }
+              currentPageReportTemplate={'{currentPage} de {totalPages}'}
+            />
+          )}
+        </section>
+      )}
     </main>
   )
 }
