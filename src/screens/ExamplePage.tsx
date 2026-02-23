@@ -284,7 +284,6 @@ const ExamplePage = ({ searchParams }) => {
         to: params['date-range-max']
       },
       onChange: (value) => {
-        console.log(value)
         setParams({
           'date-range-min': value.from,
           'date-range-max': value.to

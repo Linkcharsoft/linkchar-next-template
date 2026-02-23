@@ -102,7 +102,7 @@ export const customFetch = async <T extends object>({
         data = await response.json()
       }
     } catch (e) {
-      console.warn('The response was not a JSON', e)
+      console.error('The response was not a JSON', e)
     }
   }
 
