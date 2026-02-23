@@ -72,27 +72,36 @@ const ESLintConfig = [
 
       // Import order
       'import/order': ['error', {
-        'groups': [
+        groups: [
           'builtin',
           'external',
           'internal',
-          ['parent', 'sibling'],
+          'parent',
+          'sibling',
           'index',
           'object',
           'type'
         ],
+        pathGroups: [
+          {
+            pattern: '**/*.css',
+            group: 'builtin',
+            position: 'before'
+          }, {
+            pattern: '**/*.scss',
+            group: 'builtin',
+            position: 'before'
+          }, {
+            pattern: '**/*.sass',
+            group: 'builtin',
+            position: 'before'
+          }
+        ],
+        pathGroupsExcludedImportTypes: [],
         alphabetize: {
           order: 'asc',
           caseInsensitive: true
-        },
-        warnOnUnassignedImports: true,
-        pathGroups: [
-          {
-            pattern: '**/*.+(css|scss|sass)',
-            group: 'external',
-            position: 'before'
-          }
-        ]
+        }
       }],
       'import/no-unresolved': 'error',
 
