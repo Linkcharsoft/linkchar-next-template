@@ -1,26 +1,25 @@
+import { DOMAIN } from '@/constants/env'
 import type { MetadataRoute } from 'next'
 
 const sitemap = (): MetadataRoute.Sitemap => {
-  const BASE_URL = process.env.NEXT_PUBLIC_DOMAIN
-
   return [
     {
-      url: BASE_URL,
+      url: DOMAIN,
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 1
     }, {
-      url: `${BASE_URL}/login`,
+      url: `${DOMAIN}/login`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 0.5
     }, {
-      url: `${BASE_URL}/signup`,
+      url: `${DOMAIN}/signup`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 0.5
     }, {
-      url: `${BASE_URL}/password-recovery`,
+      url: `${DOMAIN}/password-recovery`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 0.5
