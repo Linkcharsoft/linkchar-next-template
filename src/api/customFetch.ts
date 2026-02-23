@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { API_URL } from '@/constants/env'
+import { API_URL, DOMAIN } from '@/constants/env'
 
 type CustomFetchType = {
   path: string
@@ -8,6 +8,7 @@ type CustomFetchType = {
   body?: object | FormData
   params?: string | URLSearchParams | Record<string, string> | string[][]
   headers?: Record<string, string>
+  _retryCount?: number
 }
 
 type CustomFetchResponse<T extends object> = {
@@ -23,6 +24,7 @@ type FetchOptionsType = {
   body?: string | FormData
 }
 
+const MAX_RETRIES = 1
 
 /**
  * A custom `fetch` wrapper that automatically handles:
@@ -44,14 +46,14 @@ type FetchOptionsType = {
  * ```
  */
 
-
 export const customFetch = async <T extends object>({
   path,
   token,
   method,
   body,
   params,
-  headers = { 'Content-Type': 'application/json' }
+  headers = { 'Content-Type': 'application/json' },
+  _retryCount = 0
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
   // URL
   const urlPath = new URL(`/api${path}`, API_URL)
@@ -61,26 +63,23 @@ export const customFetch = async <T extends object>({
   // Headers
   const requestHeaders = new Headers(headers)
   if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
-
   if (body instanceof FormData) requestHeaders.delete('Content-Type')
 
   // Body
   const fetchOptions: FetchOptionsType = {
     method,
     headers: requestHeaders,
-    body: undefined
-  }
-
-  if (body && !(body instanceof FormData)) {
-    fetchOptions.body = JSON.stringify(body)
-  } else {
-    fetchOptions.body = body as FormData | undefined
+    body: body instanceof FormData
+      ? body
+      : body
+        ? JSON.stringify(body)
+        : undefined
   }
 
   // Fetch
   let response = await fetch(urlPath.toString(), fetchOptions)
 
-  if (response.status === 401) {
+  if (response.status === 401 && _retryCount < MAX_RETRIES) {
     try {
       const newAccessToken = await handleRefreshToken()
 
@@ -89,7 +88,7 @@ export const customFetch = async <T extends object>({
       return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers })
     } catch (error) {
       console.error(error)
-      await handleUnauthorizedLogout()
+      handleUnauthorizedLogout()
     }
   }
 
@@ -114,36 +113,36 @@ export const customFetch = async <T extends object>({
   }
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_DOMAIN
-
 const handleRefreshToken = async (): Promise<string | undefined> => {
   try {
     // eslint-disable-next-line no-undef
     const fetchOptions: RequestInit = {
-      method: 'POST'
+      method: 'POST',
+      credentials: typeof window === 'undefined' ? undefined : 'include'
     }
 
     if (typeof window === 'undefined') {
       const { cookies } = await import('next/headers')
       const cookieStore = await cookies()
-      const allCookies = cookieStore.getAll()
-      const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+      const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
 
       if (cookieHeader) {
-        fetchOptions.headers = {
-          ...fetchOptions.headers,
-          'Cookie': cookieHeader
-        }
+        fetchOptions.headers = { 'Cookie': cookieHeader }
       }
-    } else {
-      fetchOptions.credentials = 'include'
     }
 
-    const res = await fetch(`${BASE_URL}/api/auth/refresh`, fetchOptions)
+    const res = await fetch(`${DOMAIN}/api/auth/refresh`, fetchOptions)
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(`Error refreshing token: ${data.message}`)
+    }
 
     const data = await res.json()
 
-    if (!res.ok) throw new Error(`Error refreshing token: ${data.message}`)
+    if (!data.token) {
+      throw new Error('Error refreshing token: No token in response')
+    }
 
     return data.token
   } catch (error) {
@@ -154,9 +153,7 @@ const handleRefreshToken = async (): Promise<string | undefined> => {
 
 const handleUnauthorizedLogout = async () => {
   try {
-    await fetch(`${BASE_URL}/api/auth/logout`, {
-      method: 'POST'
-    })
+    await fetch(`${DOMAIN}/api/auth/logout`, { method: 'POST' })
   } catch (e) {
     console.error('Error on logout', e)
   } finally {
