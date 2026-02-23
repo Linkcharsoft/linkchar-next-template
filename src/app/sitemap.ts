@@ -9,6 +9,21 @@ const sitemap = (): MetadataRoute.Sitemap => {
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 1
+    }, {
+      url: `${BASE_URL}/login`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.5
+    }, {
+      url: `${BASE_URL}/signup`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.5
+    }, {
+      url: `${BASE_URL}/password-recovery`,
+      lastModified: new Date(),
+      changeFrequency: 'yearly',
+      priority: 0.5
     }
   ]
 }
