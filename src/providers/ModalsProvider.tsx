@@ -1,5 +1,5 @@
-import StateModal from '@/components/modals/StateModal'
-import ToastNotifications from '@/components/modals/ToastNotifications'
+import StateModal from '@/components/modals/StateModal/StateModal'
+import ToastNotifications from '@/components/modals/ToastNotifications/ToastNotifications'
 
 const ModalsProvider = () => {
   return (

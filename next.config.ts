@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
     fetches: {
       fullUrl: true
     }
+  },
+  sassOptions: {
+    additionalData: `
+      @use "@/styles/mixins.sass" as mixins;
+    `
   }
 
   // --- Images config example ---

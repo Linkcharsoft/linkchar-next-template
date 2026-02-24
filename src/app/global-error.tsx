@@ -1,5 +1,5 @@
 'use client'
-import GlobalErrorPage from '@/screens/GlobalErrorPage'
+import GlobalErrorPage from '@/screens/GlobalErrorPage/GlobalErrorPage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

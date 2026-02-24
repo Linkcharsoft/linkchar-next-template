@@ -1,4 +1,4 @@
-import ExamplePage from '@/screens/ExamplePage'
+import ExamplePage from '@/screens/ExamplePage/ExamplePage'
 import { getServerUser } from '@/utils/auth'
 import type { Metadata } from 'next'
 

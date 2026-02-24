@@ -4,7 +4,7 @@ import { useIsClient } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/auth'
 import GmailIcon from '@/assets/icons/GmailIcon'
 import OutlookIcon from '@/assets/icons/OutlookIcon'
-import CustomButton from '@/components/CustomButton'
+import CustomButton from '@/components/CustomButton/CustomButton'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
 import useModalStore from '@/stores/modalStore'
 

@@ -1,4 +1,3 @@
-@use 'resources/mixins' as mixins
 @use "sass:meta"
 
 // Replace with the link of the fonts of this project
@@ -14,30 +13,5 @@
   @tailwind components
   @tailwind utilities
 
-// Variables & Resources
-@include meta.load-css('resources/general')
-
-// Layouts
-@include meta.load-css('layouts/AuthLayout')
-
-// Pages
-@include meta.load-css('screens/GlobalErrorPage')
-@include meta.load-css('screens/HomePage')
-@include meta.load-css('screens/NotFoundPage')
-
-// Example (Delete)
-@include meta.load-css('./ExamplePage.sass')
-
-// Containers
-
-// Components
-@include meta.load-css('components/Waves')
-@include meta.load-css('components/Filters')
-@include meta.load-css('components/CustomButton')
-@include meta.load-css('components/InputContainer')
-@include meta.load-css('components/Loader')
-@include meta.load-css('components/SearchInput')
-
-// Modals
-@include meta.load-css('components/modals/LoadingModal')
-@include meta.load-css('components/modals/ToastNotifications')
+// Resources
+@include meta.load-css('./general')

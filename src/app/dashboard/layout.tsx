@@ -1,19 +1,10 @@
-import LoadingModal from '@/components/modals/LoadingModal'
+import DashboardLayout from '@/layouts/DashboardLayout/DashboardLayout'
 import type { ReactNode } from 'react'
-
 
 interface Props {
   children: ReactNode
 }
 
+const Layout = ({ children }: Props) => <DashboardLayout>{ children }</DashboardLayout>
 
-const DashboardLayout = ({ children }: Props) => {
-  return (
-    <>
-      { children }
-      <LoadingModal/>
-    </>
-  )
-}
-
-export default DashboardLayout
+export default Layout

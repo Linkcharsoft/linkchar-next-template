@@ -3,8 +3,7 @@ import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
 import { DOMAIN } from '@/constants/env'
-import ProvidersContainer from '@/providers/ProvidersContainer'
-import { getAccessToken, getServerUser } from '@/utils/auth'
+import GeneralLayout from '@/layouts/GeneralLayout/GeneralLayout'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
@@ -148,39 +147,6 @@ interface Props {
   children: ReactNode
 }
 
-const Layout = async ({ children }: Props) => {
-  let token
-  let user
-
-  try {
-    token = await getAccessToken()
-    user = await getServerUser()
-  } catch (error) {
-    console.error(error)
-  }
-
-  return (
-    <html lang="en">
-      <head>
-        {/* Tailwind */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              const style = document.createElement('style')
-              style.innerHTML = '@layer tailwind-base, primereact, tailwind-utilities;'
-              style.setAttribute('type', 'text/css')
-              document.querySelector('head').prepend(style)
-            `
-          }}
-        />
-      </head>
-      <body>
-        <ProvidersContainer token={token} user={user}>
-          { children }
-        </ProvidersContainer>
-      </body>
-    </html>
-  )
-}
+const Layout = async ({ children }: Props) => <GeneralLayout>{ children }</GeneralLayout>
 
 export default Layout

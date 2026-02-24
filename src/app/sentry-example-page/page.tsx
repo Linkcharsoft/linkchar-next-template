@@ -3,7 +3,7 @@
 import * as Sentry from '@sentry/nextjs'
 import Head from 'next/head'
 import { useEffect, useState } from 'react'
-import CustomButton from '@/components/CustomButton'
+import CustomButton from '@/components/CustomButton/CustomButton'
 
 class SentryExampleFrontendError extends Error {
   constructor (message: string | undefined) {
