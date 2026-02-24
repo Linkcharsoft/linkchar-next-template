@@ -2,7 +2,8 @@ import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
-import { DOMAIN } from '@/constants/env'
+import Script from 'next/script'
+import { APP_ENV, DOMAIN } from '@/constants/env'
 import GeneralLayout from '@/layouts/GeneralLayout/GeneralLayout'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
@@ -147,6 +148,33 @@ interface Props {
   children: ReactNode
 }
 
-const Layout = async ({ children }: Props) => <GeneralLayout>{ children }</GeneralLayout>
+const Layout = async ({ children }: Props) => (
+  <html lang="en">
+    <head>
+      {/* Tailwind */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+              const style = document.createElement('style')
+              style.innerHTML = '@layer tailwind-base, primereact, tailwind-utilities;'
+              style.setAttribute('type', 'text/css')
+              document.querySelector('head').prepend(style)
+            `
+        }}
+      />
+
+      {APP_ENV === 'development' && (
+        <Script
+          src="//unpkg.com/react-scan/dist/auto.global.js"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
+      )}
+    </head>
+    <body>
+      <GeneralLayout>{ children }</GeneralLayout>
+    </body>
+  </html>
+)
 
 export default Layout

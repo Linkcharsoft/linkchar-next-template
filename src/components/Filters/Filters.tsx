@@ -6,7 +6,7 @@ import { Calendar } from 'primereact/calendar'
 import { Dropdown } from 'primereact/dropdown'
 import { MultiSelect } from 'primereact/multiselect'
 import { classNames } from 'primereact/utils'
-import { useMemo, useRef, useState } from 'react'
+import { memo, useMemo, useRef, useState } from 'react'
 import { useMediaQuery } from 'usehooks-ts'
 import CustomButton from '../CustomButton/CustomButton'
 import Label from '../Label/Label'
@@ -457,4 +457,4 @@ const Filters = ({
   )
 }
 
-export default Filters
+export default memo(Filters)

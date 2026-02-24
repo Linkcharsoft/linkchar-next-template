@@ -9,3 +9,6 @@ if(!DOMAIN || !API_URL || !APP_ENV) {
   throw new Error('Missing environment variables')
 }
 
+if(APP_ENV !== 'production' && APP_ENV !== 'staging' && APP_ENV !== 'development') {
+  throw new Error('Invalid APP_ENV')
+}
