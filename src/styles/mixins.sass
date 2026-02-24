@@ -6,10 +6,13 @@
     width: 0
     height: 0
 
-@mixin scroll($bar-size, $border-width: 2px)
+@mixin scroll($bar-size: 16, $border-width: 2px)
   // Firefox and modern browsers support
-  scrollbar-width: if($bar-size == null, none, if($bar-size > 12, auto, thin))
   scrollbar-color: #000000 #FFFFFF
+  @if $bar-size > 12
+    scrollbar-width: auto
+  @else
+    scrollbar-width: thin
 
   // WebKit support (Chrome, Safari, Edge, Opera)
   &::-webkit-scrollbar
