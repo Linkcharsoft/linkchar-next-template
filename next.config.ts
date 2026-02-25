@@ -59,9 +59,9 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: 'linkchar-y5',
+  org: process.env.SENTRY_ORG,
 
-  project: 'test-next-16',
+  project: process.env.SENTRY_PROJECT,
 
   authToken: process.env.SENTRY_AUTH_TOKEN,
 
