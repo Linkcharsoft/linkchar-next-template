@@ -14,7 +14,7 @@
 
 ## Project Structure
 
-```
+```text
 src/
 ├── api/              # API functions using customFetch
 ├── app/              # Next.js App Router (pages, layouts, API routes)
@@ -47,6 +47,7 @@ src/
 - `src/app/**/page.tsx` files are **thin wrappers**: they only export metadata and render a Screen component
 - All page logic and UI lives in `src/screens/` components
 - Example:
+
   ```tsx
   // src/app/login/page.tsx
   import LoginPage from '@/screens/auth/LoginPage'
@@ -69,14 +70,15 @@ src/
 ### Tailwind + PrimeReact Layer Ordering
 
 Do NOT modify this layer order in `src/styles/index.sass` — ensures Tailwind utilities override PrimeReact:
-```
+
+```css
 @layer tailwind-base, primereact, tailwind-utilities
 ```
 
 ## Naming Conventions
 
 | Element | Convention | Example |
-|---------|-----------|---------|
+| ------- | ---------- | ------- |
 | Components | PascalCase file & export | `CustomButton.tsx` → `export default CustomButton` |
 | Screens | PascalCase with "Page" suffix | `LoginPage.tsx`, `HomePage.tsx` |
 | Hooks | camelCase with "use" prefix | `usePressKey.ts` → `export default usePressKey` |
@@ -93,7 +95,7 @@ Do NOT modify this layer order in `src/styles/index.sass` — ensures Tailwind u
 
 Each component lives in its own folder with colocated styles:
 
-```
+```text
 src/components/ComponentName/
 ├── ComponentName.tsx    # Component code
 └── ComponentName.sass   # Component styles (colocated, imported directly)
@@ -142,7 +144,7 @@ export default memo(ComponentName) // Wrap with memo for reusable components
 > **MANDATORY: BEFORE creating any new component, ALWAYS check this table AND the `src/components/` directory. If a similar one exists, REUSE it or extend it by adding props/variants. NEVER duplicate functionality.**
 
 | Component | Path | Description |
-|-----------|------|-------------|
+| --------- | ---- | ----------- |
 | `CustomButton` | `components/CustomButton/CustomButton.tsx` | Button with variants (primary, white, transparent, success, info, warn, error), sizes (detail, small, medium, large), and optional `href` for link behavior |
 | `InputContainer` | `components/inputs/InputContainer/InputContainer.tsx` | Wraps an input with `Label` + `InputError` |
 | `Label` | `components/Label/Label.tsx` | Styled `<label>` element |
@@ -188,6 +190,7 @@ To add a new modal type: define its type in `modalStore.ts` → add to `ModalPay
 ### TAILWIND-FIRST Approach
 
 > **ALWAYS use Tailwind utilities first** for spacing, layout, flexbox, grid, colors, typography, responsive. Only use SASS `.sass` for:
+>
 > - Complex styles that CANNOT be expressed with Tailwind (custom animations, complex pseudo-elements)
 > - Styles that need deep nesting with BEM
 > - PrimeReact style overrides
@@ -206,6 +209,7 @@ To add a new modal type: define its type in `modalStore.ts` → add to `ModalPay
 ### Typography System (Tailwind Custom)
 
 Use the custom typography classes defined in `tailwind.config.js`:
+
 - Pattern: `text-{weight}-{size}` where weight = `extrabold|bold|semibold|medium|regular|light` and size = `10|12|14|16|18|20|24|28|32|36|40|44|48|56|64`
 - Examples: `text-bold-24`, `text-medium-16`, `text-regular-14`
 
@@ -217,13 +221,14 @@ Use the custom typography classes defined in `tailwind.config.js`:
 
 ### Breakpoints
 
-```
+```text
 2xs: 375px | xs: 480px | sm: 640px | md: 768px | lg: 1024px | xl: 1280px | 2xl: 1420px
 ```
 
 ### Global Container
 
 Use `container-custom` class for centered content with responsive max-widths:
+
 - Default: 1600px | <=1920px: 1440px | <=1640px: 1200px | <=1440px: 1000px
 
 ## PrimeReact Usage
@@ -276,11 +281,12 @@ Use `container-custom` class for centered content with responsive max-widths:
 
 After each significant implementation (new screen, new component, new feature, bug fix, refactor), create a commit with this format:
 
-```
+```text
 [ TYPE ] Description of the change
 ```
 
 **Types:**
+
 - `FEATURE` - New functionality or screen
 - `ADD` - Add a new file, config, or asset (not a full feature)
 - `UPDATE` - Enhancement to existing functionality
@@ -290,7 +296,8 @@ After each significant implementation (new screen, new component, new feature, b
 - `CHORE` - Config, dependencies, tooling changes
 
 **Examples:**
-```
+
+```text
 [ FEATURE ] Add login screen with form validation
 [ UPDATE ] Add loading state to dashboard table
 [ FIX ] Correct token refresh loop on expired sessions
@@ -329,26 +336,29 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 2. Thin page wrapper in `src/app/{route}/page.tsx` with metadata + canonical
 3. Extract reusable parts into `src/components/` — **but FIRST check the existing components table** -->
 
-### Styling Rules
-4. **TAILWIND-FIRST**: Use Tailwind utilities for ALL layout (flex, gap, padding, margin, width, responsive, colors, typography). SASS only for complex styles.
-5. **Typography**: ALWAYS `text-{weight}-{size}` (e.g., `text-bold-24`). NEVER loose `text-xl`, `font-bold`.
-6. **Colors**: `surface-50` to `surface-900` for grays. Semantic colors with Tailwind defaults.
-7. **Responsive**: Custom breakpoints: `2xs:`, `xs:`, `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
-8. **Container**: `container-custom` for centered content
-9. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`
+### Styling Checklist
+
+1. **TAILWIND-FIRST**: Use Tailwind utilities for ALL layout (flex, gap, padding, margin, width, responsive, colors, typography). SASS only for complex styles.
+2. **Typography**: ALWAYS `text-{weight}-{size}` (e.g., `text-bold-24`). NEVER loose `text-xl`, `font-bold`.
+3. **Colors**: `surface-50` to `surface-900` for grays. Semantic colors with Tailwind defaults.
+4. **Responsive**: Custom breakpoints: `2xs:`, `xs:`, `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
+5. **Container**: `container-custom` for centered content
+6. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`
 
 ### Component Rules
-10. **REUSE**: Check existing components table BEFORE creating new ones. NEVER duplicate functionality.
-11. **PrimeReact** for inputs (InputText, Dropdown, Calendar, MultiSelect). NO native HTML inputs.
-12. **PrimeIcons** (`pi pi-xxx`) for icons. NO inline SVGs when a PrimeIcon exists.
-13. **Conditional classes**: `classNames()` from `primereact/utils`. NOT `clsx`.
-14. **Images**: `next/image` + WebP in `src/assets/images/`
-15. **Links**: `next/link` or `CustomButton` with `href` prop
-16. **Animations**: `m` from framer-motion + `AnimatePresence`. NEVER `motion`.
-17. **Modals/Toasts**: `useModalStore` for loading states and notifications
-18. **Env vars**: Import from `@/constants/env`. NEVER `process.env` directly.
+
+1. **REUSE**: Check existing components table BEFORE creating new ones. NEVER duplicate functionality.
+2. **PrimeReact** for inputs (InputText, Dropdown, Calendar, MultiSelect). NO native HTML inputs.
+3. **PrimeIcons** (`pi pi-xxx`) for icons. NO inline SVGs when a PrimeIcon exists.
+4. **Conditional classes**: `classNames()` from `primereact/utils`. NOT `clsx`.
+5. **Images**: `next/image` + WebP in `src/assets/images/`
+6. **Links**: `next/link` or `CustomButton` with `href` prop
+7. **Animations**: `m` from framer-motion + `AnimatePresence`. NEVER `motion`.
+8. **Modals/Toasts**: `useModalStore` for loading states and notifications
+9. **Env vars**: Import from `@/constants/env`. NEVER `process.env` directly.
 
 ### Asset Pipeline
+
 - **SVG** -> React component `.tsx` in `src/assets/icons/` (Props: `SVGProps<SVGSVGElement>`, `memo()`, default export). Example: `src/assets/icons/GmailIcon.tsx`
 - **PNG/JPEG** -> WebP in `src/assets/images/`: `ffmpeg -i input.png -q:v 85 output.webp`
 - **Download from Figma MCP**: `curl -s "http://localhost:3845/assets/{hash}.{ext}" -o /tmp/{name}.{ext}`
@@ -357,9 +367,11 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 ## Swagger/OpenAPI-to-Code Workflow
 
 ### Slash Command
+
 - `/gen-from-spec {resource}` - Generate types + API client from an OpenAPI/Swagger spec
 
 ### Conventions
+
 - **Types**: `src/types/api/{resource}.ts` — use `interface` (not `type`), `Type` suffix for models
 - **API client**: `src/api/{resource}.ts` — ALWAYS use `customFetch` from `@/api/customFetch`
 - **SWR Hooks** (optional): `src/hooks/use{Resource}.ts` — `useSWR` pattern with API client functions
