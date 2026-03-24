@@ -42,7 +42,9 @@ interface ModalStore {
   closeModal: <K extends keyof ModalPayloads>(key: K) => void
   closeAllModals: () => void
 
-  notification: ToastMessage
+  notification: Omit<ToastMessage, 'severity'> & {
+    severity: Exclude<ToastMessage['severity'], 'secondary' | 'contrast'>
+  }
   setNotification: (notification: {
     severity: Exclude<ToastMessage['severity'], 'secondary' | 'contrast'>
     summary: ToastMessage['summary']
