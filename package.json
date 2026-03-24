@@ -24,7 +24,6 @@
   "dependencies": {
     "@microsoft/clarity": "1.0.2",
     "@sentry/nextjs": "10.44.0",
-    "classnames": "2.5.1",
     "dayjs": "1.11.20",
     "formik": "2.4.9",
     "framer-motion": "12.38.0",
