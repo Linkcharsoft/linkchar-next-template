@@ -109,8 +109,8 @@ export const customFetch = async <T extends object>({
       if (contentType && contentType.includes('application/json')) {
         data = await response.json()
       }
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
       throw new Error(AUTH_TOKEN_ERRORS['parse-response'])
     }
   }

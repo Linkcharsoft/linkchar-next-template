@@ -59,10 +59,11 @@ export async function proxy (req: NextRequest) {
     // ✅ If the user is authenticated and everything is fine, proceed with the request
     return NextResponse.next()
   } catch (error) {
+    const message = error instanceof Error ? error.message : AUTH_TOKEN_ERRORS.proxy
     const authErrors = Object.values(AUTH_TOKEN_ERRORS)
 
     // 🔄 If there is no token, redirect to login
-    if(authErrors.includes(error.message)) {
+    if(authErrors.includes(message)) {
       console.error('Middleware error:', error)
 
       if(!isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))

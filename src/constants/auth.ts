@@ -8,6 +8,7 @@ export const LISTENER_COOKIE_NAME = 'linkchar-listener'
 export const AUTH_BACKEND_EMAIL_ADDRESS = 'base@linkchar.com'
 
 export const AUTH_TOKEN_ERRORS = {
+  'proxy': 'Proxy error',
   'not-found': 'No session found',
   'invalid': 'Invalid session',
   'general': 'Failed to get session',
