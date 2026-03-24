@@ -10,7 +10,8 @@ const MAX_TIME_VALUE = 10
 const PRODUCT_NAME = 'Linkchar'
 
 
-// Borrar el contenido de este componente al desarrollar la app
+// Delete the contents of this component when developing the app and run this command:
+// pnpm remove three @types/three lenis
 const HomePage = () => {
   const containerRef = useRef<HTMLElement>(null)
   const scrollRef = useRef(null)
@@ -62,10 +63,10 @@ const HomePage = () => {
         private mouseX: number
         private mouseY: number
         private targetMousePos: { x: number, y: number }
-        private material: THREE.RawShaderMaterial
-        private planeGeometry: THREE.PlaneGeometry
-        private mat: THREE.MeshBasicMaterial
-        private plane: THREE.Mesh
+        private material!: THREE.RawShaderMaterial
+        private planeGeometry!: THREE.PlaneGeometry
+        private mat!: THREE.MeshBasicMaterial
+        private plane!: THREE.Mesh
 
         constructor (width: number, height: number) {
           this.renderer = new THREE.WebGLRenderer({
@@ -102,15 +103,15 @@ const HomePage = () => {
             vertexShader: vertexRef.current?.textContent,
             fragmentShader: fragmentRef.current?.textContent,
             uniforms: {
-              iTime: { type: 'f', value: 0 },
-              uHue: { type: 'f', value: .5 },
-              uHueVariation: { type: 'f', value: 1 },
-              uGradient: { type: 'f', value: 1 },
-              uDensity: { type: 'f', value: 1 },
-              uDisplacement: { type: 'f', value: 1 },
-              uMousePosition: { type: 'v2', value: new THREE.Vector2(1.5, 3.5) },
-              iResolution: { type: 'v2', value: new THREE.Vector2(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight) },
-              scroll: { type: 'f', value: 0 }
+              iTime: { value: 0 },
+              uHue: { value: .5 },
+              uHueVariation: { value: 1 },
+              uGradient: { value: 1 },
+              uDensity: { value: 1 },
+              uDisplacement: { value: 1 },
+              uMousePosition: { value: new THREE.Vector2(1.5, 3.5) },
+              iResolution: { value: new THREE.Vector2(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight) },
+              scroll: { value: 0 }
             }
           })
           this.planeGeometry = new THREE.PlaneGeometry(2, 4, 1, 1)
@@ -127,12 +128,12 @@ const HomePage = () => {
 
         render () {
           this.timer += 0.5
-          this.plane.material.uniforms.iTime.value = oscilateTime(this.timer / 300)
+          this.material.uniforms.iTime.value = oscilateTime(this.timer / 300)
           this.mousePos.x += (this.targetMousePos.x - this.mousePos.x) * .1
           this.mousePos.y += (this.targetMousePos.y - this.mousePos.y) * .1
 
           if (this.plane) {
-            this.plane.material.uniforms.uMousePosition.value = new THREE.Vector2(this.mousePos.x, this.mousePos.y)
+            this.material.uniforms.uMousePosition.value = new THREE.Vector2(this.mousePos.x, this.mousePos.y)
           }
 
           this.renderer.render(this.scene, this.camera)
@@ -159,7 +160,7 @@ const HomePage = () => {
           this.renderer.setSize(w, h)
           this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
           // this.renderer.setPixelRatio(0.3)
-          this.plane.material.uniforms.iResolution.value = new THREE.Vector2(w, h)
+          this.material.uniforms.iResolution.value = new THREE.Vector2(w, h)
         }
 
 
