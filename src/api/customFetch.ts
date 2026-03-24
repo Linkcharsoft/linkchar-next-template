@@ -86,7 +86,15 @@ export const customFetch = async <T extends object>({
 
       if(!newAccessToken) throw new Error(AUTH_TOKEN_ERRORS['no-refresh-token'])
 
-      return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers })
+      return await customFetch<T>({
+        path,
+        token: newAccessToken,
+        method,
+        body,
+        params,
+        headers,
+        _retryCount: _retryCount + 1
+      })
     } catch (error) {
       console.error(error)
       handleUnauthorizedLogout()
