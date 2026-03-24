@@ -103,7 +103,8 @@ const SignupPage = () => {
       } catch (error) {
         setGeneralError('An error occurred. Please try again.')
         // ! Sentry
-        console.error(`Error: ${error.message}`)
+        const message = error instanceof Error ? error.message : error
+        console.error(`Error: ${message}`)
       } finally {
         closeModal('loadingModal')
       }

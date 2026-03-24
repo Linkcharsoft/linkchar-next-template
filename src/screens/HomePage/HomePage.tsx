@@ -18,7 +18,7 @@ const HomePage = () => {
   const fragmentRef = useRef<HTMLScriptElement>(null)
 
 
-  function oscilateTime (time) {
+  function oscilateTime (time: number) {
     const boundedTime = time % (2 * MAX_TIME_VALUE)
     const oscillatingTime = boundedTime > MAX_TIME_VALUE ? 2 * MAX_TIME_VALUE - boundedTime : boundedTime
     return oscillatingTime
@@ -32,7 +32,7 @@ const HomePage = () => {
         wrapper: scrollRef.current
       })
 
-      const raf = (time) => {
+      const raf = (time: number) => {
         lenis.raf(time)
         requestAnimationFrame(raf)
       }
@@ -44,7 +44,7 @@ const HomePage = () => {
   // Background
   useEffect(() => {
     if (typeof window !== 'undefined' && containerRef.current && vertexRef.current && fragmentRef.current) {
-      let requestId
+      let requestId: number | undefined
       const windowHalfX = containerRef.current?.offsetWidth / 2
       const windowHalfY = containerRef.current?.offsetHeight / 2
 
@@ -67,7 +67,7 @@ const HomePage = () => {
         private mat: THREE.MeshBasicMaterial
         private plane: THREE.Mesh
 
-        constructor (width, height) {
+        constructor (width: number, height: number) {
           this.renderer = new THREE.WebGLRenderer({
             alpha: true,
             antialias: false
@@ -145,11 +145,13 @@ const HomePage = () => {
 
         // stop render
         stop () {
-          window.cancelAnimationFrame(requestId)
-          requestId = undefined
+          if(requestId) {
+            window.cancelAnimationFrame(requestId)
+            requestId = undefined
+          }
         }
 
-        updateSize (w, h) {
+        updateSize (w: number, h: number) {
           // Update camera
           this.camera.aspect = w / h
           this.camera.updateProjectionMatrix()
@@ -161,7 +163,7 @@ const HomePage = () => {
         }
 
 
-        mouseMove (mousePos) {
+        mouseMove (mousePos: { x: number, y: number, px: number, py: number }) {
           this.targetMousePos.x = mousePos.px
           this.targetMousePos.y = mousePos.py
           this.mouseX = (mousePos.x - windowHalfX) * 0.01
@@ -170,12 +172,12 @@ const HomePage = () => {
       }
 
       const mousePos = { x: 0, y: 0, px: 0, py: 0 }
-      let world
+      let world: World
 
       // let gui = new dat.GUI()
 
       const domIsReady = () => {
-        world = new World(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight)
+        world = new World(containerRef.current?.offsetWidth ?? 0, containerRef.current?.offsetHeight ?? 0)
         window.addEventListener('resize', handleWindowResize, false)
         document.addEventListener('mousemove', handleMouseMove, false)
         handleWindowResize()
@@ -183,10 +185,10 @@ const HomePage = () => {
       }
 
       const handleWindowResize = () => {
-        world.updateSize(containerRef.current?.offsetWidth, containerRef.current?.offsetHeight)
+        world.updateSize(containerRef.current?.offsetWidth ?? 0, containerRef.current?.offsetHeight ?? 0)
       }
 
-      const handleMouseMove = (e) => {
+      const handleMouseMove = (e: MouseEvent) => {
         mousePos.x = e.clientX
         mousePos.y = e.clientY
         mousePos.px = mousePos.x / (containerRef.current as HTMLElement)?.offsetWidth

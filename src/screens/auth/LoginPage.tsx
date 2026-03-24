@@ -99,7 +99,8 @@ const LoginPage = () => {
           password: AUTH_INPUT_ERRORS.general
         })
         // ! Sentry
-        console.error(`Error: ${error.message}`)
+        const message = error instanceof Error ? error.message : error
+        console.error(`Error: ${message}`)
       } finally {
         closeModal('loadingModal')
       }

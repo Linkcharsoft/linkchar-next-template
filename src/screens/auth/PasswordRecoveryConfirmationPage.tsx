@@ -129,7 +129,8 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
           life: 5000
         })
         // ! Sentry
-        console.error(`Error: ${error.message}`)
+        const message = error instanceof Error ? error.message : error
+        console.error(`Error: ${message}`)
       } finally {
         closeModal('loadingModal')
       }
