@@ -12,7 +12,7 @@ const usePressKey = (key: string, callback: () => void) => {
     return () => {
       window.removeEventListener('keydown', handlePressEnterKey)
     }
-  })
+  }, [key, callback])
 }
 
 export default usePressKey
