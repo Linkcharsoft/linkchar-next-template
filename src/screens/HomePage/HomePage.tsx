@@ -10,7 +10,7 @@ const PRODUCT_NAME = 'Linkchar'
 
 
 // Delete the contents of this component when developing the app and run this command:
-// pnpm remove three @types/three lenis
+// pnpm remove three @types/three
 const HomePage = () => {
   const containerRef = useRef<HTMLElement>(null)
   const vertexRef = useRef<HTMLScriptElement>(null)
