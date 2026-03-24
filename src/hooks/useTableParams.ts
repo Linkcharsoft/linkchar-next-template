@@ -233,7 +233,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
 
   // 3. Current params: (URL search params + Default params + Auto-Parsing)
   const PARAMS: ReturnedParams<DefaultParams> = useMemo(() => {
-    const currentParams: object = {}
+    const currentParams: Record<string, unknown> = {}
 
     Object.keys(DEFAULT_PARAMS).forEach((k) => {
       const defaultParam = DEFAULT_PARAMS[k]
