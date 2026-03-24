@@ -25,11 +25,11 @@ type FilterBase = {
 type SelectionMode<T> = {
   multiple?: false
   selected: T | undefined
-  onChange: (value: T | undefined) => void // TODO: Make the value returned by onChange infer the type based on options.value
+  onChange(value: T | undefined): void
 } | {
   multiple: true
   selected: T[]
-  onChange: (value: T[]) => void
+  onChange(value: T[]): void
 }
 
 type PillFilter = FilterBase & {

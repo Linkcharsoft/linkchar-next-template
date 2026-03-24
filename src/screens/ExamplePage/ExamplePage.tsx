@@ -17,8 +17,11 @@ import useModalStore from '@/stores/modalStore'
 import useUserStore from '@/stores/userStore'
 import type { FilterItem } from '@/components/Filters/Filters'
 
+interface Props {
+  searchParams: { [key: string]: string | string[] | undefined }
+}
 
-const ExamplePage = ({ searchParams }) => {
+const ExamplePage = ({ searchParams }: Props) => {
   const { setNotification, openModal } = useModalStore()
   const { token, user } = useUserStore()
   const router = useRouter()
@@ -272,6 +275,7 @@ const ExamplePage = ({ searchParams }) => {
     {
       type: 'date',
       title: 'Date - Unique Value',
+      multiple: false,
       selected: params['date-unique'],
       onChange: (value) => setParam('date-unique', value)
     }, {
