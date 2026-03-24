@@ -4,8 +4,15 @@ import { SESSION_COOKIE_NAME } from '@/constants/auth'
 import { AUTH_SECRET } from '@/constants/env'
 import type { SessionType } from '@/types/auth'
 
-if (!AUTH_SECRET) throw new Error('Missing AUTH_SECRET')
-if (AUTH_SECRET.length !== 32) throw new Error('AUTH_SECRET must be 32 characters long')
+const CRYPTO_ERRORS = {
+  'miss-secret': 'Missing encryption secret (AUTH_SECRET)',
+  'invalid-secret': 'Encryption secret (AUTH_SECRET) must be 32 characters long',
+  'encrypt-failed': 'Failed to encrypt session',
+  'decrypt-failed': 'Failed to decrypt session'
+}
+
+if (!AUTH_SECRET) throw new Error(CRYPTO_ERRORS['miss-secret'])
+if (AUTH_SECRET.length !== 32) throw new Error(CRYPTO_ERRORS['invalid-secret'])
 
 const ENCRYPTION_KEY = crypto.subtle.importKey(
   'raw',
@@ -33,7 +40,7 @@ export async function encryptSession (data: object): Promise<string> {
     const result = new Uint8Array([...iv, ...new Uint8Array(encrypted)])
     return Buffer.from(result).toString('base64')
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Failed to encrypt session')
+    throw new Error(error instanceof Error ? error.message : CRYPTO_ERRORS['encrypt-failed'])
   }
 }
 
@@ -53,13 +60,13 @@ export async function decryptSession (session: string): Promise<SessionType | nu
 
     return JSON.parse(new TextDecoder().decode(decrypted))
   } catch (error) {
-    if(error.message === 'The operation failed for an operation-specific reason') {
+    const message = error instanceof Error ? error.message : CRYPTO_ERRORS['decrypt-failed']
+
+    if(message === 'The operation failed for an operation-specific reason') {
       const cookieStore = await cookies()
       cookieStore.delete(SESSION_COOKIE_NAME)
-
-      throw new Error('Failed to decrypt session')
     }
 
-    throw new Error(error instanceof Error ? error.message : 'Failed to decrypt session')
+    throw new Error(message)
   }
 }
