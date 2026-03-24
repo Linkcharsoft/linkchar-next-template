@@ -3,7 +3,6 @@ import type { Route } from 'next'
 export const AUTHENTICATED_HOME_PATH: Route = '/dashboard'
 
 export const SESSION_COOKIE_NAME = 'linkchar-session'
-
 export const LISTENER_COOKIE_NAME = 'linkchar-listener'
 
 export const AUTH_BACKEND_EMAIL_ADDRESS = 'base@linkchar.com'
@@ -11,7 +10,10 @@ export const AUTH_BACKEND_EMAIL_ADDRESS = 'base@linkchar.com'
 export const AUTH_TOKEN_ERRORS = {
   'not-found': 'No session found',
   'invalid': 'Invalid session',
-  'general': 'Failed to get session'
+  'general': 'Failed to get session',
+  'parse-response': 'The response was not a JSON',
+  'refresh-token': 'Error refreshing token',
+  'no-refresh-token': 'No access token returned from refresh'
 }
 
 export const AUTH_INPUT_ERRORS = {

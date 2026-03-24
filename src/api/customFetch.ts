@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { AUTH_TOKEN_ERRORS } from '@/constants/auth'
 import { API_URL, DOMAIN } from '@/constants/env'
 
 type CustomFetchType = {
@@ -83,7 +84,7 @@ export const customFetch = async <T extends object>({
     try {
       const newAccessToken = await handleRefreshToken()
 
-      if(!newAccessToken) throw new Error('No access token returned from refresh')
+      if(!newAccessToken) throw new Error(AUTH_TOKEN_ERRORS['no-refresh-token'])
 
       return await customFetch<T>({ path, token: newAccessToken, method, body, params, headers })
     } catch (error) {
@@ -101,7 +102,8 @@ export const customFetch = async <T extends object>({
         data = await response.json()
       }
     } catch (e) {
-      console.error('The response was not a JSON', e)
+      console.error(e)
+      throw new Error(AUTH_TOKEN_ERRORS['parse-response'])
     }
   }
 
@@ -135,18 +137,18 @@ const handleRefreshToken = async (): Promise<string | undefined> => {
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
-      throw new Error(`Error refreshing token: ${data.message}`)
+      throw new Error(`${AUTH_TOKEN_ERRORS['refresh-token']}: ${data.message}`)
     }
 
     const data = await res.json()
 
     if (!data.token) {
-      throw new Error('Error refreshing token: No token in response')
+      throw new Error(`${AUTH_TOKEN_ERRORS['refresh-token']}: No token in response`)
     }
 
     return data.token
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Error refreshing token'
+    const message = error instanceof Error ? error.message : AUTH_TOKEN_ERRORS['refresh-token']
     throw new Error(message)
   }
 }
