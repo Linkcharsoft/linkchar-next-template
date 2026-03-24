@@ -1,4 +1,5 @@
 'use client'
+import './EmailValidationPage.sass'
 import Link from 'next/link'
 import { useIsClient } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/auth'

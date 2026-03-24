@@ -1,4 +1,5 @@
 'use client'
+import './ChangePasswordPage.sass'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'

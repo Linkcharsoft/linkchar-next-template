@@ -1,4 +1,5 @@
 'use client'
+import './ChangePasswordConfirmationPage.sass'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { Password } from 'primereact/password'
@@ -12,26 +13,27 @@ import PasswordValidation from '@/components/PasswordValidator/PasswordValidator
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
+import useUserStore from '@/stores/userStore'
 import validatePassword from '@/utils/validatePassword'
 
 
 type Props = {
-  token: string,
-  email: string
+  token: string
 }
 
-type RecoveryPasswordConfirmationFormikType = {
+type ChangePasswordConfirmationFormikType = {
   password: string
 }
 type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
-const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
+const ChangePasswordConfirmationPage = ({ token }: Props) => {
   const {
     openModal,
     closeModal,
     setNotification
   } = useModalStore()
+  const { user } = useUserStore()
   const isClient = useIsClient()
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
@@ -39,7 +41,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
   usePressKey('Enter', () => {
     if (tokenStatus === 'valid') {
-      recoveryConfirmationFormik.handleSubmit()
+      changeConfirmationFormik.handleSubmit()
     }
   })
 
@@ -53,7 +55,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
     const checkUrlToken = async () => {
       const { ok } = await checkPasswordToken({
-        email,
+        email: user?.email as string,
         token
       })
 
@@ -66,11 +68,11 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
       closeModal('loadingModal')
     }
 
-    checkUrlToken()
-  }, [])
+    if(user) checkUrlToken()
+  }, [user])
 
 
-  const recoveryConfirmationFormik = useFormik<RecoveryPasswordConfirmationFormikType>({
+  const changeConfirmationFormik = useFormik<ChangePasswordConfirmationFormikType>({
     initialValues: {
       password: ''
     },
@@ -103,7 +105,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
       try {
         const { ok } = await passwordConfirm({
           token,
-          email,
+          email: user?.email as string,
           password
         })
 
@@ -111,10 +113,10 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
           setNotification({
             severity: 'success',
             summary: 'Password changed successfully!',
-            detail: 'Redirecting to login page...'
+            detail: 'Redirecting to home page...'
           })
 
-          setTimeout(() => router.replace('/login'), 1000)
+          setTimeout(() => router.replace('/'), 3000)
         } else {
           setNotification({
             severity: 'error',
@@ -129,8 +131,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
           life: 5000
         })
         // ! Sentry
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        console.error(`Error: ${error}`)
       } finally {
         closeModal('loadingModal')
       }
@@ -147,27 +148,25 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
         onSubmit={e => {
           e.preventDefault()
           if(tokenStatus === 'valid') {
-            recoveryConfirmationFormik.handleSubmit()
+            changeConfirmationFormik.handleSubmit()
           }
         }}
       >
         <h1 className="AuthLayout__Title">
-          Password recovery
+          Change password
         </h1>
 
         {(tokenStatus === 'invalid') && (
           <>
             <i className="pi pi-exclamation-triangle text-center text-48 text-orange-600"/>
 
-            <div className="flex flex-col gap-4">
-              <p className="text-regular-16 text-center text-surface-800">
-                The link you&apos;ve used is no longer available
-              </p>
-            </div>
+            <p className="text-regular-16 text-center text-surface-800">
+              The link you&apos;ve used is no longer available
+            </p>
 
             <CustomButton
               className="w-full"
-              href='/password-recovery'
+              href='/change-password'
               replace
               type='button'
             >
@@ -182,15 +181,15 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
               <InputContainer
                 label='New password'
                 htmlFor='password'
-                error={recoveryConfirmationFormik.errors.password}
+                error={changeConfirmationFormik.errors.password}
               >
                 <Password
                   name="password"
                   id="password"
+                  onChange={changeConfirmationFormik.handleChange}
+                  value={changeConfirmationFormik.values.password}
+                  invalid={Boolean(changeConfirmationFormik.errors.password)}
                   placeholder="Type your new password"
-                  value={recoveryConfirmationFormik.values.password}
-                  onChange={recoveryConfirmationFormik.handleChange}
-                  invalid={Boolean(recoveryConfirmationFormik.errors.password)}
                   autoComplete="current-password"
                   toggleMask
                   feedback={false}
@@ -199,19 +198,19 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
                       className: 'w-full'
                     }
                   }}
-                  disabled={recoveryConfirmationFormik.isSubmitting}
-                  aria-disabled={recoveryConfirmationFormik.isSubmitting}
+                  disabled={changeConfirmationFormik.isSubmitting}
+                  aria-disabled={changeConfirmationFormik.isSubmitting}
                 />
               </InputContainer>
 
-              <PasswordValidation password={recoveryConfirmationFormik.values.password}/>
+              <PasswordValidation password={changeConfirmationFormik.values.password}/>
             </div>
 
             <CustomButton
               className="w-full"
               type='submit'
-              disabled={recoveryConfirmationFormik.isSubmitting}
-              aria-disabled={recoveryConfirmationFormik.isSubmitting}
+              disabled={changeConfirmationFormik.isSubmitting}
+              aria-disabled={changeConfirmationFormik.isSubmitting}
             >
               Change password
             </CustomButton>
@@ -222,4 +221,4 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   )
 }
 
-export default PasswordRecoveryConfirmationPage
+export default ChangePasswordConfirmationPage

@@ -1,4 +1,5 @@
 'use client'
+import './PasswordRecoveryPage.sass'
 import { useFormik } from 'formik'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'

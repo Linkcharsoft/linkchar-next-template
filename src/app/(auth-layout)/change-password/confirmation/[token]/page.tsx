@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import ChangePasswordConfirmationPage from '@/screens/auth/ChangePasswordConfirmationPage'
+import ChangePasswordConfirmationPage from '@/screens/auth/ChangePasswordConfirmationPage/ChangePasswordConfirmationPage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

@@ -1,4 +1,4 @@
-import PasswordRecoveryPage from '@/screens/auth/PasswordRecoveryPage'
+import PasswordRecoveryPage from '@/screens/auth/PasswordRecoveryPage/PasswordRecoveryPage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

@@ -1,4 +1,4 @@
-import SignupPage from '@/screens/auth/SignupPage'
+import SignupPage from '@/screens/auth/SignupPage/SignupPage'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {

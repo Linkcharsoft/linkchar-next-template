@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import EmailValidationPage from '@/screens/auth/EmailValidationPage'
+import EmailValidationPage from '@/screens/auth/EmailValidationPage/EmailValidationPage'
 import validateEmail from '@/utils/validateEmail'
 import type { Metadata } from 'next'
 

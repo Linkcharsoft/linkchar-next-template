@@ -1,4 +1,5 @@
 'use client'
+import './SignupPage.sass'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
