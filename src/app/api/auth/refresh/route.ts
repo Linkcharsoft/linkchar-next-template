@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { refreshToken } from '@/api/auth'
-import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_ERRORS } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 import { encryptSession } from '@/utils/crypto'
 import type { SessionType } from '@/types/auth'
@@ -58,13 +58,13 @@ export async function POST () {
         status: 200
       })
     } else {
-      throw new Error('Error refreshing token')
+      throw new Error(AUTH_ERRORS['refresh-token'])
     }
   } catch (error) {
-    return NextResponse.json({
-      message: error.message
-    }, {
-      status: 401
-    })
+    const message = error instanceof Error ? error.message : AUTH_ERRORS['refresh-token']
+    return NextResponse.json(
+      { message },
+      { status: 401 }
+    )
   }
 }

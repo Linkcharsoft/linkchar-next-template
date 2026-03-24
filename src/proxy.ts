@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_TOKEN_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import { getAccessToken } from '@/utils/auth'
 import type { NextRequest } from 'next/server'
 
@@ -59,8 +59,8 @@ export async function proxy (req: NextRequest) {
     // ✅ If the user is authenticated and everything is fine, proceed with the request
     return NextResponse.next()
   } catch (error) {
-    const message = error instanceof Error ? error.message : AUTH_TOKEN_ERRORS.proxy
-    const authErrors = Object.values(AUTH_TOKEN_ERRORS)
+    const message = error instanceof Error ? error.message : AUTH_ERRORS.proxy
+    const authErrors = Object.values(AUTH_ERRORS)
 
     // 🔄 If there is no token, redirect to login
     if(authErrors.includes(message)) {

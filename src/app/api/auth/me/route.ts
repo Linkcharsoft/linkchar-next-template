@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getMyUser } from '@/api/auth'
+import { AUTH_ERRORS } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 
 export async function GET () {
@@ -13,10 +14,10 @@ export async function GET () {
         status: 200
       })
     } else {
-      throw new Error('User not found')
+      throw new Error(AUTH_ERRORS['user-not-found'])
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error'
+    const message = error instanceof Error ? error.message : AUTH_ERRORS['user-not-found']
     return NextResponse.json(
       { message },
       { status: 400 }

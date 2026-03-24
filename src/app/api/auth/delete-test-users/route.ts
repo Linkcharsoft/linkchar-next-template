@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { AUTH_ERRORS } from '@/constants/auth'
 import { API_URL } from '@/constants/env'
 
 export async function DELETE () {
@@ -14,10 +15,10 @@ export async function DELETE () {
         status: 200
       })
     } else {
-      throw new Error('Test users not deleted')
+      throw new Error(AUTH_ERRORS['delete-test-users'])
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error'
+    const message = error instanceof Error ? error.message : AUTH_ERRORS['delete-test-users']
     return NextResponse.json(
       { message },
       { status: 400 }

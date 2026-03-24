@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { login } from '@/api/auth'
-import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_ERRORS } from '@/constants/auth'
 import { encryptSession } from '@/utils/crypto'
 import type { SessionType } from '@/types/auth'
 import type { NextRequest } from 'next/server'
@@ -25,7 +25,7 @@ export async function POST (req: NextRequest) {
       // Returns error if key session data is missing
       if(Object.values(session).some(value => value === undefined)) {
         return NextResponse.json({
-          message: 'Invalid session'
+          message: AUTH_ERRORS['session-invalid']
         }, {
           status: 400
         })
@@ -69,7 +69,7 @@ export async function POST (req: NextRequest) {
       })
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error'
+    const message = error instanceof Error ? error.message : AUTH_ERRORS.login
     return NextResponse.json(
       { message },
       { status: 400 }

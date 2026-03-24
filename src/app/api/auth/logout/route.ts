@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { logout } from '@/api/auth'
-import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
+import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_ERRORS } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 
 export async function POST () {
@@ -20,10 +20,10 @@ export async function POST () {
         status: 200
       })
     } else {
-      throw new Error('Logout failed')
+      throw new Error(AUTH_ERRORS.logout)
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error'
+    const message = error instanceof Error ? error.message : AUTH_ERRORS.logout
     return NextResponse.json(
       { message },
       { status: 400 }
