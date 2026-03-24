@@ -103,14 +103,14 @@ importers:
         specifier: 1.0.0
         version: 1.0.0
       cypress:
-        specifier: 15.12.0
-        version: 15.12.0
+        specifier: 15.13.0
+        version: 15.13.0
       cypress-dotenv:
         specifier: 3.0.1
-        version: 3.0.1(cypress@15.12.0)(dotenv@17.3.1)
+        version: 3.0.1(cypress@15.13.0)(dotenv@17.3.1)
       cypress-file-upload:
         specifier: 5.0.8
-        version: 5.0.8(cypress@15.12.0)
+        version: 5.0.8(cypress@15.13.0)
       cypress-mailslurp:
         specifier: 1.11.1
         version: 1.11.1
@@ -127,8 +127,8 @@ importers:
         specifier: 4.4.4
         version: 4.4.4(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@1.21.7))
       eslint-plugin-cypress:
-        specifier: 6.2.0
-        version: 6.2.0(eslint@9.39.4(jiti@1.21.7))
+        specifier: 6.2.1
+        version: 6.2.1(eslint@9.39.4(jiti@1.21.7))
       eslint-plugin-import:
         specifier: 2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.57.2(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.4)(eslint@9.39.4(jiti@1.21.7))
@@ -1963,8 +1963,8 @@ packages:
     resolution: {integrity: sha512-Zi55PF4tJFMnKDC3zlDNs41wlIoWsY2/HrkLYVoCOhFb3dHfS6uUyxsol+vDfQV99NYl6BzaK+SriqB5EBMj+Q==}
     engines: {node: '>=10'}
 
-  cypress@15.12.0:
-    resolution: {integrity: sha512-B2BRcudLfA4NZZP5QpA45J70bu1heCH59V1yKRLHAtiC49r7RV03X5ifUh7Nfbk8QNg93RAsc6oAmodm/+j0pA==}
+  cypress@15.13.0:
+    resolution: {integrity: sha512-hJ9sY++TUC/HlUzHVJpIrDyqKMjlhx5PTXl/A7eA91JNEtUWkJAqefQR5mo9AtLra/9+m+JJaMg2U5Qd0a74Fw==}
     engines: {node: ^20.1.0 || ^22.0.0 || >=24.0.0}
     hasBin: true
 
@@ -2211,8 +2211,8 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
 
-  eslint-plugin-cypress@6.2.0:
-    resolution: {integrity: sha512-G/8XT9Si0GaqGRVM0sgnRACCI9mbzsC4CisvaaiuJlQoCseKz6C51kq5fcC/yKmwO4dTsWCdhbgaiQtZFGSONg==}
+  eslint-plugin-cypress@6.2.1:
+    resolution: {integrity: sha512-pbjvNE2GKG3hlerT3SIQcRnsMfzFnpAyg0V17D+Gm/a18cxBOVLUxWWANAs7LzykdTPn+SKgzczhF0+IODFs7w==}
     peerDependencies:
       eslint: '>=9'
 
@@ -5849,19 +5849,19 @@ snapshots:
 
   csstype@3.2.3: {}
 
-  cypress-dotenv@3.0.1(cypress@15.12.0)(dotenv@17.3.1):
+  cypress-dotenv@3.0.1(cypress@15.13.0)(dotenv@17.3.1):
     dependencies:
       camelcase: 6.3.0
-      cypress: 15.12.0
+      cypress: 15.13.0
       dotenv: 17.3.1
       dotenv-parse-variables: 2.0.0
       lodash.clonedeep: 4.5.0
     transitivePeerDependencies:
       - supports-color
 
-  cypress-file-upload@5.0.8(cypress@15.12.0):
+  cypress-file-upload@5.0.8(cypress@15.13.0):
     dependencies:
-      cypress: 15.12.0
+      cypress: 15.13.0
 
   cypress-mailslurp@1.11.1:
     dependencies:
@@ -5869,7 +5869,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  cypress@15.12.0:
+  cypress@15.13.0:
     dependencies:
       '@cypress/request': 3.0.10
       '@cypress/xvfb': 1.2.4(supports-color@8.1.1)
@@ -6233,7 +6233,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-cypress@6.2.0(eslint@9.39.4(jiti@1.21.7)):
+  eslint-plugin-cypress@6.2.1(eslint@9.39.4(jiti@1.21.7)):
     dependencies:
       eslint: 9.39.4(jiti@1.21.7)
       globals: 17.4.0
