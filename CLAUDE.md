@@ -108,8 +108,6 @@ The `.sass` file is imported directly in the `.tsx` file via `import './Componen
 ```tsx
 'use client' // Only if it uses hooks, events, or browser APIs
 import './ComponentName.sass' // Colocated styles
-import { memo } from 'react'
-
 interface Props {
   // Props interface defined inline, NOT exported unless needed elsewhere
 }
@@ -122,13 +120,12 @@ const ComponentName = ({ prop1, prop2 }: Props) => {
   )
 }
 
-export default memo(ComponentName) // Wrap with memo for reusable components
+export default ComponentName
 ```
 
 ### Key Patterns
 
 - **`'use client'`**: Only add when the component uses hooks, event handlers, or browser APIs
-- **`memo()`**: Wrap reusable components with `memo` for performance
 - **Default exports**: Every component/hook/store uses `export default`
 - **Path alias**: Always use `@/` for imports from `src/` (e.g., `@/components/CustomButton/CustomButton`)
 - **Type imports**: Use `import type { X }` for type-only imports (enforced by ESLint)
