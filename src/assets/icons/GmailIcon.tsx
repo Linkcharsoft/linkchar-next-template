@@ -1,4 +1,3 @@
-import { memo } from 'react'
 import type { SVGProps } from 'react'
 
 const GmailIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -33,4 +32,4 @@ const GmailIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
-export default memo(GmailIcon)
+export default GmailIcon

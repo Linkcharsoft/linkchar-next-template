@@ -1,4 +1,3 @@
-import { memo } from 'react'
 import type { SVGProps } from 'react'
 
 const OutlookIcon = (props: SVGProps<SVGSVGElement>) => (
@@ -25,4 +24,4 @@ const OutlookIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 )
 
-export default memo(OutlookIcon)
+export default OutlookIcon

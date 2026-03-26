@@ -1,7 +1,6 @@
 'use client'
 import './LoadingModal.sass'
 import { AnimatePresence, m } from 'framer-motion'
-import { memo } from 'react'
 import useModalStore from '@/stores/modalStore'
 import Loader from '../../Loader/Loader'
 
@@ -46,4 +45,4 @@ const LoadingModal = () => {
   )
 }
 
-export default memo(LoadingModal)
+export default LoadingModal

@@ -3,7 +3,6 @@ import './CustomButton.sass'
 import Link from 'next/link'
 import { Button } from 'primereact/button'
 import { classNames } from 'primereact/utils'
-import { memo } from 'react'
 import { Tooltip } from 'react-tooltip'
 import type { StateTypes } from '@/types/general'
 import type { Route } from 'next'
@@ -93,4 +92,4 @@ const CustomButton = ({
   )
 }
 
-export default memo(CustomButton)
+export default CustomButton

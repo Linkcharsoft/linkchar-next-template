@@ -3,7 +3,7 @@ import './SearchInput.sass'
 import { IconField } from 'primereact/iconfield'
 import { InputIcon } from 'primereact/inputicon'
 import { InputText } from 'primereact/inputtext'
-import { memo, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 
 interface Props {
@@ -66,4 +66,4 @@ const SearchInput = ({
   )
 }
 
-export default memo(SearchInput)
+export default SearchInput

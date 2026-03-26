@@ -1,5 +1,4 @@
 import './InputContainer.sass'
-import { memo } from 'react'
 import Label from '../../Label/Label'
 import InputError from '../InputError/InputError'
 import type { ReactNode } from 'react'
@@ -26,4 +25,4 @@ const InputContainer = ({
   )
 }
 
-export default memo(InputContainer)
+export default InputContainer

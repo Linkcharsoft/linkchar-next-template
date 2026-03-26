@@ -1,6 +1,5 @@
 import './PasswordValidator.sass'
 import { classNames } from 'primereact/utils'
-import { memo } from 'react'
 import validatePassword from '@/utils/validatePassword'
 
 interface Props {
@@ -33,4 +32,4 @@ const PasswordValidator = ({ password }: Props) => {
   )
 }
 
-export default memo(PasswordValidator)
+export default PasswordValidator

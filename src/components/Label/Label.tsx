@@ -1,5 +1,4 @@
 import './Label.sass'
-import { memo } from 'react'
 import type { HTMLProps } from 'react'
 
 const Label = (props: HTMLProps<HTMLLabelElement>) => {
@@ -13,4 +12,4 @@ const Label = (props: HTMLProps<HTMLLabelElement>) => {
   )
 }
 
-export default memo(Label)
+export default Label
