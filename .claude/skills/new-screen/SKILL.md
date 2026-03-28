@@ -18,9 +18,11 @@ Examples:
 
 ---
 
-## Step 0 — Read proxy.ts first
+## Step 0 — Read proxy.ts first and check for existing pages
 
 Before creating anything, read `src/proxy.ts` to understand the current `AUTH_PATHS` and `PUBLIC_PATHS` sets. You will need this to decide if proxy.ts needs to be updated.
+
+If a matching page already exists, **stop and tell the user** which page they should reuse or extend instead.
 
 ---
 
@@ -36,7 +38,7 @@ The page type determines where files go and whether `src/proxy.ts` needs updatin
 
 ### `auth`
 
-- Screen: `src/screens/auth/ScreenName.tsx` (flat file inside `src/screens/auth/`, no subfolder, no `.sass`)
+- Screen: `src/screens/auth/ScreenName/ScreenName.tsx` + `src/screens/auth/ScreenName/ScreenName.sass`
 - Page: `src/app/(auth-layout)/{route}/page.tsx`
 - proxy.ts: **add to `AUTH_PATHS`** only if the route is NOT already covered by an existing `pathname.includes(path)` check. For example, `/signup/confirm` is already covered by `/signup`. Check before adding.
 
@@ -132,28 +134,41 @@ export default ScreenName
 
 Rules for all screen types:
 - Always `'use client'` (screens use hooks)
-- NO `memo()` — screens are not reused as props
 - Root element is `<main>`
 - Protected/public use `.ScreenName` BEM root class; auth uses `.AuthLayout`
 - No `export const metadata` — metadata belongs in `page.tsx` only
-- Single quotes, no semicolons, 2-space indentation
-- `import type { X }` for type-only imports
 
 ---
 
-## Step 4 — Create the `.sass` file (protected and public only)
+## Step 4 — Create the `.sass` file
 
-Create an empty `src/screens/ScreenName/ScreenName.sass`.
+Create an empty `src/screens/ScreenName/ScreenName.sass` (protected and public) or `src/screens/auth/ScreenName/ScreenName.sass` (auth).
 
-Only add styles if Tailwind truly cannot cover the requirement. Use `.sass` indented syntax (no `{}`, no `;`) with BEM naming.
+Only add styles if Tailwind truly cannot cover the requirement or if the number of Tailwind classes is excessive.
 
-Auth screens do NOT get a `.sass` file — they share `AuthLayout.sass`.
+If styles are needed, use `.sass` indented syntax (no curly braces, no semicolons) with BEM:
+```sass
+.ModalName
+  // styles
+
+  &__Element
+    // styles
+
+  &--Modifier
+    // styles
+
+  &__Element--Modifier
+    // styles
+```
+
+Note that auth screens generally share their styles through the `src/layouts/AuthLayout`
 
 ---
 
 ## Step 5 — Create the `page.tsx` wrapper
 
 The page is a **thin wrapper only** — no logic, no UI.
+It only serves to manage the metadata and the parameters returned by Next.js (segmentName, searchParams, etc.)
 
 ### Protected page (`src/app/{route}/page.tsx`)
 
@@ -206,7 +221,7 @@ export default Page
 ### Auth page (`src/app/(auth-layout)/{route}/page.tsx`)
 
 ```tsx
-import ScreenName from '@/screens/auth/ScreenName'
+import ScreenName from '@/screens/auth/ScreenName/ScreenName'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -240,17 +255,11 @@ After all files are created/updated, show:
 
 ---
 
-## Conventions checklist
+## Step 7 — Validate
 
-Before finishing, verify:
-- [ ] Screen name ends in `Page`
-- [ ] Single quotes, no semicolons, 2-space indentation
-- [ ] `import type { X }` for type-only imports
-- [ ] `metadata` includes both `title` and `alternates.canonical`
-- [ ] Protected page is `async` and awaits `searchParams`
-- [ ] Public route added to `PUBLIC_PATHS` in proxy.ts (if public)
-- [ ] Auth route added to `AUTH_PATHS` in proxy.ts only if not already covered (if auth)
-- [ ] No `memo()` on screen components
-- [ ] No `process.env` — env vars from `@/constants/env`
-- [ ] `.sass` uses indented syntax (no `{}`, no `;`)
-- [ ] Auth screen is a flat file in `src/screens/auth/` (no subfolder)
+Run these commands and fix any errors before finishing:
+
+```bash
+pnpm run lint-check --fix
+pnpm run type-check
+```

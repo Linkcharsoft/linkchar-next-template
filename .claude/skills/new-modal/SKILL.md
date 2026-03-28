@@ -11,19 +11,22 @@ Derive from the name:
 
 ---
 
-## Step 1 — Read existing files first
+## Step 0 — Read existing files first and check for existing modals
 
-Before writing anything, read these files to understand the exact current state:
+Before creating anything, read these files to understand the exact current state:
 - `src/stores/modalStore.ts`
 - `src/providers/ModalsProvider.tsx`
+And check the existing modals by scanning `src/components/modals`.
+
+If a similar modal already exists, **stop and tell the user** which modal they should reuse or extend instead.
 
 ---
 
-## Step 2 — Update `src/stores/modalStore.ts`
+## Step 1 — Update `src/stores/modalStore.ts`
 
 Make three additions to the existing file (do NOT rewrite it, use Edit):
 
-**2a. Add the modal type** — after the existing modal types block, add:
+**1a. Add the modal type** — after the existing modal types block, add:
 ```ts
 type ModalName = {
   // Define the props this modal needs
@@ -31,20 +34,16 @@ type ModalName = {
 }
 ```
 
-**2b. Add to `ModalPayloads`** — add a new entry:
+**1b. Add to `ModalPayloads`** — add a new entry:
 ```ts
 type ModalPayloads = {
-  loadingModal: LoadingModal
-  stateModal: StateModal
   modalKey: ModalName   // ← add this
 }
 ```
 
-**2c. Add to `initialModals`** — add a new entry with `show: false` and all fields initialized to empty/default values:
+**1c. Add to `initialModals`** — add a new entry with `show: false` and all fields initialized to empty/default values:
 ```ts
 const initialModals: ModalStateMap = {
-  loadingModal: { ... },
-  stateModal: { ... },
   modalKey: {           // ← add this
     show: false,
     // all fields initialized
@@ -54,7 +53,7 @@ const initialModals: ModalStateMap = {
 
 ---
 
-## Step 3 — Create the modal component
+## Step 2 — Create the modal component
 
 Create two files:
 
@@ -70,17 +69,34 @@ Follow the exact pattern of `src/components/modals/StateModal/StateModal.tsx`:
 - Use `CustomButton` (not native `<button>`) for actions
 - Use `classNames` from `primereact/utils` for conditional classes (never `clsx`)
 - Use Tailwind utilities for layout (flex, gap, padding). SASS only if truly needed.
-- Typography: `text-bold-24`, `text-medium-16`, etc. (never `text-xl`, `font-bold`)
-- Icons: PrimeIcons `pi pi-xxx` (never inline SVGs)
-- Do NOT use `memo()` — modal components are registered once, not reused as props
+- Typography: `text-{weight}-{size}` (e.g. `text-bold-24`).
+- Colors: `surface-50` to `surface-900` for grays. Semantic Tailwind defaults for others
+- Icons: PrimeIcons `pi pi-xxx` for icons (never inline SVGs if an icon exists)
 
 **`src/components/modals/ModalName/ModalName.sass`**
 
-Create an empty file (or add styles only if Tailwind cannot cover the requirement).
+Create an empty `.sass` file.
+
+Only add styles if Tailwind truly cannot cover the requirement or if the number of Tailwind classes is excessive.
+
+If styles are needed, use `.sass` indented syntax (no curly braces, no semicolons) with BEM:
+```sass
+.ModalName
+  // styles
+
+  &__Element
+    // styles
+
+  &--Modifier
+    // styles
+
+  &__Element--Modifier
+    // styles
+```
 
 ---
 
-## Step 4 — Register in `src/providers/ModalsProvider.tsx`
+## Step 3 — Register in `src/providers/ModalsProvider.tsx`
 
 Add the import and render the component:
 
@@ -90,8 +106,6 @@ import ModalName from '@/components/modals/ModalName/ModalName'
 const ModalsProvider = () => {
   return (
     <>
-      <ToastNotifications/>
-      <StateModal/>
       <ModalName/>   {/* ← add this */}
     </>
   )
@@ -100,7 +114,7 @@ const ModalsProvider = () => {
 
 ---
 
-## Step 5 — Show usage example
+## Step 4 — Show usage example
 
 After all files are created, show a short usage example in the chat:
 
@@ -118,12 +132,12 @@ closeModal('modalKey')
 
 ---
 
-## Conventions checklist
+## Step 5 — Validate
 
-Before finishing, verify:
-- [ ] Single quotes everywhere, no semicolons, 2-space indentation
-- [ ] `import type { X }` for type-only imports
-- [ ] No `process.env` — env vars from `@/constants/env`
-- [ ] No `motion` from framer-motion (use `m` + `LazyMotion` if animations needed)
-- [ ] `classNames()` from `primereact/utils` for conditional classes
-- [ ] Typography uses `text-{weight}-{size}` pattern
+Run these commands and fix any errors before finishing:
+
+```bash
+pnpm run lint-check --fix
+pnpm run type-check
+```
+

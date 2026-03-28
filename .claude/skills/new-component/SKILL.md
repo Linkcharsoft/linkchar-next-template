@@ -7,14 +7,17 @@ Create a new reusable component. Arguments: **$ARGUMENTS**
 
 Parse the arguments:
 - First word = `ComponentName` (must be PascalCase)
-- If the word `client` appears → add `'use client'` directive
-- Anything after the component name that isn't `client` = ignore
+- Second word = Next.js component type: `client` | `server` (default: `server`)
+
+Examples:
+- `Button client`
+- `Tag server`
 
 ---
 
 ## Step 0 — Check for existing components
 
-Before creating anything, check the existing components table in CLAUDE.md and scan `src/components/` with a Glob.
+Before creating anything, check the existing components by scanning `src/components/`.
 
 If a similar component already exists, **stop and tell the user** which component they should reuse or extend instead.
 
@@ -25,10 +28,9 @@ If a similar component already exists, **stop and tell the user** which componen
 Follow this exact template. Adapt only what's in angle brackets:
 
 ```tsx
-// Include 'use client' ONLY if the `client` argument was passed
+// Include 'use client' ONLY if the component type is `client`
 'use client'
 import './ComponentName.sass'
-import { memo } from 'react'
 
 interface Props {
   // Define props here — do NOT export this interface unless needed elsewhere
@@ -42,27 +44,26 @@ const ComponentName = ({}: Props) => {
   )
 }
 
-export default memo(ComponentName)
+export default ComponentName
 ```
 
 Rules:
-- `'use client'` → only if `client` argument was passed
-- `memo()` → always wrap the export
+- `'use client'` → if the component type is `client`
+- Import `./ComponentName.sass`
+- No `process.env` — env vars from `@/constants/env`
 - Props interface → inline, not exported unless another file will import it
 - BEM root class → `.ComponentName` (matches the component name exactly)
-- Single quotes, no semicolons, 2-space indentation
-- `import type { X }` for type-only imports
-- `classNames()` from `primereact/utils` for conditional classes (never `clsx`)
-- `m` from framer-motion + `LazyMotion` if animations needed (never `motion`)
-- PrimeIcons `pi pi-xxx` for icons (never inline SVGs if an icon exists)
-- Typography: `text-{weight}-{size}` (e.g. `text-bold-24`). Never `text-xl`, `font-bold`
+- `classNames()` from `primereact/utils` for conditional classes
+- Sass Preprocessor: `.sass` uses indented syntax (no `{}`, no `;`)
+- Typography: `text-{weight}-{size}` (e.g. `text-bold-24`).
 - Colors: `surface-50` to `surface-900` for grays. Semantic Tailwind defaults for others
+- Icons: PrimeIcons `pi pi-xxx` for icons (never inline SVGs if an icon exists)
 
 ---
 
 ## Step 2 — Create `src/components/ComponentName/ComponentName.sass`
 
-Create an empty `.sass` file. Only add styles if Tailwind truly cannot cover the requirement.
+Create an empty `.sass` file. Only add styles if Tailwind truly cannot cover the requirement or if the number of Tailwind classes is excessive.
 
 If styles are needed, use `.sass` indented syntax (no curly braces, no semicolons) with BEM:
 ```sass
@@ -74,30 +75,19 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
 
   &--Modifier
     // styles
+
+  &__Element--Modifier
+    // styles
 ```
 
 ---
 
-## Step 3 — Show usage
+## Step 3 — Validate
 
-After creating both files, show a short example of how to import and use the component:
+Run these commands and fix any errors before finishing:
 
-```tsx
-import ComponentName from '@/components/ComponentName/ComponentName'
-
-<ComponentName />
+```bash
+pnpm run lint-check --fix
+pnpm run type-check
 ```
 
----
-
-## Conventions checklist
-
-Before finishing, verify:
-- [ ] Single quotes everywhere, no semicolons, 2-space indentation
-- [ ] `import type { X }` for type-only imports
-- [ ] `memo()` wraps the default export
-- [ ] `'use client'` present only if `client` argument was passed
-- [ ] No `motion` (use `m` + `LazyMotion`)
-- [ ] `classNames()` from `primereact/utils` for conditional classes
-- [ ] Typography uses `text-{weight}-{size}` pattern
-- [ ] `.sass` uses indented syntax (no `{}`, no `;`)
