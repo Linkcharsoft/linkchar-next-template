@@ -1,295 +1,214 @@
-# README Index
+# Linkchar Next Template
 
-1. [Getting Started](#getting-started)
-2. [General Information](#general-information)
-   - [Template Functionalities](#template-functionalities)
-   - [Libraries Included](#libraries-included)
-3. [About the Template](#about-the-template)
-4. [About NextAuth](#about-nextauth)
-   - [NextAuth Configuration](#nextauth-configuration)
-   - [NextAuth Providers](#nextauth-providers)
-   - [NextAuth Callbacks](#nextauth-callbacks)
-   - [NextAuth Session](#nextauth-session)
-5. [Middleware](#middleware)
-6. [Cypress E2E Testing](#cypress-e2e-testing)
-   - [Project Structure](#project-structure)
-   - [Additional Libraries](#additional-libraries)
-   - [E2E Test Example](#e2e-test-example)
-   - [Navigation and Route Protection Test Example](#navigation-and-route-protection-test-example)
-7. [Standard Date Format - dayjs](#standard-date-format---dayjs)
-   - [Import and Configure the Plugin](#import-and-configure-the-plugin)
-   - [Usage Examples](#usage-examples)
-   - [Converting a Local Date to UTC](#converting-a-local-date-to-utc)
-   - [Formatting UTC Dates](#formatting-utc-dates)
-8. [Using dimensions for responsive design](#using-dimensions-for-responsive-design)
-   - [Differences Between vh, dvh, and svh](#differences-between-vh-dvh-and-svh)
+Production-ready Next.js starter template by **Linkchar**, pre-configured with a robust tech stack, strict conventions, and scalable architecture. Includes a complete authentication flow, route protection, error tracking, and analytics out of the box.
 
-<hr>
+## Tech Stack
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+| Category | Technology |
+| --- | --- |
+| Framework | Next.js 16 (App Router) + React 19 + React Compiler + TypeScript |
+| Styling | Tailwind CSS 3 + SASS (indented `.sass` syntax) |
+| UI Library | PrimeReact 10 + PrimeIcons 7 |
+| State Management | Zustand 5 |
+| Forms | Formik + Yup |
+| Animations | Framer Motion (`LazyMotion` + `m`) |
+| 3D | Three.js |
+| Data Fetching | SWR + custom `customFetch` wrapper |
+| Auth | JWT sessions encrypted with AES-GCM via `jose` + Web Crypto API |
+| Error Tracking | Sentry (session replays, performance monitoring, source maps) |
+| Analytics | Microsoft Clarity |
+| Testing | Cypress 15 (E2E) |
+| Linting | ESLint 9 (flat config) + Husky git hooks |
+| Package Manager | pnpm (>=10.30.0) |
+| Node | ^22.22.0 |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js ^22.22.0
+- pnpm >=10.30.0
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+pnpm install
 ```
 
-## General information
+### Environment Variables
 
-This template includes the following functionalities:
+Copy the example file and fill in the required values:
 
-- Login
-- Signup
-- Email validation
-- Password recovery
-- Change password
-
-And the next libraries:
-
-- Next.js
-- Tailwind CSS
-- PrimeReact
-- NextAuth
-- Zustand
-- lenis
-- formik
-- framer-motion
-- swr
-- usehooks-ts
-- dayjs
-
-## About the template
-
-This template is a Next.js template that includes a basic authentication system using NextAuth and Zustand. It also includes a custom hook called useParamsHandler that allows you to handle URL parameters in the URL. The template also includes a custom hook called usePressKey that allows you to handle keyboard events.
-For auth functionalities, the template uses NextAuth, which is a popular authentication library for Next.js.
-
-## About next-auth
-
-NextAuth is a popular authentication library for Next.js. It provides a simple and easy-to-use API for handling authentication and authorization in your Next.js applications. With NextAuth, you can easily add authentication to your Next.js applications, including login, signup, password recovery, and more.
-
-#### NextAuth configuration
-
-The next-auth configuration file is located in the `src/pages/api/auth/[...nextauth].ts` file. This file contains the configuration for the authentication system, including the providers, callbacks, and other settings.
-
-#### NextAuth providers
-
-NextAuth supports various providers, including email, password, OAuth, and more. The providers are configured in the src/pages/api/auth/[...nextauth].ts file.
-For this template, the providers are configured to use the credentials strategy, which allows users to sign in using their email and password. Additionally, this setup is combined with the JWT strategy to ensure token-based authentication, enabling secure and stateless session management for the users. The JWT tokens are issued and verified when users sign in using their credentials, allowing further API requests to be authenticated with these tokens.
-
-#### NextAuth callbacks
-
-NextAuth provides callbacks for various events, such as sign in, sign out, and error. The callbacks are configured in the `src/pages/api/auth/[...nextauth].ts` file.
-
-#### NextAuth session
-
-NextAuth provides a session object that contains information about the user's session, such as the user ID, access token, and refresh token. The session object is available in the `src/pages/api/auth/[...nextauth].ts` file.
-
-## Middleware
-
-This template includes a custom middleware function designed to manage access control based on user authentication status. The middleware retrieves the JWT token using NextAuth and determines whether users have access to public or private routes. Below is a summary of how the middleware works:
-
-- Token Retrieval: The middleware attempts to retrieve the token using getToken from NextAuth.
-- Public and Private Paths:
-  - The template defines certain public paths (e.g., /login, /signup) that do not require authentication.
-  - Static resources (e.g., images, fonts) are also publicly accessible.
-- Redirection Logic:
-  If an authenticated user tries to access public client paths like /login or /signup, they will be redirected to the home page (/).
-  If no token is present and the user tries to access a private route, they will be redirected to the login page (/login).
-- Profile Completion Check (optional): The middleware can be extended to check if a user's profile is complete and redirect them to a profile completion page if necessary.
-  This middleware ensures that unauthenticated users are restricted from accessing private pages while authenticated users are seamlessly redirected to the appropriate sections of the application.
-
-The middleware is located in the `src/middleware.ts` file and is responsible for handling authentication and authorization for different routes in the application.
-
-## Cypress e2e testing
-
-#### Project Structure
-
-Your Cypress project follows this folder structure:
-
-```textplain
-cypress
-├── e2e
-│   └── **.cy.ts       // E2E test files in TypeScript format
-├── fixtures
-│   └── example.ts     // Static data for use in tests
-└── support
-    ├── commands.ts    // Custom Cypress commands
-    └── e2e.ts         // Support configuration for E2E tests
+```bash
+cp .env.example .env.local
 ```
 
-#### Aditional Libraries
+| Variable | Side | Description |
+| --- | --- | --- |
+| `NEXT_PUBLIC_DOMAIN` | Client | Frontend URL |
+| `NEXT_PUBLIC_API_URL` | Client | Backend API URL |
+| `NEXT_PUBLIC_MEDIA_URL` | Client | Media/bucket URL |
+| `NEXT_PUBLIC_APP_ENV` | Client | `development`, `staging`, or `production` |
+| `NEXT_PUBLIC_CLARITY_ID` | Client | Microsoft Clarity tracking ID |
+| `AUTH_SECRET` | Server | 32-char secret for AES-GCM session encryption |
+| `AUTH_DEFAULT_USER` | Server | Default test user (dev only) |
+| `AUTH_DEFAULT_PASSWORD` | Server | Default test password (dev only) |
+| `MAILSLURP_API_KEY` | Server | MailSlurp API key (E2E email testing) |
+| `SENTRY_ORG` | Build | Sentry organization slug |
+| `SENTRY_PROJECT` | Build | Sentry project name |
+| `SENTRY_AUTH_TOKEN` | Build | Sentry auth token (source map upload) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Client | Sentry DSN |
 
-- cypress-dotenv to load environment variables from a .env file.
-- cypress-file-upload to handle file uploads in tests, enabling the use of cy.upload().
+### Development
 
-#### E2E Text Example
-
-```javascript
-import 'cypress-file-upload'
-
-describe('Profile Information Update', () => {
-  before(function () {
-    // Load data from fixture
-    cy.fixture('example').then(function (data) {
-      this.data = data
-    })
-  })
-
-  it('logs in and updates profile information', function () {
-    // Base URLs
-    const baseUrl = Cypress.config('baseUrl')
-    const profileUrl = `${baseUrl}/profile`
-
-    // Dynamic variables for profile updates
-    const firstName = 'TestFirst' + Math.floor(Math.random() * 1000)
-    const lastName = 'TestLast' + Math.floor(Math.random() * 1000)
-    const phone = '+12345' + Math.floor(Math.random() * 1000)
-    
-    // Intercept profile update request
-    cy.intercept('PATCH', '/api/users/me').as('updateProfile')
-
-    // Log in using custom command (requires setup in commands.ts)
-    cy.login(this.data.email, this.data.password).then(() => {
-      cy.url().should('eq', `${baseUrl}/dashboard`)
-      cy.get('.ProfileButton').should('be.visible').click()
-    })
-
-    // Navigate to profile page
-    cy.get('[href="/profile"]').click()
-    cy.url().should('eq', profileUrl)
-
-    // Update profile fields
-    cy.get('#first_name').clear().type(firstName)
-    cy.get('#last_name').clear().type(lastName)
-    cy.get('#phone').clear().type(phone)
-
-    // Submit changes
-    cy.get('.saveButton').click()
-
-    // Wait for profile update request
-    cy.wait('@updateProfile').its('response.statusCode').should('eq', 200)
-
-    // Reload page and verify updates
-    cy.reload()
-    cy.get('#first_name').should('have.value', firstName)
-    cy.get('#last_name').should('have.value', lastName)
-    cy.get('#phone').should('have.value', phone)
-  })
-})
+```bash
+pnpm start
 ```
 
-#### Navigation and Route Protection Test Example
+### Build
 
-```javascript
-describe('Navigation and Route Protection', () => {
-  const baseUrl = Cypress.config('baseUrl')
-  const protectedRoute = `${baseUrl}/`
-  const loginRoute = `${baseUrl}/login`
-  
-  before(() => {
-    // Load fixture data if needed, e.g., user credentials
-    cy.fixture('userData').then(function (data) {
-      this.data = data
-    })
-  })
-
-  context('Unauthenticated user', () => {
-    it('should redirect to login page when trying to access a protected route', function () {
-      cy.visit(protectedRoute)
-      cy.url().should('eq', loginRoute) // Assert redirection to login
-    })
-  })
-
-  context('Authenticated user', () => {
-    beforeEach(function () {
-      // Log in using custom command and store session
-      cy.login(this.data.email, this.data.password) // Ensure this command is set up in commands.ts
-    })
-
-    it('should access protected route after login', () => {
-      cy.visit(protectedRoute)
-      cy.url().should('eq', protectedRoute) // Assert the user is on the protected route
-      cy.contains('Powered by Linkchar') // Customize based on your dashboard content
-    })
-
-    it('should redirect to home when visiting login page as authenticated user', () => {
-      cy.visit(loginRoute)
-      cy.url().should('eq', `${baseUrl}/`) // Assert redirection to home page
-    })
-  })
-})
+```bash
+pnpm build
 ```
 
-Explanation of Key Sections
+### Lint & Type Check
 
-- Fixture Loading: Loads static data from a fixture file to make tests reusable.
-- Dynamic Data Generation: Adds unique values for fields to simulate different data each test run.
-- Interception: Captures network requests, allowing us to validate the response.
-- Custom Commands: A cy.login() command (created in commands.ts) abstracts login steps, improving code readability.
-- Assertions: Verifies that the profile page displays updated values after submission.
-
-This test flow covers typical user actions like loading data, interacting with form fields, intercepting network requests, and verifying responses.
-
-## Standard date format - dayjs
-
-#### Import and Configure the Plugin
-
-In the component or module where you need to work with UTC dates, import dayjs and the utc plugin, then extend dayjs with the plugin:
-
-```javascript
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
-
-// Extend dayjs with the UTC plugin
-dayjs.extend(utc);
+```bash
+pnpm run lint-check       # ESLint
+pnpm run lint-check --fix # ESLint with auto-fix
+pnpm run type-check       # TypeScript type checking
+pnpm run check            # Both
 ```
 
-#### Usage Examples
+### Testing
 
-```javascript
-const currentUTCDate = dayjs().utc().format();
-console.log(currentUTCDate); // Displays the current date and time in UTC (ISO format)
+```bash
+pnpm run test-open  # Cypress interactive mode
+pnpm run test-run   # Cypress headless mode
 ```
 
-#### Converting a Local Date to UTC
+### All Scripts
 
-If you have a local date and need to convert it to UTC, you can use this approach:
+| Script | Description |
+| --- | --- |
+| `pnpm start` | Start development server |
+| `pnpm build` | Production build |
+| `pnpm run serve` | Build + start production server |
+| `pnpm run check` | Run ESLint + TypeScript type check |
+| `pnpm run lint-check` | ESLint only |
+| `pnpm run type-check` | TypeScript type check only |
+| `pnpm run test-open` | Cypress interactive mode |
+| `pnpm run test-run` | Cypress headless mode |
+| `pnpm run clean` | Remove `.next`, `node_modules`, and lockfile |
+| `pnpm run nuke` | Clean + reinstall + rebuild from scratch |
 
-```javascript
-const localDate = '2024-10-03T15:30:00'; // Local date
-const utcDate = dayjs(localDate).utc().format();
-console.log(utcDate); // Outputs the date in UTC
+## Project Structure
+
+```text
+src/
+├── api/              # API functions using customFetch
+├── app/              # Next.js App Router (pages, layouts, API routes)
+│   ├── (auth-layout)/    # Auth route group (login, signup, password recovery)
+│   ├── api/auth/         # Auth API routes (login, logout, me, refresh)
+│   ├── dashboard/        # Protected dashboard routes
+│   └── ...
+├── assets/           # Static files (fonts/, icons/, images/, videos/)
+├── components/       # Reusable UI components (each in its own folder)
+│   ├── inputs/           # Input components (InputContainer, InputError)
+│   └── modals/           # Modal components (LoadingModal, StateModal, Toasts)
+├── constants/        # App constants (auth.ts, env.ts)
+├── cypress/          # E2E tests, fixtures, and utilities
+├── hooks/            # Custom React hooks (usePressKey, useTableParams, ...)
+├── layouts/          # Layout components (AuthLayout, DashboardLayout, GeneralLayout)
+├── providers/        # React providers (ProvidersContainer, ModalsProvider)
+├── screens/          # Page-level components
+│   └── auth/             # Auth screens (Login, Signup, PasswordRecovery, ...)
+├── stores/           # Zustand stores (modalStore, userStore)
+├── styles/           # Global SASS styles (index.sass, general.sass, mixins.sass)
+├── types/            # TypeScript type definitions
+└── utils/            # Utility functions (crypto, validation, auth helpers)
 ```
 
-#### Formatting UTC Dates
+### Architecture
 
-To standardize the UTC date into a specific format, use the following code:
+- **Pages** (`src/app/**/page.tsx`) are thin wrappers — they export metadata and render a Screen component.
+- **Screens** (`src/screens/`) contain all page logic and UI.
+- **Layouts** (`src/layouts/`) handle shared layout structure, delegated from App Router layout files.
+- **Components** (`src/components/`) are reusable, each in its own folder with colocated `.sass` styles.
 
-```javascript
-const formattedUTCDate = dayjs().utc().format('YYYY-MM-DD HH:mm:ss');
-console.log(formattedUTCDate); // For example: "2024-10-03 18:30:00"
+## Authentication
+
+The template includes a complete, production-ready auth system:
+
+### Auth Screens
+
+| Screen | Route | Description |
+| --- | --- | --- |
+| Login | `/login` | Email/password login |
+| Signup | `/signup` | Account creation |
+| Email Validation | `/signup/email-validation/[email]` | Email verification |
+| Signup Confirmation | `/signup/confirmation/[token]` | Registration confirmation |
+| Password Recovery | `/password-recovery` | Request password reset |
+| Password Recovery Confirmation | `/password-recovery/confirmation/[token]/[email]` | Reset with token |
+| Change Password | `/change-password` | Change current password |
+| Change Password Confirmation | `/change-password/confirmation/[token]` | Confirm password change |
+
+### How It Works
+
+1. **Login**: Credentials are sent to `/api/auth/login`, which calls the backend, receives JWT tokens, encrypts the session with AES-GCM, and sets an httpOnly cookie (`linkchar-session`).
+2. **Token Refresh**: On 401 responses, `customFetch` automatically refreshes the access token via `/api/auth/refresh`.
+3. **Multi-tab Sync**: A non-httpOnly listener cookie (`linkchar-listener`) is polled every second to detect auth changes across browser tabs.
+4. **Route Protection**: Middleware (`src/proxy.ts`) enforces access control:
+   - **Auth routes** (`/login`, `/signup`, etc.) — redirect authenticated users to `/dashboard`
+   - **Protected routes** (`/dashboard`, etc.) — redirect unauthenticated users to `/login`
+   - **Public routes** (`/`, `/sentry-example-page`) — accessible to everyone
+
+## Error Tracking (Sentry)
+
+Sentry is fully integrated with environment-aware configuration:
+
+- **Development**: Disabled entirely
+- **Staging**: 100% trace sample rate, session replays enabled, user PII sent
+- **Production**: 10% trace sample rate, session replays at 10%, error replays at 100%
+- **Ad-blocker bypass**: Tunnel route at `/monitoring`
+- **Source maps**: Automatically uploaded during build
+- **Privacy**: Text masking and media blocking in production replays
+
+## Git Hooks (Husky)
+
+| Hook | Action |
+| --- | --- |
+| `pre-commit` | Runs `pnpm run lint-check` — blocks commit on lint errors |
+| `pre-push` | Runs `pnpm build` — blocks push if build fails |
+
+## Conventions
+
+- **Styling**: Tailwind-first. SASS (`.sass` indented syntax) only for complex styles.
+- **Typography**: Custom classes — `text-{weight}-{size}` (e.g., `text-bold-24`, `text-medium-16`).
+- **BEM in SASS**: `.ComponentName__Element--Modifier`.
+- **Imports**: `@/` path alias. Type imports use `import type { X }`.
+- **Exports**: Default exports for components, hooks, and stores.
+- **Animations**: `m` from framer-motion with `LazyMotion` (never `motion`).
+- **Modals/Toasts**: Managed globally via `useModalStore` (Zustand).
+- **Env vars**: Always import from `@/constants/env`, never use `process.env` directly.
+- **PrimeReact**: Use PrimeReact components for inputs; PrimeIcons for icons.
+
+## Commit Convention
+
+```text
+[ TYPE ] Description
 ```
 
-For more information about dayjs, you can refer to the official documentation: <https://day.js.org/docs/en/display/format>
+| Type | Usage |
+| --- | --- |
+| `FEATURE` | New functionality or screen |
+| `ADD` | New file, config, or asset |
+| `UPDATE` | Enhancement to existing functionality |
+| `FIX` | Bug fix |
+| `REFACTOR` | Code restructuring without behavior change |
+| `STYLE` | Visual/styling changes only |
+| `CHORE` | Config, dependencies, tooling |
 
-## Using dimensions for responsive design
+## License
 
-When developing responsive designs, especially for mobile compatibility, it's essential to select the appropriate unit of measurement for viewport height. Specifically, **the svh unit is recommended for handling height** in mobile web browsers like Safari on iOS, which can present challenges with traditional vh units.
-
-#### Differences Between vh, dvh, and svh
-
-- vh (Viewport Height): Represents 1% of the viewport height. However, it does not account for dynamic UI changes like the appearance of the address bar or keyboard on mobile browsers. When these UI elements appear, the visible area shrinks, causing potential layout shifts.
-- dvh (Dynamic Viewport Height): Adjusts based on dynamic changes in the viewport size. For instance, if the browser UI (address bar or keyboard) appears, the dvh value changes to reflect the newly available height. However, when using dvh, it can lead to undesired overflow behavior, particularly when a keyboard pops up. The scroll may extend beyond the container, which isn't ideal for keeping elements confined.
-- svh (Small Viewport Height): Stays constant regardless of dynamic changes in UI elements, providing a stable height based on the smallest viewport height available. This makes it preferable for mobile layouts because it ensures the content is contained within the viewport, even if an on-screen keyboard or other UI elements appear.
-
-In summary, using svh offers better control and consistency for mobile layouts. Unlike dvh, svh avoids overflow issues when input fields are active, making it the ideal choice for designing consistent and visually stable interfaces on mobile devices.
-
-However, for layouts without interactive elements, such as text-only sections or image galleries, dvh can be preferable since it adjusts dynamically to changes in viewport height. For layouts that include interactive elements like input, textarea, or select, svh is recommended to ensure the layout remains stable even when the on-screen keyboard or other UI elements appear.
-
-For more information on viewport units: <https://web.dev/blog/viewport-units/>
+Proprietary — Linkchar.
