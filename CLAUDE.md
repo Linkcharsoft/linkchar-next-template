@@ -12,6 +12,18 @@
 - **Package Manager:** pnpm (>=10.30.0)
 - **Node Version:** ^22.22.0
 
+## Automation Skills
+
+> **MANDATORY: For any of the tasks below, ALWAYS invoke the matching skill instead of writing files manually.** Even when the user does not type the slash command explicitly (e.g. "add a screen for settings", "create a modal to confirm deletion"), recognize the intent and invoke the skill. The skills encapsulate every convention in this document and generate files in the correct locations.
+
+| Task | Skill | Example invocation |
+| ---- | ----- | ------------------ |
+| Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
+| Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
+| Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
+
+Skills live in `.claude/skills/{skill-name}/SKILL.md`. Do not duplicate their logic in chat — invoke them.
+
 ## Project Structure
 
 ```text
@@ -44,20 +56,14 @@ src/
 
 ## Architecture Pattern: Pages vs Screens
 
+> To create a new screen, use the `/new-screen` skill — it supports `auth`, `public`, and `protected` page types and updates `src/proxy.ts` when needed.
+
 - `src/app/**/page.tsx` files are **thin wrappers**: they only export metadata and render a Screen component
 - All page logic and UI lives in `src/screens/` components
-- Example:
-
-  ```tsx
-  // src/app/login/page.tsx
-  import LoginPage from '@/screens/auth/LoginPage'
-  import type { Metadata } from 'next'
-
-  export const metadata: Metadata = { title: 'Log in' }
-
-  const Page = () => <LoginPage/>
-  export default Page
-  ```
+- Route protection is defined in `src/proxy.ts`:
+  - `AUTH_PATHS`: routes for unauthenticated users only (login, signup, password recovery)
+  - `PUBLIC_PATHS`: routes accessible to everyone (must be added explicitly)
+  - Anything else is protected and redirects to `/login` without a valid session
 
 ### Route Groups & Layouts
 
@@ -91,42 +97,15 @@ Do NOT modify this layer order in `src/styles/index.sass` — ensures Tailwind u
 
 ## Component Patterns
 
-### Component Folder Structure
+> To create a new component, use the `/new-component` skill. It generates the folder, `.tsx`, and `.sass` with the correct template.
 
-Each component lives in its own folder with colocated styles:
-
-```text
-src/components/ComponentName/
-├── ComponentName.tsx    # Component code
-└── ComponentName.sass   # Component styles (colocated, imported directly)
-```
-
-The `.sass` file is imported directly in the `.tsx` file via `import './ComponentName.sass'`.
-
-### Standard Component Template
-
-```tsx
-'use client' // Only if it uses hooks, events, or browser APIs
-import './ComponentName.sass' // Colocated styles
-interface Props {
-  // Props interface defined inline, NOT exported unless needed elsewhere
-}
-
-const ComponentName = ({ prop1, prop2 }: Props) => {
-  return (
-    <div className="ComponentName">
-      {/* content */}
-    </div>
-  )
-}
-
-export default ComponentName
-```
+Each component lives in its own folder (`src/components/ComponentName/`) with the `.tsx` and a colocated `.sass` imported directly via `import './ComponentName.sass'`.
 
 ### Key Patterns
 
 - **`'use client'`**: Only add when the component uses hooks, event handlers, or browser APIs
 - **Default exports**: Every component/hook/store uses `export default`
+- **`memo()`**: Wrap reusable components exported from `src/components/` (not screens or modals)
 - **Path alias**: Always use `@/` for imports from `src/` (e.g., `@/components/CustomButton/CustomButton`)
 - **Type imports**: Use `import type { X }` for type-only imports (enforced by ESLint)
 - **Import order** (enforced by ESLint):
@@ -173,7 +152,7 @@ setNotification({ severity: 'success', summary: 'Done!' })
 setNotification({ severity: 'error', summary: 'Error', detail: 'Something failed', life: 5000 })
 ```
 
-To add a new modal type: define its type in `modalStore.ts` → add to `ModalPayloads` → create the component in `components/modals/` → register it in `providers/ModalsProvider.tsx`.
+To add a new modal type, use the `/new-modal` skill — it handles all four steps (type declaration in `modalStore.ts`, `ModalPayloads` entry, component in `components/modals/`, and registration in `providers/ModalsProvider.tsx`).
 
 ## Environment Variables
 
