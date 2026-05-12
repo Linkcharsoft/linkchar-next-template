@@ -18,7 +18,7 @@ If any of those are missing, ask.
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, breakpoints). Use ONLY these tokens; no hex.
-2. `src/components/` (Glob the folders) — confirm which reusable components exist (especially `Navbar`, `MobileNavbar`, `Footer`, `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, STOP and ask the parent to run `figma-components` first.
+2. `src/components/` (Glob the folders) — confirm which reusable components exist (header/navbar variants, footers, shared modals like `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, STOP and ask the parent to run `figma-components` first.
 3. `src/app/` (Glob top-level folders + route groups `({name})`) — see existing route group structure so you don't collide with one.
 
 ## Steps
@@ -27,7 +27,7 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 2. **Adjust** existing layouts if the Figma matches an existing layout but with structural changes (e.g. a new sticky behavior, an added Footer slot).
 3. **Create new layouts** when Figma shows a structural shell that doesn't match any existing one:
    1. Place in `src/layouts/{LayoutName}/{LayoutName}.tsx` + colocated `.sass`.
-   2. The component composes existing reusable components (Navbar, Footer, etc.) — does NOT inline that JSX.
+   2. The component composes existing reusable components (header/navbar, footer, etc.) — does NOT inline that JSX.
    3. Wrap content with `<main className='flex-1'>{children}</main>` for proper sizing.
    4. Include `<LoadingModal />` at the end so global loading state works.
 4. **Wire up** the layout in the matching `src/app/{(group-name)}/layout.tsx` route group (create the route group folder if needed). The route-group `layout.tsx` is a thin wrapper that delegates to the layout component.

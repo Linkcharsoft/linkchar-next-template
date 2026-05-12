@@ -99,11 +99,11 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
   gap: 1rem
   padding: 1.5rem
   border-radius: 8px
-  @apply bg-white border border-surface-200 text-bold-14 text-surface-950
+  @apply bg-white border border-surface-200 text-bold-14 text-surface-900
 
 // ❌ Avoid
 .MyComponent
-  @apply flex gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-bold-14 text-surface-950
+  @apply flex gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-bold-14 text-surface-900
 ```
 
 ---

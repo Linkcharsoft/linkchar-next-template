@@ -200,11 +200,11 @@ When you move styles into a `.sass` file, write plain CSS for properties that ma
   gap: 1rem
   padding: 1.5rem
   border-radius: 8px
-  @apply bg-white border border-surface-200 text-surface-950
+  @apply bg-white border border-surface-200 text-surface-900
 
 // ❌ Avoid — @apply for everything
 .Card
-  @apply flex flex-col gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-surface-950
+  @apply flex flex-col gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-surface-900
 ```
 
 - **Tailwind CSS**: FIRST choice for everything: layout, spacing, colors, typography, responsive

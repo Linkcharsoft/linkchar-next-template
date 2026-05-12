@@ -8,10 +8,10 @@ You are the **figma-scaffold** sub-agent. Your job is mechanical: scaffold every
 
 ## Expected input from the parent
 A list of screens, each with:
-- Screen name (PascalCase, ending in `Page` — e.g. `LandingPage`, `EquiposPage`).
+- Screen name (PascalCase, ending in `Page` — e.g. `HomePage`, `ProductsPage`).
 - Page type (`auth` | `public` | `protected`).
-- Route path (e.g. `/`, `/equipos`, `/equipos/[id]`).
-- **Route group** (optional, e.g. `(landing-layout)`, `(marketing-layout)`) — when the screen should live inside a route group instead of at the root level. The parent passes this for screens that need a specific layout wrapper from Step 4.
+- Route path (e.g. `/`, `/products`, `/products/[id]`).
+- **Route group** (optional, e.g. `(marketing-layout)`, `(landing-layout)`) — when the screen should live inside a route group instead of at the root level. The parent passes this for screens that need a specific layout wrapper from Step 4.
 - Whether the screen is from Figma or TBD (both use "Próximamente" placeholder for now).
 
 If the list is missing, ask.
@@ -29,9 +29,9 @@ If the list is missing, ask.
      4. Delete the original via `git rm` (or `rm` if not yet tracked).
      5. The route stays the same in the URL — route groups are transparent to routing — but the page now inherits the group's `layout.tsx`.
 
-   Example: screen `LandingPage`, route `/`, group `(landing-layout)`:
+   Example: screen `HomePage`, route `/`, group `(marketing-layout)`:
    - `/new-screen` creates `src/app/page.tsx`
-   - You move it to `src/app/(landing-layout)/page.tsx`
+   - You move it to `src/app/(marketing-layout)/page.tsx`
 
 3. After all screens are scaffolded and (if needed) moved, edit each `src/screens/{Name}Page/{Name}Page.tsx` to set the placeholder content with title + "Próximamente":
    ```tsx

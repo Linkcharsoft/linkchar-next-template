@@ -34,7 +34,7 @@ Otherwise, **read the target `.tsx` file** (and its `.sass` if present) to under
 
 ## Step 1 — Create `{targetFolder}/{TargetName}Skeleton.tsx`
 
-Follow this exact template. Replace `{TargetName}` with the target's name (e.g. `ProductCard`, `EquipoDetailPage`):
+Follow this exact template. Replace `{TargetName}` with the target's name (e.g. `ProductCard`, `DashboardPage`):
 
 ```tsx
 'use client'

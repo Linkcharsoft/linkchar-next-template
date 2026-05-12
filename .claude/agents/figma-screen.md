@@ -36,15 +36,15 @@ If you find ANY value that has no corresponding token, STOP. Do not invent arbit
 TOKENS MISSING: cannot proceed with {ScreenName}Page until these are added.
 
 Colors:
-- #d52337 (Figma: --accent-sec) → suggest 'brand-red'
-- #6b707a (Figma: --type-bg-2-b) → suggest 'gray-600'
+- {hex-a} (Figma: {--var-name-a}) → suggest '{descriptive-token-name-a}'
+- {hex-b} (Figma: {--var-name-b}) → suggest '{descriptive-token-name-b}'
 
 Typography sizes:
 - 72px (used in hero title)
 - 38px (used in hero stats values)
 
 Spacing/radius:
-- 7px (used in eyebrow pill border-radius)
+- 7px (used in {some component}'s border-radius)
 
 Action: parent should delegate to `figma-tokens` with this list, then re-invoke me.
 ```
@@ -67,7 +67,7 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
         - **Optional but useful**: when downloading, also write a sibling `.hash.txt` (e.g. `forklift-1.hash.txt` containing the Figma hash) — that way future invocations can match by hash, not just by name.
      2. **If found** → reuse the existing `.webp` via static import. No re-download, no re-conversion.
      3. **If not found** → `curl` the URL into `/tmp/{slug}.png`, then `ffmpeg -i /tmp/{slug}.png -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling.
-   - **Logos and shared assets**: if the URL hash matches one of the already-existing logos (`heli-red.webp`, `all-service.webp`, `maquinarias.webp` etc.), reuse those instead of saving a new copy in the screen folder.
+   - **Logos and shared assets**: if the URL hash matches one of the already-existing logos in `src/assets/images/` (use the `.hash.txt` sibling files written by `figma-assets` to detect matches), reuse those instead of saving a new copy in the screen folder.
 5. **Implement the screen** at `src/screens/{Name}Page/{Name}Page.tsx`, replacing the placeholder. Follow the project's `CLAUDE.md` strictly:
    - Tailwind first for all values (colors, typography, spacing). Extract to the colocated `.sass` (BEM) any element that uses **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or accumulates **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
    - **Inside `.sass`**: write plain CSS for layout/spacing/sizing (`display: flex`, `gap: 1rem`, `padding: 1.5rem`, `border-radius: 8px`, `position: absolute`, etc.). Reserve `@apply` for design tokens only — colors (`@apply bg-surface-100`), typography (`@apply text-bold-14`), responsive (`@apply md:flex-row`), pseudo-state tokens (`@apply hover:bg-surface-100`). Do NOT `@apply flex flex-col gap-4 p-6` when plain CSS expresses it directly.
@@ -84,7 +84,7 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
    ```tsx
    <ul
      role='list'
-     aria-label='Productos destacados'
+     aria-label='Featured items'
      className='flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 md:grid md:grid-cols-3 md:overflow-visible md:snap-none'
    >
      {items.map(item => (

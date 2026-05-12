@@ -10,7 +10,7 @@ You are the **figma-assets** sub-agent. Your job is mechanical: download assets 
 A list of assets to download, each with:
 - Type (`svg-icon` | `raster-logo` | `raster-image`)
 - Source URL (Iconify URL like `https://api.iconify.design/{collection}/{icon}.svg` OR Figma URL like `https://www.figma.com/api/mcp/asset/{hash}`)
-- Target file name (e.g. `SellIcon`, `heli-red`, `product-1`)
+- Target file name (e.g. `SellIcon`, `brand-logo`, `product-1`)
 - Target folder (default: `src/assets/icons/` for SVG-as-React, `src/assets/images/` for raster, optionally a screen-specific subfolder)
 
 If the list is missing, ask.

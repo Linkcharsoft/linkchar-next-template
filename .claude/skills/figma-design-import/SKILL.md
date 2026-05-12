@@ -102,7 +102,7 @@ Read the Figma source AND the relevant codebase before touching any file.
 
    ## Layouts
    - Existing match: [DashboardLayout matches dashboard nav? Yes/No]
-   - To create: [LandingLayout if needed]
+   - To create: [{NewLayoutName} if a Figma shell doesn't match any existing layout]
 
    ## Screens (with desktop + mobile node IDs resolved)
    - **{ScreenName}Page** → route `{/path}`, type `{auth|public|protected}`
@@ -204,7 +204,7 @@ This is the heaviest token usage of the whole flow. By delegating each screen to
 4. Branch on the user's response:
    - **Empty / "siguiente" / "continuá" / "ok" / "next"** → move to step 1 with the next screen.
    - **Adjustment instructions** (free text, e.g. "achicá el hero un 20%", "el contact form va del lado izquierdo en mobile") → re-delegate to `figma-screen` for THE SAME screen with the adjustment notes appended to the prompt. After it returns, post the new report and re-ask the checkpoint.
-   - **"parar" / "stop" / "pausá"** → halt the batch and tell the user how to resume (e.g. "decime `seguí desde EquiposPage` cuando quieras retomar").
+   - **"parar" / "stop" / "pausá"** → halt the batch and tell the user how to resume (e.g. "decime `seguí desde {ScreenName}` cuando quieras retomar").
    - **Skip-specific** ("saltá esta", "después la veo") → mark the screen as skipped, move to next.
 5. After the last screen (or when user halts), post the cumulative final report.
 
@@ -253,19 +253,19 @@ If the previous subagent failed, surface the error in the same checkpoint:
 
 ```
 Resumen del batch:
-✅ LandingPage  — implementada (1 ajuste)
-✅ EquiposPage  — implementada
-⏭️  EquipoDetailPage — skipped por el usuario
-✅ NosotrosPage — implementada
+✅ {ScreenA}  — implementada (1 ajuste)
+✅ {ScreenB}  — implementada
+⏭️  {ScreenC} — skipped por el usuario
+✅ {ScreenD} — implementada
 
-Probá: pnpm start → /, /equipos, /nosotros
+Probá: pnpm start → /, /{route-b}, /{route-d}
 Reportá cualquier gap visual y pedimos un re-run puntual.
 ```
 
 **Manual escape hatch (post-batch).** If the user wants to redo a specific screen later with different inputs (e.g. real image URLs they uploaded to a CDN), they can ask outside of the auto-batch:
 
 ```
-Re-implementá EquiposPage con:
+Re-implementá {ScreenName} con:
 Desktop: figma.com/design/.../?node-id=...   (optional override)
 Mobile: figma.com/design/.../?node-id=...     (optional override)
 Imágenes: ['/products/p1.webp', '/products/p2.webp']

@@ -18,7 +18,7 @@ If any list is missing, ask.
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, STOP and ask the parent to delegate to `figma-tokens` first — never hardcode hex.
-2. `CLAUDE.md` (project root) — project conventions (BEM in SASS, framer-motion `m` not `motion`, `classNames` from primereact/utils not `clsx`, default exports, `memo()` for reusable components, etc.).
+2. `CLAUDE.md` (project root) — project conventions (BEM in SASS, framer-motion `m` not `motion`, `classNames` from primereact/utils not `clsx`, default exports — and NO manual `memo()` since React Compiler handles memoization automatically, etc.).
 3. `src/components/` (Glob the folders) — full list of existing components. The "Existing Reusable Components" table in CLAUDE.md may be out of date.
 
 ## Steps
@@ -44,7 +44,7 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 3. **Update CLAUDE.md's "Existing Reusable Components" table**. After creating a new component, locate the table in `CLAUDE.md` (look for the "## Existing Reusable Components" heading, or the heading the project uses for the catalog) and append a row:
 
    ```markdown
-   | `ProductCard` | `components/ProductCard/ProductCard.tsx` | Card with image, category, title, price + 2 CTAs (Ver más / Comprar). Optional image via `next/image` static import. |
+   | `{ComponentName}` | `components/{ComponentName}/{ComponentName}.tsx` | One-sentence description: what it is + key props/variants (e.g. "Card with image, title, two CTAs; optional image via `next/image` static import"). |
    ```
 
    Keep the row description tight — one sentence explaining what it is + main props/variants. This keeps the catalog in sync so future invocations of this agent (or the user) can see what's already available without globbing the folder.
@@ -54,7 +54,7 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 ## Hard rules
 - Read the project's `CLAUDE.md` "Existing Reusable Components" table BEFORE creating anything new — if a similar component exists, extend it.
 - A11y: any clickable non-button element needs `role="button"`, `tabIndex={0}`, `onKeyDown` for Enter/Space — or just use a `<button>`.
-- For optional images in cards (ProductCard-style), accept `image?: string | StaticImageData` so static imports work.
+- For optional images in cards, accept `image?: string | StaticImageData` so static imports work.
 
 ## Output to parent
 A summary table: for each component (extended or created), the list of new variants/props added and the file paths touched. Plus lint/type-check status.

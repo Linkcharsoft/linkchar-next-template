@@ -18,12 +18,12 @@ If any of those are missing, ask before editing.
 
 2. **For each token from the parent, decide override-vs-create**:
    - **Same name in BOTH Figma and tailwind.config.js** → **override** the existing value with Figma's. The name match means the project intends them to be the same token; keep it that way.
-     - Example: Figma uses `surface-300: #d1d1db`, project has `surface-300: #E0E0E0` → overwrite to `#d1d1db`.
+     - Example: Figma uses `surface-300: #C5C9D3`, project has `surface-300: #E0E0E0` → overwrite to `#C5C9D3`.
    - **Different name (or Figma name doesn't exist in config)** → **create new** with a descriptive key.
-     - Example: Figma uses `--type-sec: #d1d1db`, no `type-sec` in config → create as `gray-300: #d1d1db` (or whatever descriptive name fits).
+     - Example: Figma uses `--type-sec: #C5C9D3`, no `type-sec` in config → create as `{descriptive-name}: #C5C9D3` (pick a name that reflects the role, e.g. `accent-muted`, `border-subtle`).
    - **Same name BUT same value already** → no-op, skip silently.
 
-   Report each decision in your output: `OVERRIDE surface-300 (#E0E0E0 → #d1d1db)` or `CREATE gray-300 (#d1d1db)`.
+   Report each decision in your output: `OVERRIDE surface-300 (#E0E0E0 → #C5C9D3)` or `CREATE accent-muted (#C5C9D3)`.
 
 3. **Edit `tailwind.config.js`**:
    - Apply the decisions from step 2 inside `theme.extend.colors`. Keep the surface palette structure intact (do not delete existing keys, only override values when the rule applies).
@@ -50,20 +50,20 @@ A short confirmation organized by decision type:
 Token changes applied to tailwind.config.js:
 
 OVERRIDDEN (name match in both):
-- surface-300: #E0E0E0 → #d1d1db
-- surface-600: #757575 → #6b707a
+- surface-300: {old hex} → {new hex}
+- surface-600: {old hex} → {new hex}
 
 CREATED (new key):
-- brand-red: #d52337
-- brand-blue: #264099
-- surface-950: #0d1117
-- gray-300: #d1d1db (semantic alias for borders/secondary text)
+- {brand-token-a}: {hex}
+- {brand-token-b}: {hex}
+- surface-950: {hex}
+- {alias-token}: {hex} (semantic alias for borders/secondary text)
 
 Typography sizes added (fontSize + plugin.sizes):
-- 11, 22, 34, 38, 42, 72
+- {list of new sizes}
 
 Fonts:
-- Replaced Merriweather Sans → Inter (300/400/500/600/700/800/900)
+- Replaced {old font} → {new font} ({weight list})
 
 Type-check: ✅ clean
 ```
