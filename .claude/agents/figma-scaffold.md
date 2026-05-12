@@ -35,7 +35,7 @@ If the list is missing, ask.
 
 3. After all screens are scaffolded and (if needed) moved, edit each `src/screens/{Name}Page/{Name}Page.tsx` to set the placeholder content with title + "Próximamente":
    ```tsx
-   <section className='container-custom flex min-h-[60vh] flex-col items-center justify-center gap-2 px-4 py-16'>
+   <section className='container-custom flex min-h-[60vh] flex-col items-center justify-center gap-2 py-16'>
      <h1 className='text-extrabold-44 text-center text-white'>{title}</h1>
      <p className='text-medium-18 text-center text-surface-400'>Próximamente</p>
    </section>

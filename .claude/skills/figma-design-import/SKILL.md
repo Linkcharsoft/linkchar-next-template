@@ -220,6 +220,7 @@ Mobile URL: figma.com/design/{fileKey}/{name}?node-id={mobile_id}   (or "no mobi
 Images: descargá de Figma
 Existing components to reuse: {list from Step 3}
 Tokens available: {list from Step 1}
+Container rule: every top-level <section> MUST be anchored with `container-custom` (or wrap its content in a child <div className='container-custom ...'> when the section has a full-bleed background). The class already brings a built-in 16px lateral gutter — do NOT add `px-*` on the same element. Ignore Figma's absolute frame width and per-section padding-x — they break cross-section alignment.
 Adjustment notes (only on re-runs): {text from user}
 ```
 
@@ -300,6 +301,7 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 - ❌ Skip the per-screen checkpoint and chain through every screen in one shot — the user wants to review each result before the next starts
 - ❌ Halt the whole Step 5.2 batch silently if one screen fails — surface the error in the next checkpoint and let the user choose retry / skip / stop
 - ❌ Hardcode hex colors anywhere — always tokens
+- ❌ Translate Figma's absolute frame width / per-section `padding-x` literally instead of anchoring every top-level `<section>` with `container-custom` — this is the #1 cause of misaligned sections in Figma-driven screens. Every section (and the inner content of full-bleed layout chrome — Navbar, Footer) MUST use `container-custom`. NEVER substitute with `max-w-[Xpx]`, `max-w-7xl`, or arbitrary per-section paddings.
 - ❌ Skip the "confirm with user" checkpoint at the end of Step 0
 - ❌ Manual scaffolding instead of invoking `/new-component`, `/new-screen`, `/new-modal` (sub-agents already follow this rule, but you might be tempted)
 

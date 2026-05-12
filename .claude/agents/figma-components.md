@@ -55,6 +55,7 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 - Read the project's `CLAUDE.md` "Existing Reusable Components" table BEFORE creating anything new — if a similar component exists, extend it.
 - A11y: any clickable non-button element needs `role="button"`, `tabIndex={0}`, `onKeyDown` for Enter/Space — or just use a `<button>`.
 - For optional images in cards, accept `image?: string | StaticImageData` so static imports work.
+- **Full-bleed components (Navbar, Footer, Sidebar, top/bottom bars) MUST use `container-custom`**: when the root element has a background that spans 100vw, wrap the inner content with `<div className='container-custom ...'>` so that the component's content aligns horizontally with the screens' sections. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. NEVER hardcode `max-w-[Xpx]` or arbitrary `px-*` to define the inner content width — those numbers come from Figma's absolute frames and break alignment with the rest of the page.
 
 ## Output to parent
 A summary table: for each component (extended or created), the list of new variants/props added and the file paths touched. Plus lint/type-check status.

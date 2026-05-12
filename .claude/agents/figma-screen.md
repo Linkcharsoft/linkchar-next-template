@@ -69,6 +69,23 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
      3. **If not found** → `curl` the URL into `/tmp/{slug}.png`, then `ffmpeg -i /tmp/{slug}.png -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling.
    - **Logos and shared assets**: if the URL hash matches one of the already-existing logos in `src/assets/images/` (use the `.hash.txt` sibling files written by `figma-assets` to detect matches), reuse those instead of saving a new copy in the screen folder.
 5. **Implement the screen** at `src/screens/{Name}Page/{Name}Page.tsx`, replacing the placeholder. Follow the project's `CLAUDE.md` strictly:
+   - **`container-custom` is MANDATORY on every top-level section.** Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a 16px built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. Two valid patterns:
+
+     ```tsx
+     // 1) Section with a full-bleed background (color/image spans 100vw)
+     <section className='HeroSection'>
+       <div className='container-custom flex flex-col gap-6 py-16'>
+         {/* content aligned to the project's container */}
+       </div>
+     </section>
+
+     // 2) Section without full-bleed background
+     <section className='container-custom flex flex-col gap-6 py-16'>
+       {/* content */}
+     </section>
+     ```
+
+     NEVER use `max-w-[1440px]`, `max-w-7xl`, or arbitrary per-section paddings to define the section's content width — that breaks cross-section alignment, which is the #1 visual gap reported on Figma-driven screens. A narrower inner column (centered text ≤ 800px) is fine, but it MUST be nested inside `container-custom`.
    - Tailwind first for all values (colors, typography, spacing). Extract to the colocated `.sass` (BEM) any element that uses **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or accumulates **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
    - **Inside `.sass`**: write plain CSS for layout/spacing/sizing (`display: flex`, `gap: 1rem`, `padding: 1.5rem`, `border-radius: 8px`, `position: absolute`, etc.). Reserve `@apply` for design tokens only — colors (`@apply bg-surface-100`), typography (`@apply text-bold-14`), responsive (`@apply md:flex-row`), pseudo-state tokens (`@apply hover:bg-surface-100`). Do NOT `@apply flex flex-col gap-4 p-6` when plain CSS expresses it directly.
    - Typography ALWAYS `text-{weight}-{size}`. NEVER `text-xl`/`font-bold`/raw px.
@@ -170,6 +187,7 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
 - If Figma uses a typography size outside the project scale, ask the parent to add it via `figma-tokens` rather than using arbitrary `text-[Xpx]`.
 - All `<a>` for internal routes must use Next.js `<Link>` or `CustomButton` with `href`.
 - For interactive non-button elements, add proper a11y attributes (`role`, `tabIndex`, `onKeyDown`).
+- `container-custom` on EVERY top-level section. Reject the impulse to translate Figma's absolute frame width / per-section `padding-x` literally — that's exactly what produces misaligned sections. Self-check before finishing: every `<section>` either has `container-custom` directly or wraps its content in a `<div className='container-custom ...'>`.
 
 ## Output to parent
 A short report:

@@ -240,9 +240,14 @@ Use the custom typography classes defined in `tailwind.config.js`:
 
 ### Global Container
 
-Use `container-custom` class for centered content with responsive max-widths:
+Use `container-custom` class for centered content with responsive max-widths AND a built-in responsive lateral gutter:
 
-- Default: 1600px | <=1920px: 1440px | <=1640px: 1200px | <=1440px: 1000px
+- **Max-width tiers**: Default: 1600px | <=1920px: 1440px | <=1640px: 1200px | <=1440px: 1000px
+- **Lateral padding (built-in)**: 16px on every viewport. This guarantees a safe edge gutter and prevents content from touching the screen edges on mobile.
+
+Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. `px-4`) on the same element that already has `container-custom` — it's redundant. If a specific section truly needs a different inner padding than the global gutter, nest a child `<div>` and apply `px-*` there instead of duplicating it on the container.
+
+**MANDATORY**: every top-level `<section>` of any screen (and the inner content of every layout: navbar, footer, sidebar) MUST anchor its content with `container-custom` so that ALL sections share the same horizontal alignment and lateral padding. If the section has a full-bleed background, keep the background on `<section>` and nest a `<div className='container-custom ...'>` for the content; otherwise apply `container-custom` directly on the `<section>`. NEVER substitute it with `max-w-[1600px]`, `max-w-7xl`, or custom per-section paddings — that's the #1 cause of misaligned sections in Figma-driven screens.
 
 ## PrimeReact Usage
 
@@ -355,7 +360,7 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 2. **Typography**: ALWAYS `text-{weight}-{size}` (e.g., `text-bold-24`). NEVER loose `text-xl`, `font-bold`.
 3. **Colors**: `surface-50` to `surface-900` for grays. Semantic colors with Tailwind defaults.
 4. **Responsive**: Custom breakpoints: `2xs:`, `xs:`, `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
-5. **Container**: `container-custom` for centered content
+5. **Container**: `container-custom` is MANDATORY on every top-level `<section>` (or the inner `<div>` when the `<section>` is full-bleed) so all sections share the same horizontal alignment. Brings a built-in 16px lateral gutter — do NOT add `px-*` next to it. Also required on layout chrome (Navbar, Footer). NEVER substitute with `max-w-[Xpx]` or custom per-section paddings.
 6. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`. Plain CSS for layout/spacing/sizing; `@apply` only for design tokens (colors, `text-{weight}-{size}`, pseudo-state tokens).
 
 ### Component Rules
@@ -422,7 +427,27 @@ If the connection to `127.0.0.1:3845` fails, the skill will error out on the fir
   - Semantic: Tailwind defaults (`text-red-600`, `bg-blue-600`, `text-green-600`, etc.).
   - Brand/extra tokens: if the Figma design needs new namespaces (e.g. `brand-*`), the `figma-tokens` agent will add them to `tailwind.config.js` first. NEVER hardcode hex — every Figma color must resolve to a token.
 - **Breakpoints**: Use the project's custom screens — `2xs:` (375), `xs:` (480), `sm:` (640), `md:` (768), `lg:` (1024), `xl:` (1280), `2xl:` (1420). Do not invent new ones.
-- **Container**: For centered page content use the `container-custom` class.
+- **Container — MANDATORY for every section**: EVERY top-level section/block of a screen MUST anchor its content with the `container-custom` class so that all sections share the same max-width and lateral padding across the page. The Figma MCP returns absolute pixel widths and per-section padding — IGNORE those and replace them with `container-custom`. The class ALREADY brings a built-in 16px lateral gutter, so do NOT add `px-*` on the same element that has `container-custom`. There are two valid patterns:
+  - **Section with full-bleed background** (background color/image spans 100vw): put the background on the `<section>` and a child `<div className='container-custom ...'>` wraps the content.
+
+    ```tsx
+    <section className='HeroSection'>          // full-bleed background lives here
+      <div className='container-custom flex flex-col gap-6 py-16'>
+        {/* contenido alineado al ancho del proyecto */}
+      </div>
+    </section>
+    ```
+
+  - **Section without full-bleed background** (background matches page): apply `container-custom` directly on the `<section>`.
+
+    ```tsx
+    <section className='container-custom flex flex-col gap-6 py-16'>
+      {/* contenido */}
+    </section>
+    ```
+
+  - NEVER replace `container-custom` with hardcoded `max-w-[1600px]`, `max-w-7xl`, or custom per-section paddings — that breaks alignment between sections. If a section needs a narrower inner column (e.g. centered text block ≤ 800px), still nest it INSIDE `container-custom`.
+  - Layouts (`AuthLayout`, `DashboardLayout`, etc.) and their composed parts (Navbar, Footer) must also use `container-custom` for their inner content, so the page chrome aligns with the screen's sections.
 - **SASS**: When utilities are not enough, write `.sass` indented syntax (NO semicolons, NO curly braces) using BEM (`.ComponentName__Element--Modifier`) and `@apply` for Tailwind composition. Colocate as `ComponentName.sass` next to the `.tsx`.
 - **PrimeReact layer order**: NEVER alter the layer ordering in `src/styles/index.sass` (`@layer tailwind-base, primereact, tailwind-utilities`).
 
@@ -468,8 +493,9 @@ If the connection to `127.0.0.1:3845` fails, the skill will error out on the fir
 2. ✅ Every color/typography/spacing maps to a project token (no hardcoded values).
 3. ✅ All reusable components from `src/components/` were used where applicable.
 4. ✅ No new icon library was added; assets came from the Figma MCP or PrimeIcons.
-5. ✅ `pnpm run lint-check --fix` and `pnpm run type-check` pass clean.
-6. ✅ Interactive behavior (hover, focus, disabled, loading, error) matches the Figma variants.
+5. ✅ Every top-level `<section>` (and the inner content of every layout part: navbar, footer, sidebar) is anchored with `container-custom`. No section uses `max-w-[Xpx]`, `max-w-7xl`, or arbitrary per-section paddings to define its content width.
+6. ✅ `pnpm run lint-check --fix` and `pnpm run type-check` pass clean.
+7. ✅ Interactive behavior (hover, focus, disabled, loading, error) matches the Figma variants.
 
 ## Dev Tools
 
