@@ -393,6 +393,16 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 
 These rules govern every Figma-driven implementation. Treat the MCP output (React + Tailwind) as a **representation of design intent**, NEVER as final code — always translate it into this project's stack and conventions before shipping.
 
+### Prerequisites
+
+The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode MCP server at `http://127.0.0.1:3845/mcp`. For any Figma skill (`/figma-design-import`, `figma:*`) to work, you MUST have:
+
+1. **Figma desktop app running** on the same machine — the web version does not expose the Dev Mode MCP server.
+2. **Dev Mode MCP enabled** in Figma: `Preferences → Enable Dev Mode MCP Server` (requires a Figma seat with Dev Mode access).
+3. The Figma file open and the relevant node selected (or its URL/nodeId ready to pass to the skill).
+
+If the connection to `127.0.0.1:3845` fails, the skill will error out on the first MCP call — start Figma desktop and re-run.
+
 ### Required Flow (do not skip)
 
 1. **Get design context** — call `get_design_context` with the `nodeId` and `fileKey` extracted from the Figma URL (`figma.com/design/:fileKey/...?node-id=:nodeId`, convert `-` to `:` in the nodeId).
