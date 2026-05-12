@@ -144,11 +144,18 @@ Rules for all screen types:
 
 Create an empty `src/screens/ScreenName/ScreenName.sass` (protected and public) or `src/screens/auth/ScreenName/ScreenName.sass` (auth).
 
-Only add styles if Tailwind truly cannot cover the requirement or if the number of Tailwind classes is excessive.
+Move styles here using BEM + `@apply` whenever:
+- Tailwind cannot express the style (custom animations, complex pseudo-elements, PrimeReact overrides)
+- An element uses **visual appearance classes**: colors, backgrounds, borders, shadows, `rounded-*`, typography (`text-*`), or interactive states (`hover:`, `focus:`)
+- An element accumulates **6 or more classes** of any kind
+
+**Inline exceptions** (these may stay in JSX, skip the `.sass`):
+- **Layout-only** combos (`flex items-center gap-4`, `grid grid-cols-2`).
+- **One-off mix of 2–3 simple utilities** — even visual ones like `text-bold-18` or `bg-red-600` — when the combination isn't repeated in the screen AND doesn't need responsive/state variants.
 
 If styles are needed, use `.sass` indented syntax (no curly braces, no semicolons) with BEM:
 ```sass
-.ModalName
+.ScreenName
   // styles
 
   &__Element
@@ -159,6 +166,25 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
 
   &__Element--Modifier
     // styles
+```
+
+**Inside `.sass`: prefer plain CSS, `@apply` only for design tokens.**
+
+- ✅ Plain CSS for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `cursor`, `overflow`, `transition`, `transform`
+- ✅ `@apply` for: project colors (`bg-surface-100`, `text-surface-700`), typography tokens (`text-bold-14`, `text-medium-16`), responsive prefixes (`md:flex-row`), pseudo-state tokens (`hover:bg-surface-100`)
+
+```sass
+// ✅ Good
+.MyScreen
+  display: flex
+  gap: 1rem
+  padding: 1.5rem
+  border-radius: 8px
+  @apply bg-white border border-surface-200 text-bold-14 text-surface-950
+
+// ❌ Avoid
+.MyScreen
+  @apply flex gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-bold-14 text-surface-950
 ```
 
 Note that auth screens generally share their styles through the `src/layouts/AuthLayout`
