@@ -79,6 +79,7 @@ Read the Figma source AND the relevant codebase before touching any file.
 1. **Figma context** — call `get_design_context` on the user's nodeId. If the response is too large, fall back to `get_metadata` first, then `get_design_context` on specific sub-nodes. As a last resort, delegate the file parsing to a generic subagent that returns a structured summary.
 2. **Codebase context** — read these to know what already exists:
    - `tailwind.config.js` — existing colors (`surface-*`), typography scale, breakpoints
+   - `figma-tokens-map.md` (project root, may not exist yet) — Figma-variable → Tailwind-token mapping from prior imports. ALWAYS read this first: if a Figma variable from the current node is already mapped, do NOT propose it as a new token; reuse the mapped one.
    - `src/styles/index.sass` — fonts loaded
    - `src/components/` — list every folder; cross-reference with the "Existing Reusable Components" table in `CLAUDE.md`
    - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`
@@ -88,8 +89,10 @@ Read the Figma source AND the relevant codebase before touching any file.
 
    ```markdown
    ## Tokens
-   - Add: [list new colors/sizes/fonts not yet in tailwind.config.js]
-   - Already covered: [list]
+   - Already mapped (in figma-tokens-map.md): [list — `figmaVar` → `tailwindToken`]
+   - Add: [list new Figma variables that need a token decision; the figma-tokens agent will apply its REUSE/CREATE/BLOCK policy]
+   - Already covered (Tailwind has an exact match by hex AND name is not yet mapped): [list]
+   - **Warnings**: if any proposed token would override `surface-*` or any existing token, flag it here — the figma-tokens agent will block these unless the user explicitly confirms.
 
    ## Assets
    - SVGs to convert to React components: [list with Figma node IDs]
