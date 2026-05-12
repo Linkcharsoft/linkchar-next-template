@@ -105,7 +105,7 @@ Each component lives in its own folder (`src/components/ComponentName/`) with th
 
 - **`'use client'`**: Only add when the component uses hooks, event handlers, or browser APIs
 - **Default exports**: Every component/hook/store uses `export default`
-- **`memo()`**: Wrap reusable components exported from `src/components/` (not screens or modals)
+- **No manual `memo()`/`useMemo`/`useCallback`**: this project has React Compiler enabled (`reactCompiler: true` in `next.config.ts` + `babel-plugin-react-compiler`). The compiler handles memoization automatically — wrapping components in `memo()` is unnecessary noise. Default exports without `memo()`.
 - **Path alias**: Always use `@/` for imports from `src/` (e.g., `@/components/CustomButton/CustomButton`)
 - **Type imports**: Use `import type { X }` for type-only imports (enforced by ESLint)
 - **Import order** (enforced by ESLint):
@@ -165,16 +165,47 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 
 ### TAILWIND-FIRST Approach
 
-> **ALWAYS use Tailwind utilities first** for spacing, layout, flexbox, grid, colors, typography, responsive. Only use SASS `.sass` for:
+> **ALWAYS use Tailwind utilities first** for spacing, layout, flexbox, grid, colors, typography, responsive. Move styles to the colocated `.sass` when:
 >
-> - Complex styles that CANNOT be expressed with Tailwind (custom animations, complex pseudo-elements)
-> - Styles that need deep nesting with BEM
-> - PrimeReact style overrides
+> - The style CANNOT be expressed with Tailwind (custom animations, complex pseudo-elements)
+> - The element needs deep nesting or PrimeReact overrides
+> - The classes describe **visual appearance**: colors, backgrounds, borders, shadows, `rounded-*`, typography (`text-*`), or interactive states (`hover:`, `focus:`) — even if there are only a few
+> - The element accumulates **6 or more classes** of any kind — no exceptions
 >
-> **If you can do it with Tailwind, do it with Tailwind. The `.sass` file can remain empty or minimal.**
+> **Inline exceptions — classes that may stay in JSX (skip the `.sass`):**
+>
+> 1. **Layout-only**: the element's only classes are layout/spacing/sizing utilities (`flex`, `grid`, `gap-*`, `items-*`, `justify-*`, `w-*`, `h-*`, `p-*`, `m-*`).
+> 2. **One-off mix of 2–3 simple utilities** — even if some are visual tokens like `text-bold-18`, `bg-red-600`, `text-surface-700`, or `rounded-lg` — as long as **all three** conditions hold:
+>    - The element uses **only 2 or 3 classes** total.
+>    - That combination is **not repeated** elsewhere in the component.
+>    - It does NOT need **responsive variants** (`md:`, `lg:`, etc.) or **pseudo-state** modifiers (`hover:`, `focus:`).
+>
+> As soon as the combination starts repeating, needs responsive/state variants, or grows to a fourth class, lift it into the `.sass`. The **6+ classes rule is a hard cap** — it always forces a `.sass` block, regardless of class type. The goal of these exceptions is to avoid `.sass` classes that just wrap two Tailwind utilities used in a single JSX element.
+
+#### Inside `.sass` files: prefer plain CSS, `@apply` only for design tokens
+
+When you move styles into a `.sass` file, write plain CSS for properties that map 1:1 to a single CSS declaration. Reserve `@apply` for design-system tokens that pull from the project's Tailwind config.
+
+- ✅ **Plain CSS** for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `top/right/bottom/left`, `cursor`, `overflow`, `text-align`, `transition`, `transform`
+- ✅ **`@apply`** for: project colors (e.g. `text-surface-700`, `bg-surface-100`), typography tokens (`text-bold-14`, `text-medium-16` — these compose size + weight + letter-spacing), responsive prefixes (`md:flex-row`), and pseudo-state tokens (`hover:bg-surface-100`)
+
+```sass
+// ✅ Good — plain CSS for layout, @apply for tokens
+.Card
+  display: flex
+  flex-direction: column
+  gap: 1rem
+  padding: 1.5rem
+  border-radius: 8px
+  @apply bg-white border border-surface-200 text-surface-950
+
+// ❌ Avoid — @apply for everything
+.Card
+  @apply flex flex-col gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-surface-950
+```
 
 - **Tailwind CSS**: FIRST choice for everything: layout, spacing, colors, typography, responsive
-- **SASS (.sass indented syntax)**: ONLY for complex styles that Tailwind cannot cover. BEM naming.
+- **SASS (.sass indented syntax)**: For visual appearance classes, 6+ class combinations, and anything Tailwind cannot express. BEM naming. Plain CSS by default; `@apply` only for design tokens.
 - **Colocated styles**: Each component imports its own `.sass` file directly (`import './Component.sass'`)
 - `src/styles/index.sass` only contains global styles (fonts, Tailwind layers, general reset)
 - SASS mixins are auto-injected globally via `next.config.ts` `sassOptions.additionalData`
@@ -314,12 +345,12 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 
 ### Styling Checklist
 
-1. **TAILWIND-FIRST**: Use Tailwind utilities for ALL layout (flex, gap, padding, margin, width, responsive, colors, typography). SASS only for complex styles.
+1. **TAILWIND-FIRST**: Use Tailwind for all layout and structure. Move to SASS (BEM + `@apply`) any element with visual appearance classes (colors, borders, shadows, `rounded-*`, `text-*`, `hover:`) or 6+ classes of any kind. Pure layout combos (`flex items-center gap-4`) and one-off 2–3-class mixes that don't repeat or need responsive variants may stay inline.
 2. **Typography**: ALWAYS `text-{weight}-{size}` (e.g., `text-bold-24`). NEVER loose `text-xl`, `font-bold`.
 3. **Colors**: `surface-50` to `surface-900` for grays. Semantic colors with Tailwind defaults.
 4. **Responsive**: Custom breakpoints: `2xs:`, `xs:`, `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
 5. **Container**: `container-custom` for centered content
-6. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`
+6. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`. Plain CSS for layout/spacing/sizing; `@apply` only for design tokens (colors, `text-{weight}-{size}`, pseudo-state tokens).
 
 ### Component Rules
 
@@ -335,7 +366,7 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 
 ### Asset Pipeline
 
-- **SVG** -> React component `.tsx` in `src/assets/icons/` (Props: `SVGProps<SVGSVGElement>`, `memo()`, default export). Example: `src/assets/icons/GmailIcon.tsx`
+- **SVG** -> React component `.tsx` in `src/assets/icons/` (Props: `SVGProps<SVGSVGElement>`, default export — React Compiler handles memoization automatically). Example: `src/assets/icons/GmailIcon.tsx`
 - **PNG/JPEG** -> WebP in `src/assets/images/`: `ffmpeg -i input.png -q:v 85 output.webp`
 - **Download from Figma MCP**: `curl -s "http://localhost:3845/assets/{hash}.{ext}" -o /tmp/{name}.{ext}`
 - **NEVER** save SVGs as loose `.svg` files if they will be used as React components
