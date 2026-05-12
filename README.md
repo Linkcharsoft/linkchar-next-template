@@ -19,7 +19,7 @@ Production-ready Next.js starter template by **Linkchar**, pre-configured with a
 | Analytics | Microsoft Clarity |
 | Testing | Cypress 15 (E2E) |
 | Linting | ESLint 9 (flat config) + Husky git hooks |
-| Package Manager | pnpm (>=10.30.0) |
+| Package Manager | pnpm (>=10.33.0) |
 | Node | ^22.22.0 |
 
 ## Getting Started
@@ -27,7 +27,7 @@ Production-ready Next.js starter template by **Linkchar**, pre-configured with a
 ### Prerequisites
 
 - Node.js ^22.22.0
-- pnpm >=10.30.0
+- pnpm >=10.33.0
 
 ### Installation
 
@@ -181,11 +181,37 @@ Sentry is fully integrated with environment-aware configuration:
 | `pre-commit` | Runs `pnpm run lint-check` — blocks commit on lint errors |
 | `pre-push` | Runs `pnpm build` — blocks push if build fails |
 
+## Claude Code Skills
+
+This template ships with a set of [Claude Code](https://claude.com/claude-code) skills under `.claude/skills/` that automate the most common scaffolding tasks. Invoke them with a slash command:
+
+| Skill | Purpose |
+| --- | --- |
+| `/new-screen` | Generate a Screen component + colocated `.sass` + page wrapper, updating `src/proxy.ts` when needed |
+| `/datatable` | Scaffold a full paginated DataTable screen (types + API client + screen with `useTableParams` + filters + page wrapper) |
+| `/new-component` | Generate a reusable component folder (`.tsx` + `.sass`) following project conventions |
+| `/new-modal` | Wire up a new modal type across `modalStore`, the component file, and `ModalsProvider` |
+| `/new-skeleton` | Create a skeleton loader sibling for an existing component or screen using `SkeletonBlock` |
+| `/new-api` | Generate an API domain from an OpenAPI JSON spec (or a manual scaffold) — types + `customFetch` functions in a single file per tag |
+| `/figma-design-import` | Orchestrate a full Figma-to-code import: tokens → assets → components → layouts → screens → validation |
+
+All conventions enforced by these skills are documented in `CLAUDE.md` — the canonical project guide for any AI-assisted contribution.
+
+### Figma MCP Integration
+
+The repo includes a `.mcp.json` that wires Claude Code to the Figma Dev Mode MCP server at `http://127.0.0.1:3845/mcp`. For any Figma skill (`/figma-design-import`, `figma:*`) to work, you must have:
+
+1. **Figma desktop app** running on the same machine (web Figma does not expose the MCP server).
+2. **Dev Mode MCP enabled** in Figma: `Preferences → Enable Dev Mode MCP Server` (requires a Figma seat with Dev Mode access).
+
+If the connection to `127.0.0.1:3845` fails, the skill errors out on the first MCP call — start Figma desktop and retry.
+
 ## Conventions
 
-- **Styling**: Tailwind-first. SASS (`.sass` indented syntax) only for complex styles.
+- **Styling**: Tailwind-first. Move to SASS (`.sass` indented syntax) when an element has visual appearance classes (colors, borders, `text-*`, `hover:`) or accumulates 6+ classes of any kind.
 - **Typography**: Custom classes — `text-{weight}-{size}` (e.g., `text-bold-24`, `text-medium-16`).
 - **BEM in SASS**: `.ComponentName__Element--Modifier`.
+- **React Compiler**: Enabled in `next.config.ts` — never wrap components in `memo()`, `useMemo`, or `useCallback`; the compiler memoizes automatically.
 - **Imports**: `@/` path alias. Type imports use `import type { X }`.
 - **Exports**: Default exports for components, hooks, and stores.
 - **Animations**: `m` from framer-motion with `LazyMotion` (never `motion`).
