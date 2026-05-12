@@ -21,6 +21,7 @@
 | Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
 | Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
+| Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
 
 Skills live in `.claude/skills/{skill-name}/SKILL.md`. Do not duplicate their logic in chat — invoke them.
 
@@ -382,6 +383,78 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 - **Types**: `src/types/api/{resource}.ts` — use `interface` (not `type`), `Type` suffix for models
 - **API client**: `src/api/{resource}.ts` — ALWAYS use `customFetch` from `@/api/customFetch`
 - **SWR Hooks** (optional): `src/hooks/use{Resource}.ts` — `useSWR` pattern with API client functions
+
+## Figma MCP Integration
+
+These rules govern every Figma-driven implementation. Treat the MCP output (React + Tailwind) as a **representation of design intent**, NEVER as final code — always translate it into this project's stack and conventions before shipping.
+
+### Required Flow (do not skip)
+
+1. **Get design context** — call `get_design_context` with the `nodeId` and `fileKey` extracted from the Figma URL (`figma.com/design/:fileKey/...?node-id=:nodeId`, convert `-` to `:` in the nodeId).
+2. **If the response is too large or truncated** — call `get_metadata` first to get the high-level node map, then re-fetch only the required node(s) with `get_design_context`.
+3. **Get a screenshot** — call `get_screenshot` for visual reference of the variant being implemented.
+4. **Only after both** `get_design_context` AND `get_screenshot` are available, download any required assets and start implementation.
+5. **Reuse, then build** — check the existing components table BEFORE generating any new component. If a similar one exists, REUSE or extend it via props/variants. NEVER duplicate functionality.
+6. **Validate against the screenshot** — verify 1:1 visual parity AND interactive behavior before marking the task complete.
+
+### Translation Rules (Figma React+Tailwind → this project)
+
+- **Stack**: Next.js 16 App Router + React 19 + TypeScript. Use `'use client'` ONLY when hooks/event handlers/browser APIs are required.
+- **Layout & spacing**: Use Tailwind utilities first (flex, grid, gap, padding, margin, width, responsive). SASS only for what Tailwind cannot express.
+- **Typography**: ALWAYS map to the custom scale `text-{weight}-{size}` where `weight ∈ {extrabold|bold|semibold|medium|regular|light}` and `size ∈ {10|12|14|16|18|20|24|28|32|36|40|44|48|56|64}`. NEVER use loose `text-xl`, `font-bold`, raw `font-size`, or arbitrary px values.
+- **Colors**:
+  - Grays: `surface-50` → `surface-900` (defined in `tailwind.config.js`).
+  - Semantic: Tailwind defaults (`text-red-600`, `bg-blue-600`, `text-green-600`, etc.).
+  - Brand/extra tokens: if the Figma design needs new namespaces (e.g. `brand-*`), the `figma-tokens` agent will add them to `tailwind.config.js` first. NEVER hardcode hex — every Figma color must resolve to a token.
+- **Breakpoints**: Use the project's custom screens — `2xs:` (375), `xs:` (480), `sm:` (640), `md:` (768), `lg:` (1024), `xl:` (1280), `2xl:` (1420). Do not invent new ones.
+- **Container**: For centered page content use the `container-custom` class.
+- **SASS**: When utilities are not enough, write `.sass` indented syntax (NO semicolons, NO curly braces) using BEM (`.ComponentName__Element--Modifier`) and `@apply` for Tailwind composition. Colocate as `ComponentName.sass` next to the `.tsx`.
+- **PrimeReact layer order**: NEVER alter the layer ordering in `src/styles/index.sass` (`@layer tailwind-base, primereact, tailwind-utilities`).
+
+### Component & Reuse Rules (CRITICAL)
+
+- **MANDATORY**: Before generating ANY new component, check `src/components/` and the "Existing Reusable Components" table in this CLAUDE.md. Reuse `CustomButton`, `InputContainer`, `Label`, `InputError`, `SearchInput`, `Filters`, `PasswordValidator`, `Loader`, `Waves`, `LoadingModal`, `StateModal`, `ToastNotifications` whenever the Figma node maps to one of them.
+- **Buttons**: Always `CustomButton` (`variant`: primary | white | transparent | success | info | warn | error; `size`: detail | small | medium | large; pass `href` for links). NEVER render a raw `<button>` or another button library.
+- **Inputs**: ALWAYS PrimeReact (`InputText`, `Password`, `Calendar`, `Dropdown`, `MultiSelect`) wrapped in `InputContainer`. NEVER native HTML inputs.
+- **Icons**: ALWAYS PrimeIcons (`<i className="pi pi-{name}" />`) when the icon exists in the PrimeIcons set. Only fall back to a custom SVG component if PrimeIcons doesn't have it.
+- **Conditional classes**: `classNames` from `primereact/utils`. NEVER `clsx` or template-string concatenation.
+- **Animations**: `m` from `framer-motion` + `LazyMotion` + `AnimatePresence`. NEVER `motion`. ESLint will reject `motion` imports.
+- **Links / navigation**: `next/link` or `CustomButton` with the `href` prop. NEVER raw `<a>` for internal routes.
+- **Modals & toasts**: Trigger via `useModalStore` (`openModal`, `closeModal`, `setNotification`). To add a new modal type invoke `/new-modal`.
+- **New components / screens / modals**: Invoke the matching skill (`/new-component`, `/new-screen`, `/new-modal`). Do NOT scaffold files manually — the skills enforce folder layout, default exports, colocated `.sass`, and route registration.
+
+### Asset Handling
+
+- **Figma MCP localhost sources**: When the MCP returns a `http://localhost:3845/assets/...` URL for an image or SVG, USE IT DIRECTLY. NEVER replace it with placeholders, stock URLs, or `Image` library imports.
+- **Downloaded assets**:
+  - **SVG icons** → React component `.tsx` in `src/assets/icons/` following the existing pattern: typed with `SVGProps<SVGSVGElement>`, spreads `...props`, default export, registered in `src/assets/icons/index.ts`. React Compiler handles memoization — no manual `memo()`. NEVER save loose `.svg` files when the asset will be rendered as a React component.
+  - **PNG/JPEG images** → MUST be converted to WebP and stored in `src/assets/images/`. Use `ffmpeg -i input.png -q:v 85 output.webp`. Render with `next/image`.
+  - Download command for Figma MCP assets: `curl -s "http://localhost:3845/assets/{hash}.{ext}" -o /tmp/{name}.{ext}`.
+- **Icon packages**: IMPORTANT — DO NOT install new icon libraries (`lucide-react`, `react-icons`, `heroicons`, etc.). Use PrimeIcons or assets returned by the Figma MCP.
+
+### Imports & Code Style
+
+- Use the `@/` alias for any import from `src/` (e.g. `@/components/CustomButton/CustomButton`). NEVER multi-level relative imports.
+- Type-only imports: `import type { X } from '...'` (enforced by ESLint).
+- Default exports for components, hooks, and stores.
+- React Compiler is enabled — do NOT wrap components in `memo()` / `useMemo` / `useCallback`. The compiler memoizes automatically.
+- ESLint formatting: 2 spaces, single quotes, no semicolons, no trailing commas, space inside braces, space before function parens. Run `pnpm run lint-check --fix` and `pnpm run type-check` before committing.
+
+### Forms & State
+
+- **Forms**: `useFormik<FormType>()` + Yup schema, `validateOnChange: false`, inputs wrapped in `InputContainer`.
+- **State**: Zustand stores in `src/stores/` named `useXxxStore`, default export, `'use client'` directive.
+- **Data fetching**: SWR + `customFetch` from `@/api/customFetch`. NEVER raw `fetch` for app APIs.
+- **Env vars**: Always import from `@/constants/env`. NEVER `process.env.X` in components.
+
+### Validation Checklist (before declaring the Figma task done)
+
+1. ✅ Visual parity vs. the `get_screenshot` reference (spacing, colors, typography, states).
+2. ✅ Every color/typography/spacing maps to a project token (no hardcoded values).
+3. ✅ All reusable components from `src/components/` were used where applicable.
+4. ✅ No new icon library was added; assets came from the Figma MCP or PrimeIcons.
+5. ✅ `pnpm run lint-check --fix` and `pnpm run type-check` pass clean.
+6. ✅ Interactive behavior (hover, focus, disabled, loading, error) matches the Figma variants.
 
 ## Dev Tools
 
