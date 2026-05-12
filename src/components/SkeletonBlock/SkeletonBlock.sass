@@ -1,0 +1,25 @@
+@keyframes skeletonShimmer
+  0%
+    background-position: -600px 0
+  100%
+    background-position: 600px 0
+
+.SkeletonBlock
+  position: relative
+  overflow: hidden
+  @apply bg-surface-200
+
+  &::after
+    content: ''
+    position: absolute
+    inset: 0
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%)
+    background-size: 600px 100%
+    animation: skeletonShimmer 1.4s ease-in-out infinite
+
+  &--Dark
+    @apply bg-surface-800
+
+    &::after
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%)
+      background-size: 600px 100%

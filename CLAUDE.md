@@ -21,6 +21,7 @@
 | Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
 | Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
+| Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
 | Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
 
 Skills live in `.claude/skills/{skill-name}/SKILL.md`. Do not duplicate their logic in chat — invoke them.
@@ -130,6 +131,7 @@ Each component lives in its own folder (`src/components/ComponentName/`) with th
 | `Filters` | `components/Filters/Filters.tsx` | Filter panel with pill, dropdown, date, and date-range filters |
 | `PasswordValidator` | `components/PasswordValidator/PasswordValidator.tsx` | Real-time password strength indicator |
 | `Loader` | `components/Loader/Loader.tsx` | CSS spinner loader |
+| `SkeletonBlock` | `components/SkeletonBlock/SkeletonBlock.tsx` | Shimmering placeholder rectangle used as the primitive for skeleton loaders. Pass `dark` for use on dark backgrounds. Size and shape via a BEM class passed in `className`. |
 | `Waves` | `components/Waves/Waves.tsx` | Decorative SVG wave animation |
 | `LoadingModal` | `components/modals/LoadingModal/LoadingModal.tsx` | Full-screen loading overlay with message |
 | `StateModal` | `components/modals/StateModal/StateModal.tsx` | State-based modal (success, error, warn, info) |
