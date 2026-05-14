@@ -170,7 +170,6 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
               className="w-full"
               href='/password-recovery'
               replace
-              type='button'
             >
               Please try again
             </CustomButton>

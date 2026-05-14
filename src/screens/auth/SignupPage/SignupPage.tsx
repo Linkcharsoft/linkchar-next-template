@@ -199,7 +199,6 @@ const SignupPage = () => {
             variant='transparent'
             href='/login'
             className='w-full'
-            type='button'
             disabled={signupFormik.isSubmitting}
             aria-disabled={signupFormik.isSubmitting}
           >

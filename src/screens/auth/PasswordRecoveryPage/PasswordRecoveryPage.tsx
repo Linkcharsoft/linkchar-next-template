@@ -182,7 +182,6 @@ const PasswordRecoveryPage = () => {
             variant='transparent'
             href='/login'
             className='w-full'
-            type='button'
             disabled={passwordRecoveryFormik.isSubmitting}
             aria-disabled={passwordRecoveryFormik.isSubmitting}
           >

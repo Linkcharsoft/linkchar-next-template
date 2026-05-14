@@ -223,7 +223,6 @@ const SignupConfirmationPage = ({ token }: Props) => {
               className="w-full"
               href='/login'
               replace
-              type='button'
             >
               Go to log in
             </CustomButton>

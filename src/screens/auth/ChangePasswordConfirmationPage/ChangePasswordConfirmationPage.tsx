@@ -168,7 +168,6 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
               className="w-full"
               href='/change-password'
               replace
-              type='button'
             >
               Please try again
             </CustomButton>

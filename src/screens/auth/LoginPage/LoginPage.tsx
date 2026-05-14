@@ -176,7 +176,6 @@ const LoginPage = () => {
             variant='transparent'
             href='/password-recovery'
             className='w-full'
-            type='button'
             disabled={loginFormik.isSubmitting}
             aria-disabled={loginFormik.isSubmitting}
           >
@@ -198,7 +197,6 @@ const LoginPage = () => {
             variant='transparent'
             href='/signup'
             className='w-full'
-            type='button'
             disabled={loginFormik.isSubmitting}
             aria-disabled={loginFormik.isSubmitting}
           >
