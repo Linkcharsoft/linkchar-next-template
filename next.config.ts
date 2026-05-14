@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
 
   // --- Images config example ---
   // images: {
-  //   minimumCacheTTL: 3600,
+  //   minimumCacheTTL: 31536000,
   //   formats: ['image/avif', 'image/webp'],
   //   remotePatterns: [
   //     {
