@@ -131,7 +131,9 @@ Read the Figma source AND the relevant codebase before touching any file.
 
 > **Delegate to**: `Agent({ subagent_type: 'figma-tokens' })` — runs in **Haiku**.
 
-Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
+Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js`, loads fonts via `next/font/google` in `src/app/layout.tsx` (exposing them as CSS variables), updates `src/styles/general.sass` `font-family`, and removes any legacy `@import url('https://fonts.googleapis.com/...')` from `src/styles/index.sass`. Then runs `pnpm type-check`.
+
+**Fonts are NEVER loaded via CSS `@import`** — that causes a Lighthouse render-blocking warning and a third-party request. The agent enforces this and will scrub any pre-existing `@import url('https://fonts.googleapis.com/...')` line it finds.
 
 You receive: confirmation of changes + type-check result.
 

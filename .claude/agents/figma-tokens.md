@@ -1,6 +1,6 @@
 ---
 name: figma-tokens
-description: Step 1 of figma-design-import — edits tailwind.config.js and src/styles/index.sass to add design tokens (colors, typography sizes, fonts) identified in the Step 0 gap analysis, while enforcing the project's token policy. Then validates with pnpm type-check.
+description: Step 1 of figma-design-import — edits tailwind.config.js, src/app/layout.tsx, and src/styles/{index,general}.sass to add design tokens (colors, typography sizes, fonts) identified in the Step 0 gap analysis. Fonts are loaded via next/font/google (NEVER via CSS @import). Then validates with pnpm type-check. Mechanical edits, no architectural decisions.
 model: haiku
 ---
 
@@ -70,7 +70,29 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
    - Add new typography sizes to BOTH the `fontSize` map AND the typography plugin's `sizes` array — they must stay in sync.
    - Add new breakpoints to `theme.extend.screens` if specified.
 
-5. **Edit `src/styles/index.sass`** for new fonts: replace or add `@font-face` / `@import url(...)`. DO NOT modify the layer order line `@layer tailwind-base, primereact, tailwind-utilities`. If the body font changed, also edit `font-family` in `src/styles/general.sass`.
+5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`**:
+
+   Loading Google Fonts with `@import url('https://fonts.googleapis.com/...')` inside a SASS/CSS file is **forbidden** in this project. It causes a Lighthouse render-blocking warning (~300ms penalty), triggers a third-party DNS+TLS roundtrip, and is discovered late by the browser because it lives inside an already-parsed CSS file. `next/font/google` auto-hosts the font on our origin, preloads the `.woff2`, and adds `font-display: swap` automatically — no render-blocking, no third-party request.
+
+   For every font in the gap analysis:
+
+   - **Remove** any existing `@import url('https://fonts.googleapis.com/...')` line from `src/styles/index.sass`. If you find one, delete it — it's the legacy approach.
+   - **Add** the font in `src/app/layout.tsx`:
+     - `import { {FontName} } from 'next/font/google'` (the import name MUST match the family — `Inter`, `Roboto`, `Poppins`, etc. For multi-word families, use PascalCase no spaces: `Plus_Jakarta_Sans`, `IBM_Plex_Sans`.)
+     - Instantiate it at module scope (above the component):
+       ```tsx
+       const {camelCaseName} = {FontName}({
+         subsets: ['latin'],
+         weight: ['300', '400', '500', '600', '700', '800', '900'], // only the weights actually used
+         display: 'swap',
+         variable: '--font-{kebab-case-name}'
+       })
+       ```
+     - If the family has italic, add `style: ['normal', 'italic']`. If it's a variable font (e.g. `Inter`), you can omit `weight` and let Next bundle the full range.
+     - Apply the CSS variable on the `<html>` element: `<html lang="en" className={ {camelCaseName}.variable}>`. If multiple fonts, combine: `className={[font1.variable, font2.variable].join(' ')}`.
+   - **Update `src/styles/general.sass`** body selector: `font-family: var(--font-{kebab-case-name}), sans-serif` (replaces the old `"FontName", sans-serif` form).
+   - **Update `tailwind.config.js`** `fontFamily.sans`: `['var(--font-{kebab-case-name})', 'sans-serif']` (and any secondary family — e.g. `serif: ['var(--font-merriweather)', 'serif']`).
+   - **DO NOT modify the layer order line** in `src/styles/index.sass`: `@layer tailwind-base, primereact, tailwind-utilities` stays as-is.
 
 6. **Append decisions to `figma-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
 
@@ -81,6 +103,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 - Never delete existing tokens.
 - Never override `surface-50`...`surface-900`. Never extend that namespace.
 - Never override ANY non-surface token without an explicit `confirmOverride: true` from the parent.
+- Never load fonts via `@import url('https://fonts.googleapis.com/...')` in any `.sass` / `.css` file — always use `next/font/google` in `src/app/layout.tsx` and expose them as CSS variables. If you encounter a legacy `@import` for a Google Font, delete it.
 - Always read `figma-tokens-map.md` FIRST and prefer mapped reuse over any new action.
 - Always append your decisions to `figma-tokens-map.md` so the mapping survives future imports.
 
@@ -110,8 +133,10 @@ BLOCKED-OVERRIDE (awaiting user decision):
 Typography sizes added (fontSize + plugin.sizes):
 - {list of new sizes, or "none"}
 
-Fonts:
+Fonts (loaded via next/font/google in src/app/layout.tsx as --font-{name}):
 - {Replaced X → Y (weights), or "none"}
+- {Removed legacy @import from src/styles/index.sass, or "no legacy import found"}
+- {Updated src/styles/general.sass + tailwind.config.js fontFamily to var(--font-{name}), or "no body font change"}
 
 Type-check: ✅ clean / ❌ <errors>
 ```
