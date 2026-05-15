@@ -98,10 +98,19 @@ Read the Figma source AND the relevant codebase before touching any file.
    - SVGs to convert to React components: [list with Figma node IDs]
    - Images to convert to WebP: [list]
 
-   ## Components
-   - Extend existing: [list — e.g. CustomButton needs new variants]
-   - Create new: [list — e.g. ProductCard, ServiceCard, Navbar]
-   - Reuse as-is: [list]
+   ## Components (with representative Figma nodeIds — MANDATORY)
+   Every component (whether to extend or create) MUST have a representative Figma `nodeId` resolved here. `figma-components` will refuse to work without one — it forbids prose-only specs because building components from text descriptions consistently produces wrong-but-plausible output (screenshots hide structure: a colored area may be the IMAGE fill rather than a card frame; auto-layout direction, exact spacing per side, and hover/focus variants are invisible until the node is inspected).
+
+   How to resolve a nodeId:
+   - If the Figma file has a dedicated "Components / Library / Design System" page → pull the nodeId from there (canonical source).
+   - Otherwise → take the FIRST instance of that component you find in any screen frame. Any single instance works; `figma-components` will fetch its design context.
+
+   - Extend existing:
+     - `CustomButton` ← nodeId `X:Y` (Figma: "Button - Primary - Default")
+   - Create new:
+     - `ProductCard` ← nodeId `X:Y` (Figma: first instance in `Home > Products grid`)
+     - `Navbar` ← nodeId `X:Y` (Figma: any screen's header)
+   - Reuse as-is: [list — these don't need a nodeId, no change is made]
 
    ## Layouts
    - Existing match: [DashboardLayout matches dashboard nav? Yes/No]
@@ -131,9 +140,7 @@ Read the Figma source AND the relevant codebase before touching any file.
 
 > **Delegate to**: `Agent({ subagent_type: 'figma-tokens' })` — runs in **Haiku**.
 
-Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js`, loads fonts via `next/font/google` in `src/app/layout.tsx` (exposing them as CSS variables), updates `src/styles/general.sass` `font-family`, and removes any legacy `@import url('https://fonts.googleapis.com/...')` from `src/styles/index.sass`. Then runs `pnpm type-check`.
-
-**Fonts are NEVER loaded via CSS `@import`** — that causes a Lighthouse render-blocking warning and a third-party request. The agent enforces this and will scrub any pre-existing `@import url('https://fonts.googleapis.com/...')` line it finds.
+Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
 
 You receive: confirmation of changes + type-check result.
 
@@ -156,9 +163,14 @@ You receive: list of files created with their final sizes + lint/type-check stat
 > **Delegate to**: `Agent({ subagent_type: 'figma-components' })` — runs in **Opus**.
 
 Pass to the agent:
-- The list of existing components to extend with which new variants/sizes/states.
-- The list of new components to create with their Figma node references and target names.
+- The Figma `fileKey` (so the agent can call MCP tools itself).
+- The list of existing components to extend with which new variants/sizes/states, AND a representative **`figmaNodeId`** for each one (from Step 0's component-node mapping).
+- The list of new components to create, AND a representative **`figmaNodeId`** for each one.
 - The design tokens already added in Step 1 (colors/typography names, not hex).
+
+`figma-components` will INDEPENDENTLY fetch `get_design_context` + `get_screenshot` on each component's nodeId before writing code — that's the gate against prose-driven implementation errors. Do not try to pre-extract the design and pass it in as prose; let the agent fetch and interpret the structured data directly.
+
+If any component in your input lacks a `figmaNodeId`, the agent will refuse to proceed. Resolve the nodeIds in Step 0 — they are cheap to obtain (any instance of the component in any screen frame works) and save much more in rework cycles down the line.
 
 The agent reads existing `.tsx` and `.sass` files, finds usages with Grep (to avoid breaking callers), extends or creates following project conventions, and validates each one.
 
@@ -307,6 +319,9 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 - ❌ Strip vertical padding from sections "because container-custom handles spacing" — IT DOES NOT. `container-custom` is horizontal-only (max-width + 16px lateral gutter). Every section must keep its own `py-*` / `pt-*` / `pb-*` translated from Figma; sections without vertical padding collapse against each other and look broken.
 - ❌ Skip the "confirm with user" checkpoint at the end of Step 0
 - ❌ Manual scaffolding instead of invoking `/new-component`, `/new-screen`, `/new-modal` (sub-agents already follow this rule, but you might be tempted)
+- ❌ Pass components to `figma-components` as PROSE only (no `figmaNodeId`) — screenshots and text descriptions hide structure (e.g. which fill belongs to which node, auto-layout direction, exact paddings, hover/focus variants), and prose-driven components are the #1 source of rework. Resolve a representative nodeId for every component during Step 0.
+- ❌ Pre-extract the design context for each component in Step 0 and pass it as prose to `figma-components` — that is exactly the failure mode the nodeId-per-component rule prevents. Let the agent fetch its own design context per nodeId; that's the whole point of isolated sub-agent contexts.
+- ❌ Invent subfolders under `src/assets/icons/` or `src/assets/images/` per screen / feature (e.g. `src/assets/images/home/`, `src/assets/images/shared/patterns/`) — the convention is flat. Sub-agents that nest are getting it wrong; flatten on review.
 
 ---
 
@@ -317,7 +332,7 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 | 0 | Inventory & gap analysis | (parent) | Opus | **FULL design file URL** |
 | 1 | Tokens | `figma-tokens` | Haiku | List of colors/sizes/fonts to add |
 | 2 | Assets | `figma-assets` | Haiku | List of assets with type + URL + target name |
-| 3 | Components | `figma-components` | Opus | Extend list + create list + token names |
+| 3 | Components | `figma-components` | Opus | fileKey + extend list (with `figmaNodeId` each) + create list (with `figmaNodeId` each) + token names |
 | 4 | Layouts | `figma-layouts` | Sonnet | Current layouts state + Figma findings |
 | 5.1 | Scaffold screens | `figma-scaffold` | Haiku | Screen list (name, type, route, Figma-or-TBD) |
 | 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-screen` | Opus | (none upfront — checkpoint after each screen for optional adjustments) |

@@ -68,7 +68,23 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
      2. **If found** → reuse the existing `.webp` via static import. No re-download, no re-conversion.
      3. **If not found** → `curl` the URL into `/tmp/{slug}.png`, then `ffmpeg -i /tmp/{slug}.png -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling.
    - **Logos and shared assets**: if the URL hash matches one of the already-existing logos in `src/assets/images/` (use the `.hash.txt` sibling files written by `figma-assets` to detect matches), reuse those instead of saving a new copy in the screen folder.
-5. **Implement the screen** at `src/screens/{Name}Page/{Name}Page.tsx`, replacing the placeholder. Follow the project's `CLAUDE.md` strictly:
+5. **Component reuse audit (BEFORE writing JSX).** The parent passes a list of "Existing components to reuse" but it may be incomplete, stale, or written from the parent's interpretation rather than the file system. Before writing any section, walk the design context and identify every reusable visual primitive (cards, buttons, inputs, callouts, list items, badges, tabs, paginators, breadcrumbs, accordions, etc.). For each:
+
+   1. Grep `src/components/` (and `src/components/**/`) for an obvious name match (e.g. design has a numbered step → grep for `Step`, design has tab pills → grep for `Tab` / `Pill`).
+   2. If a match exists AND the component covers this variant → IMPORT and use it. Do NOT inline a one-off version.
+   3. If a match exists but does NOT cover this variant (e.g. needs a new size or state), STOP and report a `COMPONENT GAP` to the parent:
+
+      ```
+      COMPONENT GAP: {existing-component} does not cover {Figma node X:Y}'s {variant/state}.
+      Need: {description of new variant/state}.
+      Parent: please delegate to figma-components with this nodeId, then re-invoke me.
+      ```
+
+   4. If no match exists AND the visual is reused 2+ times in the screen OR is a clearly named primitive (a "card", a "tab", etc.), STOP and report a `COMPONENT GAP` so the parent can create it via `figma-components` instead of you inlining bespoke JSX.
+
+   Inlining bespoke versions of what should be reusable components is the most common silent regression in this flow. The reuse audit costs ~2-3 extra Grep calls per screen and prevents it.
+
+6. **Implement the screen** at `src/screens/{Name}Page/{Name}Page.tsx`, replacing the placeholder. Follow the project's `CLAUDE.md` strictly:
    - **`container-custom` is MANDATORY on every top-level section.** Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute *horizontal* padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a 16px built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. **Vertical padding is a separate concern**: `container-custom` does NOT set any `py-*` / `pt-*` / `pb-*`, so you MUST translate the vertical spacing from the Figma frame (e.g. a hero `padding-top: 120px; padding-bottom: 80px` → `pt-[120px] pb-20` or the closest token-friendly equivalent). NEVER ship a section without vertical padding — it will collapse against its siblings. Two valid patterns:
 
      ```tsx
@@ -95,7 +111,7 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
    - Use `classNames` from `primereact/utils` (NEVER `clsx`).
    - Inputs via PrimeReact wrapped in `InputContainer`.
    - Mock data ONLY inline with a clearly-named const if the API isn't defined yet.
-6. **Mobile responsive**: implement the variants from Step 2's mobile context. Use `md:` (768px) and `lg:` (1024px) Tailwind prefixes per the codebase's breakpoints.
+7. **Mobile responsive**: implement the variants from Step 2's mobile context. Use `md:` (768px) and `lg:` (1024px) Tailwind prefixes per the codebase's breakpoints.
 
    **Horizontal scroll containers** (when mobile shows cards in `overflow-x-auto`): make them accessible:
    ```tsx
@@ -120,7 +136,7 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
    - `scroll-px-4` matches the container padding so items align with edges.
    - Below `md:`, items have fixed `w-[292px]` and parent scrolls. At `md:+`, switch to grid.
    - Items must be focusable (the inner Card already has buttons/links that are focusable). If the item has no inner focus target, add `tabIndex={0}` + `onKeyDown` for arrow-key navigation.
-7. **Forms — auto-wire to Formik + Yup**. Whenever the screen has a form (contact, signup, search, etc.), do NOT leave it as `<form onSubmit={preventDefault}>` with a TODO. Generate the full Formik scaffold:
+8. **Forms — auto-wire to Formik + Yup**. Whenever the screen has a form (contact, signup, search, etc.), do NOT leave it as `<form onSubmit={preventDefault}>` with a TODO. Generate the full Formik scaffold:
 
    ```tsx
    import { useFormik } from 'formik'
@@ -155,7 +171,7 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
 
    Wrap each input in `InputContainer` so the project's `<Label>` + `<InputError>` pattern displays validation errors. Pass `formik.values.{field}`, `formik.handleChange`, and `formik.errors.{field}` to each input. The only TODO left is the API endpoint URL — never the validation or state wiring.
 
-8. **Animations — translate Figma hints to framer-motion `m` components**. The project uses `LazyMotion` (already wired in `ProvidersContainer`) — that means you MUST use `m.div` / `m.button` / etc., NEVER `motion.div`. Detect animation cues from the design context:
+9. **Animations — translate Figma hints to framer-motion `m` components**. The project uses `LazyMotion` (already wired in `ProvidersContainer`) — that means you MUST use `m.div` / `m.button` / etc., NEVER `motion.div`. Detect animation cues from the design context:
 
    - **Hover transitions on cards/buttons** (Figma "Smart Animate" between Default and Hover variants): wrap with `<m.div whileHover={{ ... }} transition={{ duration: 0.2 }}>`. Map the visual diff between variants to props (e.g. card hover scales up + adds shadow → `whileHover={{ scale: 1.02, boxShadow: '...' }}`).
    - **Scroll reveals** (sections that fade-in or slide-in): `<m.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }}>`.
@@ -177,10 +193,10 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
 
    Do NOT translate every micro-interaction — only the ones Figma explicitly designed. If unsure, leave the component static; gratuitous animation is worse than none.
 
-9. **Validate**:
-   - `pnpm run lint-check --fix`
-   - `pnpm run type-check`
-   - Both must pass clean.
+10. **Validate**:
+    - `pnpm run lint-check --fix`
+    - `pnpm run type-check`
+    - Both must pass clean.
 
 ## Hard rules
 - Verbatim text from Figma — do NOT paraphrase or "improve" copy.
