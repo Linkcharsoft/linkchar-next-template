@@ -24,15 +24,17 @@ interface Props {
 addLocale('es', es)
 
 const ProvidersContainer = ({ token, user, children }: Props) => {
-  const { setToken, setUser } = useUserStore()
+  const { setToken, setUser, removeToken, removeUser } = useUserStore()
   const authListener = useRef<string | null>(null)
   const router = useRouter()
 
 
-  // User data setup
+  // User data setup. Pair token and user as a single auth state — if either is
+  // missing (logout, expired session, /api/auth/me failure), clear both stores
+  // and the Sentry user. Avoids leaving Zustand with stale data after logout.
   useEffect(() => {
-    if(token) setToken(token)
-    if(user) {
+    if (token && user) {
+      setToken(token)
       setUser(user)
 
       // Set sentry user context on client side
@@ -41,6 +43,10 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
         email: user.email,
         username: `${user.first_name} ${user.last_name}`
       })
+    } else {
+      removeToken()
+      removeUser()
+      Sentry.setUser(null)
     }
   }, [token, user])
 
