@@ -46,6 +46,7 @@ export const getServerUser = async (): Promise<UserType | undefined> => {
 
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value ?? ''
+  if (!sessionCookie) return undefined
 
   const res = await fetch(`${DOMAIN}/api/auth/me/`, {
     method: 'GET',
