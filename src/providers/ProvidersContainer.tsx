@@ -1,5 +1,4 @@
 'use client'
-import Clarity from '@microsoft/clarity'
 import * as Sentry from '@sentry/nextjs'
 import { domAnimation, LazyMotion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
@@ -80,7 +79,10 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
   // Clarity setup
   useEffect(() => {
-    if(CLARITY_ID) Clarity.init(CLARITY_ID)
+    if (!CLARITY_ID) return
+    import('@microsoft/clarity').then(({ default: Clarity }) => {
+      Clarity.init(CLARITY_ID)
+    })
   }, [])
 
 
