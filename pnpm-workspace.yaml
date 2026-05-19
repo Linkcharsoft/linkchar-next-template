@@ -1,0 +1,13 @@
+allowBuilds:
+  "@parcel/watcher": true
+  "@sentry/cli": true
+  cypress: true
+  husky: true
+  playwright-webkit: true
+  sass: true
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - "@types/react@19.2.15"
+  - postcss@8.5.15
+  - react-tooltip@6.0.4
