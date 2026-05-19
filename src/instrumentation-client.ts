@@ -29,12 +29,9 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Add optional integrations for additional features
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: isProd,
-      blockAllMedia: isProd
-    })
-  ],
+  // Session Replay is added lazily below to keep the heaviest Sentry chunk
+  // off the critical bundle.
+  integrations: [],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: values.traces,
@@ -55,5 +52,21 @@ Sentry.init({
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: isStaging
 })
+
+// Lazy-load Session Replay after init to move its bundle off the critical path.
+if (!isDev) {
+  Sentry.lazyLoadIntegration('replayIntegration')
+    .then((replayIntegration) => {
+      const client = Sentry.getClient()
+      if (!client) return
+      client.addIntegration(replayIntegration({
+        maskAllText: isProd,
+        blockAllMedia: isProd
+      }))
+    })
+    .catch((error) => {
+      console.error('Failed to lazy-load Sentry replayIntegration', error)
+    })
+}
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
