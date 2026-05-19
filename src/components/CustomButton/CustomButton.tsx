@@ -1,13 +1,16 @@
 'use client'
 import './CustomButton.sass'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { Button } from 'primereact/button'
 import { classNames } from 'primereact/utils'
-import { Tooltip } from 'react-tooltip'
 import type { StateTypes } from '@/types/general'
 import type { Route } from 'next'
 import type { ButtonProps as OriginalButtonProps } from 'primereact/button'
 import type { ReactNode } from 'react'
+
+// Lazy-load react-tooltip — it only mounts when a button receives `data-tooltip-id`.
+const Tooltip = dynamic(() => import('react-tooltip').then(m => m.Tooltip), { ssr: false })
 
 type CustomButtonVariant = 'primary' | 'white' | 'transparent' | StateTypes
 type CustomButtonSize = 'detail' | 'small' | 'medium' | 'large'
