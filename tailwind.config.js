@@ -17,6 +17,9 @@ export const theme = {
       'surface-800': '#424242',
       'surface-900': '#212121'
     },
+    fontFamily: {
+      sans: ['var(--font-merriweather-sans)', 'sans-serif']
+    },
     fontSize: {
       128: '128px',
       120: '120px',

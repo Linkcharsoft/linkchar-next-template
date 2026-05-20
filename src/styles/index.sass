@@ -1,7 +1,6 @@
 @use "sass:meta"
 
-// Replace with the link of the fonts of this project
-@import url('https://fonts.googleapis.com/css2?family=Merriweather+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,700&display=swap')
+// Fonts load via next/font in src/app/layout.tsx — don't @import from fonts.googleapis.com (render-blocking).
 
 // Taildwind
 @layer tailwind-base, primereact, tailwind-utilities
@@ -12,6 +11,13 @@
 @layer tailwind-utilities
   @tailwind components
   @tailwind utilities
+
+// PrimeIcons FOIT fix — override the library's `font-family: 'primeicons'` (loaded
+// with `font-display: block`) to use the swap-display variable from next/font/local
+// declared in src/app/layout.tsx. Without this, icons remain invisible until the
+// font finishes loading, failing Lighthouse "Ensure text remains visible".
+.pi
+  font-family: var(--font-primeicons) !important
 
 // Resources
 @include meta.load-css('./general')

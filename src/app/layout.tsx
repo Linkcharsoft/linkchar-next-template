@@ -2,11 +2,36 @@ import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
 import 'primereact/resources/themes/lara-light-blue/theme.css'
+import { Merriweather_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import Script from 'next/script'
 import { APP_ENV, DOMAIN } from '@/constants/env'
 import GeneralLayout from '@/layouts/GeneralLayout/GeneralLayout'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
+
+// Variable font — `weight` is omitted on purpose (one .woff2 covers all weights).
+// For non-variable fonts, specify only the weights used: `weight: ['400', '700']`.
+const merriweatherSans = Merriweather_Sans({
+  subsets: ['latin'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-merriweather-sans'
+})
+
+// Re-host PrimeIcons font with `display: 'swap'` to fix FOIT.
+// The library ships its own @font-face with `font-display: block` which hides icons
+// until the font loads (Lighthouse "Ensure text remains visible" fail).
+// Pointing `src` at node_modules keeps the file version-locked to package.json —
+// `pnpm update primeicons` auto-updates it. The .pi selector override in
+// src/styles/index.sass forces the icons to use this variable instead of the
+// library's font-family declaration.
+const primeIcons = localFont({
+  src: '../../node_modules/primeicons/fonts/primeicons.woff2',
+  display: 'swap',
+  variable: '--font-primeicons',
+  preload: true
+})
 
 const SITE_URL = new URL(DOMAIN || 'https://linkchar.com')
 
@@ -149,7 +174,7 @@ interface Props {
 }
 
 const Layout = async ({ children }: Props) => (
-  <html lang="en">
+  <html lang="en" className={`${merriweatherSans.variable} ${primeIcons.variable}`}>
     <head>
       {/* Tailwind */}
       <script
