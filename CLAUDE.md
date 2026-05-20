@@ -326,6 +326,8 @@ After each significant implementation (new screen, new component, new feature, b
 [ CHORE ] Add style-dictionary for design tokens
 ```
 
+**Keep the message SHORT — single line, no body, no bullet list.** One terse phrase that names the change (under ~70 characters). Examples to mirror from this repo's history: `[ ADD ] Cache & Security Headers`, `[ UPDATE ] Improve Sentry replayIntegration loading`, `[ UPDATE ] Migrate Node engine 22 -> 24`. Detail belongs in the PR description, not the commit subject. If a change is too large to summarize in one line, it should be split into multiple commits.
+
 ### Pre-Commit Steps
 
 Before every commit, **always** run ESLint with auto-fix to ensure code quality:
@@ -371,11 +373,14 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 2. **PrimeReact** for inputs (InputText, Dropdown, Calendar, MultiSelect). NO native HTML inputs.
 3. **PrimeIcons** (`pi pi-xxx`) for icons. NO inline SVGs when a PrimeIcon exists.
 4. **Conditional classes**: `classNames()` from `primereact/utils`. NOT `clsx`.
-5. **Images**: `next/image` + WebP in `src/assets/images/`
-6. **Links**: `next/link` or `CustomButton` with `href` prop
+5. **Images**: `next/image` + WebP in `src/assets/images/`. See "Image Performance" in Lighthouse rules for `sizes` / `priority` / `fetchPriority` requirements.
+6. **Links**: `next/link` or `CustomButton` with `href` prop. External `target='_blank'` MUST include `rel='noopener noreferrer'`.
 7. **Animations**: `m` from framer-motion + `AnimatePresence`. NEVER `motion`.
-8. **Modals/Toasts**: `useModalStore` for loading states and notifications
+8. **Modals/Toasts**: `useModalStore` for loading states and notifications. Single-screen-only modals go local — see "Bundle & Performance Architecture".
 9. **Env vars**: Import from `@/constants/env`. NEVER `process.env` directly.
+10. **Icon-only buttons**: every `<button>` (or `CustomButton`) whose visible content is only an icon MUST receive `aria-label`. Without it, Lighthouse "Buttons do not have an accessible name" fails.
+11. **Form inputs**: every text-like input MUST set `autocomplete` to the matching token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
+12. **Heading element choice**: card/list-item titles inside a page that already has h1/h2 use `<p>`, not `<h3>`/`<h4>`. Reserve heading elements for actual document structure.
 
 ### Asset Pipeline
 
@@ -504,11 +509,80 @@ If the connection to `127.0.0.1:3845` fails, the skill will error out on the fir
 - **React Scan**: Automatically loaded in development (`APP_ENV === 'development'`) via `next/script` in root layout. Highlights unnecessary re-renders.
 - **APP_ENV validation**: `constants/env.ts` validates that `APP_ENV` is one of `production`, `staging`, or `development`
 
-## SEO
+## Performance & Lighthouse Rules
 
-- Every page should include `alternates.canonical` in its metadata export
-- Use semantic HTML: proper heading hierarchy (`h1` > `h2` > `h3`), `<p>` for text, `<main>` for main content
-- `robots.ts` and `sitemap.ts` are configured in `src/app/`
+These rules exist to prevent specific Lighthouse failures (Performance, Accessibility, SEO, Best Practices). They are mandatory whenever you generate UI code — do NOT ship code that violates them.
+
+### Image Performance (LCP, CLS, "Properly size images")
+
+- **`sizes` is REQUIRED on every `<Image fill>`**. Without it, Next.js serves the largest variant available. Match the rendered width: full-bleed hero → `sizes='100vw'`; half-width content → `sizes='(min-width: 768px) 50vw, 100vw'`; quarter-width card in a 4-col grid → `sizes='(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw'`.
+- **LCP image** (hero, above-the-fold) needs BOTH `priority` AND `fetchPriority='high'`. `priority` tells Next to preload; `fetchPriority` tells the browser the resource is high priority. Both are required to pass the Lighthouse LCP audit.
+- **Lists/grids**: only the first N items (those visible above the fold) get `priority`. Use `priority={index < N}`. Setting `priority` on every item defeats lazy loading and ships extra preloads.
+- **Avoid CLS**: every image container must reserve space — for fixed-size containers set BOTH `height` AND `min-height` (or `aspect-ratio`). Skeleton placeholders must mirror final dimensions exactly.
+- **Decorative images use `alt=''`**. Content images need a meaningful `alt`. Never leave `alt=''` on an image that conveys information — Lighthouse flags missing/empty alt as an a11y failure.
+- **Mobile/desktop dual `<Image>` pattern**: when using `<Image className='hidden md:block'>` + `<Image className='md:hidden'>`, BOTH variants download by default. Scope each with `sizes`: desktop `sizes='(min-width: 768px) Xvw, 0vw'`, mobile `sizes='(min-width: 768px) 0vw, 100vw'`. The `0vw` tells Next to skip download at that breakpoint.
+- **Raster assets (PNG/JPEG)**: convert to WebP at import time with `ffmpeg -i input.png -q:v 85 output.webp`. Render with `next/image` so AVIF/WebP variants are served when supported.
+- **Never use `unoptimized` on `next/image`** unless the source is a known optimized image — it defeats Next's image pipeline.
+
+### Font Loading ("Eliminate render-blocking resources", "Ensure text remains visible")
+
+- **NEVER** use `@import url('https://fonts.googleapis.com/...')` in CSS/SASS. It is render-blocking and triggers FOIT.
+- **ALL fonts** must be loaded via `next/font/google` or `next/font/local`, with `display: 'swap'` and a CSS variable (`variable: '--font-X'`). Apply the variable to `<html>` via `className`.
+- **Tailwind and CSS must reference the variable**, not the literal font name: `font-family: var(--font-merriweather-sans)` (NOT `'Merriweather Sans'`); Tailwind: `fontFamily: { sans: ['var(--font-merriweather-sans)', 'sans-serif'] }`.
+- **Variable fonts**: omit `weight` to ship one `.woff2` covering the full weight range. Non-variable fonts: specify ONLY the weights actually used — every weight in the array is an extra file.
+- **Icon fonts whose default `@font-face` uses `font-display: block`** MUST be re-hosted via `next/font/local` and forced via `[icon-selector] { font-family: var(--font-X) !important }`. Otherwise icons cause FOIT. The template ships this done for PrimeIcons — see `src/app/layout.tsx` (`localFont({ src: '../../node_modules/primeicons/fonts/primeicons.woff2', display: 'swap', variable: '--font-primeicons' })`) and `src/styles/index.sass` (`.pi { font-family: var(--font-primeicons) !important }`). Referencing the file directly from `node_modules` keeps the font version locked to `package.json` — no manual copy in `src/assets/`, no drift on upgrades.
+
+### SEO & Metadata (Lighthouse "SEO" category)
+
+- **Every public page MUST export metadata** containing: `title`, `description`, `alternates.canonical`, `openGraph`, `twitter`. Missing any of these triggers SEO audit failures.
+- **Use the root layout's title template** (`title: { default: '...', template: '%s | App Name' }`). Per-page titles should be the bare title — the template adds the brand suffix. Dashboard/admin pages: short bare title, never manually append `| App`.
+- **Dynamic routes** (`[id]`, `[slug]`, etc.): use `generateMetadata` (not static `metadata`) to fetch the resource and return data-driven `title`, `description`, and `og.images`. If the resource is not found, return `robots: { index: false, follow: false }` so error pages do not get indexed.
+- **Filtered/paginated listings** (`?search=`, `?page>1`, `?category=`, etc.): set `robots: { index: false, follow: true }` when those params are present. Otherwise every filter combination becomes a duplicate-content URL Google penalizes.
+- **`html lang`** must match the actual content language (`"es"`, `"en"`). `openGraph.locale` and any `twitter` locale must match (e.g. `es_AR`, not the Next.js default `en_US`). Mismatched/missing lang fails both SEO and a11y audits.
+- **`robots.ts`** must disallow `/api/*`, dashboard/admin routes, and auth-only routes (`/login`, `/signup`, `/password-recovery`, `/change-password`). These should never appear in search results.
+- **`sitemap.ts`** with database/API-sourced entries: mark `export const dynamic = 'force-dynamic'` (or use `revalidate`) so it reflects content changes. Hard-coded static sitemaps go stale instantly.
+- **NEVER** set `robots: { nocache: true }` in global metadata — it interferes with CDN caching without any SEO benefit (common leftover from Next.js boilerplate templates).
+- **`public/manifest.json`** must reflect the real app (`name`, `short_name`, `description`, `theme_color`, `icons`). Template defaults left in production fail the Lighthouse PWA audit.
+- **Social card image** (`og:image`, `twitter:image`): 1200×630 WebP, stored under `public/seo/`, referenced as a path. Required for proper sharing previews and "Open Graph" SEO checks.
+
+### Accessibility (Lighthouse "Accessibility")
+
+- **Heading hierarchy** must start with h1 and never skip levels (no `h1 → h3`). If the visual design has no h1, add a visually-hidden one (`<h1 className='sr-only'>{Page Title}</h1>`). Each rendered page must have exactly one h1.
+- **Card/list-item titles** inside a page that already has h1/h2 use `<p>` (not `<h3>`/`<h4>`). Heading elements for each card pollute the document outline; Lighthouse flags it as "Heading levels are not in sequential order".
+- **Never nest `<main>`**. The convention is: each **screen** owns its own `<main id='main'>` element (the skip-to-content target lives there); **layouts** must NOT render `<main>` themselves — they wrap chrome (navbar, sidebar, footer, decorative side-panels) around the screen slot. Two `<main>` per page = automatic a11y fail. If a layout needs a wrapper around the screen slot, use `<div>`; use `<aside>` for purely decorative side-panels.
+- **Icon-only interactive elements** MUST have `aria-label`. `<button><i className='pi pi-times'/></button>` has no accessible name and fails "Buttons do not have an accessible name". Provide one: `aria-label='Close'`.
+- **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`. Prevents tab-napping (security) and avoids a Lighthouse Best Practices flag.
+- **Form inputs need `autocomplete`**: email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, full name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`, etc. Missing autocomplete is both a Lighthouse a11y failure and a password-manager UX regression.
+- **Viewport meta**: never use `user-scalable=no` or `maximum-scale=1`. Both block accessibility zoom and fail Lighthouse. Configure via the Next.js `viewport` export and leave zoom unrestricted.
+- **Tap target size**: interactive elements on mobile need at least `44×44px` with 8px gap to neighbors (Lighthouse measures `48×48` effective). Set `min-h-[44px] min-w-[44px]` on icon buttons; rely on `CustomButton` size variants that already meet this for regular buttons.
+- **Color contrast** must meet WCAG AA: 4.5:1 for normal text, 3:1 for large text (18pt+ or 14pt+ bold) and UI components. When picking color tokens, verify every text/background pair before shipping — Lighthouse runs `axe-core` contrast checks automatically.
+- **Skip-to-content link**: the root layout (`src/app/layout.tsx`) renders `<a href='#main' className='SkipToContent'>...</a>` as the first child of `<body>`, paired with `id='main'` on the screen's `<main>`. Required for the "Bypass blocks of repetitive content" Lighthouse audit.
+- **Horizontal-scroll carousels** (mobile `overflow-x-auto` lists): use semantic `<ul role='list' aria-label='...'>` + `<li>` items. Screen readers announce the item count; the label describes what the carousel contains.
+
+### Bundle & Performance Architecture
+
+- **`'use client'` belongs at the deepest leaf that needs it**. Marking a layout or page as `'use client'` opts the entire subtree out of SSR — you lose streaming, bigger JS payload, slower LCP. Default to server; push the directive down to the specific component that uses hooks/events/browser APIs.
+- **`generateStaticParams`** for dynamic detail routes when the set of params is bounded (catalog items, blog posts, etc.). Converts dynamic routes to statically pre-rendered HTML at build time → dramatic LCP and TTFB improvement. Combine with `revalidate` for ISR if data changes.
+- **Heavy client-only components** (rich text editors, charts, code editors, map libraries, non-critical modals) → `dynamic(() => import('...'), { ssr: false })` from `next/dynamic`. Reduces the initial JS payload that ships with the page.
+- **Modals used on a single screen** are NOT registered in the global `ModalsProvider`. Mount them locally inside the screen that uses them. A modal in the global provider ships its JavaScript on every page — even pages that never open it.
+- **Third-party scripts** (analytics, tag managers, pixels, heatmap tools): MUST use Next.js `<Script>` with `strategy='afterInteractive'` or `'lazyOnload'`. NEVER `strategy='beforeInteractive'` unless the script is genuinely critical for the first paint — `beforeInteractive` blocks hydration and destroys LCP/TBT.
+- **`fetch` calls in Server Components** must set an explicit cache policy: `fetch(url, { next: { revalidate: N } })` for ISR, or `cache: 'no-store'` for always-fresh. Defaults change between Next.js versions — be explicit so the behavior is stable.
+- **Browserslist** (in `package.json`) should target modern engines only. Wider ranges (e.g. the Create-React-App default `>0.2%`) ship hundreds of KB of legacy polyfills. The Lighthouse audit "Avoid serving legacy JavaScript to modern browsers" depends on this.
+- **`reactStrictMode: true`** must remain enabled in `next.config.ts` — surfaces unsafe patterns during development.
+
+### Lighthouse-driven base configuration (already shipped by this template)
+
+The template ships with these Lighthouse-driven configurations pre-applied in `next.config.ts`, `package.json`, and `src/app/layout.tsx`. Do NOT remove or downgrade them without explicit reason:
+
+- **Security headers**: HSTS (`Strict-Transport-Security`), `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`.
+- **Per-path cache headers** for `/manifest.json`, `/seo/*`, `/sitemap.xml`, `/robots.txt`.
+- **`images.minimumCacheTTL: 31536000`** (1 year) and **`images.formats: ['image/avif', 'image/webp']`**.
+- **Tight `browserslist`** in `package.json` — modern engines only (>0.5%, not ie 11, not safari < 15.4, etc.).
+- **Bundle analysis via Turbopack-native `next experimental-analyze`** (Next 16.1+) — run `pnpm run analyze` when investigating bundle bloat. Output lands in `.next/diagnostics/analyze/`. No extra dependency required (the webpack-based `@next/bundle-analyzer` is not used — Next 16 ships with Turbopack as default, so the webpack analyzer would not reflect the production bundle).
+
+### Cleanup before production
+
+The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/sentry-example-api/route.ts` — these exist only to validate that Sentry is correctly wired up and report errors as expected. **Delete both files** (and remove `/sentry-example-page` from `next.config.ts` rewrites / `robots.ts` if applicable) before shipping to production. The page contains inline styles with hardcoded hex colors that intentionally don't follow the project's token system — that's expected for a throwaway test page, but it WILL flag in `figma-validation` if left in. Validating Sentry: open the page, click the buttons, confirm the errors appear in your Sentry dashboard, then delete.
 
 ## Testing
 
