@@ -202,7 +202,7 @@ const SignupPage = () => {
             disabled={signupFormik.isSubmitting}
             aria-disabled={signupFormik.isSubmitting}
           >
-            Already have an account?{' '}<span className="font-bold">Log in</span>
+            Already have an account?{' '}<span className="text-bold-16">Log in</span>
           </CustomButton>
         </div>
       </form>

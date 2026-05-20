@@ -189,7 +189,7 @@ const PasswordRecoveryPage = () => {
             disabled={passwordRecoveryFormik.isSubmitting}
             aria-disabled={passwordRecoveryFormik.isSubmitting}
           >
-            Go back to <span className="font-bold">Log in</span>
+            Go back to <span className="text-bold-16">Log in</span>
           </CustomButton>
         </div>
       </form>

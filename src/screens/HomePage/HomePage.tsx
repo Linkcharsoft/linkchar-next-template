@@ -159,7 +159,7 @@ const HomePage = () => {
 
 
   return (
-    <main id="main" ref={containerRef} className="HomePage font-bold text-white">
+    <main id="main" ref={containerRef} className="HomePage text-bold-16 text-white">
       <Image
         src={Logo}
         alt={PRODUCT_NAME}
@@ -170,7 +170,7 @@ const HomePage = () => {
       />
       <h1 className='text-extrabold-64'>{ PRODUCT_NAME }</h1>
       <h2 className='text-24'>Coming Soon</h2>
-      <p className='font-light'>Powered by <a className='font-bold hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></p>
+      <p className='text-light-16'>Powered by <a className='text-bold-16 hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></p>
 
       <script
         ref={fragmentRef}

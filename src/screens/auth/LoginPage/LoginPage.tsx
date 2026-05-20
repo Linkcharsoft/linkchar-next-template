@@ -180,7 +180,7 @@ const LoginPage = () => {
             aria-disabled={loginFormik.isSubmitting}
           >
             <span className='text-surface-800'>
-              Forgot password? <span className="font-bold">Recover it</span>
+              Forgot password? <span className="text-bold-16">Recover it</span>
             </span>
           </CustomButton>
 
@@ -200,7 +200,7 @@ const LoginPage = () => {
             disabled={loginFormik.isSubmitting}
             aria-disabled={loginFormik.isSubmitting}
           >
-            Don&apos;t have an account? <span className="font-bold">Sign up</span>
+            Don&apos;t have an account? <span className="text-bold-16">Sign up</span>
           </CustomButton>
         </div>
       </form>

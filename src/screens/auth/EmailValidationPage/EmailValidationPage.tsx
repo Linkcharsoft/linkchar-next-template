@@ -83,7 +83,7 @@ const EmailValidationPage = ({ email }: Props) => {
         </h1>
 
         <p className="text-regular-16 text-center text-surface-800">
-          We sent you an email to <span className="font-semibold text-surface-900" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
+          We sent you an email to <span className="text-semibold-16 text-surface-900" style={{ overflowWrap: 'anywhere' }}>{email}</span> with a link to validate your account
         </p>
 
 
@@ -119,13 +119,13 @@ const EmailValidationPage = ({ email }: Props) => {
           </CustomButton>
 
           <div className="flex w-full flex-col items-center justify-center gap-2">
-            <p className="font-normal text-surface-800">
+            <p className="text-regular-16 text-surface-800">
               Didn&apos;t receive anything?
             </p>
 
             <CustomButton
               variant='transparent'
-              className='w-full !font-semibold'
+              className='!text-semibold-16 w-full'
               onClick={handleResendEmail}
               disabled={timerIsRunning}
               type='submit'

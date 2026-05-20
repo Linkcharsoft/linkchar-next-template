@@ -102,7 +102,7 @@ const ChangePasswordPage = () => {
 
         <div className="flex flex-col gap-4">
           <p className="text-regular-16 text-center text-surface-800">
-            We will send you an email to <span className="font-semibold">{ user?.email }</span> with a link to change your password
+            We will send you an email to <span className="text-semibold-16">{ user?.email }</span> with a link to change your password
           </p>
           <p className="text-regular-16 text-center text-surface-800">
             Make sure to check the spam folder
