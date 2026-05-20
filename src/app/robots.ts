@@ -6,7 +6,15 @@ const robots = (): MetadataRoute.Robots => {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/dashboard']
+      // Auth flows and dashboards shouldn't appear in search results.
+      disallow: [
+        '/api',
+        '/dashboard',
+        '/login',
+        '/signup',
+        '/password-recovery',
+        '/change-password'
+      ]
     },
     sitemap: `${DOMAIN}/sitemap.xml`
   }
