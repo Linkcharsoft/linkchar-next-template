@@ -94,9 +94,40 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
    - **Update `tailwind.config.js`** `fontFamily.sans`: `['var(--font-{kebab-case-name})', 'sans-serif']` (and any secondary family — e.g. `serif: ['var(--font-merriweather)', 'serif']`).
    - **DO NOT modify the layer order line** in `src/styles/index.sass`: `@layer tailwind-base, primereact, tailwind-utilities` stays as-is.
 
-6. **Append decisions to `figma-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
+6. **Icon fonts with `font-display: block` (PrimeIcons, FontAwesome, etc.) — only run this step if the project adds a NEW icon-font library beyond what the template already wires up**.
 
-7. Run `pnpm run type-check` and report PASS/FAIL.
+   Many icon-font CSS files ship with `@font-face { font-display: block }` baked in, which causes a Lighthouse FOIT (Flash Of Invisible Text) on icons until the font loads. The fix is to re-host the font via `next/font/local` with `display: 'swap'` and override the library's selector to use the new font-family variable.
+
+   **The template ships this already done for PrimeIcons** (see `src/app/layout.tsx` and `src/styles/index.sass`). Skip the step unless the project adds a DIFFERENT icon font (FontAwesome, Material Icons via webfont, etc.). If it does, replicate the pattern:
+
+   - Find the font file inside its node_modules package (e.g. `node_modules/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2`) — referencing it from there keeps the version locked to `package.json` and auto-updates with `pnpm update`. Do NOT copy the file into `src/assets/fonts/`.
+   - In `src/app/layout.tsx`, add a `next/font/local` instance pointing at the node_modules path:
+     ```tsx
+     import localFont from 'next/font/local'
+
+     const iconFont = localFont({
+       src: '../../node_modules/{package}/path/to/{font-file}.woff2',
+       display: 'swap',
+       variable: '--font-{name}',
+       preload: true
+     })
+     ```
+   - Combine the variable with the existing fonts on `<html>`:
+     ```tsx
+     <html lang='en' className={`${sansFont.variable} ${iconFont.variable}`}>
+     ```
+   - In `src/styles/index.sass`, override the icon selector to use the variable (this beats the library's own `font-family` declaration):
+     ```sass
+     .{icon-selector}
+       font-family: var(--font-{name}) !important
+     ```
+     Replace `.{icon-selector}` with the library's selector (e.g. `.fa` for FontAwesome, `.material-icons`, etc.).
+
+   Skip this step if the project does not add a NEW icon font with `font-display: block`. Most modern icon sets shipped as SVG components (Lucide, Heroicons, etc.) are not affected.
+
+7. **Append decisions to `figma-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
+
+8. Run `pnpm run type-check` and report PASS/FAIL.
 
 ## Hard rules
 - Never invent token values — use only what the parent provided.

@@ -68,6 +68,16 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
      2. **If found** → reuse the existing `.webp` via static import. No re-download, no re-conversion.
      3. **If not found** → `curl` the URL into `/tmp/{slug}.png`, then `ffmpeg -i /tmp/{slug}.png -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling.
    - **Logos and shared assets**: if the URL hash matches one of the already-existing logos in `src/assets/images/` (use the `.hash.txt` sibling files written by `figma-assets` to detect matches), reuse those instead of saving a new copy in the screen folder.
+
+   **Image rendering rules — Lighthouse-mandatory, no exceptions:**
+
+   - Every `<Image>` MUST have a meaningful `alt`. Decorative-only images use `alt=''`; never leave content images with empty alt.
+   - Every `<Image fill>` MUST declare `sizes`. Examples: full-bleed hero → `sizes='100vw'`; half-width content panel → `sizes='(min-width: 768px) 50vw, 100vw'`; 4-col grid card → `sizes='(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw'`. Without `sizes` Next.js serves the largest variant and Lighthouse "Properly size images" fails.
+   - **LCP image** (the largest above-the-fold image — typically the hero) needs BOTH `priority` AND `fetchPriority='high'`. Both, not one.
+   - **Lists/grids**: only the first N items above the fold get `priority`. Pattern: `priority={index < N}`. Setting `priority` on every item destroys lazy loading.
+   - **Mobile/desktop dual `<Image>` (`hidden md:block` + `md:hidden`)**: BOTH variants download by default. Scope each with `sizes` to skip the hidden one — desktop `sizes='(min-width: 768px) Xvw, 0vw'`, mobile `sizes='(min-width: 768px) 0vw, 100vw'`.
+   - **Image container must reserve space** to avoid CLS — for fixed-size containers set BOTH `height` AND `min-height` in the `.sass`, or use `aspect-ratio`.
+   - Never use `unoptimized` unless the asset is already in an optimized final format and there's a documented reason.
 5. **Component reuse audit (BEFORE writing JSX).** The parent passes a list of "Existing components to reuse" but it may be incomplete, stale, or written from the parent's interpretation rather than the file system. Before writing any section, walk the design context and identify every reusable visual primitive (cards, buttons, inputs, callouts, list items, badges, tabs, paginators, breadcrumbs, accordions, etc.). For each:
 
    1. Grep `src/components/` (and `src/components/**/`) for an obvious name match (e.g. design has a numbered step → grep for `Step`, design has tab pills → grep for `Tab` / `Pill`).
@@ -198,12 +208,33 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
     - `pnpm run type-check`
     - Both must pass clean.
 
+## Accessibility & Lighthouse rules (mandatory for every screen)
+
+Beyond the carousel pattern in Step 7, every screen must satisfy these — they are checked by Lighthouse's Accessibility and SEO audits.
+
+- **Heading hierarchy** starts at h1, never skips levels. Every rendered page must have exactly one h1. If the Figma design has no visible h1 (e.g. a dashboard view where the breadcrumb is the only "title"), add a visually-hidden one: `<h1 className='sr-only'>{Page Title}</h1>`.
+- **Card/list-item titles** that sit inside a page already owning h1/h2 use `<p>` — NOT `<h3>`/`<h4>`. Heading elements for every card pollute the document outline and Lighthouse flags it.
+- **The screen root MUST be `<main id='main' className='ScreenName'>`** — each screen owns its own `<main>` (the skip-to-content link in the root layout points to `#main`). Layouts do NOT render `<main>` themselves, so two `<main>` per page only happens if you wrap a layout in `<main>` by mistake — never do that. Verify with `grep '<main' src/layouts/` → should be zero matches.
+- **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Example: `<CustomButton aria-label='Close'><i className='pi pi-times'/></CustomButton>`.
+- **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
+- **Form inputs** MUST set the matching `autocomplete` token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
+- **Tap target size on mobile**: every interactive element must be at least `44×44px` with 8px gap to neighbors. Icon-only buttons need `min-h-[44px] min-w-[44px]`. Regular `CustomButton` size variants already satisfy this.
+- **Viewport `user-scalable`**: never set the viewport meta to disable zoom — accessibility requires zoomable pages, and Lighthouse flags it. Use the Next.js root `viewport` export and leave zoom unrestricted.
+
+## Bundle architecture rules
+
+- **`'use client'` only when necessary** — pushed to the deepest leaf that uses hooks/events/browser APIs. A screen that simply renders server-rendered children should NOT be `'use client'`.
+- **Modals opened only by this screen** are mounted INSIDE the screen, not in the global `ModalsProvider`. Otherwise the modal's JS ships on every page in the app.
+- **Heavy client-only deps** (rich text editor, chart, code editor, map library, etc.): use `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
+- **Third-party scripts** (analytics, pixels, tag managers) go through Next.js `<Script>` with `strategy='afterInteractive'` or `'lazyOnload'`. NEVER `'beforeInteractive'`.
+
 ## Hard rules
 - Verbatim text from Figma — do NOT paraphrase or "improve" copy.
 - If Figma uses a typography size outside the project scale, ask the parent to add it via `figma-tokens` rather than using arbitrary `text-[Xpx]`.
 - All `<a>` for internal routes must use Next.js `<Link>` or `CustomButton` with `href`.
 - For interactive non-button elements, add proper a11y attributes (`role`, `tabIndex`, `onKeyDown`).
 - `container-custom` on EVERY top-level section. Reject the impulse to translate Figma's absolute frame width / per-section `padding-x` literally — that's exactly what produces misaligned sections. Self-check before finishing: every `<section>` either has `container-custom` directly or wraps its content in a `<div className='container-custom ...'>`. AND every section has explicit vertical padding (`py-*` / `pt-*` / `pb-*`) translated from the Figma design — `container-custom` only covers horizontal, not vertical, so a section with only `container-custom` and no `py-*` is incomplete.
+- All Lighthouse rules from "Accessibility & Lighthouse rules" and "Bundle architecture rules" above are blocking — if you can't satisfy one, STOP and surface the conflict to the parent.
 
 ## Output to parent
 A short report:

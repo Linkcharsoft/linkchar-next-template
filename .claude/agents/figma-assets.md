@@ -46,8 +46,18 @@ Follow the project's existing icon convention (look at any existing file in `src
 - Component takes `(props: SVGProps<SVGSVGElement>)`, spreads `{...props}` on the root `<svg>`.
 - Replace `fill="{hex}"` with `fill="currentColor"` ONLY if the icon is monochromatic and the caller will theme it via CSS (`text-*` on parent). Multi-color icons keep their original fills.
 - Remove duplicate `id="..."` attributes on `<path>` elements — they cause collisions when the icon renders multiple times on one page.
+- **Set `aria-hidden='true'` and `focusable='false'` by default on the root `<svg>`** (BEFORE `{...props}` so a consumer can override when the icon is genuinely informative). Most icons are decorative — next to a text label, or inside an icon-only button whose `aria-label` already provides the accessible name — so the icon itself must be hidden from assistive tech to avoid double-announcing.
 - Default export. **No `memo()`** — React Compiler handles memoization automatically (if the project has it enabled; check `next.config.ts`).
 - Register the export in `src/assets/icons/index.ts`.
+
+Example shape:
+```tsx
+const {Name}Icon = (props: SVGProps<SVGSVGElement>) => (
+  <svg aria-hidden='true' focusable='false' viewBox='...' xmlns='http://www.w3.org/2000/svg' {...props}>
+    {/* paths */}
+  </svg>
+)
+```
 
 ### Static-file SVG details (when size + role say "decorative")
 

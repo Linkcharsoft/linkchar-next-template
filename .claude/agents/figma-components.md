@@ -34,7 +34,7 @@ Only AFTER this inspection do you write the component. Skipping it — even "to 
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, STOP and ask the parent to delegate to `figma-tokens` first — never hardcode hex.
-2. `CLAUDE.md` (project root) — project conventions (BEM in SASS, framer-motion `m` not `motion`, `classNames` from primereact/utils not `clsx`, default exports — and NO manual `memo()` since React Compiler handles memoization automatically, etc.).
+2. `CLAUDE.md` (project root) — project conventions (BEM in SASS, framer-motion `m` not `motion`, `classNames` from primereact/utils not `clsx`, default exports — and NO manual `memo()` since React Compiler handles memoization automatically, etc.). Also read the `## Performance & Lighthouse Rules` section — its Image / A11y / Bundle rules apply to every component you create.
 3. `src/components/` (Glob the folders) — full list of existing components. The "Existing Reusable Components" table in CLAUDE.md may be out of date.
 
 ## Steps
@@ -67,10 +67,24 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 
    Also: if you EXTENDED an existing component with a meaningful new variant (e.g. added `priority` levels to `CustomButton`), update its existing row to mention the new variants — don't add a duplicate row.
 
+## Accessibility & Lighthouse rules (mandatory for every component)
+
+These are the same rules `CLAUDE.md` documents — repeated here because this agent is the one most likely to introduce violations when extending or creating components.
+
+- **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
+- **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
+- **Form inputs** MUST set the matching `autocomplete` token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.) when building input components.
+- **Card / list-item titles** use `<p>` — NOT `<h3>`/`<h4>`. Heading elements are reserved for actual document structure; cards inside a page that already has h1/h2 must not pollute the outline.
+- **Clickable non-button elements** need `role="button"`, `tabIndex={0}`, and `onKeyDown` for Enter/Space — or just use a `<button>`.
+- **Images**: `next/image` with meaningful `alt` (empty only if decorative). For `<Image fill>` always declare `sizes`. The component does not decide `priority` — the consumer does — but if the component renders the LCP image of the page, expose `priority`/`fetchPriority` as props.
+- **Tap target size**: any interactive element the component renders must be at least `44×44px` on mobile (`min-h-[44px] min-w-[44px]` on icon-only buttons; regular `CustomButton` size variants already satisfy this).
+- **`'use client'` at the deepest leaf**: only mark the component as client if it directly uses hooks, event handlers, or browser APIs. A wrapping presentational component should remain server-rendered even if a child is client.
+- **Heavy client-only deps** (rich text editors, charts, code editors, map libraries) MUST be imported via `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
+- **Optional images in card-style components**: accept `image?: string | StaticImageData` so static imports work.
+
 ## Hard rules
 - Read the project's `CLAUDE.md` "Existing Reusable Components" table BEFORE creating anything new — if a similar component exists, extend it.
-- A11y: any clickable non-button element needs `role="button"`, `tabIndex={0}`, `onKeyDown` for Enter/Space — or just use a `<button>`.
-- For optional images in cards, accept `image?: string | StaticImageData` so static imports work.
+- Every component MUST satisfy the rules in the "Accessibility & Lighthouse rules" section above — they are blocking, not aspirational.
 - **Full-bleed components (Navbar, Footer, Sidebar, top/bottom bars) MUST use `container-custom`**: when the root element has a background that spans 100vw, wrap the inner content with `<div className='container-custom ...'>` so that the component's content aligns horizontally with the screens' sections. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. NEVER hardcode `max-w-[Xpx]` or arbitrary `px-*` to define the inner content width — those numbers come from Figma's absolute frames and break alignment with the rest of the page. **Vertical padding (`py-*`) is NOT covered by `container-custom`** — always add it explicitly from the Figma design (e.g. `py-4` on a navbar, `py-12` on a footer); the class only handles horizontal.
 
 ## Output to parent

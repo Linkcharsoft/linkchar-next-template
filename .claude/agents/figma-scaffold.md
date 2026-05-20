@@ -41,7 +41,12 @@ If the list is missing, ask.
    </section>
    ```
 
-4. Each `page.tsx` must export `metadata` with `alternates.canonical: '{route}'` (SEO requirement).
+4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
+
+   - **`auth` and `protected` (dashboard)**: minimal — `title` + `alternates.canonical`. Robots already blocks these via `robots.ts`; no social previews needed.
+   - **`public` static route**: full metadata — `title`, `description` (placeholder ok, e.g. `'TODO: page description (~155 chars)'`), `alternates.canonical`, `openGraph` and `twitter` blocks pointing at `/seo/social-banner.webp`. Per-page values can be placeholders; the SHAPE must be correct so a later edit only swaps strings.
+   - **`public` dynamic route** (`[id]`, `[slug]`, etc.): use `export async function generateMetadata(...)` from the start, not a static `metadata` const. The function can return placeholder values for now (the actual fetch wires in when the API exists), but the async signature must be there so the dynamic-metadata pattern is baked in.
+   - **Optional: `robots: { index: false, follow: false }`** while the page is a "Próximamente" placeholder. Drop it once real content ships. This prevents half-built pages from being indexed.
 
 5. Verify all routes are reachable: read `src/proxy.ts` and confirm public ones are in `PUBLIC_PATHS`. If `/new-screen` didn't add a public route to `PUBLIC_PATHS` (the skill only handles auth paths automatically), add it manually.
 
@@ -51,6 +56,9 @@ If the list is missing, ask.
 - ALWAYS invoke `/new-screen` — never scaffold manually.
 - Page wrappers must be THIN (just metadata + render the screen component). No business logic in `page.tsx`.
 - Default exports for both screen and page.
+- The screen root MUST be `<main id='main' className='{Name}Page'>` — each screen owns its own `<main>`. Layouts do NOT render `<main>` themselves, so this never creates nesting. The `/new-screen` skill already does this; verify after the skill runs.
+- Public-page metadata always includes `description`, `openGraph`, and `twitter` blocks — even with placeholder strings.
+- Dynamic routes always use `generateMetadata` (function), never `metadata` (const).
 
 ## Output to parent
 A list of created routes (route → screen file path) plus lint/type-check status.
