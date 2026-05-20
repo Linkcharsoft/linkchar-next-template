@@ -17,6 +17,7 @@
     "lint-check": "eslint .",
     "type-check": "tsc --noEmit",
     "check": "pnpm run lint-check && pnpm run type-check",
+    "analyze": "next experimental-analyze --output",
     "test-open": "cypress open",
     "test-run": "cypress run"
   },
