@@ -35,6 +35,7 @@ const GlobalErrorPage = ({
           title='Logo'
           className="GlobalErrorPage__Logo"
           priority
+          fetchPriority='high'
         />
 
         <h1 className='text-bold-32 md:text-bold-48'>

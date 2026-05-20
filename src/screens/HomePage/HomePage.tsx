@@ -166,6 +166,7 @@ const HomePage = () => {
         title={PRODUCT_NAME}
         className="HomePage__Logo"
         priority
+        fetchPriority="high"
       />
       <h1 className='text-extrabold-64'>{ PRODUCT_NAME }</h1>
       <h2 className='text-24'>Coming Soon</h2>
