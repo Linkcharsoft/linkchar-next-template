@@ -121,6 +121,11 @@ const ESLintConfig = [
 
       // TS
       ...typescriptEslint.configs.recommended.rules,
+      // TypeScript already checks for undefined variables/types (with better accuracy
+      // than ESLint, because it understands DOM lib types like RequestInit/RequestCache).
+      // Disabling no-undef here removes the need for `// eslint-disable-next-line no-undef`
+      // sprinkles on every DOM type usage. Recommended by typescript-eslint maintainers.
+      'no-undef': 'off',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
