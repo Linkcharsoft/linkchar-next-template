@@ -83,6 +83,8 @@ For elements on a dark background (dark cards, footers, hero overlays), pass `da
 
 The goal is **visual parity at first glance** — the skeleton should occupy roughly the same space and rhythm as the loaded UI so there is no layout shift when data arrives.
 
+> **Lighthouse note**: Cumulative Layout Shift (CLS) is a Core Web Vital. A skeleton whose dimensions don't match the final UI is worse than no skeleton at all — every divergence becomes a CLS event on hydration/data-fetch. Match: total height, every internal padding/gap, image aspect-ratios, button heights, line spacing. When in doubt, oversize the skeleton container rather than undersize it; the content settling INTO a slightly-too-tall box doesn't shift other elements, but a too-short skeleton getting pushed by larger content does.
+
 ---
 
 ## Step 2 — Create `{targetFolder}/{TargetName}Skeleton.sass`

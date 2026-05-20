@@ -48,7 +48,7 @@ export default ComponentName
 ```
 
 Rules:
-- `'use client'` → if the component type is `client`
+- `'use client'` → only when the component genuinely uses hooks, event handlers, or browser APIs. Default to a Server Component and push `'use client'` to the deepest leaf that needs it — keeping the boundary low preserves SSR and reduces JS shipped to the client.
 - Import `./ComponentName.sass`
 - No `process.env` — env vars from `@/constants/env`
 - Props interface → inline, not exported unless another file will import it
@@ -58,6 +58,18 @@ Rules:
 - Typography: `text-{weight}-{size}` (e.g. `text-bold-24`).
 - Colors: `surface-50` to `surface-900` for grays. Semantic Tailwind defaults for others
 - Icons: PrimeIcons `pi pi-xxx` for icons (never inline SVGs if an icon exists)
+
+### Accessibility & Lighthouse rules (mandatory)
+
+These rules must hold for the component to pass the project's Lighthouse audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+
+- **Icon-only interactive elements** (a button or link whose visible content is just an icon) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
+- **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
+- **Form inputs** must set `autocomplete` to the correct token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.).
+- **Headings inside the component**: use `<h2>`/`<h3>` only if this component represents a real section of the document outline. For card/item titles inside a list, use `<p>` — let the page own the heading hierarchy.
+- **Images** rendered by the component: `next/image` with `alt` (meaningful) and either explicit `width`/`height` or `fill` + `sizes`. Above-the-fold LCP images need `priority` AND `fetchPriority='high'`.
+- **Tap targets**: any interactive element you render must be at least `44×44px` on mobile (`min-h-[44px] min-w-[44px]` on icon-only buttons). `CustomButton` size variants already meet this for regular buttons.
+- **Heavy client-only deps** (rich text editors, charts, code editors, maps) → import with `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` instead of a top-level import. Reduces bundle on every page that uses the component's parent.
 
 ---
 

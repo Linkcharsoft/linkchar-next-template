@@ -120,7 +120,15 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
 
 ---
 
-## Step 3 — Register in `src/providers/ModalsProvider.tsx`
+## Step 3 — Decide WHERE to mount the modal (global vs local)
+
+**Default: register in `src/providers/ModalsProvider.tsx`** — use this only if the modal is genuinely opened from MULTIPLE screens (e.g. confirmation dialogs reused across the app, global state/success/error modals, toasts).
+
+**Alternative: mount locally inside the consuming screen** — use this when the modal is opened from a SINGLE screen (image galleries, screen-specific wizards, page-scoped flows). A modal registered globally ships its JavaScript on every page, even those that never open it. Mounting it locally keeps that JS out of the initial bundle of unrelated routes — a real Lighthouse "Reduce unused JavaScript" win on multi-page apps.
+
+The store wiring from Step 1 is the same either way; only the render location changes.
+
+### Global registration (`src/providers/ModalsProvider.tsx`)
 
 Add the import and render the component:
 
@@ -134,6 +142,23 @@ const ModalsProvider = () => {
     </>
   )
 }
+```
+
+### Local mount (inside the consuming screen)
+
+Render the modal alongside the screen content. Wrap with a fragment so it sits next to the regular screen body without changing the layout root:
+
+```tsx
+import ModalName from '@/components/modals/ModalName/ModalName'
+
+const ScreenName = () => (
+  <>
+    <div className='ScreenName'>
+      {/* ...screen content... */}
+    </div>
+    <ModalName/>   {/* ← lives next to the screen, not in the global provider */}
+  </>
+)
 ```
 
 ---

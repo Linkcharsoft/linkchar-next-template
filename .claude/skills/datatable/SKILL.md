@@ -166,7 +166,7 @@ const {ScreenName} = ({ searchParams }: Props) => {
   )
 
   return (
-    <main className='{ScreenName}'>
+    <main id='main' className='{ScreenName}'>
       <section className='{ScreenName}__Content'>
         <header className='{ScreenName}__Filters'>
           <div className='flex items-center gap-4 xl:gap-5'>
@@ -224,10 +224,10 @@ const {ScreenName} = ({ searchParams }: Props) => {
           rows={params.page_size}
           emptyMessage={
             <div className='flex size-full flex-col items-center justify-center gap-4'>
-              <i className='pi pi-search text-28'></i>
+              <i className='pi pi-search text-28' aria-hidden='true'></i>
               <span className='text-bold-16'>No results found</span>
               <CustomButton variant='primary' onClick={resetParams}>
-                <i className='pi pi-trash text-14' />
+                <i className='pi pi-trash text-14' aria-hidden='true' />
                 <span className='text-14'>Clear filters</span>
               </CustomButton>
             </div>
@@ -257,7 +257,11 @@ const {ScreenName} = ({ searchParams }: Props) => {
             }}
             pt={{
               root: { className: 'bg-transparent p-0 flex-nowrap' },
-              RPPDropdown: { root: { className: '!w-[80px]' } }
+              RPPDropdown: { root: { className: '!w-[80px]' }, select: { 'aria-label': 'Rows per page' } },
+              firstPageButton: { 'aria-label': 'First page' },
+              prevPageButton: { 'aria-label': 'Previous page' },
+              nextPageButton: { 'aria-label': 'Next page' },
+              lastPageButton: { 'aria-label': 'Last page' }
             }}
             template={isMobile
               ? 'PrevPageLink CurrentPageReport NextPageLink RowsPerPageDropdown'
@@ -433,6 +437,7 @@ Keep the summary under 30 lines. Do not dump file contents — the user can open
 
 ## Hard rules — never violate
 
+- The screen root is `<main id='main' className='{ScreenName}'>`. Layouts do NOT render `<main>` themselves — the screen owns it. Two `<main>` per page = a11y fail.
 - NEVER use `motion` from framer-motion (use `m` with `LazyMotion`).
 - NEVER use `process.env` (use `@/constants/env`).
 - NEVER use native HTML inputs (use PrimeReact `InputText`, `Dropdown`, etc.).
@@ -443,3 +448,4 @@ Keep the summary under 30 lines. Do not dump file contents — the user can open
 - ALWAYS use single quotes, no semicolons, 2-space indent.
 - ALWAYS use `'use client'` on the screen (hooks).
 - ALWAYS use `text-{weight}-{size}` typography, never loose `text-xl` or `font-bold`.
+- ALWAYS pass `aria-label` to Paginator nav buttons via `pt`, matching the project's locale. PrimeReact's defaults are English; translate if the project ships in another language.
