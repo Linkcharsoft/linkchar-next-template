@@ -19,31 +19,14 @@ const nextConfig: NextConfig = {
     `
   },
 
-  // --- Images config example ---
-  // images: {
-  //   minimumCacheTTL: 31536000,
-  //   formats: ['image/avif', 'image/webp'],
-  //   remotePatterns: [
-  //     {
-  //       protocol: 'https',
-  //       hostname: new URL(process.env.NEXT_PUBLIC_MEDIA_URL).host,
-  //       port: '',
-  //       pathname: '/**',
-  //     },
-  //     {
-  //       protocol: 'https',
-  //       hostname: new URL(process.env.STRAPI_URL).host,
-  //       port: '',
-  //       pathname: '/**',
-  //     },
-  //     {
-  //       protocol: 'https',
-  //       hostname: new URL(process.env.STRAPI_MEDIA_URL).host,
-  //       port: '',
-  //       pathname: '/**',
-  //     }
-  //   ]
-  // }
+  images: {
+    minimumCacheTTL: 31536000,
+    formats: ['image/avif', 'image/webp']
+    // Add per-project when loading images from external origins (CDN, CMS, S3, etc.):
+    // remotePatterns: [
+    //   { protocol: 'https', hostname: new URL(process.env.NEXT_PUBLIC_MEDIA_URL).host, pathname: '/**' }
+    // ]
+  },
 
   async headers () {
     return [
