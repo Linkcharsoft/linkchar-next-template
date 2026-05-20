@@ -79,6 +79,7 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
   // Clarity setup
   useEffect(() => {
+    // if (!CLARITY_ID || APP_ENV !== 'production') return
     if (!CLARITY_ID) return
     import('@microsoft/clarity').then(({ default: Clarity }) => {
       Clarity.init(CLARITY_ID)
