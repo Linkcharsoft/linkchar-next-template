@@ -197,6 +197,7 @@ const Layout = async ({ children }: Props) => (
       )}
     </head>
     <body>
+      <a href='#main' className='SkipToContent'>Skip to content</a>
       <GeneralLayout>{ children }</GeneralLayout>
     </body>
   </html>

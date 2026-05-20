@@ -31,6 +31,20 @@ a, button
 h1, h2, h3, h4, h5, h6
   margin: unset
 
+.SkipToContent
+  position: absolute
+  left: 0.5rem
+  top: 0.5rem
+  z-index: 100
+  padding: 0.5rem 1rem
+  border-radius: 4px
+
+  &:not(:focus)
+    @apply sr-only
+
+  &:focus
+    @apply bg-white text-surface-900 shadow outline-2 outline-offset-2 outline-blue-600
+
 .container-custom
   max-width: 1600px
   padding-left: 16px
