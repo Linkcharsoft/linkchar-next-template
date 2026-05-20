@@ -164,6 +164,8 @@ const SignupConfirmationPage = ({ token }: Props) => {
                       className='hover:opacity-75'
                       href='https://outlook.com/'
                       target='_blank'
+                      rel='noopener noreferrer'
+                      aria-label='Open Outlook'
                     >
                       <OutlookIcon/>
                     </Link>
@@ -172,6 +174,8 @@ const SignupConfirmationPage = ({ token }: Props) => {
                       className='hover:opacity-75'
                       href='https://gmail.com/'
                       target='_blank'
+                      rel='noopener noreferrer'
+                      aria-label='Open Gmail'
                     >
                       <GmailIcon/>
                     </Link>

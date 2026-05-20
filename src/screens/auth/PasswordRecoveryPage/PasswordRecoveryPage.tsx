@@ -133,6 +133,8 @@ const PasswordRecoveryPage = () => {
                 className='hover:opacity-75'
                 href='https://outlook.com/'
                 target='_blank'
+                rel='noopener noreferrer'
+                aria-label='Open Outlook'
               >
                 <OutlookIcon/>
               </Link>
@@ -141,6 +143,8 @@ const PasswordRecoveryPage = () => {
                 className='hover:opacity-75'
                 href='https://gmail.com/'
                 target='_blank'
+                rel='noopener noreferrer'
+                aria-label='Open Gmail'
               >
                 <GmailIcon/>
               </Link>
