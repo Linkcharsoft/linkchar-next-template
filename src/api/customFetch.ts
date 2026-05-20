@@ -9,6 +9,12 @@ type CustomFetchType = {
   body?: object | FormData
   params?: string | URLSearchParams | Record<string, string> | string[][]
   headers?: Record<string, string>
+  // Cache controls — default is `no-store` (app data should be fresh). Override per call:
+  // - `cache: 'force-cache'` to opt in to full caching
+  // - `next: { revalidate: 60 }` for ISR
+  // - `next: { tags: ['user'] }` for on-demand revalidation
+  cache?: RequestCache
+  next?: { revalidate?: number | false, tags?: string[] }
   _retryCount?: number
 }
 
@@ -23,6 +29,8 @@ type FetchOptionsType = {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   headers: Headers
   body?: string | FormData
+  cache?: RequestCache
+  next?: { revalidate?: number | false, tags?: string[] }
 }
 
 const MAX_RETRIES = 1
@@ -54,6 +62,8 @@ export const customFetch = async <T extends object>({
   body,
   params,
   headers = { 'Content-Type': 'application/json' },
+  cache,
+  next,
   _retryCount = 0
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
   // URL
@@ -77,6 +87,14 @@ export const customFetch = async <T extends object>({
         : undefined
   }
 
+  // Cache policy — explicit to keep behavior stable across Next.js versions.
+  // Defaults to `no-store` (fresh app data); callers can override with `next.revalidate` for ISR.
+  if (next) {
+    fetchOptions.next = next
+  } else {
+    fetchOptions.cache = cache ?? 'no-store'
+  }
+
   // Fetch
   let response = await fetch(urlPath.toString(), fetchOptions)
 
@@ -93,6 +111,8 @@ export const customFetch = async <T extends object>({
         body,
         params,
         headers,
+        cache,
+        next,
         _retryCount: _retryCount + 1
       })
     } catch (error) {
@@ -125,10 +145,10 @@ export const customFetch = async <T extends object>({
 
 const handleRefreshToken = async (): Promise<string | undefined> => {
   try {
-    // eslint-disable-next-line no-undef
     const fetchOptions: RequestInit = {
       method: 'POST',
-      credentials: typeof window === 'undefined' ? undefined : 'include'
+      credentials: typeof window === 'undefined' ? undefined : 'include',
+      cache: 'no-store'
     }
 
     if (typeof window === 'undefined') {
@@ -163,7 +183,7 @@ const handleRefreshToken = async (): Promise<string | undefined> => {
 
 const handleUnauthorizedLogout = async () => {
   try {
-    await fetch(`${DOMAIN}/api/auth/logout`, { method: 'POST' })
+    await fetch(`${DOMAIN}/api/auth/logout`, { method: 'POST', cache: 'no-store' })
   } catch (e) {
     console.error('Error on logout', e)
   } finally {
