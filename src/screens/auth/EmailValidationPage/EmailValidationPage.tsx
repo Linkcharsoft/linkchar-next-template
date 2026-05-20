@@ -74,7 +74,7 @@ const EmailValidationPage = ({ email }: Props) => {
   if (!isClient) return null
 
   return (
-    <main className="AuthLayout">
+    <main id="main" className="AuthLayout">
       <section className="AuthLayout__Section">
         <i className="pi pi-envelope text-center text-48 text-blue-600" />
 

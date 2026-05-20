@@ -312,7 +312,7 @@ const ExamplePage = ({ searchParams }: Props) => {
   )
 
   return (
-    <main className='ExamplePage'>
+    <main id='main' className='ExamplePage'>
       <header className='flex w-full items-center justify-between border-b-2 px-6'>
         {!example
           ? <div></div>

@@ -6,7 +6,7 @@ import Waves from '@/components/Waves/Waves'
 
 const NotFoundPage = () => {
   return (
-    <div className='NotFoundPage'>
+    <main id='main' className='NotFoundPage'>
       <header></header>
 
       <div className="flex flex-col items-center justify-center gap-6 px-4 text-center">
@@ -28,7 +28,7 @@ const NotFoundPage = () => {
       </div>
 
       <Waves/>
-    </div>
+    </main>
   )
 }
 

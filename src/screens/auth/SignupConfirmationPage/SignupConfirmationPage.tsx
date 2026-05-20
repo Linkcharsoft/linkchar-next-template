@@ -129,7 +129,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
   if (!isClient || tokenStatus === 'loading') return null
 
   return (
-    <main className="AuthLayout">
+    <main id="main" className="AuthLayout">
       <form
         className="AuthLayout__Section"
         onSubmit={e => {

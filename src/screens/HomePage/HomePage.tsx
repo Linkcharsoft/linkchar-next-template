@@ -159,7 +159,7 @@ const HomePage = () => {
 
 
   return (
-    <main ref={containerRef} className="HomePage font-bold text-white">
+    <main id="main" ref={containerRef} className="HomePage font-bold text-white">
       <Image
         src={Logo}
         alt={PRODUCT_NAME}

@@ -116,7 +116,7 @@ const SignupPage = () => {
   if (!isClient) return null
 
   return (
-    <main className="AuthLayout">
+    <main id="main" className="AuthLayout">
       <form
         className="AuthLayout__Section"
         onSubmit={e => {

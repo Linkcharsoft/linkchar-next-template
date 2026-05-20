@@ -25,7 +25,7 @@ const GlobalErrorPage = ({
   }, [error])
 
   return (
-    <div className='GlobalErrorPage'>
+    <main id='main' className='GlobalErrorPage'>
       <div></div>
 
       <div className="flex flex-col items-center justify-center gap-6 px-4 text-center">
@@ -77,7 +77,7 @@ const GlobalErrorPage = ({
       </div>
 
       <Waves/>
-    </div>
+    </main>
   )
 }
 

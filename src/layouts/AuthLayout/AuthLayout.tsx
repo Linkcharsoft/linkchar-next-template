@@ -10,23 +10,24 @@ interface Props {
 
 const AuthLayout = ({ children }: Props) => {
   return (
-    <main className="flex h-screen w-screen overflow-hidden">
+    <div className="flex h-screen w-screen overflow-hidden">
       <section className="relative flex w-[45%] items-center justify-center bg-white">
         { children }
         <LoadingModal/>
       </section>
 
-      <section className="flex h-full w-[55%] items-center justify-center bg-black">
+      <aside className="flex h-full w-[55%] items-center justify-center bg-black" aria-hidden="true">
         <Image
           src={Logo}
           width={256}
           height={256}
-          alt="Logo"
+          alt=""
           className="AuthLayout__Logo"
           priority
+          fetchPriority="high"
         />
-      </section>
-    </main>
+      </aside>
+    </div>
   )
 }
 

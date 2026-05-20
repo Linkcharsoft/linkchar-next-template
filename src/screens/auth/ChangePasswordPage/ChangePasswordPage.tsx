@@ -88,7 +88,7 @@ const ChangePasswordPage = () => {
   if (!isClient || !user) return null
 
   return (
-    <main className="AuthLayout">
+    <main id="main" className="AuthLayout">
       <form
         className="AuthLayout__Section"
         onSubmit={e => {
