@@ -35,16 +35,21 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 5. **Verify the root `src/app/layout.tsx` has a skip-to-content link** as the first child of `<body>` (`<a href='#main' className='SkipToContent'>Skip to content</a>`, paired with a `.SkipToContent` BEM class in `src/styles/general.sass`). Use whatever language the project ships in. If missing, add it — it pairs with the `id='main'` on each screen's `<main>` (set by the `/new-screen` skill) and is required for the "Bypass blocks of repetitive content" Lighthouse audit. This is a one-time setup; only edit `src/app/layout.tsx` if the link is missing.
 6. Run `pnpm run lint-check --fix` + `pnpm run type-check`.
 
+## Accessibility & Lighthouse rules (mandatory for layout chrome)
+
+Layouts render the chrome that wraps every screen — navbar, footer, sidebar, persistent CTAs. Errors here propagate to every page in the app, so the rules are blocking.
+
+- **Exactly one `<main>` per rendered page** — each SCREEN owns its `<main id='main'>` (set by `/new-screen`); layouts must NOT render `<main>` themselves. Use `<div>`/`<aside>` for layout chrome. Two `<main>` per page is a Lighthouse a11y failure.
+- **Navbar logo as LCP**: if the layout's navbar renders a logo image that may be the LCP on landing pages, the `<Image>` should carry `priority` + `fetchPriority='high'` plus an explicit `sizes` value tuned to the logo's rendered width.
+- **Tap targets**: every interactive element in the chrome (navbar links, hamburger button, footer links/icons) must be at least `44×44px` on mobile, with 8px gap to neighbors. Icon-only buttons in the chrome (hamburger, close, social) need `aria-label` AND `min-h-[44px] min-w-[44px]`.
+
 ## Hard rules
 - Layouts compose existing components — they do NOT contain inline navbar/footer markup. If the parts don't exist as components, ask the parent to invoke `figma-components` first.
-- **Exactly one `<main>` per rendered page** — each SCREEN owns its `<main id='main'>` (set by `/new-screen`); layouts must NOT render `<main>` themselves. Use `<div>`/`<aside>` for layout chrome.
 - Layouts are Server Components — never `'use client'`. Push the directive to the nested child that needs it.
 - Use Tailwind for layout primitives (flex/grid/spacing). Extract to the colocated `.sass` (BEM) any element with **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
 - **Inside `.sass`**: write plain CSS for layout/spacing/sizing (`display: flex`, `gap: 1rem`, `padding: 1.5rem`, `border-radius: 8px`, etc.). Reserve `@apply` for design tokens only — colors (`@apply bg-surface-100`), typography (`@apply text-bold-14`), responsive prefixes, pseudo-state tokens. Do NOT `@apply flex flex-col gap-4 p-6` when plain CSS expresses it directly. **`@apply` MUST be the LAST declaration in each block scope** (root, `&__Element`, `&--Modifier`, pseudo-state) — putting it between plain CSS declarations breaks the SASS indented parser.
 - Responsive: hide/show navbar variants via `hidden md:block` / `block md:hidden` on wrapper divs, NOT via JS conditionals.
 - **`container-custom` MANDATORY for layout chrome.** Every Navbar, Footer, Sidebar, or any layout-level bar that has a full-bleed background MUST wrap its content with `container-custom` so the chrome aligns with the screens' top-level sections at every breakpoint. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. Pattern: `<header className='Navbar'>{/* full-bleed bg */}<div className='container-custom flex items-center justify-between py-4'>{/* content */}</div></header>`. NEVER use `max-w-[Xpx]` or arbitrary horizontal padding to define the chrome's content width — that's the root cause of "the navbar/footer doesn't line up with the page sections". **Vertical padding (`py-*`) IS your responsibility** — `container-custom` doesn't set any, so always add the chrome's vertical rhythm from Figma (e.g. `py-4` on a navbar, `py-12` on a footer).
-- **Navbar logo**: if the layout's navbar renders a logo image that may be the LCP on landing pages, the `<Image>` should carry `priority` + `fetchPriority='high'` plus an explicit `sizes` value tuned to the logo's rendered width.
-- **Tap targets**: every interactive element in the chrome (navbar links, hamburger button, footer links/icons) must be at least `44×44px` on mobile, with 8px gap to neighbors. Icon-only buttons in the chrome (hamburger, close, social) need `aria-label` AND `min-h-[44px] min-w-[44px]`.
 
 ## Output to parent
 A summary: for each layout (adjusted or created), the file paths and the route groups wired up. Plus lint/type-check status.
