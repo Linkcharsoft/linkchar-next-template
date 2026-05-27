@@ -73,11 +73,19 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 31. **Forbidden typography utilities**: grep `src/screens/`, `src/components/`, and `src/layouts/` for any of the following as STANDALONE Tailwind classes. Report each violation with `path:line`.
 
-    **Tailwind default size utilities** (project bans them in favor of the custom scale): `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`, `text-5xl`, `text-6xl`, `text-7xl`, `text-8xl`, `text-9xl`.
+    **Tailwind default size utilities** (banned in favor of the project's custom scale — these are Tailwind core defaults so the list is stable across forks): `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`, `text-5xl`, `text-6xl`, `text-7xl`, `text-8xl`, `text-9xl`.
 
-    **Tailwind default weight utilities** (project bans them — weight must come via the `text-{weight}-{size}` scale): `font-thin`, `font-extralight`, `font-light`, `font-normal`, `font-medium`, `font-semibold`, `font-bold`, `font-extrabold`, `font-black`.
+    **Tailwind default weight utilities** (banned — weight must come via the `text-{weight}-{size}` scale; list is stable since these are Tailwind core defaults): `font-thin`, `font-extralight`, `font-light`, `font-normal`, `font-medium`, `font-semibold`, `font-bold`, `font-extrabold`, `font-black`.
 
-    **Project sizes used WITHOUT a weight prefix** (the convention is strict — every size must be paired with a weight): `text-10`, `text-12`, `text-14`, `text-16`, `text-18`, `text-20`, `text-24`, `text-28`, `text-32`, `text-36`, `text-40`, `text-44`, `text-48`, `text-56`, `text-64`, `text-72`, `text-80`, `text-88`, `text-96`, `text-104`, `text-112`, `text-120`, `text-128`. These are valid Tailwind utilities (they set `font-size` only via `tailwind.config.js`) but the convention requires them to be replaced with `text-{weight}-{size}` from the plugin-generated scale (e.g. `text-regular-24` for plain regular weight, `text-bold-24` for bold, etc.). When greping, use word boundaries (`\btext-24\b`) so you don't false-positive on substrings of `text-regular-24`, `text-bold-24`, etc.
+    **Project sizes used WITHOUT a weight prefix** (the convention is strict — every size must be paired with a weight). Detect via regex pattern, NOT an enumerated list: this rule must stay valid even if the next fork of this template adds/removes/renames sizes in `tailwind.config.js`. Grep with **word-bounded** ripgrep:
+
+    ```bash
+    rg -nU --type-add 'styles:*.{tsx,ts,sass}' --type styles '\btext-\d+\b' src/screens src/components src/layouts
+    ```
+
+    The `\b` word boundaries are critical: `\btext-\d+\b` matches only standalone `text-{number}` patterns and does NOT false-positive on substrings of `text-regular-24`, `text-bold-24`, etc. (because the digit is preceded by a letter in those, not by `text-`). For each match, the offender used a project size as font-size-only — the fix is to add an explicit weight (e.g., `text-24` → `text-regular-24` if the original intent was the default regular weight).
+
+    Optionally cross-check matches against `tailwind.config.js`'s `theme.extend.fontSize` keys to confirm the size exists in the project's scale at all. A `text-150` violation that ALSO isn't in the config is doubly broken (arbitrary px size + no weight) and should be flagged with a sharper message.
 
     Exclude `src/app/sentry-example-page/page.tsx` from the scan — it is a documented throwaway file scheduled for deletion before production.
 
