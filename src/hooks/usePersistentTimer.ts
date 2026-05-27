@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSessionStorage } from 'usehooks-ts'
 
 /**
@@ -9,7 +9,6 @@ import { useSessionStorage } from 'usehooks-ts'
  * The timer's value is saved and retrieved from Session Storage, allowing the
  * countdown to continue even after refreshing the page or navigating to other tabs
  * (as long as the session remains active).
- *
  *
  * @example
  * ```tsx
@@ -41,36 +40,40 @@ const usePersistentTimer = ({
   timerIsRunning: boolean
 } => {
   const [timer, setTimer] = useSessionStorage<number>(storageKey, initialTime)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isRunning = timer > 0
 
   useEffect(() => {
-    if (timer <= 0) return
+    if (!isRunning) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+      return
+    }
 
-    const interval = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          return 0
-        }
-        return prev - 1
-      })
+    if (intervalRef.current) return
+
+    intervalRef.current = setInterval(() => {
+      setTimer(prev => Math.max(0, prev - 1))
     }, 1000)
 
-    return () => clearInterval(interval)
-  }, [timer, setTimer])
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [isRunning, setTimer])
 
-  const startTimer = () => {
-    setTimer(time)
-  }
-
-  const stopTimer = () => {
-    setTimer(0)
-  }
+  const startTimer = () => setTimer(time)
+  const stopTimer = () => setTimer(0)
 
   return {
     timer,
     startTimer,
     stopTimer,
-    timerIsRunning: timer > 0
+    timerIsRunning: isRunning
   }
 }
 
