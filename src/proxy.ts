@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
+import { AUTH_ERRORS, AUTHENTICATED_HOME_PATH, SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { API_URL } from '@/constants/env'
-import { decryptSession, encryptSession } from '@/utils/crypto'
+import { decryptSession } from '@/utils/crypto'
+import { clearSessionCookies, setSessionCookies } from '@/utils/sessionCookies'
 import type { SessionType } from '@/types/auth'
 import type { NextRequest } from 'next/server'
 
@@ -23,8 +24,22 @@ const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|wo
 
 const REFRESH_THRESHOLD_SECONDS = 60
 
+// Per-instance dedup so N concurrent tabs share a single refresh request.
+const refreshInFlight = new Map<string, Promise<SessionType | null>>()
+const refreshCache = new Map<string, { result: SessionType | null, timestamp: number }>()
+const REFRESH_CACHE_TTL_MS = 10_000
+
 async function refreshAccessToken (session: SessionType): Promise<SessionType | null> {
-  try {
+  const cached = refreshCache.get(session.refresh)
+  if (cached && Date.now() - cached.timestamp < REFRESH_CACHE_TTL_MS) {
+    return cached.result
+  }
+
+  const inFlight = refreshInFlight.get(session.refresh)
+  if (inFlight) return inFlight
+
+  // Throws on network errors (won't be cached); returns null on backend rejection (will be cached).
+  const promise = (async (): Promise<SessionType | null> => {
     const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,39 +57,20 @@ async function refreshAccessToken (session: SessionType): Promise<SessionType | 
       access: data.access,
       access_expiration: data.access_expiration
     }
-  } catch {
+  })()
+
+  refreshInFlight.set(session.refresh, promise)
+  try {
+    const result = await promise
+    refreshCache.set(session.refresh, { result, timestamp: Date.now() })
+    setTimeout(() => refreshCache.delete(session.refresh), REFRESH_CACHE_TTL_MS)
+    return result
+  } catch (error) {
+    console.error('Proxy refresh network error:', error)
     return null
+  } finally {
+    refreshInFlight.delete(session.refresh)
   }
-}
-
-async function applySessionCookies (response: NextResponse, session: SessionType) {
-  const encryptedSession = await encryptSession(session)
-  const refreshExpiration = new Date(session.refresh_expiration)
-  const maxAge = Math.floor((refreshExpiration.getTime() - Date.now()) / 1000)
-
-  response.cookies.set(SESSION_COOKIE_NAME, encryptedSession, {
-    httpOnly: true,
-    secure: true,
-    path: '/',
-    sameSite: 'strict',
-    priority: 'high',
-    expires: refreshExpiration,
-    maxAge
-  })
-  response.cookies.set(LISTENER_COOKIE_NAME, Date.now().toString(), {
-    httpOnly: false,
-    secure: true,
-    path: '/',
-    sameSite: 'strict',
-    priority: 'high',
-    expires: refreshExpiration,
-    maxAge
-  })
-}
-
-function clearSessionCookies (response: NextResponse) {
-  response.cookies.delete(SESSION_COOKIE_NAME)
-  response.cookies.delete(LISTENER_COOKIE_NAME)
 }
 
 export async function proxy (req: NextRequest) {
@@ -97,7 +93,7 @@ export async function proxy (req: NextRequest) {
   // 🔄 If only one of the two auth cookies exists, the pair is corrupt — purge both
   if ((authCookie && !listenerCookie) || (!authCookie && listenerCookie)) {
     const response = NextResponse.redirect(new URL('/login', req.url))
-    clearSessionCookies(response)
+    clearSessionCookies(response.cookies)
     return response
   }
 
@@ -118,11 +114,11 @@ export async function proxy (req: NextRequest) {
   if (!session) {
     if (isAuthFlow) {
       const response = NextResponse.next()
-      clearSessionCookies(response)
+      clearSessionCookies(response.cookies)
       return response
     }
     const response = NextResponse.redirect(new URL('/login', req.url))
-    clearSessionCookies(response)
+    clearSessionCookies(response.cookies)
     return response
   }
 
@@ -143,7 +139,7 @@ export async function proxy (req: NextRequest) {
         // Refresh failed — refresh token expired or revoked. Kill the session.
         console.error(AUTH_ERRORS['refresh-token'])
         const response = NextResponse.redirect(new URL('/login', req.url))
-        clearSessionCookies(response)
+        clearSessionCookies(response.cookies)
         return response
       }
     }
@@ -154,13 +150,13 @@ export async function proxy (req: NextRequest) {
   // ✅ Authenticated user landing on an auth flow → bounce to home
   if (isAuthFlow) {
     const response = NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
-    if (sessionRefreshed) await applySessionCookies(response, activeSession)
+    if (sessionRefreshed) await setSessionCookies(response.cookies, activeSession)
     return response
   }
 
   // ✅ Authenticated user on a protected route → proceed
   const response = NextResponse.next()
-  if (sessionRefreshed) await applySessionCookies(response, activeSession)
+  if (sessionRefreshed) await setSessionCookies(response.cookies, activeSession)
   return response
 }
 
