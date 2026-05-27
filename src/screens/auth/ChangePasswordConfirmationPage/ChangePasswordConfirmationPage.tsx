@@ -3,7 +3,7 @@ import './ChangePasswordConfirmationPage.sass'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { Password } from 'primereact/password'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/auth'
@@ -51,27 +51,47 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   useEffect(() => {
     if (verifyTokenRef.current) return
     verifyTokenRef.current = true
+
+    if (!user) {
+      const timeoutId = setTimeout(() => {
+        setTokenStatus('invalid')
+        setNotification({
+          severity: 'error',
+          summary: 'Could not load your account, please log in again',
+          life: 5000
+        })
+      }, 3000)
+      return () => clearTimeout(timeoutId)
+    }
+
     openModal('loadingModal', {
       title: 'Verifying link',
       content: 'Please wait...'
     })
 
     const checkUrlToken = async () => {
-      const { ok } = await checkPasswordToken({
-        email: user?.email as string,
-        token
-      })
+      try {
+        const { ok } = await checkPasswordToken({
+          email: user.email,
+          token
+        })
 
-      if (ok) {
-        setTokenStatus('valid')
-      } else {
+        setTokenStatus(ok ? 'valid' : 'invalid')
+      } catch (error) {
         setTokenStatus('invalid')
+        setNotification({
+          severity: 'error',
+          summary: 'Error verifying link, please try again later',
+          life: 5000
+        })
+        const message = error instanceof Error ? error.message : error
+        console.error(`Error: ${message}`)
+      } finally {
+        closeModal('loadingModal')
       }
-
-      closeModal('loadingModal')
     }
 
-    if(user) checkUrlToken()
+    checkUrlToken()
   }, [user])
 
 
