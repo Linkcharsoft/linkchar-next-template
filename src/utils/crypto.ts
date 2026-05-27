@@ -1,6 +1,4 @@
-import { cookies } from 'next/headers'
 import 'server-only'
-import { SESSION_COOKIE_NAME } from '@/constants/auth'
 import { AUTH_SECRET } from '@/constants/env'
 import type { SessionType } from '@/types/auth'
 
@@ -44,7 +42,7 @@ export async function encryptSession (data: object): Promise<string> {
   }
 }
 
-export async function decryptSession (session: string): Promise<SessionType | null> {
+export async function decryptSession (session: string): Promise<SessionType> {
   try {
     const key = await ENCRYPTION_KEY
 
@@ -60,13 +58,6 @@ export async function decryptSession (session: string): Promise<SessionType | nu
 
     return JSON.parse(new TextDecoder().decode(decrypted))
   } catch (error) {
-    try {
-      const cookieStore = await cookies()
-      cookieStore.delete(SESSION_COOKIE_NAME)
-    } catch {
-      // Middleware context: proxy clears the cookie via response
-    }
-
     const message = error instanceof Error ? error.message : CRYPTO_ERRORS['decrypt-failed']
     throw new Error(message)
   }
