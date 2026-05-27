@@ -40,13 +40,13 @@ export default function StateModal () {
       }}
     >
       <div className="flex flex-col items-center gap-6">
-        <i className={`${STATE_ICONS[stateModal.type]} text-32`}/>
+        <i className={`${STATE_ICONS[stateModal.type]} text-regular-32`}/>
 
         <div className="flex flex-col items-center gap-2 text-center">
           {stateModal.subtitle && (
             <p className='text-semibold-16'>{stateModal.subtitle}</p>
           )}
-          <p className='text-14'>{stateModal.content}</p>
+          <p className='text-regular-14'>{stateModal.content}</p>
         </div>
 
         <CustomButton

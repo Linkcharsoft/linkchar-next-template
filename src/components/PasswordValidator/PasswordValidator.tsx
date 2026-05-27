@@ -19,13 +19,13 @@ const PasswordValidator = ({ password }: Props) => {
           <div className="flex w-4 items-center justify-center">
             <i
               className={classNames('pi', {
-                'pi-circle-fill text-surface-700 text-10': !password,
+                'pi-circle-fill text-surface-700 text-regular-10': !password,
                 'pi-check text-green-600': password && PASSWORD_VALIDATIONS.validations[type].value,
                 'pi-times text-red-600': password && !PASSWORD_VALIDATIONS.validations[type].value
               })}
             ></i>
           </div>
-          <span className="text-14 text-surface-700">{PASSWORD_VALIDATIONS.validations[type].label}</span>
+          <span className="text-regular-14 text-surface-700">{PASSWORD_VALIDATIONS.validations[type].label}</span>
         </div>
       ))}
     </div>

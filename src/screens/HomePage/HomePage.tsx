@@ -169,7 +169,7 @@ const HomePage = () => {
         fetchPriority="high"
       />
       <h1 className='text-extrabold-64'>{ PRODUCT_NAME }</h1>
-      <h2 className='text-24'>Coming Soon</h2>
+      <h2 className='text-regular-24'>Coming Soon</h2>
       <p className='text-light-16'>Powered by <a className='text-bold-16 hover:text-pink-700' href="https://inferencia.io/" target="_blank" rel="noopener noreferrer">Inferencia</a></p>
 
       <script

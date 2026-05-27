@@ -25,7 +25,7 @@ const ToastNotifications = () => {
     if (notification.summary) {
       toastRef.current?.show({
         ...notification,
-        icon: `${STATE_ICONS[notification.severity!]} ${isMobile ? 'text-24' : 'text-28'}`
+        icon: `${STATE_ICONS[notification.severity!]} ${isMobile ? 'text-regular-24' : 'text-regular-28'}`
       })
 
       // Reset state
