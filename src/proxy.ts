@@ -14,6 +14,7 @@ const AUTH_PATHS = new Set([
   '/password-recovery',
   '/password-recovery/confirmation'
 ])
+const AUTH_PATH_PREFIXES = [...AUTH_PATHS].map(p => `${p}/`)
 
 const PUBLIC_PATHS = new Set([
   '/',
@@ -83,9 +84,9 @@ export async function proxy (req: NextRequest) {
   // ⛔ Ignore Next.js chunks
   if (pathname.startsWith('/_next')) return NextResponse.next()
   // ⛔ Ignore public paths (exact match)
-  if ([...PUBLIC_PATHS].some(path => path === pathname)) return NextResponse.next()
+  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next()
 
-  const isAuthFlow = [...AUTH_PATHS].some(path => pathname === path || pathname.startsWith(`${path}/`))
+  const isAuthFlow = AUTH_PATHS.has(pathname) || AUTH_PATH_PREFIXES.some(prefix => pathname.startsWith(prefix))
 
   const authCookie = req.cookies.get(SESSION_COOKIE_NAME)
   const listenerCookie = req.cookies.get(LISTENER_COOKIE_NAME)
