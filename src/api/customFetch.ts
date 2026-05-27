@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AUTH_ERRORS } from '@/constants/auth'
-import { API_URL, DOMAIN } from '@/constants/env'
+import { API_URL } from '@/constants/env'
 
 type CustomFetchType = {
   path: string
@@ -36,23 +36,15 @@ type FetchOptionsType = {
 const MAX_RETRIES = 1
 
 /**
- * A custom `fetch` wrapper that automatically handles:
- * 1. URL construction based on environment constants.
- * 2. Injection of authentication tokens.
- * 3. Automatic token refresh in case of 401 (Unauthorized) errors.
- * 4. User sign-out if the token refresh process fails.
+ * `fetch` wrapper: URL construction, token injection, client-side 401 refresh + retry,
+ * forced logout on refresh failure. Server-side 401s are returned as-is (proxy handles refresh).
  *
- * @template T - The expected type for the `data` object in the response.
- * @param {CustomFetchType} params - The request configuration options.
- * @returns {Promise<CustomFetchResponse<T>>} An object containing the original response, success status, and the parsed data or error.
- * * @example
- * ```typescript
- * const { data, ok } = await customFetch<{ name: string, email: string }>({
+ * @example
+ * const { data, ok } = await customFetch<{ name: string }>({
  *   path: '/profile',
  *   method: 'GET',
  *   token: 'my-token'
- * });
- * ```
+ * })
  */
 
 export const customFetch = async <T extends object>({
@@ -96,13 +88,17 @@ export const customFetch = async <T extends object>({
   }
 
   // Fetch
-  let response = await fetch(urlPath.toString(), fetchOptions)
+  const response = await fetch(urlPath.toString(), fetchOptions)
 
-  if (response.status === 401 && _retryCount < MAX_RETRIES) {
+  // Client-side only: server-side 401s bubble up; the proxy handles refresh proactively.
+  if (
+    response.status === 401 &&
+    _retryCount < MAX_RETRIES &&
+    typeof window !== 'undefined'
+  ) {
     try {
       const newAccessToken = await handleRefreshToken()
-
-      if(!newAccessToken) throw new Error(AUTH_ERRORS['no-refresh-token'])
+      if (!newAccessToken) throw new Error(AUTH_ERRORS['no-refresh-token'])
 
       return await customFetch<T>({
         path,
@@ -117,7 +113,7 @@ export const customFetch = async <T extends object>({
       })
     } catch (error) {
       console.error(error)
-      handleUnauthorizedLogout()
+      await handleUnauthorizedLogout()
     }
   }
 
@@ -144,46 +140,28 @@ export const customFetch = async <T extends object>({
 }
 
 const handleRefreshToken = async (): Promise<string | undefined> => {
-  try {
-    const fetchOptions: RequestInit = {
-      method: 'POST',
-      credentials: typeof window === 'undefined' ? undefined : 'include',
-      cache: 'no-store'
-    }
+  const res = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    credentials: 'include',
+    cache: 'no-store'
+  })
 
-    if (typeof window === 'undefined') {
-      const { cookies } = await import('next/headers')
-      const cookieStore = await cookies()
-      const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
-
-      if (cookieHeader) {
-        fetchOptions.headers = { 'Cookie': cookieHeader }
-      }
-    }
-
-    const res = await fetch(`${DOMAIN}/api/auth/refresh`, fetchOptions)
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(`${AUTH_ERRORS['refresh-token']}: ${data.message}`)
-    }
-
-    const data = await res.json()
-
-    if (!data.token) {
-      throw new Error(`${AUTH_ERRORS['refresh-token']}: No token in response`)
-    }
-
-    return data.token
-  } catch (error) {
-    const message = error instanceof Error ? error.message : AUTH_ERRORS['refresh-token']
-    throw new Error(message)
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(`${AUTH_ERRORS['refresh-token']}: ${data.message}`)
   }
+
+  const data = await res.json()
+  if (!data.token) throw new Error(`${AUTH_ERRORS['refresh-token']}: No token in response`)
+
+  return data.token
 }
 
 const handleUnauthorizedLogout = async () => {
+  // Relative URL so the browser receives the delete-cookie headers (a `${DOMAIN}/...` call
+  // would set them on the wrong response).
   try {
-    await fetch(`${DOMAIN}/api/auth/logout`, { method: 'POST', cache: 'no-store' })
+    await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
   } catch (e) {
     console.error('Logout request failed:', e)
   } finally {
