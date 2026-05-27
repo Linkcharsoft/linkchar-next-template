@@ -8,15 +8,8 @@ interface Props {
 }
 
 const GeneralLayout = async ({ children }: Props) => {
-  let token
-  let user
-
-  try {
-    token = await getAccessToken()
-    user = await getServerUser()
-  } catch (error) {
-    console.error(error)
-  }
+  const token = await getAccessToken()
+  const user = await getServerUser()
 
   return (
     <ProvidersContainer token={token} user={user}>
