@@ -38,6 +38,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
   const verifyTokenRef = useRef(false)
+  const userMissingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 
@@ -48,13 +49,14 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   })
 
 
-  // Verify token logic
+  // Verify token. Guard is set AFTER `user` is available so a late hydration doesn't
+  // short-circuit the check and trap the page on 'loading'.
   useEffect(() => {
-    if (verifyTokenRef.current) return
-    verifyTokenRef.current = true
-
     if (!user) {
-      const timeoutId = setTimeout(() => {
+      // Already-validated screen must not degrade on a transient user=null (backend hiccup).
+      if (tokenStatus !== 'loading') return
+
+      userMissingTimeoutRef.current = setTimeout(() => {
         setTokenStatus('invalid')
         setNotification({
           severity: 'error',
@@ -62,8 +64,16 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
           life: 5000
         })
       }, 3000)
-      return () => clearTimeout(timeoutId)
+      return () => {
+        if (userMissingTimeoutRef.current) {
+          clearTimeout(userMissingTimeoutRef.current)
+          userMissingTimeoutRef.current = null
+        }
+      }
     }
+
+    if (verifyTokenRef.current) return
+    verifyTokenRef.current = true
 
     openModal('loadingModal', {
       title: 'Verifying link',
@@ -93,7 +103,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     }
 
     checkUrlToken()
-  }, [user])
+  }, [user, tokenStatus])
 
 
   useEffect(() => {
@@ -143,13 +153,20 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         })
 
         if (ok) {
+          // Assumes the backend revokes other refresh tokens on password change.
+          try {
+            await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
+          } catch (logoutError) {
+            console.error('Logout after password change failed:', logoutError)
+          }
+
           setNotification({
             severity: 'success',
             summary: 'Password changed successfully!',
-            detail: 'Redirecting to home page...'
+            detail: 'Redirecting to login page...'
           })
 
-          redirectTimeoutRef.current = setTimeout(() => router.replace('/'), 3000)
+          redirectTimeoutRef.current = setTimeout(() => router.replace('/login'), 2000)
         } else {
           setNotification({
             severity: 'error',
