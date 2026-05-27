@@ -9,6 +9,7 @@ import { useDebounceCallback } from 'usehooks-ts'
 interface Props {
   initialValue?: string
   placeholder?: string
+  'aria-label'?: string
   onChange: (value?: string) => void
   disabled?: boolean
   className?: string
@@ -17,6 +18,7 @@ interface Props {
 const SearchInput = ({
   initialValue,
   placeholder = 'Search...',
+  'aria-label': ariaLabel,
   onChange,
   disabled,
   className
@@ -35,6 +37,7 @@ const SearchInput = ({
         id='search'
         name='search'
         className={className}
+        aria-label={ariaLabel || placeholder}
         value={searchValue}
         placeholder={placeholder}
         onChange={e => {
@@ -53,14 +56,14 @@ const SearchInput = ({
 
       {searchValue ? (
         <InputIcon
-          className="pi pi-times cursor-pointer text-14 hover:text-red-600 hover:opacity-75"
+          className="pi pi-times text-regular-14 cursor-pointer hover:text-red-600 hover:opacity-75"
           onClick={() => {
             setSearchValue('')
             onChange()
           }}
         />
       ) : (
-        <InputIcon className="pi pi-search text-14" />
+        <InputIcon className="pi pi-search text-regular-14" />
       )}
     </IconField>
   )
