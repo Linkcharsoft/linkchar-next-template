@@ -15,9 +15,9 @@ Examples:
 
 ---
 
-## Step 0 — Check for existing components
+## Step 0 — Recon & dedup
 
-Before creating anything, check the existing components by scanning `src/components/`.
+Before creating anything, scan `src/components/` and cross-reference with the "Existing Reusable Components" table in `CLAUDE.md`.
 
 If a similar component already exists, **stop and tell the user** which component they should reuse or extend instead.
 
@@ -47,7 +47,7 @@ const ComponentName = ({}: Props) => {
 export default ComponentName
 ```
 
-Rules:
+### Rules:
 - `'use client'` → only when the component genuinely uses hooks, event handlers, or browser APIs. Default to a Server Component and push `'use client'` to the deepest leaf that needs it — keeping the boundary low preserves SSR and reduces JS shipped to the client.
 - Import `./ComponentName.sass`
 - No `process.env` — env vars from `@/constants/env`
@@ -69,6 +69,11 @@ These rules must hold for the component to pass the project's Lighthouse audits.
 - **Headings inside the component**: use `<h2>`/`<h3>` only if this component represents a real section of the document outline. For card/item titles inside a list, use `<p>` — let the page own the heading hierarchy.
 - **Images** rendered by the component: `next/image` with `alt` (meaningful) and either explicit `width`/`height` or `fill` + `sizes`. Above-the-fold LCP images need `priority` AND `fetchPriority='high'`.
 - **Tap targets**: any interactive element you render must be at least `44×44px` on mobile (`min-h-[44px] min-w-[44px]` on icon-only buttons). `CustomButton` size variants already meet this for regular buttons.
+- **Focus visibility**: every interactive element must show a visible `:focus-visible` outline. NEVER set `outline: none` without providing a replacement — use Tailwind's `focus-visible:ring-2 focus-visible:ring-offset-2` or a SASS `&:focus-visible` block. Keyboard users navigate by sight of focus; removing the ring fails WCAG 2.4.7.
+- **Keyboard interaction**: any element that triggers an action MUST be `<button>`, `<a>`, or `CustomButton` — these get keyboard handling for free. If you must use a `<div>` (rare), add `role='button'`, `tabIndex={0}`, AND `onKeyDown` handlers for Enter and Space. Otherwise the action is mouse-only and fails WCAG 2.1.1.
+- **Reduced motion** is handled globally — no per-component guard needed. `general.sass` ships a `@media (prefers-reduced-motion: reduce)` reset that neutralizes every CSS animation/transition (including PrimeReact and `SkeletonBlock` shimmer), and `MotionConfig reducedMotion='user'` in `ProvidersContainer` disables every framer-motion `m.*` animation automatically. Only override locally if an animation is GENUINELY essential (e.g. a progress indicator that conveys state) AND must keep playing for users who opted out — wrap that specific subtree with a nested `<MotionConfig reducedMotion='never'>` or use `!important` on the CSS duration.
+- **Color contrast**: WCAG AA — 4.5:1 for normal text, 3:1 for large text (18pt+ / 14pt bold+) and UI controls. The project tokens are chosen so `text-surface-900` on `bg-surface-50/100/200` and `text-surface-50` on `bg-surface-800/900` pass; verify any custom pairing with axe-core or Lighthouse before shipping.
+- **Decorative icons** inside text or interactive content use `aria-hidden='true'`. Without it, screen readers announce `.pi pi-X` glyphs as garbage characters next to the label.
 - **Heavy client-only deps** (rich text editors, charts, code editors, maps) → import with `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` instead of a top-level import. Reduces bundle on every page that uses the component's parent.
 
 ---
@@ -120,7 +125,26 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
 
 ---
 
-## Step 3 — Validate
+## Step 3 — Conventions checklist + summary
+
+Before closing, verify:
+- [ ] Folder at `src/components/{Name}/` with `{Name}.tsx` + `{Name}.sass`
+- [ ] `.tsx` ends with `export default {Name}` — no `memo()` wrapping (React Compiler is enabled)
+- [ ] `.tsx` imports `./{Name}.sass`
+- [ ] BEM root class on the JSX root matches the component name exactly (`.{Name}`)
+- [ ] `'use client'` is present ONLY if the component uses hooks / event handlers / browser APIs
+- [ ] No `process.env` references — env vars come from `@/constants/env`
+- [ ] Icons via PrimeIcons (`pi pi-xxx`) or existing entries in `src/assets/icons/` — no new icon library installed
+- [ ] If the component is interactive: a11y rules from Step 1 satisfied (aria-label on icon-only buttons, `rel='noopener noreferrer'` on external links, `autocomplete` on inputs, 44×44 tap targets)
+
+Then post a short summary:
+1. Files created (markdown links)
+2. One-line import snippet (e.g. `import {Name} from '@/components/{Name}/{Name}'`)
+3. What the user should fill in next (props, JSX, styles)
+
+---
+
+## Step 4 — Validate
 
 Run these commands and fix any errors before finishing:
 

@@ -17,7 +17,7 @@ This skill assumes `src/components/SkeletonBlock/SkeletonBlock.tsx` is the proje
 
 ---
 
-## Step 0 — Resolve the target and read it
+## Step 0 — Recon & dedup
 
 Resolve where the target lives:
 
@@ -84,6 +84,26 @@ For elements on a dark background (dark cards, footers, hero overlays), pass `da
 The goal is **visual parity at first glance** — the skeleton should occupy roughly the same space and rhythm as the loaded UI so there is no layout shift when data arrives.
 
 > **Lighthouse note**: Cumulative Layout Shift (CLS) is a Core Web Vital. A skeleton whose dimensions don't match the final UI is worse than no skeleton at all — every divergence becomes a CLS event on hydration/data-fetch. Match: total height, every internal padding/gap, image aspect-ratios, button heights, line spacing. When in doubt, oversize the skeleton container rather than undersize it; the content settling INTO a slightly-too-tall box doesn't shift other elements, but a too-short skeleton getting pushed by larger content does.
+
+### Accessibility rules (mandatory)
+
+Loading states have their own a11y obligations beyond visual parity. Without these, screen-reader users either hear nothing (silent loading) or get spammed by repeated "blank" announcements per `SkeletonBlock`. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the broader set.
+
+- **`aria-busy` on the loading container**: the CONSUMER must wrap the section being loaded with `aria-busy={isLoading}` on a parent element (the screen's `<main>`, the section, or the card container). When data arrives, the flag flips to false. This is the canonical SR signal that content is in flight.
+- **Screen-reader-only "Loading" label**: include `<span className='sr-only'>Loading content…</span>` (or a more specific label like `Loading products…`) inside the skeleton's root. Visual placeholders communicate nothing to non-sighted users; without this text the page sounds completely silent during fetch.
+- **`aria-hidden='true'` on the skeleton root**: hide the visual placeholders from SR — they're decorative. Without this, SR announces "blank, blank, blank" once per `SkeletonBlock`. The skeleton's root `<div>` should set `aria-hidden='true'`, leaving the `sr-only` Loading label as the ONLY thing assistive tech reads:
+
+  ```tsx
+  <div className='{Name}Skeleton' aria-hidden='true'>
+    <span className='sr-only'>Loading content…</span>
+    {/* ...SkeletonBlocks */}
+  </div>
+  ```
+
+  (The `sr-only` span lives inside `aria-hidden` but should remain visible to SR — wrap it OUTSIDE the aria-hidden subtree if needed. A safe alternative: put `aria-hidden` only on the `SkeletonBlock` siblings, not on the root, and keep the label as a regular sibling.)
+- **Reduced motion** is handled globally — the `@media (prefers-reduced-motion: reduce)` reset in `general.sass` freezes `SkeletonBlock`'s shimmer (along with every other CSS animation/transition) to `0.01ms` for users who opted out, with no per-skeleton config required.
+- **Error fallback is mandatory**: skeletons MUST NOT loop forever. The consumer is responsible for swapping the skeleton for an error state if the fetch fails (a network error message, retry button, or empty state). Trapping SR users in perpetual "Loading…" with no result is worse than showing the error.
+- **Focus**: never put a focusable element inside the skeleton (e.g. a placeholder "button"). The skeleton must be focus-free so Tab order stays consistent before and after the data loads.
 
 ---
 
@@ -154,12 +174,23 @@ If the skeleton accepts `count` (looped variant), include that in the snippet:
 
 ---
 
-## Step 4 — Show summary
+## Step 4 — Conventions checklist + summary
 
-After all files are created, show:
-1. Files created (with paths)
+Before closing, verify:
+- [ ] `{Name}Skeleton.tsx` + `{Name}Skeleton.sass` live in the same folder as the target
+- [ ] BEM root class is `.{Name}Skeleton`
+- [ ] Every visual leaf in the target has a `<SkeletonBlock />` counterpart
+- [ ] Container layout (display, gap, padding, flex/grid direction, responsive breakpoints) mirrors the target's outer container
+- [ ] Dimensions match the target's rendered size (border-radius, line heights, aspect-ratios) — no CLS on data arrival
+- [ ] No animation/shimmer styles added — `SkeletonBlock` handles its own animation
+- [ ] On dark backgrounds, `<SkeletonBlock dark />` is used
+- [ ] No consumer file was mutated — Step 3 only suggested the wiring snippet, the user pastes it themselves
+- [ ] If the target renders as a list, `count?: number` prop is supported
+
+Then post:
+1. Files created (with markdown links)
 2. The one-line usage snippet from Step 3
-3. A reminder: **"Open the page in the browser and toggle the loading state (slow network / throttle) to verify visual parity with the loaded UI."**
+3. Reminder: **"Open the page in the browser and toggle the loading state (slow network / throttle) to verify visual parity with the loaded UI."**
 
 ---
 

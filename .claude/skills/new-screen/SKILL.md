@@ -18,15 +18,17 @@ Examples:
 
 ---
 
-## Step 0 — Read proxy.ts first and check for existing pages
+## Step 0 — Recon & dedup
 
-Before creating anything, read `src/proxy.ts` to understand the current `AUTH_PATHS` and `PUBLIC_PATHS` sets. You will need this to decide if proxy.ts needs to be updated.
+Before creating anything:
+- Read `src/proxy.ts` to understand the current `AUTH_PATHS` and `PUBLIC_PATHS` sets. You will need this to decide if `proxy.ts` needs to be updated in Step 2.
+- Scan `src/app/` and `src/screens/` to detect collisions with the target route or screen name.
 
-If a matching page already exists, **stop and tell the user** which page they should reuse or extend instead.
+If a matching page already exists, **stop and tell the user** which page they should reuse or extend instead. In particular: if the requested screen is a list/table with pagination, filters, or search — STOP and redirect the user to `/new-table`, which scaffolds the full stack (types + API + screen + filters + paginator).
 
 ---
 
-## Step 1 — Determine file locations
+## Step 1 — Plan: file locations by page type
 
 The page type determines where files go and whether `src/proxy.ts` needs updating:
 
@@ -50,7 +52,7 @@ The page type determines where files go and whether `src/proxy.ts` needs updatin
 
 ---
 
-## Step 2 — Update `src/proxy.ts` if needed
+## Step 2 — Mutate registries: `src/proxy.ts` (if needed)
 
 Use Edit (not rewrite) to add the new entry.
 
@@ -137,6 +139,24 @@ Rules for all screen types:
 - **The screen owns its `<main id='main'>` root** — the skip-to-content link in the root layout points to `#main`. Layouts must NOT render `<main>` themselves (they only render chrome around the screen slot); if you find a layout that does, fix the layout, not the screen. Two `<main>` per rendered page is a Lighthouse a11y failure.
 - Protected/public use `.ScreenName` BEM root class; auth uses `.AuthLayout`
 - No `export const metadata` — metadata belongs in `page.tsx` only
+
+### Accessibility & Lighthouse rules (mandatory)
+
+These rules must hold for the screen to pass the project's Lighthouse audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+
+- **Heading hierarchy** must start with `<h1>` and never skip levels (no `h1 → h3`). If the visual design has no h1, add a visually-hidden one: `<h1 className='sr-only'>{Page Title}</h1>`. Each rendered page must have exactly one h1.
+- **Card / list-item titles inside the screen** use `<p>` (not `<h3>` / `<h4>`). Heading elements pollute the document outline; reserve them for actual document structure.
+- **Single `<main>`**: the screen owns `<main id='main'>` and is the ONLY `<main>` on the rendered page (Lighthouse fails on duplicate `<main>`).
+- **Top-level `<section>`s**: every top-level section MUST anchor its content with `container-custom` so all sections share the same horizontal alignment + 16px lateral gutter. Never substitute with `max-w-[Xpx]` or `max-w-7xl`. AND each section must keep its own vertical padding (`py-*`/`pt-*`/`pb-*`) — `container-custom` does NOT provide vertical rhythm.
+- **Form inputs** (when present in the screen) set `autocomplete` to the matching token: email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`.
+- **Form submission errors**: when a server or schema validation error fires on submit, focus MUST move to the first invalid field (call `.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Without this, screen-reader users don't know the form failed and assume the click did nothing.
+- **Icon-only buttons** rendered directly in the screen MUST set `aria-label`. External links (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
+- **Focus indicators**: never strip `outline` on interactive elements without replacing it. The project relies on browser defaults + `focus-visible` rings; verify nothing in your `.sass` clobbers them with `outline: none`.
+- **Carousels and horizontal scrolling lists** (`overflow-x-auto` on mobile for cards, products, testimonials) MUST use `<ul role='list' aria-label='...'>` + `<li>` children. SR users get the item count announced and a meaningful label for the carousel as a whole.
+- **Loading states**: never render the screen blank while data is fetching — use `<{Name}PageSkeleton/>` via `/new-skeleton`, or `<Loader/>` for sub-sections. Wrap the loading container with `aria-busy={isLoading}` so SR users know data is on the way.
+- **Color contrast**: WCAG AA — 4.5:1 for normal text, 3:1 for large text and UI. The project's `surface-*` tokens are chosen to meet this against standard pairings; verify custom combinations (e.g. brand color on a tinted background) with axe-core or Lighthouse.
+- **Reduced motion** is handled globally — the CSS reset in `general.sass` neutralizes all CSS animations/transitions, and `MotionConfig reducedMotion='user'` in `ProvidersContainer` disables every framer-motion animation. No per-screen config needed. Only override locally if a specific animation is essential to comprehension (e.g. a stepper progress indicator) AND must keep playing for users who opted out.
+- **Heavy client-only components** the screen renders (rich text editors, charts, maps) → `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
 
 ---
 
@@ -385,11 +405,25 @@ Rules:
 
 ---
 
-## Step 6 — Show summary
+## Step 6 — Conventions checklist + summary
 
-After all files are created/updated, show:
-1. Files created (with paths)
-2. Files modified (proxy.ts if updated, with what was added)
+Before closing, verify:
+- [ ] Screen at the correct location per page type (`src/screens/{Name}/` for protected/public, `src/screens/auth/{Name}/` for auth)
+- [ ] Screen owns `<main id='main'>` and is the ONLY `<main>` on the rendered page
+- [ ] `'use client'` is on the Screen component, NOT on the `page.tsx` wrapper
+- [ ] `page.tsx` is a thin wrapper — metadata only, no logic, no UI
+- [ ] Public pages export full metadata: `title`, `description`, `alternates.canonical`, `openGraph`, `twitter` (Lighthouse SEO requires all of these)
+- [ ] Dynamic routes use `generateMetadata` with not-found handling (`robots: { index: false, follow: false }` when the resource is missing)
+- [ ] Listings with filter/pagination params return `robots: { index: false, follow: true }` when those params are present
+- [ ] Protected/auth pages have at least `title` + `alternates.canonical` (they can skip `openGraph`/`twitter` since `robots.ts` disallows them)
+- [ ] `proxy.ts` updated only if needed (auth route not covered by an existing `includes()` check, OR new public route)
+- [ ] Heading hierarchy starts at `<h1>` (visually-hidden `sr-only` if no visible h1)
+- [ ] Every top-level `<section>` is anchored with `container-custom` and has explicit vertical padding (`py-*`/`pt-*`/`pb-*`)
+- [ ] A11y rules from Step 3 satisfied (autocomplete on inputs, aria-label on icon-only buttons, rel='noopener noreferrer' on external links)
+
+Then post a short summary:
+1. Files created (markdown links)
+2. Files modified (`proxy.ts` if updated, with what was added)
 3. A reminder of what to implement next inside the screen
 
 ---
