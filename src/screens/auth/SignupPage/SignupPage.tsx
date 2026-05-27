@@ -99,6 +99,7 @@ const SignupPage = () => {
 
           throw new Error('An error occurred. Please try again.')
         } else {
+          localStorage.removeItem('test_user')
           router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
         }
       } catch (error) {
