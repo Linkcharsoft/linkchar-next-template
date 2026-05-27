@@ -11,11 +11,12 @@ const InputError = ({ message }: Props) => {
     <AnimatePresence>
       {message && (
         <m.div
-          className="InputError text-medium-14 flex items-center gap-2 text-red-600"
+          role='alert'
+          className='InputError text-medium-14 flex items-center gap-2 text-red-600'
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
         >
-          <i className="pi pi-exclamation-circle text-red-600"></i>
+          <i className='pi pi-exclamation-circle text-red-600' aria-hidden='true'></i>
           { message }
         </m.div>
       )}
