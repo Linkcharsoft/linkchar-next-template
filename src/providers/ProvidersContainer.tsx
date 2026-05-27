@@ -72,7 +72,7 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
         router.refresh()
       }
-    }, 1000)
+    }, 2000)
 
     return () => clearInterval(intervalId)
   }, [])
