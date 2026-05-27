@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server'
 import { AUTH_ERRORS } from '@/constants/auth'
-import { API_URL } from '@/constants/env'
+import { API_URL, APP_ENV } from '@/constants/env'
+import { isValidOrigin } from '@/utils/validateOrigin'
+import type { NextRequest } from 'next/server'
 
-export async function DELETE () {
+// E2E-only endpoint — 404 in production.
+export async function DELETE (req: NextRequest) {
+  if (APP_ENV === 'production') {
+    return NextResponse.json({ message: 'Not Found' }, { status: 404 })
+  }
+
+  if (!isValidOrigin(req)) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const response = await fetch(`${API_URL}/api/users/delete-test-users/`, {
       method: 'DELETE'
