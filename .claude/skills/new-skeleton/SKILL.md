@@ -52,7 +52,7 @@ const {TargetName}Skeleton = () => {
 export default {TargetName}Skeleton
 ```
 
-Rules:
+### Rules:
 - Always `'use client'` (skeletons are visual-only client components — matches every existing skeleton in this project)
 - Import `./{TargetName}Skeleton.sass`
 - Import `SkeletonBlock` from `@/components/SkeletonBlock/SkeletonBlock`
@@ -141,7 +141,7 @@ Template:
   // Add only the classes you actually reference in the .tsx
 ```
 
-Rules:
+### Rules:
 - **Sizes** come from observing the target's rendered dimensions (read the target's `.sass` and Tailwind classes for actual heights, paddings, border-radius). Do NOT invent — match what's there.
 - **Layout** of the skeleton container should mirror the target's outer container: same `display`, `gap`, `padding`, `flex-direction`, and responsive breakpoints (`@apply lg:flex-row` if the target does that).
 - **Border-radius** must match the target (rounded buttons → rounded skeleton button; sharp lines → sharp skeleton).

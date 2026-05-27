@@ -393,7 +393,7 @@ const Page = () => (
 export default Page
 ```
 
-Rules:
+### Rules:
 - `metadata` (or `generateMetadata`) MUST always include `title` and `alternates.canonical`.
 - Public pages MUST include `description`, `openGraph`, and `twitter` — Lighthouse SEO requires them.
 - Dynamic routes use `generateMetadata`. Return `robots: { index: false, follow: false }` when the resource is not found.

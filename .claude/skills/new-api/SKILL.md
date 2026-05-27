@@ -93,7 +93,7 @@ Function name (in priority order):
    - `DELETE /users/{id}/` → `deleteUser`
    - Non-CRUD subpaths → `{verb}{PathSegmentsCamel}` (e.g. `POST /users/{id}/activate/` → `activateUser`)
 
-Function signature rules:
+### Function signature rules:
 - **Path params** (`{id}`, `{slug}`) become positional arguments with the type from the spec (default `number | string` if no schema).
 - **Body** for POST/PUT/PATCH becomes the `body` argument typed with the corresponding `Create…PayloadType` / `Update…PayloadType`.
 - **Token** is always the last argument (omitted entirely when `no-auth` was passed).
@@ -172,7 +172,7 @@ export const deleteUser = async (id: number | string, token: string) => {
 }
 ```
 
-Mandatory rules:
+###Mandatory rules:
 - Single quotes, no semicolons, 2-space indentation.
 - `customFetch` from `./customFetch` (relative). Shared types from `@/types/general` (alias).
 - `import type { X }` for type-only imports, alphabetized.
