@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   compiler: {
-    // Keep error/warn in production for server logs and Sentry breadcrumbs.
+    // Keep error/warn in production.
     removeConsole: (process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production')
       ? { exclude: ['error', 'warn'] }
       : false

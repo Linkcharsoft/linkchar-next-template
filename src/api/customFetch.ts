@@ -90,7 +90,7 @@ export const customFetch = async <T extends object>({
   // Fetch
   const response = await fetch(urlPath.toString(), fetchOptions)
 
-  // Client-side only: server-side 401s bubble up; the proxy handles refresh proactively.
+  // Client-side only; the proxy handles server-side refresh proactively.
   if (
     response.status === 401 &&
     _retryCount < MAX_RETRIES &&
@@ -158,8 +158,7 @@ const handleRefreshToken = async (): Promise<string | undefined> => {
 }
 
 const handleUnauthorizedLogout = async () => {
-  // Relative URL so the browser receives the delete-cookie headers (a `${DOMAIN}/...` call
-  // would set them on the wrong response).
+  // Relative URL — absolute would set delete-cookie on the wrong response.
   try {
     await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
   } catch (e) {

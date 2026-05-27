@@ -3,8 +3,7 @@ import { getMyUser } from '@/api/auth'
 import { AUTH_ERRORS } from '@/constants/auth'
 import { getServerSession } from '@/utils/auth'
 
-// Reference handler — default template hydrates the user via `getServerUser()` in
-// GeneralLayout. Use this from Client Components that need to re-fetch on demand.
+// Reference handler for Client Components that need to re-fetch the user on demand.
 export async function GET () {
   try {
     const session = await getServerSession()

@@ -39,7 +39,6 @@ async function refreshAccessToken (session: SessionType): Promise<SessionType | 
   const inFlight = refreshInFlight.get(session.refresh)
   if (inFlight) return inFlight
 
-  // Throws on network errors (won't be cached); returns null on backend rejection (will be cached).
   const promise = (async (): Promise<SessionType | null> => {
     const res = await fetch(`${API_URL}/api/auth/token/refresh/`, {
       method: 'POST',

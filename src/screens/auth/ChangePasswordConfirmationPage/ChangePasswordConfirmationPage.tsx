@@ -49,11 +49,10 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   })
 
 
-  // Verify token. Guard is set AFTER `user` is available so a late hydration doesn't
-  // short-circuit the check and trap the page on 'loading'.
+  // Guard set AFTER user hydrates, otherwise a late hydration traps the page on 'loading'.
   useEffect(() => {
     if (!user) {
-      // Already-validated screen must not degrade on a transient user=null (backend hiccup).
+      // Don't degrade an already-validated screen on a transient user=null.
       if (tokenStatus !== 'loading') return
 
       userMissingTimeoutRef.current = setTimeout(() => {

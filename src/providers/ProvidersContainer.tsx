@@ -28,8 +28,7 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
   const router = useRouter()
 
 
-  // Three-way auth state: keep token alone when `/users/me` fails (transient backend issue)
-  // so the user isn't visually logged out by a 5xx; only a missing token is treated as logout.
+  // Keep token alone on transient /users/me failure — only missing token means logout.
   useEffect(() => {
     if (token && user) {
       setToken(token)
@@ -50,8 +49,7 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
     }
   }, [token, user])
 
-  // Polling is required: the session cookie is httpOnly, so storage/BroadcastChannel events
-  // can't observe it. The non-httpOnly listener cookie is updated in lockstep on every change.
+  // Polling: session cookie is httpOnly, so storage/BroadcastChannel can't observe it.
   useEffect(() => {
     const getCookie = (name: string): string | null => {
       const nameLenPlus = (name.length + 1)
