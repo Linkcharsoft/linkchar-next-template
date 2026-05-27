@@ -46,7 +46,9 @@ export async function POST () {
         secure: true,
         path: '/',
         sameSite: 'strict',
-        priority: 'high'
+        priority: 'high',
+        expires: refreshExpiration,
+        maxAge
       })
 
       revalidatePath('/', 'layout')

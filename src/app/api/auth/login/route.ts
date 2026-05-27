@@ -54,7 +54,9 @@ export async function POST (req: NextRequest) {
         secure: true,
         path: '/',
         sameSite: 'strict',
-        priority: 'high'
+        priority: 'high',
+        expires: refreshExpiration,
+        maxAge
       })
 
       revalidatePath('/', 'layout')
