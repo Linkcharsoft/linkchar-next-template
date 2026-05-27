@@ -2,12 +2,17 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { login } from '@/api/auth'
-import { SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTH_ERRORS } from '@/constants/auth'
-import { encryptSession } from '@/utils/crypto'
+import { AUTH_ERRORS } from '@/constants/auth'
+import { setSessionCookies } from '@/utils/sessionCookies'
+import { isValidOrigin } from '@/utils/validateOrigin'
 import type { SessionType } from '@/types/auth'
 import type { NextRequest } from 'next/server'
 
 export async function POST (req: NextRequest) {
+  if (!isValidOrigin(req)) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+  }
+
   try {
     const body = await req.json()
 
@@ -31,33 +36,8 @@ export async function POST (req: NextRequest) {
         })
       }
 
-      // Encrypts the session for greater security using double encryption
-      const encryptedSession = await encryptSession(session)
-
-      // Set the expiration of session cookie
-      const refreshExpiration = new Date(session.refresh_expiration)
-      const maxAge = Math.floor((refreshExpiration.getTime() - Date.now()) / 1000)
-
-      // Set session cookie
       const cookieStore = await cookies()
-      cookieStore.set(SESSION_COOKIE_NAME, encryptedSession, {
-        httpOnly: true,
-        secure: true,
-        path: '/',
-        sameSite: 'strict',
-        priority: 'high',
-        expires: refreshExpiration,
-        maxAge
-      })
-      cookieStore.set(LISTENER_COOKIE_NAME, Date.now().toString(), {
-        httpOnly: false,
-        secure: true,
-        path: '/',
-        sameSite: 'strict',
-        priority: 'high',
-        expires: refreshExpiration,
-        maxAge
-      })
+      await setSessionCookies(cookieStore, session)
 
       revalidatePath('/', 'layout')
 
