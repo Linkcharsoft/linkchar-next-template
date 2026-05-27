@@ -38,6 +38,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
   const verifyTokenRef = useRef(false)
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 
   usePressKey('Enter', () => {
@@ -95,6 +96,15 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   }, [user])
 
 
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
+  }, [])
+
+
   const changeConfirmationFormik = useFormik<ChangePasswordConfirmationFormikType>({
     initialValues: {
       password: ''
@@ -139,7 +149,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
             detail: 'Redirecting to home page...'
           })
 
-          setTimeout(() => router.replace('/'), 3000)
+          redirectTimeoutRef.current = setTimeout(() => router.replace('/'), 3000)
         } else {
           setNotification({
             severity: 'error',
@@ -212,7 +222,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
                   value={changeConfirmationFormik.values.password}
                   invalid={Boolean(changeConfirmationFormik.errors.password)}
                   placeholder="Type your new password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   toggleMask
                   feedback={false}
                   pt={{

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { useSessionStorage } from 'usehooks-ts'
 
 /**
@@ -40,18 +40,15 @@ const usePersistentTimer = ({
   stopTimer: () => void
   timerIsRunning: boolean
 } => {
-  const intervalRef = useRef<number | null>(null)
   const [timer, setTimer] = useSessionStorage<number>(storageKey, initialTime)
-  const [timerIsRunning, setTimerIsRunning] = useState<boolean>(initialTime > 0 ? true : false)
 
   useEffect(() => {
-    if (!timerIsRunning) return
+    if (timer <= 0) return
 
     const interval = setInterval(() => {
       setTimer(prev => {
         if (prev <= 1) {
           clearInterval(interval)
-          setTimerIsRunning(false)
           return 0
         }
         return prev - 1
@@ -59,20 +56,14 @@ const usePersistentTimer = ({
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [timerIsRunning])
+  }, [timer, setTimer])
 
   const startTimer = () => {
-    setTimerIsRunning(true)
     setTimer(time)
   }
 
   const stopTimer = () => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
     setTimer(0)
-    setTimerIsRunning(false)
   }
 
   return {

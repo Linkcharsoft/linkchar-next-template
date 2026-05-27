@@ -185,7 +185,10 @@ const handleUnauthorizedLogout = async () => {
   try {
     await fetch(`${DOMAIN}/api/auth/logout`, { method: 'POST', cache: 'no-store' })
   } catch (e) {
-    console.error('Error on logout', e)
+    // Logout endpoint call failed (network error, timeout, etc).
+    // The server will still set empty Set-Cookie headers; the proxy may also clear cookies.
+    // Just log and continue to redirect.
+    console.error('Logout request failed:', e)
   } finally {
     redirect('/login')
   }

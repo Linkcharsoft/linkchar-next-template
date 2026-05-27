@@ -162,7 +162,7 @@ const SignupPage = () => {
                 value={signupFormik.values.password}
                 onChange={signupFormik.handleChange}
                 invalid={Boolean(signupFormik.errors.password)}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 toggleMask
                 feedback={false}
                 pt={{

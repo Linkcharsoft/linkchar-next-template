@@ -37,6 +37,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
   const verifyTokenRef = useRef(false)
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 
   usePressKey('Enter', () => {
@@ -72,6 +73,15 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
     }
 
     checkUrlToken()
+  }, [])
+
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
   }, [])
 
 
@@ -119,7 +129,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
             detail: 'Redirecting to login page...'
           })
 
-          setTimeout(() => router.replace('/login'), 1000)
+          redirectTimeoutRef.current = setTimeout(() => router.replace('/login'), 1000)
         } else {
           setNotification({
             severity: 'error',
@@ -195,7 +205,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
                   value={recoveryConfirmationFormik.values.password}
                   onChange={recoveryConfirmationFormik.handleChange}
                   invalid={Boolean(recoveryConfirmationFormik.errors.password)}
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   toggleMask
                   feedback={false}
                   pt={{

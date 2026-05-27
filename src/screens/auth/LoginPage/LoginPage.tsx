@@ -64,12 +64,12 @@ const LoginPage = () => {
         })
 
         if(response.ok) {
-          router.replace(AUTHENTICATED_HOME_PATH)
-
           setNotification({
             severity: 'success',
             summary: 'Login successful'
           })
+
+          router.replace(AUTHENTICATED_HOME_PATH)
         } else {
           const errors = await response.json()
 
