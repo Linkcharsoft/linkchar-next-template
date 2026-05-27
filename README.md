@@ -190,6 +190,7 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 | `/new-screen` | Generate a Screen component + colocated `.sass` + page wrapper, updating `src/proxy.ts` when needed |
 | `/new-table` | Scaffold a full paginated DataTable screen (types + API client + screen with `useTableParams` + filters + page wrapper) |
 | `/new-component` | Generate a reusable component folder (`.tsx` + `.sass`) following project conventions |
+| `/new-hook` | Generate a custom React hook in `src/hooks/` with the `use` prefix, default export, and `'use client'` when needed |
 | `/new-modal` | Wire up a new modal type across `modalStore`, the component file, and `ModalsProvider` |
 | `/new-skeleton` | Create a skeleton loader sibling for an existing component or screen using `SkeletonBlock` |
 | `/new-api` | Generate an API domain from an OpenAPI JSON spec (or a manual scaffold) — types + `customFetch` functions in a single file per tag |

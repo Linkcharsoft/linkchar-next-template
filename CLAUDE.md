@@ -21,6 +21,7 @@
 | Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
 | Create a paginated DataTable screen (with `useTableParams`, filters, search, sorting) | `/new-table` | `/new-table UsersPage users /dashboard/users` |
 | Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
+| Create a new custom React hook | `/new-hook` | `/new-hook useDebounce` |
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
 | Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
 | Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
