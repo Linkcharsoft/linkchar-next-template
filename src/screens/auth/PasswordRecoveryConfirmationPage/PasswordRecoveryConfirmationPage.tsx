@@ -172,7 +172,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <i className="pi pi-exclamation-triangle text-center text-48 text-orange-600"/>
+            <i className="pi pi-exclamation-triangle text-regular-48 text-center text-orange-600" aria-hidden="true"/>
 
             <div className="flex flex-col gap-4">
               <p className="text-regular-16 text-center text-surface-800">

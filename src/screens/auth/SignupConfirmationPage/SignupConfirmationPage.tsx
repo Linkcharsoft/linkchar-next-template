@@ -149,7 +149,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'invalid') && (
           <>
-            <i className="pi pi-exclamation-triangle text-center text-48 text-orange-600"/>
+            <i className="pi pi-exclamation-triangle text-regular-48 text-center text-orange-600" aria-hidden="true"/>
 
             <div className="flex flex-col gap-6">
               <p className="text-regular-16 text-center text-surface-800">
@@ -221,7 +221,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
         {(tokenStatus === 'valid') && (
           <>
-            <i className="pi pi-check-circle text-center text-48 text-green-600"/>
+            <i className="pi pi-check-circle text-regular-48 text-center text-green-600" aria-hidden="true"/>
 
             <p className="text-regular-16 text-center text-surface-800">
               Account successfully verified!
