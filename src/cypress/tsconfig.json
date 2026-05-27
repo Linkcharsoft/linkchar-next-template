@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "lib": [
-      "es5",
+      "es6",
       "dom"
     ],
     "types": [
@@ -15,10 +15,9 @@
     "typeRoots": [
       "../../node_modules/@types"
     ],
-    "baseUrl": "../..",
     "paths": {
       "@/*": [
-        "src/*"
+        "../../src/*"
       ]
     },
   },
