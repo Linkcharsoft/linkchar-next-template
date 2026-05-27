@@ -72,12 +72,15 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 These are the same rules `CLAUDE.md` documents — repeated here because this agent is the one most likely to introduce violations when extending or creating components.
 
 - **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
+- **Decorative icons inside text or interactive content** (the `<i className='pi pi-X'>` next to a button label, the icon paired with a heading, etc.) MUST set `aria-hidden='true'`. Without it, screen readers announce PrimeIcons glyph codes as garbage characters next to the visible label.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
 - **Form inputs** MUST set the matching `autoComplete` token (JSX prop: `email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.) when building input components.
 - **Card / list-item titles** use `<p>` — NOT `<h3>`/`<h4>`. Heading elements are reserved for actual document structure; cards inside a page that already has h1/h2 must not pollute the outline.
 - **Clickable non-button elements** need `role="button"`, `tabIndex={0}`, and `onKeyDown` for Enter/Space — or just use a `<button>`.
+- **Focus visibility**: NEVER `outline: none` (or `box-shadow: none` on `:focus`) without providing a visible replacement (`focus-visible:ring-*`, a custom `&:focus-visible` block, or PrimeReact's default ring). Keyboard users navigate by sight of focus — removing the indicator fails WCAG 2.4.7. If you strip the default to apply a custom design, the replacement MUST be visible at the same focus event.
 - **Images**: `next/image` with meaningful `alt` (empty only if decorative). For `<Image fill>` always declare `sizes`. The component does not decide `priority` — the consumer does — but if the component renders the LCP image of the page, expose `priority`/`fetchPriority` as props.
 - **Tap target size**: any interactive element the component renders must be at least `44×44px` on mobile (`min-h-[44px] min-w-[44px]` on icon-only buttons; regular `CustomButton` size variants already satisfy this).
+- **Color contrast (WCAG AA)**: 4.5:1 for normal text, 3:1 for large text (18pt+ / 14pt bold+) and UI controls. The project's `surface-*` tokens are chosen so standard pairings pass (`text-surface-900` on light backgrounds, `text-surface-50` on `surface-700+`); verify any brand/custom pairing with axe-core or Lighthouse before shipping the component.
 - **`'use client'` at the deepest leaf**: only mark the component as client if it directly uses hooks, event handlers, or browser APIs. A wrapping presentational component should remain server-rendered even if a child is client.
 - **Heavy client-only deps** (rich text editors, charts, code editors, map libraries) MUST be imported via `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
 - **Optional images in card-style components**: accept `image?: string | StaticImageData` so static imports work.
