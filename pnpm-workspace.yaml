@@ -8,6 +8,5 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - "@types/react@19.2.15"
-  - postcss@8.5.15
-  - react-tooltip@6.0.4
+  - cypress@15.16.0
+  - react-tooltip@6.0.5
