@@ -196,9 +196,10 @@ When you move styles into a `.sass` file, write plain CSS for properties that ma
 
 - ✅ **Plain CSS** for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `top/right/bottom/left`, `cursor`, `overflow`, `text-align`, `transition`, `transform`
 - ✅ **`@apply`** for: project colors (e.g. `text-surface-700`, `bg-surface-100`), typography tokens (`text-bold-14`, `text-medium-16` — these compose size + weight + letter-spacing), responsive prefixes (`md:flex-row`), and pseudo-state tokens (`hover:bg-surface-100`)
+- ⚠️ **`@apply` MUST be the LAST declaration in each block scope** — root selector, `&__Element`, `&--Modifier`, pseudo-state. Plain CSS properties go FIRST, then a single `@apply` line at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented-syntax parser with a confusing "expected selector" error. Nested child blocks (`&__X`, `&--X`, `&:hover`) are fine after `@apply` because they're a deeper scope.
 
 ```sass
-// ✅ Good — plain CSS for layout, @apply for tokens
+// ✅ Good — plain CSS first, @apply LAST in each scope
 .Card
   display: flex
   flex-direction: column
@@ -207,7 +208,21 @@ When you move styles into a `.sass` file, write plain CSS for properties that ma
   border-radius: 8px
   @apply bg-white border border-surface-200 text-surface-900
 
-// ❌ Avoid — @apply for everything
+  &__Title
+    margin-bottom: 8px
+    @apply text-bold-18
+
+  &--Active
+    transform: scale(1.02)
+    @apply bg-surface-100
+
+// ❌ Avoid — @apply between plain CSS declarations (breaks the SASS parser)
+.Card
+  display: flex
+  @apply bg-white
+  border-radius: 8px
+
+// ❌ Avoid — @apply for everything (use plain CSS for layout)
 .Card
   @apply flex flex-col gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-surface-900
 ```

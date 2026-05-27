@@ -147,6 +147,7 @@ Template:
 - **Border-radius** must match the target (rounded buttons → rounded skeleton button; sharp lines → sharp skeleton).
 - **Plain CSS** for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `aspect-ratio`, `position`, `overflow`, `grid-template-columns`.
 - **`@apply`** only for design tokens: project colors (`bg-white`, `border-surface-200`, `text-surface-900`), typography (`text-bold-14`), responsive prefixes (`md:flex-row`, `lg:grid-cols-2`), and pseudo-state tokens.
+- ⚠️ **`@apply` MUST be the LAST declaration in each block scope** (root, `&__Element`, `&--Modifier`, pseudo-state). Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser. Nested child blocks are fine after `@apply` since they're a deeper scope.
 - Do NOT add shimmer or animation styles — `SkeletonBlock` handles its own animation; you only size the rectangle.
 
 ---

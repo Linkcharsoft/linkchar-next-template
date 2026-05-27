@@ -69,7 +69,17 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 30. **Raw hex colors**: grep `src/screens/`, `src/components/`, and `src/layouts/` for `#[0-9a-fA-F]{6}\b` and `#[0-9a-fA-F]{3}\b`. Exclude `src/assets/icons/` and `src/assets/images/` (icon/image content may legitimately contain hex). Report each remaining match.
 
-### 8. Typography compliance
+### 8. SASS `@apply` placement
+
+32. **`@apply` not at the end of its block**: in indented SASS, `@apply` MUST be the LAST declaration in each block scope (root selector, `&__Element`, `&--Modifier`, pseudo-state). Putting `@apply` between plain CSS declarations breaks the SASS indented parser at build time. Grep with ripgrep multiline:
+
+    ```bash
+    rg -nU --multiline --multiline-dotall '@apply[^\n]+\n[ \t]+[a-z][a-z-]*:' src --type-add 'sass:*.sass' --type sass
+    ```
+
+    This matches an `@apply` line followed by what looks like a CSS property declaration (`property:`) at any indentation. Each match is a violation candidate — verify by reading the file (the line after `@apply` could legitimately start a nested child block like `&__X` or `&:hover`, which the regex won't match since they start with `&`, not a property name). For each true violation, the fix is to reorder: move every plain CSS declaration BEFORE the `@apply`, leaving `@apply` as the last line of the block.
+
+### 9. Typography compliance
 
 31. **Forbidden typography utilities**: grep `src/screens/`, `src/components/`, and `src/layouts/` for any of the following as STANDALONE Tailwind classes. Report each violation with `path:line`.
 

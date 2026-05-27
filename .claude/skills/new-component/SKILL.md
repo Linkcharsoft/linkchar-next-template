@@ -108,9 +108,10 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
 
 - ✅ Plain CSS for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `cursor`, `overflow`, `transition`, `transform`
 - ✅ `@apply` for: project colors (`bg-surface-100`, `text-surface-700`), typography tokens (`text-bold-14`, `text-medium-16`), responsive prefixes (`md:flex-row`), pseudo-state tokens (`hover:bg-surface-100`)
+- ⚠️ **`@apply` MUST be the LAST declaration in each block scope** — root, `&__Element`, `&--Modifier`, pseudo-state. Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser. Nested child blocks (`&__X`, `&--X`) are allowed after `@apply` since they're a deeper scope.
 
 ```sass
-// ✅ Good
+// ✅ Good — plain CSS first, @apply LAST in each scope
 .MyComponent
   display: flex
   gap: 1rem
@@ -118,7 +119,21 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
   border-radius: 8px
   @apply bg-white border border-surface-200 text-bold-14 text-surface-900
 
-// ❌ Avoid
+  &__Title
+    margin-bottom: 8px
+    @apply text-bold-18
+
+  &--Active
+    transform: scale(1.02)
+    @apply bg-surface-100
+
+// ❌ Avoid — @apply between plain CSS declarations (SASS parser breaks)
+.MyComponent
+  display: flex
+  @apply bg-white
+  border-radius: 8px
+
+// ❌ Avoid — @apply for everything
 .MyComponent
   @apply flex gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-bold-14 text-surface-900
 ```
