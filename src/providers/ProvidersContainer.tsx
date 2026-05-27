@@ -14,8 +14,8 @@ import type { UserType } from '@/types/auth'
 import type { ReactNode } from 'react'
 
 interface Props {
-  token?: string
-  user?: UserType
+  token?: string | null
+  user?: UserType | null
   children: ReactNode
 }
 
@@ -28,28 +28,30 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
   const router = useRouter()
 
 
-  // User data setup. Pair token and user as a single auth state — if either is
-  // missing (logout, expired session, /api/auth/me failure), clear both stores
-  // and the Sentry user. Avoids leaving Zustand with stale data after logout.
+  // Three-way auth state: keep token alone when `/users/me` fails (transient backend issue)
+  // so the user isn't visually logged out by a 5xx; only a missing token is treated as logout.
   useEffect(() => {
     if (token && user) {
       setToken(token)
       setUser(user)
 
-      // Set sentry user context on client side
       Sentry.setUser({
         id: user.id,
         email: user.email,
         username: `${user.first_name} ${user.last_name}`
       })
-    } else {
+    } else if (!token) {
       removeToken()
       removeUser()
       Sentry.setUser(null)
+    } else {
+      setToken(token)
+      removeUser()
     }
   }, [token, user])
 
-  // Auth cookie listener
+  // Polling is required: the session cookie is httpOnly, so storage/BroadcastChannel events
+  // can't observe it. The non-httpOnly listener cookie is updated in lockstep on every change.
   useEffect(() => {
     const getCookie = (name: string): string | null => {
       const nameLenPlus = (name.length + 1)
@@ -66,10 +68,7 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
       const currentListener = getCookie(LISTENER_COOKIE_NAME) || null
 
       if (currentListener !== authListener.current) {
-        console.warn('\n\nAuth cookie change detected, refreshing...\n\n')
-
         authListener.current = currentListener
-
         router.refresh()
       }
     }, 2000)
