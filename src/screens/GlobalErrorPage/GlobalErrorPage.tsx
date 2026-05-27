@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import Logo from '@/assets/images/logo.svg'
+import CustomButton from '@/components/CustomButton/CustomButton'
 import Waves from '@/components/Waves/Waves'
 
 const GlobalErrorPage = ({
@@ -65,14 +66,15 @@ const GlobalErrorPage = ({
           <>
             <p className='text-regular-16 md:text-regular-18'>If you have any relevant information that could help us replicate the issue:</p>
 
-            <button
+            <CustomButton
+              variant='transparent'
               className='GlobalErrorPage__Link'
               onClick={() => {
                 showReportDialog({ eventId })
               }}
             >
               Send feedback
-            </button>
+            </CustomButton>
           </>
         )}
       </div>
