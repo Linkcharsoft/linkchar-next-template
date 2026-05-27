@@ -60,13 +60,14 @@ export async function decryptSession (session: string): Promise<SessionType | nu
 
     return JSON.parse(new TextDecoder().decode(decrypted))
   } catch (error) {
-    const message = error instanceof Error ? error.message : CRYPTO_ERRORS['decrypt-failed']
-
-    if(message === 'The operation failed for an operation-specific reason') {
+    try {
       const cookieStore = await cookies()
       cookieStore.delete(SESSION_COOKIE_NAME)
+    } catch {
+      // Middleware context: proxy clears the cookie via response
     }
 
+    const message = error instanceof Error ? error.message : CRYPTO_ERRORS['decrypt-failed']
     throw new Error(message)
   }
 }
