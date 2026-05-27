@@ -319,9 +319,10 @@ const ExamplePage = ({ searchParams }: Props) => {
           : <CustomButton
             variant='transparent'
             size='detail'
+            aria-label='Back'
             onClick={() => setExample(null)}
           >
-            <i className="pi pi-chevron-left"></i>
+            <i className="pi pi-chevron-left" aria-hidden="true"></i>
           </CustomButton>
         }
 
@@ -498,7 +499,7 @@ const ExamplePage = ({ searchParams }: Props) => {
                 disabled={employeesIsLoading}
               />
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" role="status" aria-live="polite">
                 <span className="text-bold-14">{employeesData?.data.count || 0}</span>
                 <span>Results</span>
               </div>
@@ -528,7 +529,7 @@ const ExamplePage = ({ searchParams }: Props) => {
             </div>
 
             <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2" role="status" aria-live="polite">
                 <span className="text-bold-14">{employeesData?.data.count || 0}</span>
                 <span>Resultados</span>
               </div>
@@ -540,18 +541,19 @@ const ExamplePage = ({ searchParams }: Props) => {
             dataKey="id"
             scrollable
             scrollHeight='100%'
+            pt={{ table: { 'aria-label': 'Trabajadores' } }}
             value={employeesData?.data?.results}
             rows={params.page_size}
             emptyMessage={
-              <div className='flex size-full flex-col items-center justify-center gap-4'>
-                <i className="pi pi-search text-28"></i>
+              <div role="status" aria-live="polite" className='flex size-full flex-col items-center justify-center gap-4'>
+                <i className="pi pi-search text-regular-28" aria-hidden="true"></i>
                 <span className='text-bold-16'>No se encontraron trabajadores</span>
                 <CustomButton
                   variant='primary'
                   onClick={resetParams}
                 >
-                  <i className="pi pi-trash text-14" />
-                  <span className="text-14">Limpiar filtros</span>
+                  <i className="pi pi-trash text-regular-14" aria-hidden="true" />
+                  <span className="text-regular-14">Limpiar filtros</span>
                 </CustomButton>
               </div>
             }
@@ -608,8 +610,13 @@ const ExamplePage = ({ searchParams }: Props) => {
                 RPPDropdown: {
                   root: {
                     className: '!w-[80px]'
-                  }
-                }
+                  },
+                  select: { 'aria-label': 'Filas por página' }
+                },
+                firstPageButton: { 'aria-label': 'Primera página' },
+                prevPageButton: { 'aria-label': 'Página anterior' },
+                nextPageButton: { 'aria-label': 'Página siguiente' },
+                lastPageButton: { 'aria-label': 'Última página' }
               }}
               template={isMobile
                 ? 'PrevPageLink CurrentPageReport NextPageLink RowsPerPageDropdown'
