@@ -181,16 +181,16 @@ const Filters = ({
         onClick={cleanFilters}
         disabled={disabled}
       >
-        <i className="pi pi-trash text-14" />
-        <span className="hidden text-14 2xl:inline">Clean filters</span>
+        <i className="pi pi-trash text-regular-14" aria-hidden="true" />
+        <span className="text-regular-14 hidden 2xl:inline">Clean filters</span>
       </CustomButton>
       <CustomButton
         variant='transparent'
         onClick={() => setShowFilters(!showFilters)}
         disabled={disabled}
       >
-        <i className="pi pi-filter text-14"></i>
-        <span className='hidden text-14 2xl:inline'>
+        <i className="pi pi-filter text-regular-14" aria-hidden="true"></i>
+        <span className='text-regular-14 hidden 2xl:inline'>
           Filters {ACTIVE_FILTERS > 0 && `(${ACTIVE_FILTERS})`}
         </span>
       </CustomButton>
@@ -221,20 +221,22 @@ const Filters = ({
                   <CustomButton
                     variant='transparent'
                     size='detail'
+                    aria-label='Clear filters'
                     onClick={cleanFilters}
                     data-tooltip-id={ACTIVE_FILTERS === 0 ? 'no-filters' : undefined}
                     data-tooltip-content='No filters to reset'
                     disabled={disabled || ACTIVE_FILTERS === 0}
                   >
-                    <i className="pi pi-trash text-14" />
+                    <i className="pi pi-trash text-regular-14" aria-hidden="true" />
                   </CustomButton>
                   <CustomButton
                     variant='transparent'
                     size='detail'
+                    aria-label='Close filters'
                     onClick={() => setShowFilters(false)}
                     disabled={disabled}
                   >
-                    <i className="pi pi-times text-14" />
+                    <i className="pi pi-times text-regular-14" aria-hidden="true" />
                   </CustomButton>
                 </div>
               </div>
@@ -256,10 +258,11 @@ const Filters = ({
                             variant='transparent'
                             size='detail'
                             className='hover:text-red-600'
+                            aria-label='Clear selection'
                             onClick={() => filter.onChange([])}
                             disabled={disabled}
                           >
-                            <i className="pi pi-times text-14"></i>
+                            <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
                           </CustomButton>
                         )}
                       </>
@@ -272,13 +275,14 @@ const Filters = ({
                             variant='transparent'
                             size='detail'
                             className='hover:text-red-600'
+                            aria-label='Clear date'
                             onClick={() => {
                               if(filter.multiple) filter.onChange([])
                               else filter.onChange(undefined)
                             }}
                             disabled={disabled}
                           >
-                            <i className="pi pi-times text-14"></i>
+                            <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
                           </CustomButton>
                         )}
                       </>
@@ -291,10 +295,11 @@ const Filters = ({
                             variant='transparent'
                             size='detail'
                             className='hover:text-red-600'
+                            aria-label='Clear date range'
                             onClick={() => filter.onChange({ from: undefined, to: undefined })}
                             disabled={disabled}
                           >
-                            <i className="pi pi-times text-14"></i>
+                            <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
                           </CustomButton>
                         )}
                       </>
@@ -335,7 +340,7 @@ const Filters = ({
                             style={{ backgroundColor: option.color }}
                           />
                         )}
-                        <span className="text-14">{option.label}</span>
+                        <span className="text-regular-14">{option.label}</span>
                       </button>
                     ))}
 
