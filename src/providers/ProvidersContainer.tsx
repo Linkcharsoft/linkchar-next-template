@@ -1,6 +1,6 @@
 'use client'
 import * as Sentry from '@sentry/nextjs'
-import { domAnimation, LazyMotion } from 'framer-motion'
+import { domAnimation, LazyMotion, MotionConfig } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { es } from 'primelocale/es.json'
 import { addLocale, PrimeReactProvider } from 'primereact/api'
@@ -88,9 +88,11 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
   return (
     <PrimeReactProvider value={{ pt: Tailwind }}>
-      <LazyMotion features={domAnimation} strict>
-        { children }
-      </LazyMotion>
+      <MotionConfig reducedMotion='user'>
+        <LazyMotion features={domAnimation} strict>
+          { children }
+        </LazyMotion>
+      </MotionConfig>
 
       <ModalsProvider/>
     </PrimeReactProvider>
