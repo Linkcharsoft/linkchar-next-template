@@ -71,7 +71,15 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 ### 8. Typography compliance
 
-31. **Forbidden typography utilities**: grep `src/screens/`, `src/components/`, and `src/layouts/` for any of `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`, `text-5xl`, `text-6xl`, `text-7xl`, `font-thin`, `font-light`, `font-normal`, `font-medium`, `font-semibold`, `font-bold`, `font-extrabold`, `font-black` — as STANDALONE Tailwind classes (not as part of the project's `text-{weight}-{size}` scale). Report each.
+31. **Forbidden typography utilities**: grep `src/screens/`, `src/components/`, and `src/layouts/` for any of the following as STANDALONE Tailwind classes. Report each violation with `path:line`.
+
+    **Tailwind default size utilities** (project bans them in favor of the custom scale): `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`, `text-5xl`, `text-6xl`, `text-7xl`, `text-8xl`, `text-9xl`.
+
+    **Tailwind default weight utilities** (project bans them — weight must come via the `text-{weight}-{size}` scale): `font-thin`, `font-extralight`, `font-light`, `font-normal`, `font-medium`, `font-semibold`, `font-bold`, `font-extrabold`, `font-black`.
+
+    **Project sizes used WITHOUT a weight prefix** (the convention is strict — every size must be paired with a weight): `text-10`, `text-12`, `text-14`, `text-16`, `text-18`, `text-20`, `text-24`, `text-28`, `text-32`, `text-36`, `text-40`, `text-44`, `text-48`, `text-56`, `text-64`, `text-72`, `text-80`, `text-88`, `text-96`, `text-104`, `text-112`, `text-120`, `text-128`. These are valid Tailwind utilities (they set `font-size` only via `tailwind.config.js`) but the convention requires them to be replaced with `text-{weight}-{size}` from the plugin-generated scale (e.g. `text-regular-24` for plain regular weight, `text-bold-24` for bold, etc.). When greping, use word boundaries (`\btext-24\b`) so you don't false-positive on substrings of `text-regular-24`, `text-bold-24`, etc.
+
+    Exclude `src/app/sentry-example-page/page.tsx` from the scan — it is a documented throwaway file scheduled for deletion before production.
 
 ## Hard rules
 - **Report only, never fix** — unless the parent explicitly asks to fix a specific category.
