@@ -3,7 +3,7 @@ import './PasswordRecoveryConfirmationPage.sass'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { Password } from 'primereact/password'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { checkPasswordToken, passwordConfirm } from '@/api/auth'
@@ -36,6 +36,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const isClient = useIsClient()
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
+  const verifyTokenRef = useRef(false)
 
 
   usePressKey('Enter', () => {
@@ -47,6 +48,9 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
 
   // Verify token logic
   useEffect(() => {
+    if (verifyTokenRef.current) return
+    verifyTokenRef.current = true
+
     openModal('loadingModal', {
       title: 'Verifying link',
       content: 'Please wait...'

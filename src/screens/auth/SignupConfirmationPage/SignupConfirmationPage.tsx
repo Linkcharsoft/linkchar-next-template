@@ -4,7 +4,7 @@ import { useFormik } from 'formik'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { InputText } from 'primereact/inputtext'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import * as Yup from 'yup'
 import { emailConfirmation, resendEmailConfirmation } from '@/api/auth'
@@ -37,6 +37,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
+  const verifyTokenRef = useRef(false)
   const {
     timer,
     startTimer,
@@ -56,6 +57,9 @@ const SignupConfirmationPage = ({ token }: Props) => {
 
   // Verify token logic
   useEffect(() => {
+    if (verifyTokenRef.current) return
+    verifyTokenRef.current = true
+
     openModal('loadingModal', {
       title: 'Verifying link',
       content: 'Please wait...'

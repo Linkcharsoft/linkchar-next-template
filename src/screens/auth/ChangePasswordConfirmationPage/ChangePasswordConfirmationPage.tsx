@@ -37,6 +37,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   const isClient = useIsClient()
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')
+  const verifyTokenRef = useRef(false)
 
 
   usePressKey('Enter', () => {
@@ -48,6 +49,8 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
 
   // Verify token logic
   useEffect(() => {
+    if (verifyTokenRef.current) return
+    verifyTokenRef.current = true
     openModal('loadingModal', {
       title: 'Verifying link',
       content: 'Please wait...'
