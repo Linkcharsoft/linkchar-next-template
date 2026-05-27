@@ -15,6 +15,8 @@ const SHARED_COOKIE_OPTIONS = {
   priority: 'high' as const
 }
 
+// Heads up: the encrypted session ends up close to 4KB if the backend issues very large
+// JWTs (lots of claims). Browsers will reject anything over that — keep an eye on token size.
 export async function setSessionCookies (target: CookieSetter, session: SessionType) {
   const encryptedSession = await encryptSession(session)
   const refreshExpiration = new Date(session.refresh_expiration)
