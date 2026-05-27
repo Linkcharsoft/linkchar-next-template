@@ -73,7 +73,7 @@ These are the same rules `CLAUDE.md` documents — repeated here because this ag
 
 - **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
-- **Form inputs** MUST set the matching `autocomplete` token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.) when building input components.
+- **Form inputs** MUST set the matching `autoComplete` token (JSX prop: `email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.) when building input components.
 - **Card / list-item titles** use `<p>` — NOT `<h3>`/`<h4>`. Heading elements are reserved for actual document structure; cards inside a page that already has h1/h2 must not pollute the outline.
 - **Clickable non-button elements** need `role="button"`, `tabIndex={0}`, and `onKeyDown` for Enter/Space — or just use a `<button>`.
 - **Images**: `next/image` with meaningful `alt` (empty only if decorative). For `<Image fill>` always declare `sizes`. The component does not decide `priority` — the consumer does — but if the component renders the LCP image of the page, expose `priority`/`fetchPriority` as props.

@@ -217,7 +217,7 @@ Beyond the carousel pattern in Step 7, every screen must satisfy these — they 
 - **The screen root MUST be `<main id='main' className='ScreenName'>`** — each screen owns its own `<main>` (the skip-to-content link in the root layout points to `#main`). Layouts do NOT render `<main>` themselves, so two `<main>` per page only happens if you wrap a layout in `<main>` by mistake — never do that. Verify with `grep '<main' src/layouts/` → should be zero matches.
 - **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Example: `<CustomButton aria-label='Close'><i className='pi pi-times'/></CustomButton>`.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
-- **Form inputs** MUST set the matching `autocomplete` token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
+- **Form inputs** MUST set the matching `autoComplete` token (JSX prop: `email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
 - **Tap target size on mobile**: every interactive element must be at least `44×44px` with 8px gap to neighbors. Icon-only buttons need `min-h-[44px] min-w-[44px]`. Regular `CustomButton` size variants already satisfy this.
 - **Viewport `user-scalable`**: never set the viewport meta to disable zoom — accessibility requires zoomable pages, and Lighthouse flags it. Use the Next.js root `viewport` export and leave zoom unrestricted.
 

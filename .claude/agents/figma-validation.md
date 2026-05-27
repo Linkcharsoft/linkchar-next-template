@@ -39,7 +39,7 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 11. **Each screen has exactly one `<main id='main'>` root, layouts have none**: grep `src/screens/**/*.tsx` for `<main` — each screen file should have exactly one match, and it must include `id='main'`. Then grep `src/layouts/**/*.tsx` for `<main` — there should be ZERO matches. Two `<main>` per page is the Lighthouse a11y fail this catches.
 12. **Icon-only buttons missing `aria-label`**: grep `src/components/`, `src/screens/`, and `src/layouts/` for `<button` and `<CustomButton` tags whose visible content is only an `<i className='pi pi-...'/>` (or a single icon component) without an `aria-label` attribute. Report each.
 13. **External links without `rel`**: grep for `target='_blank'` or `target="_blank"` in `src/`. For each match, verify the same tag's `rel=` contains both `noopener` and `noreferrer`. Report violations.
-14. **Form `autocomplete` missing**: grep `src/screens/` and `src/components/` for `<InputText`, `<Password`, and `<input` tags. Each text-like input handling email, password, name, phone, postal-code, or one-time-code MUST set `autocomplete=`. List any without it.
+14. **Form `autoComplete` missing**: grep `src/screens/` and `src/components/` for `<InputText`, `<Password`, and `<input` tags. Each text-like input handling email, password, name, phone, postal-code, or one-time-code MUST set `autoComplete=` (JSX camelCase — React converts it to the lowercase `autocomplete` HTML attribute). List any without it.
 15. **Viewport zoom blocked**: read `src/app/layout.tsx`, search for `user-scalable=no`, `userScalable: false`, `maximum-scale=1`, or `maximumScale: 1`. Any match is a violation.
 16. **Clickable non-button without keyboard support**: search for `onClick=` on elements that are not `<button>`/`<a>`/`<Link>`/`<CustomButton>` (e.g. `<article onClick>`, `<div onClick>`) without `role` + `tabIndex` + `onKeyDown`. List any.
 
@@ -95,7 +95,7 @@ Single structured report. Format:
 ❌ Full metadata: src/app/foo/page.tsx — missing `description`, `openGraph`, `twitter`
 
 ### Accessibility
-✅ Heading hierarchy, viewport zoom, no nested main, autocomplete, clickable non-button
+✅ Heading hierarchy, viewport zoom, no nested main, autoComplete, clickable non-button
 ❌ Icon-only buttons: src/components/Bar/Bar.tsx:25 — <button> with `pi pi-times`, no `aria-label`
 ❌ External links: src/components/Footer/Footer.tsx:42 — `target='_blank'` without `rel='noopener noreferrer'`
 

@@ -379,7 +379,7 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 8. **Modals/Toasts**: `useModalStore` for loading states and notifications. Single-screen-only modals go local — see "Bundle & Performance Architecture".
 9. **Env vars**: Import from `@/constants/env`. NEVER `process.env` directly.
 10. **Icon-only buttons**: every `<button>` (or `CustomButton`) whose visible content is only an icon MUST receive `aria-label`. Without it, Lighthouse "Buttons do not have an accessible name" fails.
-11. **Form inputs**: every text-like input MUST set `autocomplete` to the matching token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
+11. **Form inputs**: every text-like input MUST set `autoComplete` (JSX) to the matching token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
 12. **Heading element choice**: card/list-item titles inside a page that already has h1/h2 use `<p>`, not `<h3>`/`<h4>`. Reserve heading elements for actual document structure.
 
 ### Asset Pipeline
@@ -552,7 +552,7 @@ These rules exist to prevent specific Lighthouse failures (Performance, Accessib
 - **Never nest `<main>`**. The convention is: each **screen** owns its own `<main id='main'>` element (the skip-to-content target lives there); **layouts** must NOT render `<main>` themselves — they wrap chrome (navbar, sidebar, footer, decorative side-panels) around the screen slot. Two `<main>` per page = automatic a11y fail. If a layout needs a wrapper around the screen slot, use `<div>`; use `<aside>` for purely decorative side-panels.
 - **Icon-only interactive elements** MUST have `aria-label`. `<button><i className='pi pi-times'/></button>` has no accessible name and fails "Buttons do not have an accessible name". Provide one: `aria-label='Close'`.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`. Prevents tab-napping (security) and avoids a Lighthouse Best Practices flag.
-- **Form inputs need `autocomplete`**: email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, full name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`, etc. Missing autocomplete is both a Lighthouse a11y failure and a password-manager UX regression.
+- **Form inputs need `autoComplete`** (JSX prop — React lowercases it to the `autocomplete` HTML attribute): email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, full name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`, etc. Missing `autoComplete` is both a Lighthouse a11y failure and a password-manager UX regression.
 - **Viewport meta**: never use `user-scalable=no` or `maximum-scale=1`. Both block accessibility zoom and fail Lighthouse. Configure via the Next.js `viewport` export and leave zoom unrestricted.
 - **Tap target size**: interactive elements on mobile need at least `44×44px` with 8px gap to neighbors (Lighthouse measures `48×48` effective). Set `min-h-[44px] min-w-[44px]` on icon buttons; rely on `CustomButton` size variants that already meet this for regular buttons.
 - **Color contrast** must meet WCAG AA: 4.5:1 for normal text, 3:1 for large text (18pt+ or 14pt+ bold) and UI components. When picking color tokens, verify every text/background pair before shipping — Lighthouse runs `axe-core` contrast checks automatically.

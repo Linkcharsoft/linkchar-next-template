@@ -65,7 +65,7 @@ These rules must hold for the component to pass the project's Lighthouse audits.
 
 - **Icon-only interactive elements** (a button or link whose visible content is just an icon) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
-- **Form inputs** must set `autocomplete` to the correct token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.).
+- **Form inputs** must set `autoComplete` (JSX prop) to the correct token (`email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.).
 - **Headings inside the component**: use `<h2>`/`<h3>` only if this component represents a real section of the document outline. For card/item titles inside a list, use `<p>` — let the page own the heading hierarchy.
 - **Images** rendered by the component: `next/image` with `alt` (meaningful) and either explicit `width`/`height` or `fill` + `sizes`. Above-the-fold LCP images need `priority` AND `fetchPriority='high'`.
 - **Tap targets**: any interactive element you render must be at least `44×44px` on mobile (`min-h-[44px] min-w-[44px]` on icon-only buttons). `CustomButton` size variants already meet this for regular buttons.
@@ -135,7 +135,7 @@ Before closing, verify:
 - [ ] `'use client'` is present ONLY if the component uses hooks / event handlers / browser APIs
 - [ ] No `process.env` references — env vars come from `@/constants/env`
 - [ ] Icons via PrimeIcons (`pi pi-xxx`) or existing entries in `src/assets/icons/` — no new icon library installed
-- [ ] If the component is interactive: a11y rules from Step 1 satisfied (aria-label on icon-only buttons, `rel='noopener noreferrer'` on external links, `autocomplete` on inputs, 44×44 tap targets)
+- [ ] If the component is interactive: a11y rules from Step 1 satisfied (aria-label on icon-only buttons, `rel='noopener noreferrer'` on external links, `autoComplete` on inputs, 44×44 tap targets)
 
 Then post a short summary:
 1. Files created (markdown links)

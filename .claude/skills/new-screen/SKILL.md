@@ -148,7 +148,7 @@ These rules must hold for the screen to pass the project's Lighthouse audits. Se
 - **Card / list-item titles inside the screen** use `<p>` (not `<h3>` / `<h4>`). Heading elements pollute the document outline; reserve them for actual document structure.
 - **Single `<main>`**: the screen owns `<main id='main'>` and is the ONLY `<main>` on the rendered page (Lighthouse fails on duplicate `<main>`).
 - **Top-level `<section>`s**: every top-level section MUST anchor its content with `container-custom` so all sections share the same horizontal alignment + 16px lateral gutter. Never substitute with `max-w-[Xpx]` or `max-w-7xl`. AND each section must keep its own vertical padding (`py-*`/`pt-*`/`pb-*`) — `container-custom` does NOT provide vertical rhythm.
-- **Form inputs** (when present in the screen) set `autocomplete` to the matching token: email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`.
+- **Form inputs** (when present in the screen) set `autoComplete` (JSX prop) to the matching token: email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`.
 - **Form submission errors**: when a server or schema validation error fires on submit, focus MUST move to the first invalid field (call `.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Without this, screen-reader users don't know the form failed and assume the click did nothing.
 - **Icon-only buttons** rendered directly in the screen MUST set `aria-label`. External links (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
 - **Focus indicators**: never strip `outline` on interactive elements without replacing it. The project relies on browser defaults + `focus-visible` rings; verify nothing in your `.sass` clobbers them with `outline: none`.
@@ -419,7 +419,7 @@ Before closing, verify:
 - [ ] `proxy.ts` updated only if needed (auth route not covered by an existing `includes()` check, OR new public route)
 - [ ] Heading hierarchy starts at `<h1>` (visually-hidden `sr-only` if no visible h1)
 - [ ] Every top-level `<section>` is anchored with `container-custom` and has explicit vertical padding (`py-*`/`pt-*`/`pb-*`)
-- [ ] A11y rules from Step 3 satisfied (autocomplete on inputs, aria-label on icon-only buttons, rel='noopener noreferrer' on external links)
+- [ ] A11y rules from Step 3 satisfied (`autoComplete` on inputs, `aria-label` on icon-only buttons, `rel='noopener noreferrer'` on external links)
 
 Then post a short summary:
 1. Files created (markdown links)
