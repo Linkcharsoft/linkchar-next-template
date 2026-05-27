@@ -1,5 +1,5 @@
 ---
-name: datatable
+name: new-table
 description: Scaffolds a complete paginated DataTable screen — types + API client + screen with useTableParams + SearchInput + Filters + DataTable + Paginator + SASS + page wrapper. Use this instead of /new-screen whenever the requested screen is a list/table with pagination, filters, search, or sorting.
 ---
 
@@ -26,7 +26,7 @@ Derive:
 
 ---
 
-## Step 0 — Reconnaissance
+## Step 0 — Recon & dedup
 
 Before writing anything, in parallel:
 
@@ -42,11 +42,19 @@ Before writing anything, in parallel:
 Decision rules:
 - If the screen file already exists → STOP and tell the user it exists. Do not overwrite.
 - If the types or API file exists → reuse them. Read them and integrate with whatever functions/types are already there. Do NOT overwrite.
-- If the API file is missing → create it from scratch in Step 2 using the `new-api` skill conventions.
+- If the API file is missing → create it from scratch in Step 3 using the `new-api` skill conventions.
 
 ---
 
-## Step 1 — Types file
+## Step 1 — Mutate registries: `src/proxy.ts` (usually skip)
+
+Protected dashboard routes are the default — `proxy.ts` does NOT need changes for them.
+
+Only update `src/proxy.ts` if the user explicitly requested a public DataTable (rare, would need to add the route to `PUBLIC_PATHS`). Default assumption: protected. Skip this step unless the user said otherwise.
+
+---
+
+## Step 2 — Create types file
 
 Location: `src/types/api/{resource}.ts`
 
@@ -70,7 +78,7 @@ Rules:
 
 ---
 
-## Step 2 — API client
+## Step 3 — Create API client
 
 Location: `src/api/{resource}.ts`
 
@@ -103,7 +111,7 @@ Rules:
 
 ---
 
-## Step 3 — Screen component
+## Step 4 — Create Screen component
 
 Location: `src/screens/{ScreenName}/{ScreenName}.tsx`
 
@@ -291,9 +299,51 @@ Adaptation rules:
 - Never use `process.env` — only `@/constants/env`.
 - Use `classNames` from `primereact/utils` for conditional classes, never `clsx`.
 
+### Accessibility & Lighthouse rules (mandatory)
+
+These rules must hold for the screen to pass the project's a11y audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+
+- **Single `<main>`**: the screen owns `<main id='main' className='{ScreenName}'>`. Layouts must NOT render `<main>` themselves — two `<main>` per rendered page is a Lighthouse a11y failure.
+- **`aria-label` on the DataTable**: tables need an accessible name so SR users hear what they contain. Pass it via `pt`:
+
+  ```tsx
+  <DataTable
+    pt={{ table: { 'aria-label': '{Title}' } }}
+    // ...other props
+  />
+  ```
+
+  Without this, SR announces a generic "table" with no context.
+- **Result count as a live region**: wrap the count display in `aria-live='polite'` so SR users automatically hear updates when filters/search change the count. Update the templated count block to:
+
+  ```tsx
+  <div className='flex items-center gap-2' role='status' aria-live='polite'>
+    <span className='text-bold-14'>{data?.data.count || 0}</span>
+    <span>Results</span>
+  </div>
+  ```
+- **Empty-state announcement**: when filters clear all rows, SR users must hear it. Wrap the `emptyMessage` body in a status region:
+
+  ```tsx
+  emptyMessage={
+    <div role='status' aria-live='polite' className='flex size-full flex-col items-center justify-center gap-4'>
+      {/* ...icon + message + Clear button */}
+    </div>
+  }
+  ```
+- **Paginator nav buttons** require `aria-label` via the `pt` prop (already templated above). PrimeReact's defaults are English; translate if the project ships in another locale.
+- **Empty-state and inline icons** (search, trash) use `aria-hidden='true'` (already templated). Same for any purely decorative icon inside the screen.
+- **Sortable columns**: PrimeReact's `sortable` prop adds `aria-sort` automatically (`none` / `ascending` / `descending`) and exposes the column header as a button. NEVER override these via `pt` — you'll silently break sort announcements.
+- **DataTable**: keep `dataKey='id'` so screen readers announce stable row identifiers across page changes.
+- **SearchInput and Filters accessible names**: every search field and filter control needs a label. If `SearchInput` and `Filters` don't apply one internally, pass it explicitly (`<SearchInput aria-label='Search {resources}'/>`, `<Filters aria-label='Filter by'/>`). Verify with axe-core after wiring.
+- **Loading state**: `loading={isLoading}` on `DataTable` makes PrimeReact set `aria-busy='true'` on the table region while data is fetching. Keep it. Don't replace with a manual spinner that omits this attribute.
+- **Heading hierarchy**: the screen does not currently render an `<h1>` — the filter title is a `<span>`. If the consuming layout doesn't provide an h1 either, add a visually-hidden one inside `<main>`: `<h1 className='sr-only'>{Title}</h1>` to satisfy the Lighthouse heading-order audit.
+- **Tap targets**: `CustomButton` size variants already meet 44×44px on mobile. PrimeReact's Filter pills and Paginator controls inherit defaults — verify on mobile before shipping.
+- **Keyboard navigation**: tab order should flow Search → Filters → Table headers (sortable) → Table rows → Pagination. Verify after any layout change. PrimeReact wires this correctly out of the box; custom column templates with interactive elements (e.g. action icons inside cells) must keep tab order LTR and add `aria-label` per icon.
+
 ---
 
-## Step 4 — SASS file
+## Step 5 — Create SASS file
 
 Location: `src/screens/{ScreenName}/{ScreenName}.sass`
 
@@ -349,7 +399,7 @@ Rules:
 
 ---
 
-## Step 5 — Page wrapper
+## Step 6 — Create page wrapper
 
 Location: `src/app/{route}/page.tsx`
 
@@ -387,15 +437,35 @@ Rules:
 
 ---
 
-## Step 6 — proxy.ts (usually skip)
+## Step 7 — Conventions checklist + summary
 
-Protected dashboard routes are the default — `proxy.ts` does NOT need changes.
+Before closing, verify:
+- [ ] Screen at `src/screens/{ScreenName}/{ScreenName}.tsx` + `.sass`, page wrapper at `src/app/{route}/page.tsx`
+- [ ] Types file `src/types/api/{resource}.ts` reused (or created if missing)
+- [ ] API client `src/api/{resource}.ts` exports the list function with `(path: string = BASE_PATH, token: string)` signature
+- [ ] Screen owns `<main id='main'>` and is the ONLY `<main>` on the rendered page
+- [ ] `'use client'` is on the Screen, NOT on the `page.tsx` wrapper
+- [ ] `page.tsx` is async and awaits `searchParams`
+- [ ] `useTableParams` `defaultParams` keys match every key referenced in `setParam` / `params`
+- [ ] Column `field` props match keys in `ResourceType`
+- [ ] Imports alphabetized within groups, type imports last
+- [ ] `proxy.ts` left untouched (unless user explicitly requested a public DataTable)
+- [ ] A11y rules from Step 4 satisfied (Paginator aria-labels, aria-hidden on decorative icons, `dataKey` on DataTable)
 
-Only update `src/proxy.ts` if the user explicitly requested a public DataTable (rare, would need to add the route to `PUBLIC_PATHS`). Default assumption: protected. Skip this step unless the user said otherwise.
+Then post a short summary:
+1. **Files created** (markdown links, one per line)
+2. **Files modified** (if any existing API or proxy was touched)
+3. **TODOs left for the user**:
+   - Fill `ResourceType` fields in `src/types/api/{resource}.ts`
+   - Replace placeholder columns in the `<DataTable>` with real ones
+   - Add filter definitions to `FILTERS` and `defaultParams` if not already provided
+   - Adjust `.sass` `calc()` heights if the screen is nested inside a layout that subtracts header height
+
+Keep the summary under 30 lines. Do not dump file contents — the user can open the files directly.
 
 ---
 
-## Step 7 — Validation
+## Step 8 — Validate
 
 After all files are written, run:
 
@@ -415,23 +485,6 @@ Common failure modes to watch for:
 - Column `field` prop not matching any key in `ResourceType`.
 - Imports not alphabetized or type imports not last.
 - Single quotes missed.
-
----
-
-## Step 8 — Final summary
-
-Present a concise summary to the user:
-
-1. **Files created** (full paths, one per line).
-2. **Files modified** (if any existing API or proxy was touched).
-3. **TODOs left for the user**:
-   - Fill `ResourceType` fields in `src/types/api/{resource}.ts`.
-   - Replace placeholder columns in the `<DataTable>` with real ones.
-   - Add filter definitions to `FILTERS` and `defaultParams` if not already provided.
-   - Adjust `.sass` `calc()` heights if the screen is nested inside a layout that subtracts header height.
-4. **Validation status**: lint + type-check pass / fail.
-
-Keep the summary under 30 lines. Do not dump file contents — the user can open the files directly.
 
 ---
 

@@ -188,7 +188,7 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 | Skill | Purpose |
 | --- | --- |
 | `/new-screen` | Generate a Screen component + colocated `.sass` + page wrapper, updating `src/proxy.ts` when needed |
-| `/datatable` | Scaffold a full paginated DataTable screen (types + API client + screen with `useTableParams` + filters + page wrapper) |
+| `/new-table` | Scaffold a full paginated DataTable screen (types + API client + screen with `useTableParams` + filters + page wrapper) |
 | `/new-component` | Generate a reusable component folder (`.tsx` + `.sass`) following project conventions |
 | `/new-modal` | Wire up a new modal type across `modalStore`, the component file, and `ModalsProvider` |
 | `/new-skeleton` | Create a skeleton loader sibling for an existing component or screen using `SkeletonBlock` |

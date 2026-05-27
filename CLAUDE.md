@@ -19,7 +19,7 @@
 | Task | Skill | Example invocation |
 | ---- | ----- | ------------------ |
 | Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
-| Create a paginated DataTable screen (with `useTableParams`, filters, search, sorting) | `/datatable` | `/datatable UsersPage users /dashboard/users` |
+| Create a paginated DataTable screen (with `useTableParams`, filters, search, sorting) | `/new-table` | `/new-table UsersPage users /dashboard/users` |
 | Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
 | Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
@@ -27,7 +27,7 @@
 
 Skills live in `.claude/skills/{skill-name}/SKILL.md`. Do not duplicate their logic in chat — invoke them.
 
-> **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/datatable` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
+> **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
 
 ## Project Structure
 
