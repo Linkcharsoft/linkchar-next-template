@@ -28,7 +28,15 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 3. **`alternates.canonical` per page**: for every `src/app/**/page.tsx`, verify it exports `metadata` (or `generateMetadata`) including `alternates.canonical`. List any missing.
 4. **Full metadata for public pages**: every page that is NOT disallowed by `src/app/robots.ts` MUST export `title`, `description`, `alternates.canonical`, `openGraph`, and `twitter`. Read each public `page.tsx` and list any that lack `description`, `openGraph:`, or `twitter:` keys.
 
-   **How to derive "public":** read `src/app/robots.ts` first and extract the `disallow:` patterns (e.g. `/api/*`, `/dashboard`, `/login`, `/signup`, `/password-recovery`, `/change-password`). For each `src/app/**/page.tsx`, derive its route from the file path (stripping route groups like `(auth-layout)`), and consider it public if no disallow pattern matches. Do NOT hardcode `src/app/dashboard/` or `src/app/(auth-layout)/` — those names vary across projects forked from this template; the only authoritative source is `robots.ts`.
+   **How to derive "public":** read `src/app/robots.ts` and extract the disallow patterns. The Next.js `robots.ts` convention exports a default function that returns `{ rules: ... }`; the rules entry can be a single object `{ userAgent, allow, disallow }` or an array of those. Steps:
+
+   1. Read `src/app/robots.ts`.
+   2. Grep inside that file for the regex `disallow\s*:` — each match introduces a value that's either a string or a string array. Collect every literal string referenced from any `disallow:` (e.g. `/api/*`, `/dashboard`, `/login`, `/signup`, `/password-recovery`, `/change-password`). If the value is a variable or imported constant, follow the import and resolve it.
+   3. For each `src/app/**/page.tsx`, derive its URL route from the file path: strip the leading `src/app`, strip any route-group segments (parentheses-wrapped, e.g. `(auth-layout)`, `(marketing-layout)`), strip the trailing `/page.tsx`. Empty result → `/`.
+   4. Match the route against each disallow pattern. A pattern ending in `/*` matches any sub-route; an exact pattern matches the exact URL. If ANY disallow matches, the page is non-public; otherwise it's public.
+   5. Do NOT hardcode `src/app/dashboard/` or `src/app/(auth-layout)/` — those names vary across projects forked from this template; the only authoritative source is the resolved disallow list.
+
+   If `robots.ts` is missing or unparseable, flag it as a SEO violation in its own right and skip the per-page metadata check (the broader fix is to ship a working `robots.ts` first).
 
    **Also validate the `description` length** for each public page (when present):
    - `description.length < 50` → flag "too short, may not provide enough SERP context".
@@ -36,17 +44,31 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
    - `50 ≤ length ≤ 160` → ✅ pass. Same length thresholds apply to `openGraph.description` and `twitter.description` when present.
    - Placeholder text `TODO:` inside the description → flag as "placeholder description, replace before launch" (it's the convention used by figma-scaffold, fine on a scaffolded page but a violation if it survived to a real deploy).
 5. **`generateMetadata` for dynamic routes**: every `src/app/**/[id]/page.tsx`, `src/app/**/[slug]/page.tsx`, and similar dynamic-segment file MUST use `export async function generateMetadata` instead of `export const metadata`. List any that still use the static form.
-6. **No `robots: { nocache: true }`**: grep `src/app/` for `nocache: true`. Any match is a violation (interferes with CDN caching, no SEO benefit).
+6. **No `robots: { nocache: true }`**: grep `src/app/` with the regex `nocache\s*:\s*true` to catch `nocache: true`, `nocache:true`, and `'nocache' : true` variants. Any match is a violation (interferes with CDN caching, no SEO benefit).
 7. **`html lang`**: read `src/app/layout.tsx`, confirm `<html lang="...">` is set to the actual content language (not the default `"en"` if the project ships in another language). Report if `lang` is missing or looks wrong for the project.
 8. **`openGraph.locale` match**: in `src/app/layout.tsx`, confirm `openGraph.locale` matches `html lang` (e.g. `es_AR` for `lang="es"`, not the boilerplate `en_US`). Report mismatches.
 
 ### 3. Accessibility
 
-9. **Heading hierarchy**: for each generated screen, verify exactly one `<h1>` across its tree, with `<h2>` after h1, `<h3>` after h2, etc. (no skipped levels). Report violations.
+9. **Heading hierarchy**: for each generated screen, verify exactly one `<h1>` across its tree, with `<h2>` after h1, `<h3>` after h2, etc. (no skipped levels). Visually-hidden `<h1 className='sr-only'>` (or any class that compiles to `position: absolute; clip: …`) counts as the page h1 — CLAUDE.md explicitly allows this for designs without a visible page title. Report violations.
 10. **No `<h3>`/`<h4>` for card/item titles**: grep `src/components/**/*Card*.tsx`, `src/components/**/*Item*.tsx`, `src/components/**/*Row*.tsx`, and `src/components/**/*Tile*.tsx` for `<h3` or `<h4`. List any matches — card titles should be `<p>`, not heading elements.
-11. **Each screen has exactly one `<main id='main'>` root, layouts have none**: grep `src/screens/**/*.tsx` for `<main` — each screen file should have exactly one match, and it must include `id='main'`. Then grep `src/layouts/**/*.tsx` for `<main` — there should be ZERO matches. Two `<main>` per page is the Lighthouse a11y fail this catches.
-12. **Icon-only buttons missing `aria-label`**: grep `src/components/`, `src/screens/`, and `src/layouts/` for `<button` and `<CustomButton` tags whose visible content is only an `<i className='pi pi-...'/>` (or a single icon component) without an `aria-label` attribute. **Use `multiline: true`** — the icon and its closing tag often span multiple lines, and a single-line regex misses them. Suggested pattern: `<(button|CustomButton)(?![^>]*\baria-label=)[^>]*>\s*<i\s+className=['"]pi pi-[^'"]+['"]\s*/?>\s*</(button|CustomButton)>` with multiline + dotall. Report each.
-13. **External links without `rel`**: grep for `target='_blank'` or `target="_blank"` in `src/`. **Use `multiline: true`** — `<a>`, `<Link>`, and `<CustomButton>` tags often break across lines, so the `rel=` attribute may live on a different line than `target=`. For each match, read the full opening tag and verify it contains both `noopener` and `noreferrer` in some `rel=` attribute. Report violations.
+11. **Each screen has exactly one `<main id='main'>` root, layouts have none**:
+    - Grep `src/screens/**/*.tsx` for `<main` — each screen FILE (one file per screen) should have exactly one match. Count matches per file; flag any with zero or >1.
+    - For files with exactly one `<main`, also verify the tag contains `id='main'` (or `id="main"`). Missing `id` breaks the skip-to-content target.
+    - Grep `src/layouts/**/*.tsx` for `<main` — there should be ZERO matches. Two `<main>` per rendered page is the Lighthouse a11y fail this catches.
+    - Report each violation with file:line.
+12. **Icon-only buttons missing `aria-label`**: grep `src/components/`, `src/screens/`, and `src/layouts/` for `<button` and `<CustomButton` tags whose visible content is only an icon (PrimeIcon `<i>` OR an icon React component) without an `aria-label` attribute. **Use `multiline: true`** — the icon and its closing tag often span multiple lines, and a single-line regex misses them. Run TWO separate passes:
+
+    **Pass A — PrimeIcon-only buttons:**
+    ```
+    <(button|CustomButton)(?![^>]*\baria-label=)[^>]*>\s*<i\s+className=['"]pi pi-[^'"]+['"]\s*/?>\s*</(button|CustomButton)>
+    ```
+    **Pass B — icon-component-only buttons** (e.g. `<button><CloseIcon/></button>`, `<CustomButton><GmailIcon/></CustomButton>` — matches any self-closing JSX element whose name ends in `Icon`):
+    ```
+    <(button|CustomButton)(?![^>]*\baria-label=)[^>]*>\s*<[A-Z][A-Za-z0-9]*Icon\s*(?:[^>]*?)/?>\s*</(button|CustomButton)>
+    ```
+    Both passes require `multiline: true` (and `--multiline-dotall` if your regex engine separates the flags). Report each match from either pass. The project ships several icon components in `src/assets/icons/` (`GmailIcon`, `OutlookIcon`, etc.), so Pass B is necessary — Pass A alone produces a false-negative-heavy report.
+13. **External links without `rel`**: grep for any of `target=['"]_blank['"]`, `target=\{['"]_blank['"]\}` (JSX expression form), or `target=\{[^}]*_blank` (dynamic prop with `_blank`) in `src/`. **Use `multiline: true`** — `<a>`, `<Link>`, and `<CustomButton>` tags often break across lines, so the `rel=` attribute may live on a different line than `target=`. For each match, read the full opening tag and verify it contains both `noopener` and `noreferrer` in some `rel=` attribute. Report violations.
 14. **Form `autoComplete` missing**: grep `src/screens/` and `src/components/` for the PrimeReact input tags `<InputText`, `<Password`, `<Calendar`, `<Dropdown`, `<MultiSelect`, plus native `<input`. Each input collecting browser-autofillable data MUST set `autoComplete=` (JSX camelCase — React converts it to the lowercase `autocomplete` HTML attribute). Tokens to expect:
     - `<InputText` / `<input` (email, name, phone, address fields) → `email`, `name`, `given-name`, `family-name`, `tel`, `street-address`, `postal-code`, `country-name`, `organization`, `one-time-code`, etc.
     - `<Password` → `current-password` for login, `new-password` for signup / reset.
@@ -78,7 +100,10 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 ### 6. Bundle architecture
 
-26. **`'use client'` on layouts**: grep `src/app/**/layout.tsx` for `'use client'`. Layouts should be Server Components — flag every match. (False positives: `(auth-layout)` etc. — check carefully.)
+26. **`'use client'` on layouts**: grep `src/app/**/layout.tsx` for the literal `'use client'` directive. Layouts should be Server Components — flag every match. Handle false positives explicitly (do NOT skip them silently):
+    - **String content** — a layout file with `"client"` in a comment, in a string literal, in a JSON config block, etc. is NOT a violation. Verify the match is the actual directive (first non-comment line of the file).
+    - **Route group folder names** — paths like `src/app/(auth-layout)/...` contain `layout` in the folder name but the grep target is `'use client'` inside the FILE, not the folder. The path-matching glob can produce noise on systems where the route-group parens are escaped; if your tool returns the folder path as part of the match, narrow with `head -1` or anchor the grep to the file's first line.
+    - **What to do when the match is real**: report it with `path:line` and a one-line suggestion ("push `'use client'` to the deepest child of `{children}` that needs hooks; keep the layout server-rendered"). Do NOT auto-fix.
 27. **Third-party `Script` with `beforeInteractive`**: grep `src/` for `<Script` with `strategy='beforeInteractive'` or `strategy="beforeInteractive"`. Report each — only justified for scripts genuinely critical to first paint. **Known exception**: `src/app/layout.tsx` loads React Scan via `<Script strategy="beforeInteractive">` gated by `APP_ENV === 'development'` — that match is intentional (dev-only diagnostics) and should NOT be flagged. Skip any `<Script beforeInteractive>` whose nearest enclosing condition references `APP_ENV === 'development'`.
 28. **`fetch(` without explicit cache policy in server code**: grep `src/app/**/*.tsx` files that do NOT start with `'use client'`, plus `src/api/**/*.ts` (when called from server components). For each `fetch(` call, verify the second argument includes either `next: {` or `cache:`. Report plain `fetch(url)` without policy. **Exclude `src/api/customFetch.ts`** — that file IS the project's fetch wrapper; cache policy is decided per-call by the consumers that import it, not inside the wrapper itself. Flagging it would always produce a noise finding.
 29. **Modals registered globally but used in one screen**: read `src/providers/ModalsProvider.tsx` and list every modal it mounts. For each, grep `src/screens/` and `src/components/` for `openModal('<modalKey>'` usages. If a modal is opened from only ONE screen, flag it — it should be mounted locally inside that screen, not globally.
@@ -115,7 +140,7 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
     Optionally cross-check matches against `tailwind.config.js`'s `theme.extend.fontSize` keys to confirm the size exists in the project's scale at all. A `text-150` violation that ALSO isn't in the config is doubly broken (arbitrary px size + no weight) and should be flagged with a sharper message.
 
-    Exclude `src/app/sentry-example-page/page.tsx` from the scan — it is a documented throwaway file scheduled for deletion before production.
+    Exclude `src/app/sentry-example-page/page.tsx` from the scan ONLY if the file currently exists — it is a documented throwaway file scheduled for deletion before production. Once it's removed from the project, drop the exclusion (i.e. check filesystem existence before adding the path to the exclude list, so the rule doesn't dangle).
 
 ### 10. Figma tokens map sync
 
@@ -134,6 +159,33 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
     6. Report each violation with `figma-tokens-map.md:line` (for ORPHAN) or `tailwind.config.js` reference (for UNMAPPED).
 
     The goal is that the map is the **canonical historical record** of which Figma variable maps to which Tailwind token. ORPHAN rows mean the map references a token that was deleted/renamed; UNMAPPED tokens mean a Figma-shaped token was added outside the agent flow (manual addition) — both are signals that the map needs maintenance, but neither blocks a deploy.
+
+### 11. Project import & convention compliance
+
+34. **Forbidden imports** — grep `src/screens/`, `src/components/`, `src/layouts/`, `src/hooks/`:
+    - `from\s+['"]framer-motion['"]` combined with `\bmotion\b` as the imported binding — `import { motion } from 'framer-motion'` is forbidden; the project uses `m` + `LazyMotion`. ESLint catches this, but defense-in-depth here. Specifically flag lines matching `import\s*\{[^}]*\bmotion\b[^}]*\}\s*from\s*['"]framer-motion['"]` (does NOT flag `m`, `AnimatePresence`, `MotionConfig`, `LazyMotion`).
+    - `from\s+['"]clsx['"]` — forbidden; use `classNames` from `primereact/utils`.
+    - Bare `lucide-react`, `react-icons`, `@heroicons/`, `@fortawesome/` — forbidden icon libraries; the project uses PrimeIcons + Figma-sourced assets.
+    Report each match with `path:line`.
+
+35. **Raw `<a>` for internal routes**: grep `src/screens/`, `src/components/`, `src/layouts/` with multiline regex `<a\s+(?:[^>]*?\s)?href\s*=\s*['"]/`. Each match is an `<a>` whose `href` starts with `/` — an internal route. Internal navigation must use `next/link` (`<Link href='/...'>`) or `CustomButton` with the `href` prop. Allowed exceptions: the SkipToContent anchor in the root layout (`<a href='#main'>`) — its `href` starts with `#`, so the regex above naturally excludes it. Report each match.
+
+36. **`container-custom` on every top-level `<section>` of a screen**: read each `src/screens/**/*.tsx` and walk its JSX tree to find top-level `<section>` elements (direct children of `<main>`, or wrapped in a `<>` fragment that's the direct child of `<main>`). For each top-level `<section>`:
+    - **Pattern A — section without full-bleed background**: the `<section>` itself must include `container-custom` in its `className`.
+    - **Pattern B — section with full-bleed background**: the `<section>` does NOT need `container-custom`, but its FIRST direct child element (typically a `<div>`) must include `container-custom`.
+
+    Static parsing of this rule is non-trivial — use a best-effort grep: for each `src/screens/**/*.tsx`, find every `<section` opening tag inside `<main id='main'>...</main>`. For each, check whether its className OR the className of its very next opening tag (the first child) contains `container-custom`. If neither does, flag it.
+
+    The rule is also documented as forbidden: `max-w-[Xpx]`, `max-w-7xl`, or arbitrary `px-N` on top-level sections — those are usually translation drift from Figma's absolute frame width. Grep `<section[^>]*\bmax-w-\[` and `<section[^>]*\bmax-w-7xl` in `src/screens/` and flag separately as "section uses hardcoded max-width instead of container-custom".
+
+37. **Per-section vertical padding**: same parse of top-level `<section>`s — for each, check whether the className contains a vertical-padding utility (`py-`, `pt-`, `pb-`, or an arbitrary `py-[...]`). If neither the section nor its first child has any, flag it as "section without vertical rhythm — translate `py-*` from Figma; `container-custom` does not provide vertical spacing."
+
+38. **Global-only modals mounted inside components**: grep `src/components/` (excluding `src/components/modals/`) and `src/screens/` for `<LoadingModal`, `<StateModal`, `<ToastNotifications`. Background:
+    - `LoadingModal` belongs in LAYOUTS (per-layout scope) — finding it in a component file means it's been double-mounted.
+    - `StateModal` + `ToastNotifications` belong ONLY in `src/providers/ModalsProvider.tsx`. Any other mount duplicates the listener and causes double-overlay bugs.
+    Flag every match outside the expected places.
+
+39. **No `aria-label` on icon-only buttons in `src/assets/icons/` consumers**: the icons in `src/assets/icons/*.tsx` ship with `aria-hidden='true' focusable='false'` by default (decorative). That's correct only when the consumer provides the accessible name. When `<button>` / `<CustomButton>` renders a `*Icon` component as its only child AND lacks `aria-label`, the button has NO accessible name. Step 12 (icon-only buttons, Pass B) already covers this. This step is a cross-check: report any `*Icon` consumer that overrides `aria-hidden={false}` without then providing accompanying visible text or an `aria-label` on the icon itself — defaulting to icon-as-informative is unusual and worth flagging for review.
 
 ## Hard rules
 - **Report only, never fix** — unless the parent explicitly asks to fix a specific category.
@@ -176,6 +228,13 @@ Single structured report. Format:
 
 ### Tokens & Typography
 ✅ No raw hex, no forbidden utilities
+
+### Project import & convention compliance
+✅ No `motion` import, no `clsx`, no forbidden icon libs
+❌ Raw `<a href='/dashboard'>`: src/screens/HomePage/HomePage.tsx:104 — replace with `<Link>` or `<CustomButton href>`
+❌ Section without `container-custom`: src/screens/ContactPage/ContactPage.tsx:18 — top-level `<section>` uses `max-w-7xl`; replace with `container-custom`
+❌ Section without vertical padding: src/screens/ContactPage/ContactPage.tsx:42 — add `py-*` from Figma
+❌ Component mounts global modal: src/components/Hero/Hero.tsx:88 — `<LoadingModal/>` belongs in layouts, not components
 
 ## Recommendations (suggested fixers)
 - Hero image: add `sizes='100vw'` + `fetchPriority='high'` on HomePage.tsx:88. → `figma-screen` (HomePage)
