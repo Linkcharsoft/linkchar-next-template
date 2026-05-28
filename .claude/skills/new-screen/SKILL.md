@@ -167,7 +167,10 @@ Rules for all screen types:
 
 ### Accessibility & Lighthouse rules (mandatory)
 
-These rules must hold for the screen to pass the project's Lighthouse audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+These rules must hold for the screen to pass the project's Lighthouse audits.
+
+<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a screen-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. If you edit a bullet here AND the same rule appears in CLAUDE.md, update both — drift between them produces inconsistent agent behavior. Skills with the same A11y mirror: new-component, new-modal, new-table. -->
+
 
 - **Heading hierarchy** must start with `<h1>` and never skip levels (no `h1 → h3`). If the visual design has no h1, add a visually-hidden one: `<h1 className='sr-only'>{Page Title}</h1>`. Each rendered page must have exactly one h1.
 - **Card / list-item titles inside the screen** use `<p>` (not `<h3>` / `<h4>`). Heading elements pollute the document outline; reserve them for actual document structure.

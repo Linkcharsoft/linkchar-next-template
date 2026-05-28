@@ -92,7 +92,10 @@ Follow the exact pattern of `src/components/modals/StateModal/StateModal.tsx`:
 
 #### Accessibility & Lighthouse rules (mandatory)
 
-These rules must hold for the modal to pass the project's a11y audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+These rules must hold for the modal to pass the project's a11y audits.
+
+<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a modal-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. Several bullets are specific to PrimeReact's Dialog (focus trap, initial focus, blockScroll, etc.) and don't appear in CLAUDE.md — those are owned here, not mirrored. If you edit a generic bullet here AND the same rule appears in CLAUDE.md, update both. Skills with the same A11y mirror: new-screen, new-component, new-table. -->
+
 
 - **Icon-only action buttons** inside the modal MUST set `aria-label` (e.g. `aria-label='Close'`). PrimeReact's `Dialog` provides an accessible name for its built-in close button — preserve it if you customize `pt.closeButton`.
 - **Modal title**: use the `Dialog` `header` prop instead of a manual `<h2>` inside the body — `Dialog` renders the heading semantics for you and pairs it with `aria-labelledby` automatically.

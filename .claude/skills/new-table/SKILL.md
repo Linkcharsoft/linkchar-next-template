@@ -301,7 +301,10 @@ export default {ScreenName}
 
 ### Accessibility & Lighthouse rules (mandatory)
 
-These rules must hold for the screen to pass the project's a11y audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+These rules must hold for the screen to pass the project's a11y audits.
+
+<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a DataTable-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. Some bullets are specific to PrimeReact's DataTable/Paginator and don't appear in CLAUDE.md — those are owned here, not mirrored. If you edit a generic bullet here AND the same rule appears in CLAUDE.md, update both. Skills with the same A11y mirror: new-screen, new-component, new-modal. -->
+
 
 - **Single `<main>`**: the screen owns `<main id='main' className='{ScreenName}'>`. Layouts must NOT render `<main>` themselves — two `<main>` per rendered page is a Lighthouse a11y failure.
 - **`aria-label` on the DataTable**: tables need an accessible name so SR users hear what they contain. Pass it via `pt`:

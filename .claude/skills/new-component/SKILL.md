@@ -61,7 +61,10 @@ export default ComponentName
 
 ### Accessibility & Lighthouse rules (mandatory)
 
-These rules must hold for the component to pass the project's Lighthouse audits. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the full set.
+These rules must hold for the component to pass the project's Lighthouse audits.
+
+<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a component-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. If you edit a bullet here AND the same rule appears in CLAUDE.md, update both — drift between them produces inconsistent agent behavior. Skills with the same A11y mirror: new-screen, new-modal, new-table. -->
+
 
 - **Icon-only interactive elements** (a button or link whose visible content is just an icon) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
