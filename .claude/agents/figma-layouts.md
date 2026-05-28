@@ -86,7 +86,7 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
 - Layouts compose existing components — they do NOT contain inline navbar/footer markup. If the parts don't exist as components, ask the parent to invoke `figma-components` first.
 - Layouts are Server Components — never `'use client'`. Push the directive to the nested child that needs it.
 - Use Tailwind for layout primitives (flex/grid/spacing). Extract to the colocated `.sass` (BEM) any element with **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
-- **Inside `.sass`**: write plain CSS for layout/spacing/sizing (`display: flex`, `gap: 1rem`, `padding: 1.5rem`, `border-radius: 8px`, etc.). Reserve `@apply` for design tokens only — colors (`@apply bg-surface-100`), typography (`@apply text-bold-14`), responsive prefixes, pseudo-state tokens. Do NOT `@apply flex flex-col gap-4 p-6` when plain CSS expresses it directly. <!-- mirror: CLAUDE.md @apply LAST --> **`@apply` MUST be the LAST declaration in each block scope** (root, `&__Element`, `&--Modifier`, pseudo-state) — putting it between plain CSS declarations breaks the SASS indented parser.
+- **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
 - Responsive: hide/show navbar variants via `hidden md:block` / `block md:hidden` on wrapper divs, NOT via JS conditionals.
 - **`container-custom` applies to chrome that must align with the screen's content grid — typically landing-page layouts**. The rule and its scope:
 

@@ -141,8 +141,7 @@ A few steps are inherently single-line (e.g. SEO completeness Step 6: `nocache\s
 
 ### 8. SASS `@apply` placement
 
-<!-- mirror: CLAUDE.md @apply LAST — the rule wording below mirrors the canonical statement in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
-31. **`@apply` not at the end of its block**: in indented SASS, `@apply` MUST be the LAST declaration in each block scope (root selector, `&__Element`, `&--Modifier`, pseudo-state). Putting `@apply` between plain CSS declarations breaks the SASS indented parser at build time. Grep with ripgrep multiline:
+31. **`@apply` not at the end of its block** (rule defined in [CONVENTIONS.md > Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)): in indented SASS, `@apply` MUST be the LAST declaration in each block scope (root selector, `&__Element`, `&--Modifier`, pseudo-state). Putting `@apply` between plain CSS declarations breaks the SASS indented parser at build time. Grep with ripgrep multiline:
 
     ```bash
     rg -nU --multiline --multiline-dotall '@apply[^\n]+\n[ \t]+[a-z][a-z-]*:' src --type-add 'sass:*.sass' --type sass
