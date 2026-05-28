@@ -46,7 +46,7 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
    | `public` / `protected` | `src/screens/{Name}Page/{Name}Page.tsx` | `{Name}Page` (e.g. `HomePage`) |
    | `auth` | `src/screens/auth/{Name}Page/{Name}Page.tsx` | `AuthLayout` |
 
-   **Insert the `<section>` INSIDE the existing `<main id='main' className='...'>` root** that `/new-screen` already generated — do NOT overwrite the `<main>` wrapper or its className. Removing the wrapper breaks the skip-to-content target (Lighthouse a11y failure); rewriting the className from `AuthLayout` to `{Name}Page` (or vice versa) breaks the layout's expected style scope.
+   **Insert the placeholder INSIDE the existing `<main id='main' className='...'>` root** that `/new-screen` already generated — do NOT overwrite the `<main>` wrapper or its className. Removing the wrapper breaks the skip-to-content target (Lighthouse a11y failure); rewriting the className from `AuthLayout` to `{Name}Page` (or vice versa) breaks the layout's expected style scope.
 
    Pick the placeholder copy from `detectedLanguage`:
    - `en` → `"Coming soon"`
@@ -54,7 +54,9 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
 
    Compute the visible title from the screen name: drop the `Page` suffix and add a space before each capital (e.g. `PasswordRecoveryPage` → `"Password Recovery"`).
 
-   Expected end state of the screen file (English example — swap `Coming soon` for `Próximamente` when `detectedLanguage === 'es'`, and replace `<HumanReadableTitle>` with the computed title literal):
+   **The placeholder JSX differs by `screenType`** — pick the matching template below. English examples — swap `Coming soon` for `Próximamente` when `detectedLanguage === 'es'`, and replace `<HumanReadableTitle>` with the computed title literal (NOT a JSX expression — see the substitution note after the templates).
+
+   **Template A — `public` / `protected` screens** (full-page placeholder anchored with `container-custom` + vertical rhythm):
 
    ```tsx
    'use client'
@@ -72,7 +74,30 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
    export default {Name}Page
    ```
 
-   **Important — literal substitution, NOT JSX interpolation**: `<HumanReadableTitle>` in the template is a placeholder for the LITERAL string you compute (e.g. `Password Recovery`), not a JSX expression. The end-state file should read `<h1 ...>Password Recovery</h1>` — NOT `<h1 ...>{title}</h1>`, which would throw at runtime because no such variable exists. Same applies to the className: substitute `{Name}Page` with the actual PascalCase name (e.g. `HomePage`) or with `AuthLayout` for auth screens.
+   **Template B — `auth` screens** (placeholder lives inside `AuthLayout`'s form panel, which already constrains width + height — `container-custom` and `min-h-[60vh]` would fight the split-screen sizing):
+
+   ```tsx
+   'use client'
+   import './{Name}Page.sass'
+
+   const {Name}Page = () => (
+     <main id='main' className='AuthLayout'>
+       <div className='flex flex-col items-center justify-center gap-2'>
+         <h1 className='text-extrabold-28 text-surface-900 text-center'><HumanReadableTitle></h1>
+         <p className='text-medium-18 text-surface-500 text-center'>Coming soon</p>
+       </div>
+     </main>
+   )
+
+   export default {Name}Page
+   ```
+
+   The two templates differ in three ways:
+   - **`<main>` className**: `{Name}Page` (public/protected) vs `AuthLayout` (auth — shares the layout's BEM scope). Use the className that `/new-screen` already wrote, per the table above.
+   - **Root wrapper element**: `<section className='container-custom ...'>` (public/protected) vs `<div ...>` (auth — `container-custom` is explicitly forbidden inside `AuthLayout` per `figma-layouts.md`; the split-screen sizing supplies the width constraints).
+   - **Vertical sizing**: `min-h-[60vh] py-16` (public/protected — full-page rhythm) vs nothing (auth — `AuthLayout`'s panel already has fixed height; adding `min-h-[60vh]` would push content out of the panel).
+
+   **Important — literal substitution, NOT JSX interpolation**: `<HumanReadableTitle>` in the template is a placeholder for the LITERAL string you compute (e.g. `Password Recovery`), not a JSX expression. The end-state file should read `<h1 ...>Password Recovery</h1>` — NOT `<h1 ...>{title}</h1>`, which would throw at runtime because no such variable exists. Same for the className: substitute `{Name}Page` with the actual PascalCase name (e.g. `HomePage`); leave `AuthLayout` literal for auth screens.
 
    `text-extrabold-28` (not `text-extrabold-44`) is a softer placeholder size — large enough to look intentional, small enough not to dominate. `text-surface-900` (not `text-white`) is the safe default — the body background is light, so a white heading would be invisible. Layouts that ship a dark background can override per-screen later when the real content lands.
 
