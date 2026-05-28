@@ -189,7 +189,14 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
     - `StateModal` + `ToastNotifications` belong ONLY in `src/providers/ModalsProvider.tsx`. Any other mount duplicates the listener and causes double-overlay bugs.
     Flag every match outside the expected places.
 
-39. **No `aria-label` on icon-only buttons in `src/assets/icons/` consumers**: the icons in `src/assets/icons/*.tsx` ship with `aria-hidden='true' focusable='false'` by default (decorative). That's correct only when the consumer provides the accessible name. When `<button>` / `<CustomButton>` renders a `*Icon` component as its only child AND lacks `aria-label`, the button has NO accessible name. Step 12 (icon-only buttons, Pass B) already covers this. This step is a cross-check: report any `*Icon` consumer that overrides `aria-hidden={false}` without then providing accompanying visible text or an `aria-label` on the icon itself — defaulting to icon-as-informative is unusual and worth flagging for review.
+39. **Informative icon override without an accessible name**: the icons in `src/assets/icons/*.tsx` ship with `aria-hidden='true' focusable='false'` by default — they're decorative-by-default. A consumer that wants the icon itself to convey meaning (not just decorate a button label) must override with `aria-hidden={false}`. That override only makes sense when paired with EITHER visible text describing the icon OR an explicit `aria-label` on the icon. Without one, the icon is `aria-hidden={false}` but the screen reader has nothing to announce.
+
+    **Scope vs Step 12 — these don't double-report**:
+    - **Step 12** fires when an icon-only button has no `aria-label` on the BUTTON (the common case — icon is decorative, button needs the name).
+    - **Step 39** fires when an icon overrides `aria-hidden={false}` without its own `aria-label` or visible text neighbor (the rarer case — icon is meant to be informative but has no accessible name).
+    A single offending JSX node will trip at most one of these, not both. Step 12 looks at the PARENT button; Step 39 looks at the ICON override.
+
+    Grep `src/screens/`, `src/components/`, `src/layouts/` for `*Icon` JSX elements that include `aria-hidden={false}` or `aria-hidden='false'`. For each match, verify the icon has its own `aria-label`, OR that the icon sits next to visible text describing it. Flag matches that have neither.
 
 ## Hard rules
 - **Report only, never fix** — unless the parent explicitly asks to fix a specific category.
