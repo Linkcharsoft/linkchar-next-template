@@ -21,6 +21,21 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 2. `src/components/` (Glob the folders) — confirm which reusable components exist (header/navbar variants, footers, shared modals like `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, STOP and ask the parent to run `figma-components` first.
 3. `src/app/` (Glob top-level folders + route groups `({name})`) — see existing route group structure so you don't collide with one.
 
+### Provider inheritance (read once, never re-wire)
+
+The root `src/app/layout.tsx` renders `<GeneralLayout>`, which renders `<ProvidersContainer>` (see `src/providers/ProvidersContainer.tsx`). **Every route-group layout you create is nested INSIDE that hierarchy automatically** — Next.js layouts compose top-down through the route tree.
+
+`ProvidersContainer` already provides:
+- `<PrimeReactProvider value={{ pt: Tailwind }}>` — Tailwind passthrough for PrimeReact components.
+- `<LazyMotion features={domAnimation} strict>` + `<MotionConfig reducedMotion='user'>` — framer-motion config with global reduced-motion handling.
+- Auth token/user fetching via `useUserStore` (token+user from server, polling for cookie changes).
+- Sentry user context + Microsoft Clarity init.
+- `<ModalsProvider/>` mounted as a sibling — provides `<StateModal/>` and `<ToastNotifications/>` globally.
+
+**DO NOT re-wrap any of those providers in your new layout.** Duplicating `<PrimeReactProvider>` creates passthrough conflicts; duplicating `<MotionConfig>` creates inconsistent reduced-motion behavior; duplicating `<LazyMotion>` doubles bundle loading. Your new layout's job is to compose CHROME (navbar, footer, sidebar, decorative aside) around `{children}` — nothing else at the provider level.
+
+If the Figma design suggests a layout needs a feature that would require its own provider (e.g. a route-group-scoped theme override), STOP and surface that to the parent — it's an architectural decision, not a per-layout one.
+
 ## Steps
 
 1. Compare each existing layout in `src/layouts/{AuthLayout,DashboardLayout,GeneralLayout}/{Layout}.tsx` against the Figma design intent.
@@ -32,6 +47,8 @@ These files are the source of truth — the parent's prompt is a hint, but the f
    4. Include `<LoadingModal />` inside the layout. **It goes per-layout on purpose, not in the global `ModalsProvider`** — `AuthLayout` mounts it INSIDE the left-hand form `<section>` so the loader only covers the form half (the right-hand branding panel stays visible), while `DashboardLayout` / `GeneralLayout` mount it as a sibling of `{children}` so the loader covers the full viewport. When you create a new layout, decide which behavior matches the design: scope the `<LoadingModal/>` to the section it should cover (full layout vs. one panel). `ToastNotifications` and `StateModal` stay global in `ModalsProvider` because they always overlay the whole viewport; do NOT mount those per-layout.
    5. **Server Component by default**: layouts should NOT be marked `'use client'`. A nested child that needs hooks (e.g. `MobileMenu`, `ScrollSpy`) is the one that gets `'use client'`, not the layout itself — otherwise the entire route subtree opts out of SSR.
 4. **Wire up** the layout in the matching `src/app/{(group-name)}/layout.tsx` route group (create the route group folder if needed). The route-group `layout.tsx` is a thin wrapper that delegates to the layout component.
+
+   **Route group naming convention**: always `(<kebab-case-name>-layout)` — kebab-case name + the literal `-layout` suffix in parentheses. Examples: `(auth-layout)` (already in the repo), `(landing-layout)`, `(dashboard-layout)`, `(marketing-layout)`. NEVER `(landing)` / `(marketing)` / `(dashboard)` without the suffix — without `-layout`, the folder name reads like a URL segment instead of a wrapper definition, which confuses anyone scanning `src/app/` for the first time.
 5. **Verify the root `src/app/layout.tsx` has a skip-to-content link** as the first child of `<body>` (`<a href='#main' className='SkipToContent'>Skip to content</a>`, paired with a `.SkipToContent` BEM class in `src/styles/general.sass`). Use whatever language the project ships in. If missing, add it — it pairs with the `id='main'` on each screen's `<main>` (set by the `/new-screen` skill) and is required for the "Bypass blocks of repetitive content" Lighthouse audit. This is a one-time setup; only edit `src/app/layout.tsx` if the link is missing.
 6. Run `pnpm run lint-check --fix` + `pnpm run type-check`.
 
@@ -49,7 +66,17 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
 - Use Tailwind for layout primitives (flex/grid/spacing). Extract to the colocated `.sass` (BEM) any element with **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
 - **Inside `.sass`**: write plain CSS for layout/spacing/sizing (`display: flex`, `gap: 1rem`, `padding: 1.5rem`, `border-radius: 8px`, etc.). Reserve `@apply` for design tokens only — colors (`@apply bg-surface-100`), typography (`@apply text-bold-14`), responsive prefixes, pseudo-state tokens. Do NOT `@apply flex flex-col gap-4 p-6` when plain CSS expresses it directly. **`@apply` MUST be the LAST declaration in each block scope** (root, `&__Element`, `&--Modifier`, pseudo-state) — putting it between plain CSS declarations breaks the SASS indented parser.
 - Responsive: hide/show navbar variants via `hidden md:block` / `block md:hidden` on wrapper divs, NOT via JS conditionals.
-- **`container-custom` MANDATORY for layout chrome.** Every Navbar, Footer, Sidebar, or any layout-level bar that has a full-bleed background MUST wrap its content with `container-custom` so the chrome aligns with the screens' top-level sections at every breakpoint. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. Pattern: `<header className='Navbar'>{/* full-bleed bg */}<div className='container-custom flex items-center justify-between py-4'>{/* content */}</div></header>`. NEVER use `max-w-[Xpx]` or arbitrary horizontal padding to define the chrome's content width — that's the root cause of "the navbar/footer doesn't line up with the page sections". **Vertical padding (`py-*`) IS your responsibility** — `container-custom` doesn't set any, so always add the chrome's vertical rhythm from Figma (e.g. `py-4` on a navbar, `py-12` on a footer).
+- **`container-custom` applies to chrome that must align with the screen's content grid — typically landing-page layouts**. The rule and its scope:
+
+  **When it applies (use `container-custom`)**: layout chrome whose content the user perceives as belonging to the same horizontal grid as the screen content below it. Canonical case: **landing-page layouts** with a Navbar at the top, page sections in the middle, and a Footer at the bottom — all three need to anchor at the same left edge across breakpoints. Anything that runs the width of the viewport with a full-bleed background but whose CONTENT must align with the page (Navbar, Footer, breadcrumb bar, top notification bar, persistent CTA bar, full-width sidebar with content) goes here. Pattern: `<header className='Navbar'>{/* full-bleed bg */}<div className='container-custom flex items-center justify-between py-4'>{/* content */}</div></header>`. The class already provides a 16px lateral gutter, so do NOT add `px-*` next to it. Vertical padding (`py-*`) is your job — translate it from Figma.
+
+  **When it does NOT apply**: layouts whose visual structure defines its own width by design, with no shared content grid expectation. Two examples already in this codebase:
+  - **Auth flow layouts** (`AuthLayout`): split-screen with the form on one side and a branding panel on the other (`w-[45%]` + `w-[55%]` in the current implementation). The form panel has its own internal width logic; the branding panel is decorative. Neither aligns with a "page section grid" — there is none. Wrapping with `container-custom` would actually break the split.
+  - **Private dashboard layouts** (`DashboardLayout`): typically render a sidebar + main work area where the main area expands to fill available width inside its parent container. Sections inside the dashboard SCREENS still use `container-custom` (per screen-level rules), but the LAYOUT shell itself uses raw flex/grid sizing because dashboard chrome is functional (resizable sidebar, full-bleed work area) rather than aligned to a marketing grid.
+
+  **Heuristic**: ask "does the user perceive a horizontal rhythm shared between this chrome and the screen sections below/around it?" If yes → `container-custom`. If the layout's job is functional partitioning (auth split, dashboard panes) rather than marketing alignment → leave the layout chrome on raw Tailwind sizing.
+
+  NEVER use `max-w-[Xpx]` or arbitrary horizontal padding to fake `container-custom`'s job — that's the root cause of "the navbar/footer doesn't line up with the page sections" on landing-page work.
 
 ## Output to parent
 A summary: for each layout (adjusted or created), the file paths and the route groups wired up. End with the standardized footer:
