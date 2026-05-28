@@ -43,7 +43,7 @@ Fonts:
 Breakpoints: (none new)
 ```
 
-If the parent passes prose instead of a structured list ("the design uses Plus Jakarta Sans for the body and adds 4 new colors"), STOP and ask for the structured form — you cannot reliably extract token shapes from natural language.
+If the parent passes prose instead of a structured list ("the design uses Plus Jakarta Sans for the body and adds 4 new colors"), emit `STOP-BLOCKING / category: INVALID_INPUT / reason: parent passed prose instead of a structured token list / resolution: re-invoke with the structured form (see "Example input" above)`. You cannot reliably extract token shapes from natural language.
 
 ## Token policy (HARD RULES — never violate)
 
@@ -92,13 +92,15 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
 3. **For each token from the parent**, decide the action by applying the policy in order. The first rule that matches wins:
 
-   | Order | Condition | Action | Report tag |
-   | ----- | --------- | ------ | ---------- |
+   | Order | Condition | Action | Report tag / STOP category |
+   | ----- | --------- | ------ | -------------------------- |
    | a | `figmaVarName` already appears in `figma-tokens-map.md` | reuse the mapped Tailwind token; do nothing in `tailwind.config.js` | `MAPPED` |
-   | b | Proposed action would override or extend `surface-*` | reject — force a new namespace instead | `REJECTED-SURFACE` |
-   | c | Override request (same key, different hex, non-surface) without `confirmOverride: true` | block — emit conflict report, do not edit | `BLOCKED-OVERRIDE` |
+   | b | Proposed action would override or extend `surface-*` | reject — force a new namespace instead | `STOP-BLOCKING / REJECTED_SURFACE` |
+   | c | Override request (same key, different hex, non-surface) without `confirmOverride: true` | block — emit conflict STOP, do not edit | `STOP-BLOCKING / OVERRIDE_BLOCKED` |
    | d | Heuristic match against an existing non-surface token (max channel diff ≤ 4) AND semantically compatible | reuse existing token; append mapping row | `REUSED` |
    | e | Otherwise | create new token under a descriptive non-surface name; append mapping row | `CREATED` |
+
+   `MAPPED`, `REUSED`, `CREATED` are normal action labels reported in the structured output. `REJECTED_SURFACE` and `OVERRIDE_BLOCKED` are emitted via the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol) — they halt the import flow until resolved.
 
 4. **Edit `tailwind.config.js`** — apply only CREATE and (rare, confirmed) OVERRIDE actions:
    - Place new color entries inside `theme.extend.colors` under a non-surface namespace (e.g. `brand-*`, `accent-*`, `border-*`).
@@ -181,7 +183,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
 ## Output to parent
 
-A structured report. If any `BLOCKED-OVERRIDE` or `REJECTED-SURFACE` entries appear, the parent MUST stop the import flow and surface them to the user before continuing.
+A structured report. If any `STOP-BLOCKING / OVERRIDE_BLOCKED` or `STOP-BLOCKING / REJECTED_SURFACE` entries appear (see [CONVENTIONS.md > STOP Protocol](.claude/CONVENTIONS.md#stop-protocol)), the parent MUST stop the import flow and surface them to the user before continuing.
 
 <!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its ledger (the footer string is just for the human reader), so a drift here doesn't poison cost telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
 
@@ -198,11 +200,13 @@ CREATED (new key):
 - {newTokenA}: {hex}
 - {newTokenB}: {hex}
 
-REJECTED-SURFACE (forced to new namespace):
+STOP-BLOCKING / REJECTED_SURFACE (forced to new namespace):
 - {figmaVarC} ({hex}) — looked like a gray; not allowed to extend surface-*. Created as {newTokenName} instead.
 
-BLOCKED-OVERRIDE (awaiting user decision):
-- {tokenName} — Figma proposed {newHex}, existing {oldHex}, used in {N} files. Files: [list].
+STOP-BLOCKING / OVERRIDE_BLOCKED (awaiting user decision):
+- {tokenName} — Figma proposed {newHex}, existing {oldHex}, used in {N} files.
+- details:
+    files: [list]
 
 Typography sizes added (fontSize + plugin.sizes):
 - {list of new sizes, or "none"}

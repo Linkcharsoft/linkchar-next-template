@@ -52,10 +52,14 @@ Figma's `get_design_context` exposes asset names as the node's display name from
 2. **Try to derive a better name** from context:
    - Look at the parent node's `name` in the design context — Figma frames often have semantic names ("Hero", "ProductCard", "Footer"). Combine with the asset's role-hint: `{parent-name-kebab}-{role-hint}-{N}` → e.g. `hero-background`, `product-card-photo-1`, `footer-brand-mark`.
    - If multiple assets share the same derived name (e.g. 3 photos in a `ProductCard`), append a stable index from the design context: `product-card-photo-1`, `product-card-photo-2`, etc.
-3. **If you cannot derive a meaningful name** (no semantic parent node, no role-hint that helps), STOP and return to the parent with:
+3. **If you cannot derive a meaningful name** (no semantic parent node, no role-hint that helps), emit a STOP via the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
 
    ```
-   NEEDS NAMING: Figma asset `{original-name}` ({source-url}) has no semantic context I can use. Please provide a meaningful target file name, then re-invoke me.
+   STOP-BLOCKING
+   category: NAMING_NEEDED
+   reason: Figma asset `{original-name}` ({source-url}) has no semantic context I can use.
+   resolution: Provide a meaningful target file name, then re-invoke me.
+   next_agent: user_decision
    ```
 
    Do not invent a placeholder like `asset-1.webp` — that's how the registry ends up with permanently anonymous files.

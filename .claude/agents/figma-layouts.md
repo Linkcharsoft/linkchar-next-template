@@ -31,7 +31,7 @@ If any of those are missing, ask.
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, breakpoints). Use ONLY these tokens; no hex.
-2. `src/components/` (Glob the folders) — confirm which reusable components exist (header/navbar variants, footers, shared modals like `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, STOP and ask the parent to run `figma-components` first.
+2. `src/components/` (Glob the folders) — confirm which reusable components exist (header/navbar variants, footers, shared modals like `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: layout references {Component} but it's missing on disk / resolution: parent must run figma-components first / next_agent: figma-components`.
 3. `src/app/` (Glob top-level folders + route groups `({name})`) — see existing route group structure so you don't collide with one.
 
 ### Provider inheritance (read once, never re-wire)
@@ -98,7 +98,18 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
 
   **Heuristic**: ask "does the user perceive a horizontal rhythm shared between this chrome and the screen sections below/around it?" If yes → `container-custom`. If the layout's job is functional partitioning (auth split, dashboard panes) rather than marketing alignment → leave the layout chrome on raw Tailwind sizing.
 
-  **When the heuristic is ambiguous** (e.g. a hybrid layout with marketing-style nav AND functional split body), STOP and surface the decision to the parent rather than guessing. Phrase: `CONTAINER-CUSTOM DECISION: {LayoutName} has mixed marketing-grid + functional-split signals. Should the {Navbar|Footer|...} inner content anchor with container-custom?` Subjective calls made unilaterally here propagate to every screen the layout wraps — the cost of asking once is much cheaper than re-anchoring every section later.
+  **When the heuristic is ambiguous** (e.g. a hybrid layout with marketing-style nav AND functional split body), emit a `STOP-ADVISORY` and proceed with the safer default (NO `container-custom` on the chrome — does not enforce alignment but does not break a non-marketing layout either):
+
+  ```
+  STOP-ADVISORY
+  category: CONTAINER_CUSTOM_DECISION
+  reason: {LayoutName} has mixed marketing-grid + functional-split signals. Should the {Navbar|Footer|...} inner content anchor with container-custom?
+  resolution: The user should confirm or change the decision in the next checkpoint.
+  next_agent: user_decision
+  default_applied: implemented WITHOUT container-custom; the chrome uses raw flex/grid sizing.
+  ```
+
+  Subjective calls made unilaterally here propagate to every screen the layout wraps — surface the question to the user via the orchestrator's checkpoint. See [CONVENTIONS.md > STOP Protocol](.claude/CONVENTIONS.md#stop-protocol) for how advisory STOPs flow.
 
 ## Sidebar patterns (when Figma shows a persistent side panel)
 

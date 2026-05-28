@@ -30,11 +30,17 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 - `detectedLanguage` (`en` | `es`) — drives default `aria-label`s, placeholder copy, and any visible English/Spanish text the component renders. If omitted, default to `en` and note it in the report.
 - Optional `reuseAsIs` list — components from Step 0 that exist on disk and don't need any new variants. The parent should NOT pass these; if it does, refuse them with: `Component {Name} is in reuseAsIs — no work to do. Drop it from the input.`
 
-If any list is missing, OR if any component (extend or create) is missing its `figmaNodeId`, STOP and reply:
+If any list is missing, OR if any component (extend or create) is missing its `figmaNodeId`, emit:
 
-> Missing `figmaNodeId` for component `{Name}`. Building components from prose alone consistently produces wrong-but-plausible output (screenshots hide structure — a colored area in a screenshot can be the IMAGE fill, not a card frame; auto-layout direction, exact spacing per side, and hover/focus variants are invisible until the node is inspected). Please go back to Step 0 and resolve a representative Figma nodeId for this component, then re-invoke me.
+```
+STOP-BLOCKING
+category: INVALID_INPUT
+reason: Missing `figmaNodeId` for component `{Name}` — prose-only specs produce wrong-but-plausible output.
+resolution: Go back to Step 0 of the orchestrator and resolve a representative Figma nodeId for this component, then re-invoke me.
+next_agent: manual
+```
 
-Do not attempt to proceed with prose-only specs. This rule exists because prose-driven components are the #1 source of expensive rework cycles in this flow.
+Do not attempt to proceed with prose-only specs. This rule exists because prose-driven components are the #1 source of expensive rework cycles in this flow — screenshots hide structure (a colored area can be the IMAGE fill, not a card frame; auto-layout direction, exact spacing per side, and hover/focus variants are invisible until the node is inspected).
 
 ## Per-component Figma inspection (MANDATORY before writing any code)
 
@@ -43,7 +49,7 @@ For EVERY component you are about to create or extend, BEFORE writing the `.tsx`
 1. Call `mcp__claude_ai_Figma__get_design_context` on the component's `figmaNodeId` with the `fileKey`. Read the response carefully — it exposes the real auto-layout structure, fills per node, exact padding/gap per side, border widths, and variant references. The parent's textual description is a HINT; the design context is the spec.
 2. Call `mcp__claude_ai_Figma__get_screenshot` on the same nodeId for visual reference. Use the screenshot to confirm what you read in the design context, never the other way around (screenshots cannot tell you which node owns which fill).
 3. If the design context shows the component has multiple variants/states (hover, active, error, etc.) — capture each.
-4. If a value used by the node is missing from the project's tokens, STOP and return a `TOKENS MISSING` report to the parent so it can delegate to `figma-tokens` first. The check covers:
+4. If a value used by the node is missing from the project's tokens, emit `STOP-BLOCKING / category: TOKENS_MISSING` to the parent so it can delegate to `figma-tokens` first (see [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol)). The check covers:
    - **Colors** — every hex not present in `theme.extend.colors` (recursing into nested namespaces).
    - **Typography sizes** — every `fontSize` not present in `theme.extend.fontSize`.
    - **Font weights** — when a Figma node uses a weight outside the project's `text-{weight}-{size}` scale (e.g. weight 750 on a variable font when the project only ships `text-bold-*` / `text-semibold-*`).
@@ -57,7 +63,7 @@ Only AFTER this inspection do you write the component. Skipping it — even "to 
 
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
-1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, STOP and ask the parent to delegate to `figma-tokens` first — never hardcode hex.
+1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, emit `STOP-BLOCKING / category: TOKENS_MISSING / next_agent: figma-tokens`. Never hardcode hex.
 2. `CLAUDE.md` (project root) — project conventions (BEM in SASS, framer-motion `m` not `motion`, `classNames` from primereact/utils not `clsx`, default exports — and NO manual `memo()` since React Compiler handles memoization automatically, etc.). The `## Performance & Lighthouse Rules` section (in the lower half of the file) applies to every component you create; if your `CLAUDE.md` read got truncated before that heading, re-read with an offset to reach it — those rules are blocking, not aspirational. Critical excerpts are also duplicated inline in the "Accessibility & Lighthouse rules" section of this agent for convenience.
 3. `src/components/` (Glob the folders) — full list of existing components. The "Existing Reusable Components" table in CLAUDE.md may be out of date.
 
@@ -87,7 +93,15 @@ interface Props {
 const CountrySelect = ({ countries }: Props) => { /* render */ }
 ```
 
-If you can't avoid loading data inside the component (rare — usually the design intent was a screen, not a reusable component), STOP and report a `DATA SCOPE LEAK: {Component} needs data loading; consider promoting it to /new-screen or accepting the data as a prop.` to the parent.
+If you can't avoid loading data inside the component (rare — usually the design intent was a screen, not a reusable component), emit:
+
+```
+STOP-BLOCKING
+category: DATA_SCOPE_LEAK
+reason: {Component} needs data loading; reusable components must remain visual-only.
+resolution: Promote it to /new-screen, or have the consumer pass the data as a prop.
+next_agent: manual
+```
 
 ## Steps
 

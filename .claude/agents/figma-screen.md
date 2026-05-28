@@ -36,7 +36,7 @@ Existing components to reuse: {list from Step 3 — name, variants, file path}
 Tokens available: {list from Step 1}
 ```
 
-If any required field (screen name, screen type, screen slug, desktop URL, mobile URL, detected language) is missing, STOP and ask. The previous version of this agent defaulted these silently — that produced bugs (auth screens implemented in the wrong folder, Spanish error copy under `<html lang='en'>`). Defaults are forbidden; the parent must pass them.
+If any required field (screen name, screen type, screen slug, desktop URL, mobile URL, detected language) is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing required field "{field}" / resolution: parent must re-invoke with the missing field / next_agent: manual`. The previous version of this agent defaulted these silently — that produced bugs (auth screens implemented in the wrong folder, Spanish error copy under `<html lang='en'>`). Defaults are forbidden; the parent must pass them.
 
 ## File path and `<main>` className by screen type
 
@@ -51,7 +51,7 @@ If any required field (screen name, screen type, screen slug, desktop URL, mobil
 
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
-1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts, breakpoints). Use ONLY these tokens in your output. If Figma uses a value that's not there, STOP and ask the parent to delegate to `figma-tokens` first.
+1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts, breakpoints). Use ONLY these tokens in your output. If Figma uses a value that's not there, emit `STOP-BLOCKING / category: TOKENS_MISSING / next_agent: figma-tokens` (see Step "Token validation gate" below for the full format).
 2. `CLAUDE.md` (project root) — project conventions (BEM, framer-motion `m`, classNames from primereact/utils, no hex, etc.).
 3. `src/components/` (Glob the folders) — confirm which reusable components actually exist on disk. Reuse them; do not assume the parent's list is complete.
 
@@ -92,26 +92,26 @@ The prop from the wrapper carries the initial SSR-time values; `useSearchParams(
 
 After fetching the design context (Steps 1–3) and BEFORE writing any JSX, scan every value Figma uses (colors, typography sizes, font weights, spacing, breakpoints, radii) and cross-check against `tailwind.config.js`.
 
-If you find ANY value that has no corresponding token, STOP. Do not invent arbitrary Tailwind values like `text-[72px]`, `bg-[#ff0000]`, `rounded-[7px]`, `gap-[18px]`. Instead, return early with this exact format:
+If you find ANY value that has no corresponding token, STOP. Do not invent arbitrary Tailwind values like `text-[72px]`, `bg-[#ff0000]`, `rounded-[7px]`, `gap-[18px]`. Instead, return early via the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
 
 ```
-TOKENS MISSING: cannot proceed with {ScreenName}Page until these are added.
-
-Colors:
-- {hex-a} (Figma: {--var-name-a}) → suggest '{descriptive-token-name-a}'
-- {hex-b} (Figma: {--var-name-b}) → suggest '{descriptive-token-name-b}'
-
-Typography sizes:
-- 72px (used in hero title)
-- 38px (used in hero stats values)
-
-Spacing/radius:
-- 7px (used in {some component}'s border-radius)
-
-Action: parent should delegate to `figma-tokens` with this list, then re-invoke me.
+STOP-BLOCKING
+category: TOKENS_MISSING
+reason: cannot proceed with {ScreenName}Page until tokens are added
+resolution: parent should delegate to `figma-tokens` with the list below, then re-invoke me.
+next_agent: figma-tokens
+details:
+  colors:
+    - {hex-a} (Figma: {--var-name-a}) → suggest '{descriptive-token-name-a}'
+    - {hex-b} (Figma: {--var-name-b}) → suggest '{descriptive-token-name-b}'
+  typography_sizes:
+    - 72px (used in hero title)
+    - 38px (used in hero stats values)
+  spacing_radius:
+    - 7px (used in {some component}'s border-radius)
 ```
 
-The parent will run `figma-tokens` to add the missing values, then re-invoke you. Pausing here is much cheaper than implementing with hardcoded values and refactoring later.
+Pausing here is much cheaper than implementing with hardcoded values and refactoring later.
 
 **Exception**: layout-only arbitrary values that don't carry design-token meaning are OK to use as-is — these are positioning/sizing, not design tokens. Typical cases:
 - `aspect-[4/3]`, `aspect-[16/9]` — aspect ratios for image containers.
@@ -143,7 +143,17 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
        screenSlug && /^[a-z][a-z0-9-]*$/.test(screenSlug)
        ```
 
-       If the assertion fails, STOP and report `INVALID SCREEN SLUG: received "{value}" — expected non-empty kebab-case. Re-invoke with a valid slug.` Do NOT fall back to a flat path (`src/assets/images/{slug}.webp`) — flat is reserved for genuinely-shared assets (logos, brand graphics), and silently downgrading per-screen → flat scatters per-screen images into the shared bucket.
+       If the assertion fails, emit:
+
+       ```
+       STOP-BLOCKING
+       category: INVALID_INPUT
+       reason: received `screenSlug = "{value}"` — expected non-empty kebab-case (`^[a-z][a-z0-9-]*$`).
+       resolution: parent must re-invoke with a valid slug.
+       next_agent: manual
+       ```
+
+       Do NOT fall back to a flat path (`src/assets/images/{slug}.webp`) — flat is reserved for genuinely-shared assets (logos, brand graphics), and silently downgrading per-screen → flat scatters per-screen images into the shared bucket.
    - **Logos and shared assets**: if the content hash matches one of the already-existing logos in `src/assets/images/` (root-level, not under any `{screenSlug}/`), reuse those instead of saving a new copy in the per-screen folder.
 
    **Image rendering rules — full set in `CLAUDE.md > Performance & Lighthouse Rules > Image Performance`. Critical reminders** (the ones most often missed on Figma-driven work — if anything below conflicts with CLAUDE.md, CLAUDE.md wins):
@@ -158,15 +168,22 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 
    1. Grep `src/components/` (and `src/components/**/`) for an obvious name match (e.g. design has a numbered step → grep for `Step`, design has tab pills → grep for `Tab` / `Pill`).
    2. If a match exists AND the component covers this variant → IMPORT and use it. Do NOT inline a one-off version.
-   3. If a match exists but does NOT cover this variant (e.g. needs a new size or state), STOP and report a `COMPONENT GAP` to the parent:
+   3. If a match exists but does NOT cover this variant (e.g. needs a new size or state):
+      - **Used 2+ times in the screen** → emit `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-components` (format below).
+      - **Used 1 time only** → emit `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: implemented inline with a `// TODO: refactor into {ComponentName} variant {variant}` comment so the user can decide to delegate post-batch.`
 
       ```
-      COMPONENT GAP: {existing-component} does not cover {Figma node X:Y}'s {variant/state}.
-      Need: {description of new variant/state}.
-      Parent: please delegate to figma-components with this nodeId, then re-invoke me.
+      STOP-{BLOCKING|ADVISORY}
+      category: COMPONENT_GAP
+      reason: {existing-component} does not cover {Figma node X:Y}'s {variant/state}.
+      resolution: Delegate to figma-components with this nodeId; re-invoke me after the variant is added (or accept the inline default for advisory).
+      next_agent: figma-components
+      details:
+        need: {description of new variant/state}
+        usage_count: {N}
       ```
 
-   4. If no match exists AND the visual is reused 2+ times in the screen OR is a clearly named primitive (a "card", a "tab", etc.), STOP and report a `COMPONENT GAP` so the parent can create it via `figma-components` instead of you inlining bespoke JSX.
+   4. If no match exists AND the visual is reused 2+ times in the screen OR is a clearly named primitive (a "card", a "tab", etc.), emit `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-components` so the parent can create it via `figma-components` instead of you inlining bespoke JSX.
 
    Inlining bespoke versions of what should be reusable components is the most common silent regression in this flow. The reuse audit costs ~2-3 extra Grep calls per screen and prevents it.
 
@@ -370,5 +387,5 @@ End with the standardized footer:
 ---
 Workload: model=opus, tool_calls≈{N}, files_touched={M}
 Validation: lint=✅/❌, type-check=✅/❌
-Notes: {one-line count summary, e.g. "HomePage implemented (desktop + mobile), 6 images downloaded (2 reused via hash), 4 reusable components consumed, 1 COMPONENT GAP reported"}
+Notes: {one-line count summary, e.g. "HomePage implemented (desktop + mobile), 6 images downloaded (2 reused via hash), 4 reusable components consumed, 1 STOP-ADVISORY COMPONENT_GAP reported"}
 ```
