@@ -5,7 +5,7 @@ description: Orchestrates the bottom-up import of a full Figma design file into 
 
 Import a Figma design end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
 
-**REQUIRED**: a Figma URL pointing to the FULL design file (or the page that contains every screen + every component). Steps 0 through 4 rely on seeing the entire design at once — token analysis, component reuse detection, and shared layout extraction all depend on global visibility.
+**REQUIRED**: a Figma URL pointing to the FULL design file (or the page that contains every screen + every component). Every step that enumerates frames — Step 0 (inventory), Step 4 (layouts), Step 5.1 (scaffold all screens), Step 5.2 (per-screen implementation) — relies on seeing the entire design at once. Token analysis, component reuse detection, shared layout extraction, and the screen registry all depend on global visibility.
 
 If the argument is missing OR clearly points to a single screen/component, STOP and ask the user:
 
@@ -20,13 +20,21 @@ Do not proceed past Step 0 with a partial design — the inventory will be wrong
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
-| Step | Sub-agent | Model | Duration | Tool calls | Notes |
-|------|-----------|-------|----------|------------|-------|
-| 1 | figma-tokens | Haiku | 12s | ≈5 | 6 colors + 4 sizes added |
-| 2 | figma-assets | Haiku | 45s | ≈21 | 14 images, 5 icons |
-| 3 | figma-components | Opus | 3m | ≈23 | 6 new + 1 extended |
-| ... | ... | ... | ... | ... | ... |
+| Step | Sub-agent | Model | Duration | Tool calls | Tokens≈ | Notes |
+|------|-----------|-------|----------|------------|---------|-------|
+| 1 | figma-tokens | Haiku | 12s | ≈5 | ≈8k | 6 colors + 4 sizes added |
+| 2 | figma-assets | Haiku | 45s | ≈21 | ≈14k | 14 images, 5 icons |
+| 3 | figma-components | Opus | 3m | ≈23 | ≈85k | 6 new + 1 extended |
+| ... | ... | ... | ... | ... | ... | ... |
 ```
+
+**Estimating `Tokens≈`** — use the tool-call count as a proxy. Per-tool-call averages from past runs (calibrate as you go):
+- Haiku agent: ≈1.5k tokens / tool call (mostly small Reads, Edits, Bash).
+- Sonnet agent: ≈3k tokens / tool call (longer Reads, denser reasoning).
+- Opus agent: ≈4k tokens / tool call (large MCP responses, multi-file edits, screenshots).
+- Add a flat +30k for any sub-agent that calls `get_design_context` on a node (the MCP response itself is heavy).
+
+The estimate is a SIGNAL, not an invoice — keep two significant figures (`≈85k`, not `85,124`). The point is to see if Step 5.2 per-screen invocations are creeping into the hundreds-of-thousands range so the user can pause before the next one.
 
 **Where each column comes from** (every sub-agent ends its `Output to parent` with a standardized 3-line footer):
 
@@ -40,14 +48,21 @@ Notes: {one-line count summary}
 - `Model` ← `Workload: model=...` from the footer.
 - `Duration` ← **measured by the orchestrator** from wall-clock time between the `Agent(...)` call start and return. Don't ask the sub-agent to self-report — it can't measure it accurately and the harness already exposes it.
 - `Tool calls` ← `Workload: tool_calls≈...` from the footer. If you need per-tool breakdown (`Read×8, Write×12, Bash×3`), derive it from the visible tool calls in the agent's run log — that detail is not part of the footer.
+- `Tokens≈` ← **computed by the orchestrator** from `tool_calls × model_factor` + flat surcharges (see formula above). Sub-agents do NOT self-report tokens.
 - `Notes` ← `Notes:` line from the footer, used verbatim.
 
 Append the `Validation:` line of the footer to the checkpoint message after each step so the user sees lint/type-check status without scrolling through the agent's full report.
 
-**Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show approximate cost class:
-- Green: mostly Haiku/Sonnet (cheap)
-- Yellow: mixed
-- Red: heavy Opus usage (expected for Step 5.2 per-screen)
+**Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens≈` sum and the per-model breakdown:
+
+```
+Cumulative tokens≈ 420k
+  haiku: ≈30k
+  sonnet: ≈15k
+  opus: ≈375k    ← Step 5.2 per-screen is the dominant share
+```
+
+This makes the trajectory inspectable: if the per-screen Opus delta starts rising sharply across consecutive screens (Step 5.2), the user can pause and decide whether to simplify the remaining screens before continuing.
 
 This makes the model-assignment promise verifiable — if Step 1 ends up running on Opus by mistake, the ledger surfaces it.
 
@@ -134,6 +149,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    - **{ScreenName}Page** → route `{/path}`, type `{auth|public|protected}`
      - Desktop: `X:Y` ({Figma frame name})
      - Mobile: `X:Z` ({Figma frame name}) — or `(no mobile variant found)` if missing
+     - Expected reusable components (from Step 3 inventory): `[{Component1}, {Component2}, ...]` — populated after Step 3 returns, used by Step 5.2 to short-circuit the per-screen reuse audit.
 
    ## Detected language
    - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
@@ -173,7 +189,7 @@ You receive: confirmation of changes + type-check result.
 
 Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and `screenSlug` when the asset belongs to a single screen (omit for shared assets like logos). The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `ffmpeg`, registers exports in `src/assets/icons/index.ts`. Per-screen raster images land at `src/assets/images/{screenSlug}/{name}.webp`; shared raster assets land flat at `src/assets/images/{name}.webp`.
 
-Skip any asset where a PrimeIcon already covers the need (`pi pi-{name}`).
+**You (the orchestrator) pre-filter assets covered by PrimeIcons (`pi pi-{name}`) before delegating** — the `figma-assets` agent does not re-check this. When the Figma node maps to an icon that exists in PrimeIcons, do NOT include it in the asset list passed to the agent; instead, note `→ use <i className='pi pi-{name}'/>` in the gap analysis so the screen agent (Step 5.2) knows.
 
 You receive: list of files created with their final sizes + lint/type-check status.
 
@@ -222,7 +238,12 @@ Two phases: scaffold all screens at once (5.1), then implement each one in detai
 
 > **Delegate to**: `Agent({ subagent_type: 'figma-scaffold' })` — runs in **Haiku**.
 
-Pass to the agent the full screen list from the gap analysis: each screen's name, page type, route, and route group (if any), PLUS the `detectedLanguage` (`en` | `es`) and the current `<html lang>` from Step 0. All screens — both those with Figma sources and those that are TBD — get the same placeholder for consistency (`"Coming soon"` when language is `en`, `"Próximamente"` when language is `es`). Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each, sets the placeholder content in the right language, switches `<html lang>` and `openGraph.locale` in `src/app/layout.tsx` if they don't match the detected language, ensures `metadata.alternates.canonical` is exported, and verifies routes are reachable.
+Pass to the agent the full screen list from the gap analysis. **Before delegating, read `src/app/layout.tsx` and extract the current `<html lang>` value** — pass it as `currentHtmlLang`. Required input to the agent:
+
+- For each screen: `screenName`, `screenType` (`auth` | `public` | `protected`), `route`, `routeGroup` (optional), `isFromFigma` (boolean).
+- Batch-level: `detectedLanguage` (`en` | `es`, from Step 0) and `currentHtmlLang` (the literal value you just read).
+
+All screens — both those with Figma sources and those that are TBD — get the same placeholder for consistency (`"Coming soon"` when language is `en`, `"Próximamente"` when language is `es`). Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each (which generates `metadata.alternates.canonical` from the start), sets the placeholder content in the right language, switches `<html lang>` and `openGraph.locale` in `src/app/layout.tsx` if they don't match the detected language, and verifies routes are reachable.
 
 After this step, **commit the scaffold as a checkpoint** before moving on.
 
@@ -250,10 +271,16 @@ This is the heaviest token usage of the whole flow. By delegating each screen to
 
 ```
 Screen name: {Name}Page
+Screen type: {auth|public|protected}                # required — drives screen file path + <main> className
+Screen slug: {kebab-case}                           # required — used for src/assets/images/{slug}/ image folder
 Desktop URL: figma.com/design/{fileKey}/{name}?node-id={desktop_id}
 Mobile URL: figma.com/design/{fileKey}/{name}?node-id={mobile_id}   (or "no mobile variant" if missing)
+Detected language: {en|es}                          # required — drives Formik error copy, default alt text, etc.
 Images: descargá de Figma
-Existing components to reuse: {list from Step 3}
+Existing components to reuse:
+  - {ComponentA} (variants: [primary, secondary]) → src/components/{ComponentA}/{ComponentA}.tsx
+  - {ComponentB} (created in Step 3, no variants) → src/components/{ComponentB}/{ComponentB}.tsx
+  # Pre-resolved from Step 3 output (screen registry → expected reusable components) — short-circuits the per-screen reuse audit so figma-screen doesn't have to re-grep src/components/.
 Tokens available: {list from Step 1}
 Container rule: every top-level <section> MUST be anchored with `container-custom` (or wrap its content in a child <div className='container-custom ...'> when the section has a full-bleed background). The class already brings a built-in 16px lateral gutter — do NOT add `px-*` on the same element. Ignore Figma's absolute frame width and per-section padding-x — they break cross-section alignment. BUT keep the per-section `py-*` / `pt-*` / `pb-*` from Figma intact — `container-custom` only handles horizontal spacing, so every section still needs its own vertical rhythm.
 Adjustment notes (only on re-runs): {text from user}
@@ -336,6 +363,9 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 - ❌ Skip the per-screen checkpoint and chain through every screen in one shot — the user wants to review each result before the next starts
 - ❌ Halt the whole Step 5.2 batch silently if one screen fails — surface the error in the next checkpoint and let the user choose retry / skip / stop
 - ❌ Hardcode hex colors anywhere — always tokens
+- ❌ Use raw `<a href='/internal-route'>` for internal navigation — always `next/link` or `CustomButton` with `href` prop. Raw anchors trigger full-page reloads and lose Next.js client routing.
+- ❌ Import `motion` from `framer-motion` — always `m` + `LazyMotion` (already set up in `ProvidersContainer`). ESLint enforces this; using `motion` fails lint and inflates the bundle.
+- ❌ Import `clsx` for conditional classes — always `classNames` from `primereact/utils`. The project pins on `classNames` for consistency with PrimeReact's passthrough system.
 - ❌ Translate Figma's absolute frame width / per-section `padding-x` literally instead of anchoring every top-level `<section>` with `container-custom` — this is the #1 cause of misaligned sections in Figma-driven screens. Every section (and the inner content of full-bleed layout chrome — Navbar, Footer) MUST use `container-custom`. NEVER substitute with `max-w-[Xpx]`, `max-w-7xl`, or arbitrary horizontal per-section paddings.
 - ❌ Strip vertical padding from sections "because container-custom handles spacing" — IT DOES NOT. `container-custom` is horizontal-only (max-width + 16px lateral gutter). Every section must keep its own `py-*` / `pt-*` / `pb-*` translated from Figma; sections without vertical padding collapse against each other and look broken.
 - ❌ Skip the "confirm with user" checkpoint at the end of Step 0
@@ -359,6 +389,6 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 | 2 | Assets | `figma-assets` | Haiku | List of assets with type + URL + target name |
 | 3 | Components | `figma-components` | Opus | fileKey + extend list (with `figmaNodeId` each) + create list (with `figmaNodeId` each) + token names |
 | 4 | Layouts | `figma-layouts` | Sonnet | Current layouts state + Figma findings |
-| 5.1 | Scaffold screens | `figma-scaffold` | Haiku | Screen list (name, type, route, Figma-or-TBD) |
-| 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-screen` | Opus | (none upfront — checkpoint after each screen for optional adjustments) |
+| 5.1 | Scaffold screens | `figma-scaffold` | Haiku | Screen list (name, **screenType**, route, routeGroup, Figma-or-TBD) + `detectedLanguage` + `currentHtmlLang` |
+| 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
 | 6 | Validation | `figma-validation` | Haiku | Scope (or empty for full sweep) |
