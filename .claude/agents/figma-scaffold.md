@@ -106,7 +106,7 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
    2. Find the `locale:` key inside the `openGraph` object — it lives as `locale: '{currentLocale}'` (NOT prefixed with `openGraph.` because it's nested inside the object literal). Edit it to the matching new locale: `en` → `'en_US'`, `es` → `'es_AR'`. The current template defaults to `'en_US'`; if the project uses a different Spanish variant (`es_ES`, `es_MX`), the user can correct it after — default to `es_AR` since this template's primary audience is Argentina.
    3. Report the switch in your output as `LANG SWITCH: {old} → {new} based on Figma content`.
 
-   If `detectedLanguage === currentHtmlLang`, leave `src/app/layout.tsx` alone and skip this sub-step.
+   **Idempotence — re-runs on the same project**: if `detectedLanguage === currentHtmlLang`, leave `src/app/layout.tsx` alone, skip the edit, and report `LANG: {current} (no change)` instead of `LANG SWITCH:`. This matters across multiple Figma imports into the same project — a Spanish-first project that already lives at `<html lang='es'>` from a prior import must NOT trigger a no-op "switch" line on the next import. The report line distinguishes the actual switch from the steady state so the user can scan the log for real changes.
 
    **Never mix languages**: the `<html lang>`, `openGraph.locale`, and the placeholder copy ALWAYS match. Shipping a placeholder in Spanish under `<html lang="en">` is both an SEO penalty (Google misclassifies the page) and an a11y failure (screen readers mispronounce the content).
 
