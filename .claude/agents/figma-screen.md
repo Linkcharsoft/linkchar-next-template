@@ -156,9 +156,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
        Do NOT fall back to a flat path (`src/assets/images/{slug}.webp`) — flat is reserved for genuinely-shared assets (logos, brand graphics), and silently downgrading per-screen → flat scatters per-screen images into the shared bucket.
    - **Logos and shared assets**: if the content hash matches one of the already-existing logos in `src/assets/images/` (root-level, not under any `{screenSlug}/`), reuse those instead of saving a new copy in the per-screen folder.
 
-   **Image rendering rules — full set in `CLAUDE.md > Performance & Lighthouse Rules > Image Performance`. Critical reminders** (the ones most often missed on Figma-driven work — if anything below conflicts with CLAUDE.md, CLAUDE.md wins):
-
-   <!-- Source: keep in sync with `CLAUDE.md > Performance & Lighthouse Rules > Image Performance`. If you update those rules, propagate the criticals here. -->
+   **Image rendering — full rules in [CONVENTIONS.md > Image Performance](.claude/CONVENTIONS.md#image-performance). Critical reminders most often missed on Figma-driven work** (CONVENTIONS.md wins on any conflict below):
 
    - Every `<Image fill>` MUST declare `sizes` (otherwise Next.js serves the largest variant).
    - LCP image needs BOTH `priority` AND `fetchPriority='high'` — both, not one.

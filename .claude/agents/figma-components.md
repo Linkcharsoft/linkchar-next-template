@@ -64,8 +64,8 @@ Only AFTER this inspection do you write the component. Skipping it — even "to 
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, emit `STOP-BLOCKING / category: TOKENS_MISSING / next_agent: figma-tokens`. Never hardcode hex.
-2. `CLAUDE.md` (project root) — project conventions (BEM in SASS, framer-motion `m` not `motion`, `classNames` from primereact/utils not `clsx`, default exports — and NO manual `memo()` since React Compiler handles memoization automatically, etc.). The `## Performance & Lighthouse Rules` section (in the lower half of the file) applies to every component you create; if your `CLAUDE.md` read got truncated before that heading, re-read with an offset to reach it — those rules are blocking, not aspirational. Critical excerpts are also duplicated inline in the "Accessibility & Lighthouse rules" section of this agent for convenience.
-3. `src/components/` (Glob the folders) — full list of existing components. The "Existing Reusable Components" table in CLAUDE.md may be out of date.
+2. `.claude/CONVENTIONS.md` (read in the Pre-flight above) — all project conventions: BEM in SASS, `m` not `motion`, `classNames` from `primereact/utils` not `clsx`, default exports, no manual `memo()`. The [Performance & Lighthouse Rules](.claude/CONVENTIONS.md#accessibility) and related sections are blocking, not aspirational.
+3. `src/components/` (Glob the folders) — full list of existing components on disk. The [Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components) table in CONVENTIONS.md may be out of date if a recent component was added without updating it; the filesystem wins on conflict.
 
 ## Where to place a new component (folder routing)
 

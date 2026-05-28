@@ -200,14 +200,6 @@ CREATED (new key):
 - {newTokenA}: {hex}
 - {newTokenB}: {hex}
 
-STOP-BLOCKING / REJECTED_SURFACE (forced to new namespace):
-- {figmaVarC} ({hex}) — looked like a gray; not allowed to extend surface-*. Created as {newTokenName} instead.
-
-STOP-BLOCKING / OVERRIDE_BLOCKED (awaiting user decision):
-- {tokenName} — Figma proposed {newHex}, existing {oldHex}, used in {N} files.
-- details:
-    files: [list]
-
 Typography sizes added (fontSize + plugin.sizes):
 - {list of new sizes, or "none"}
 
@@ -219,5 +211,33 @@ Fonts (loaded via next/font/google in src/app/layout.tsx as --font-{name}):
 ---
 Workload: model=haiku, tool_calls≈{N}, files_touched={M}
 Validation: lint=✅/❌, type-check=✅/❌
-Notes: {one-line count summary, e.g. "6 colors + 4 sizes added, 1 font swapped"}
+Notes: {one-line count summary, e.g. "6 colors + 4 sizes added, 1 font swapped, 1 REJECTED_SURFACE, 1 OVERRIDE_BLOCKED"}
+```
+
+If any token triggered `REJECTED_SURFACE` or `OVERRIDE_BLOCKED` rules, emit one fenced STOP block per occurrence AFTER the report above, following the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
+
+```
+STOP-BLOCKING
+category: REJECTED_SURFACE
+reason: Figma var `{figmaVarC}` ({hex}) looked like a gray; cannot extend the immutable `surface-*` namespace.
+resolution: Create the token under a different namespace (e.g. `accent-gray-soft`, `border-muted`). Re-invoke with the updated namespace if you want it created.
+next_agent: figma-tokens
+details:
+  figma_var: {figmaVarC}
+  proposed_hex: {hex}
+  suggested_namespace: {newTokenName}
+```
+
+```
+STOP-BLOCKING
+category: OVERRIDE_BLOCKED
+reason: Override request for `{tokenName}` — Figma proposed `{newHex}`, existing is `{oldHex}` (used in {N} files).
+resolution: Re-invoke with `confirmOverride: true` AND a non-surface token name, OR rename the new token.
+next_agent: user_decision
+details:
+  token: {tokenName}
+  existing_hex: {oldHex}
+  proposed_hex: {newHex}
+  affected_files: {N}
+  files: [list]
 ```
