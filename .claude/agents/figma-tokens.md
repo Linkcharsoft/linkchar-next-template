@@ -172,6 +172,8 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
 A structured report. If any `BLOCKED-OVERRIDE` or `REJECTED-SURFACE` entries appear, the parent MUST stop the import flow and surface them to the user before continuing.
 
+<!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its ledger (the footer string is just for the human reader), so a drift here doesn't poison cost telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
+
 ```
 Token changes applied to tailwind.config.js + figma-tokens-map.md:
 

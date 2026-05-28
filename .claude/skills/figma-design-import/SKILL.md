@@ -45,10 +45,10 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary}
 ```
 
-- `Model` ← `Workload: model=...` from the footer.
+- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline.
 - `Duration` ← **measured by the orchestrator** from wall-clock time between the `Agent(...)` call start and return. Don't ask the sub-agent to self-report — it can't measure it accurately and the harness already exposes it.
-- `Tool calls` ← `Workload: tool_calls≈...` from the footer. If you need per-tool breakdown (`Read×8, Write×12, Bash×3`), derive it from the visible tool calls in the agent's run log — that detail is not part of the footer.
-- `Tokens≈` ← **computed by the orchestrator** from `tool_calls × model_factor` + flat surcharges (see formula above). Sub-agents do NOT self-report tokens.
+- `Tool calls` ← `Workload: tool_calls≈...` from the footer. The sub-agent counts its own calls; the orchestrator can't see them otherwise. If you need per-tool breakdown (`Read×8, Write×12, Bash×3`), derive it from the visible tool calls in the agent's run log — that detail is not part of the footer.
+- `Tokens≈` ← **computed by the orchestrator** from `tool_calls × model_factor` + flat surcharges (see formula above). Sub-agents do NOT self-report tokens. The `model_factor` comes from the frontmatter-derived `Model` value above, so a drifted footer can't poison the estimate.
 - `Notes` ← `Notes:` line from the footer, used verbatim.
 
 Append the `Validation:` line of the footer to the checkpoint message after each step so the user sees lint/type-check status without scrolling through the agent's full report.

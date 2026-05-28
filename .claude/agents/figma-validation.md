@@ -209,6 +209,8 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 Single structured report. Format:
 
+<!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its cost ledger (the footer string is just for the human reader), so a drift here doesn't poison telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
+
 ```
 ## Validation summary
 

@@ -164,6 +164,8 @@ If the run only wrote `.webp` / `.svg` / `.hash.txt` (pure raster + static SVG, 
 ## Output to parent
 A summary listing every file created (path + final size), followed by the standardized footer:
 
+<!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its cost ledger (the footer string is just for the human reader), so a drift here doesn't poison telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
+
 ```
 ---
 Workload: model=haiku, tool_calls≈{N}, files_touched={M}

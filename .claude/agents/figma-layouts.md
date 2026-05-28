@@ -108,6 +108,8 @@ If the sidebar pattern doesn't match any of the above (e.g. floating sidebar tha
 ## Output to parent
 A summary: for each layout (adjusted or created), the file paths and the route groups wired up. End with the standardized footer:
 
+<!-- The `model=sonnet` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its cost ledger (the footer string is just for the human reader), so a drift here doesn't poison telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
+
 ```
 ---
 Workload: model=sonnet, tool_calls≈{N}, files_touched={M}
