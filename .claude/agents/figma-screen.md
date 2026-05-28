@@ -26,6 +26,39 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 2. `CLAUDE.md` (project root) — project conventions (BEM, framer-motion `m`, classNames from primereact/utils, no hex, etc.).
 3. `src/components/` (Glob the folders) — confirm which reusable components actually exist on disk. Reuse them; do not assume the parent's list is complete.
 
+### Async params and searchParams (Next.js 16 pattern)
+
+Since Next 15, `params` and `searchParams` in `page.tsx` files are `Promise<...>` that the wrapper must `await` before passing to the screen. The `/new-screen` skill already generates the wrapper that way:
+
+```tsx
+// src/app/{route}/page.tsx
+interface Props {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+const Page = async ({ searchParams }: Props) => {
+  const params = await searchParams              // wrapper awaits here
+  return <ScreenName searchParams={params}/>     // screen receives a plain object
+}
+```
+
+**Inside your screen, treat `searchParams` (and `params`) as plain objects — never re-await them.** The wrapper already resolved the Promise. If you re-await, you'll either get a runtime error or silently call `await` on a non-thenable.
+
+When the screen needs **client-side reactive** search params (the URL changes and the screen should re-render filtered data), prefer `useSearchParams()` from `next/navigation` over the prop:
+
+```tsx
+'use client'
+import { useSearchParams } from 'next/navigation'
+
+const ProductsPage = () => {
+  const searchParams = useSearchParams()
+  const query = searchParams.get('q') ?? ''
+  // ...
+}
+```
+
+The prop from the wrapper carries the initial SSR-time values; `useSearchParams()` carries the live client-side values. Use whichever matches the rendering model — for forms/filters that update the URL on the client, `useSearchParams()` is correct.
+
 ## Token validation gate (mandatory between design context and implementation)
 
 After fetching the design context (Steps 1–3) and BEFORE writing any JSX, scan every value Figma uses (colors, typography sizes, font weights, spacing, breakpoints, radii) and cross-check against `tailwind.config.js`.
@@ -69,15 +102,14 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
      3. **If not found** → `curl` the URL into `/tmp/{slug}.png`, then `ffmpeg -i /tmp/{slug}.png -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling.
    - **Logos and shared assets**: if the URL hash matches one of the already-existing logos in `src/assets/images/` (use the `.hash.txt` sibling files written by `figma-assets` to detect matches), reuse those instead of saving a new copy in the screen folder.
 
-   **Image rendering rules — Lighthouse-mandatory, no exceptions:**
+   **Image rendering rules — full set in `CLAUDE.md > Performance & Lighthouse Rules > Image Performance`. Critical reminders** (the ones most often missed on Figma-driven work — if anything below conflicts with CLAUDE.md, CLAUDE.md wins):
 
-   - Every `<Image>` MUST have a meaningful `alt`. Decorative-only images use `alt=''`; never leave content images with empty alt.
-   - Every `<Image fill>` MUST declare `sizes`. Examples: full-bleed hero → `sizes='100vw'`; half-width content panel → `sizes='(min-width: 768px) 50vw, 100vw'`; 4-col grid card → `sizes='(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw'`. Without `sizes` Next.js serves the largest variant and Lighthouse "Properly size images" fails.
-   - **LCP image** (the largest above-the-fold image — typically the hero) needs BOTH `priority` AND `fetchPriority='high'`. Both, not one.
-   - **Lists/grids**: only the first N items above the fold get `priority`. Pattern: `priority={index < N}`. Setting `priority` on every item destroys lazy loading.
-   - **Mobile/desktop dual `<Image>` (`hidden md:block` + `md:hidden`)**: BOTH variants download by default. Scope each with `sizes` to skip the hidden one — desktop `sizes='(min-width: 768px) Xvw, 0vw'`, mobile `sizes='(min-width: 768px) 0vw, 100vw'`.
-   - **Image container must reserve space** to avoid CLS — for fixed-size containers set BOTH `height` AND `min-height` in the `.sass`, or use `aspect-ratio`.
-   - Never use `unoptimized` unless the asset is already in an optimized final format and there's a documented reason.
+   <!-- Source: keep in sync with `CLAUDE.md > Performance & Lighthouse Rules > Image Performance`. If you update those rules, propagate the criticals here. -->
+
+   - Every `<Image fill>` MUST declare `sizes` (otherwise Next.js serves the largest variant).
+   - LCP image needs BOTH `priority` AND `fetchPriority='high'` — both, not one.
+   - In `.map(...)` over a list, gate `priority` with `priority={index < N}` — never unconditional.
+   - Mobile/desktop dual `<Image>` (`hidden md:block` + `md:hidden`) MUST scope `sizes` with `0vw` at the hidden breakpoint, otherwise BOTH variants download.
 5. **Component reuse audit (BEFORE writing JSX).** The parent passes a list of "Existing components to reuse" but it may be incomplete, stale, or written from the parent's interpretation rather than the file system. Before writing any section, walk the design context and identify every reusable visual primitive (cards, buttons, inputs, callouts, list items, badges, tabs, paginators, breadcrumbs, accordions, etc.). For each:
 
    1. Grep `src/components/` (and `src/components/**/`) for an obvious name match (e.g. design has a numbered step → grep for `Step`, design has tab pills → grep for `Tab` / `Pill`).
