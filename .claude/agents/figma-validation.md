@@ -118,6 +118,7 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 ### 8. SASS `@apply` placement
 
+<!-- mirror: CLAUDE.md @apply LAST — the rule wording below mirrors the canonical statement in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
 31. **`@apply` not at the end of its block**: in indented SASS, `@apply` MUST be the LAST declaration in each block scope (root selector, `&__Element`, `&--Modifier`, pseudo-state). Putting `@apply` between plain CSS declarations breaks the SASS indented parser at build time. Grep with ripgrep multiline:
 
     ```bash

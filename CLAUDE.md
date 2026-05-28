@@ -204,6 +204,7 @@ When you move styles into a `.sass` file, write plain CSS for properties that ma
 
 - ✅ **Plain CSS** for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `top/right/bottom/left`, `cursor`, `overflow`, `text-align`, `transition`, `transform`
 - ✅ **`@apply`** for: project colors (e.g. `text-surface-700`, `bg-surface-100`), typography tokens (`text-bold-14`, `text-medium-16` — these compose size + weight + letter-spacing), responsive prefixes (`md:flex-row`), and pseudo-state tokens (`hover:bg-surface-100`)
+<!-- canonical-source: the `@apply` LAST rule below is mirrored in 9 skills/agents (new-component, new-screen, new-table, new-skeleton, new-modal, figma-components, figma-layouts, figma-screen, figma-validation). When this wording changes, propagate to those mirrors — they each carry a `mirror: CLAUDE.md @apply LAST` marker for searchability. -->
 - ⚠️ **`@apply` MUST be the LAST declaration in each block scope** — root selector, `&__Element`, `&--Modifier`, pseudo-state. Plain CSS properties go FIRST, then a single `@apply` line at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented-syntax parser with a confusing "expected selector" error. Nested child blocks (`&__X`, `&--X`, `&:hover`) are fine after `@apply` because they're a deeper scope.
 
 ```sass

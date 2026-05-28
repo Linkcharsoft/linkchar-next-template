@@ -499,6 +499,7 @@ Common failure modes to watch for:
 - NEVER export the `Props` interface unless another file needs it.
 - NEVER overwrite existing screen, API, or types files — reuse or abort.
 - ALWAYS use single quotes, no semicolons, 2-space indent.
+<!-- mirror: CLAUDE.md @apply LAST — keep the bullet below in sync with the canonical wording in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
 - ALWAYS place `@apply` as the LAST declaration in each `.sass` block scope (root, `&__Element`, `&--Modifier`, pseudo-state). Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser.
 - ALWAYS use `'use client'` on the screen (hooks).
 - ALWAYS use `text-{weight}-{size}` typography, never loose `text-xl` or `font-bold`.
