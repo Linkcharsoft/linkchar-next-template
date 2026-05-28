@@ -85,7 +85,18 @@ For hooks with non-trivial APIs, add a JSDoc block above the declaration so cons
  */
 ```
 
-See `src/hooks/usePersistentTimer.ts` for the reference example.
+### Reference example: `src/hooks/usePersistentTimer.ts`
+
+`usePersistentTimer` is the project's canonical "non-trivial hook" example — open it before writing your own to see the conventions in practice:
+
+- **Single source of truth** — persists state across remounts via `localStorage` so timers survive route transitions. Reads it back on mount with a `useRef` guard to avoid StrictMode double-init.
+- **Cleanup discipline** — every interval is cleared on unmount, even when the component remounts mid-tick. Cleanup runs return the timer to a stable state.
+- **JSDoc with `@hook` / `@name` / `@description` / `@example`** — so the IDE shows usage at the call site, not just the type signature.
+- **Object parameter, not positional** — `useXxx({ a, b })` instead of `useXxx(a, b)` so the call site is self-documenting and adding optional keys later is non-breaking.
+- **No `useCallback` / `useMemo` wrapping** — React Compiler handles memoization automatically; the hook returns plain values and the consumers stay clean.
+- **Explicit return type** — the IntelliSense hint at the call site shows the exact shape, not `any`.
+
+When extending or building a hook with similar complexity (persistence, intervals, cross-mount state), mirror this structure instead of inventing a new convention. For shorter idioms — a single piece of state, a single effect — look at `useTableParams` (URL-state derived) and `usePressKey` (event listener with cleanup) for the simpler patterns.
 
 ---
 
