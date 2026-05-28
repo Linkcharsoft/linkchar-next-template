@@ -25,9 +25,13 @@ If Figma uses a gray that doesn't match an existing `surface-*` value, **CREATE 
 
 ### 2. Prefer REUSE over CREATE (non-surface tokens)
 
-Before creating any new non-surface token, compare its hex against every existing non-surface token in `tailwind.config.js`. If a token is perceptually close (ΔE_2000 < 3.0) AND semantically compatible, REUSE it instead of creating a parallel token.
+Before creating any new non-surface token, compare its hex against every existing non-surface token in `tailwind.config.js`. If a token is perceptually close AND semantically compatible, REUSE it instead of creating a parallel token.
 
-ΔE_2000 calculation: convert both hex values to Lab via standard sRGB→Lab and apply the ΔE_2000 formula. If you cannot compute ΔE accurately, fall back to a conservative heuristic — accept reuse only when the max per-channel diff (R/G/B) is ≤ 4 absolute and the hex codes share at least 4 leading nibbles.
+**Similarity check (conservative heuristic).** Two non-surface tokens are "close enough to reuse" when BOTH conditions hold:
+- The maximum per-channel difference between the two hex values (R, G, B compared independently) is ≤ 4 in absolute value.
+- The hex codes share at least their first 4 nibbles (e.g. `#1f3a5b` and `#1f3a6c` share `1f3a`).
+
+When both hold AND the existing token is semantically compatible (the Figma role matches the existing token's role — both are "primary brand", both are "warning red", etc. — not an arbitrary color collision), REUSE the existing token. When in doubt, prefer CREATE: false-positive reuse hides intent and is hard to undo across multiple screens, while false-positive creation is just an extra row in the config that a future cleanup can collapse.
 
 ### 3. Override of any existing token is forbidden by default
 
@@ -62,7 +66,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
    | a | `figmaVarName` already appears in `figma-tokens-map.md` | reuse the mapped Tailwind token; do nothing in `tailwind.config.js` | `MAPPED` |
    | b | Proposed action would override or extend `surface-*` | reject — force a new namespace instead | `REJECTED-SURFACE` |
    | c | Override request (same key, different hex, non-surface) without `confirmOverride: true` | block — emit conflict report, do not edit | `BLOCKED-OVERRIDE` |
-   | d | ΔE_2000 < 3.0 to an existing non-surface token | reuse existing token; append mapping row | `REUSED` |
+   | d | Heuristic match against an existing non-surface token (max channel diff ≤ 4 AND ≥ 4 leading nibbles shared) AND semantically compatible | reuse existing token; append mapping row | `REUSED` |
    | e | Otherwise | create new token under a descriptive non-surface name; append mapping row | `CREATED` |
 
 4. **Edit `tailwind.config.js`** — apply only CREATE and (rare, confirmed) OVERRIDE actions:
@@ -90,7 +94,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
        ```
      - If the family has italic, add `style: ['normal', 'italic']`. If it's a variable font (e.g. `Inter`), you can omit `weight` and let Next bundle the full range.
      - Apply the CSS variable on the `<html>` element: `<html lang="en" className={ {camelCaseName}.variable}>`. If multiple fonts, combine: `className={[font1.variable, font2.variable].join(' ')}`.
-   - **Update `src/styles/general.sass`** body selector: `font-family: var(--font-{kebab-case-name}), sans-serif` (replaces the old `"FontName", sans-serif` form).
+   - **Update `src/styles/general.sass`** body selector: `font-family: var(--font-{kebab-case-name}), sans-serif` (replaces the old `"FontName", sans-serif` form). **Touch ONLY the `body` selector's `font-family` line. Do NOT delete or rewrite any other rule in this file** — in particular: `.SkipToContent` (a11y skip-to-content link), `.container-custom` and its `@media` breakpoints (project's mandatory horizontal anchor), and the `@media (prefers-reduced-motion: reduce)` block (global a11y reset). Re-read the file after editing to confirm those blocks survived.
    - **Update `tailwind.config.js`** `fontFamily.sans`: `['var(--font-{kebab-case-name})', 'sans-serif']` (and any secondary family — e.g. `serif: ['var(--font-merriweather)', 'serif']`).
    - **DO NOT modify the layer order line** in `src/styles/index.sass`: `@layer tailwind-base, primereact, tailwind-utilities` stays as-is.
 
@@ -148,8 +152,8 @@ Token changes applied to tailwind.config.js + figma-tokens-map.md:
 MAPPED (already in figma-tokens-map.md):
 - {figmaVarA} → {projectToken} (existing)
 
-REUSED (ΔE match against existing token):
-- {figmaVarB} → {existingToken} (ΔE=1.8)
+REUSED (heuristic match against existing token):
+- {figmaVarB} → {existingToken} (max channel diff = {N}, shared nibbles = {M})
 
 CREATED (new key):
 - {newTokenA}: {hex}
