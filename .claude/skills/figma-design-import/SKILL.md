@@ -134,7 +134,14 @@ Read the Figma source AND the relevant codebase before touching any file.
    - **{ScreenName}Page** → route `{/path}`, type `{auth|public|protected}`
      - Desktop: `X:Y` ({Figma frame name})
      - Mobile: `X:Z` ({Figma frame name}) — or `(no mobile variant found)` if missing
+
+   ## Detected language
+   - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
+   - Decision: `en` | `es` — with brief reasoning ({% of strings that are Spanish, presence of accented chars / ñ / common Spanish words like "iniciar/nuevo/comprar/usuario"})
+   - **Current `<html lang>`** in `src/app/layout.tsx`: read it and report. If it doesn't match the detected language, flag for switching (the figma-scaffold agent will perform the switch).
    ```
+
+   **How to detect language**: from the design context of the screens, collect every `characters` value (visible text). Score: a string is "Spanish-leaning" if it contains any of: `ñ`, accented Latin characters (`á é í ó ú ü`), or whole-word matches against a small list (`iniciar`, `comenzar`, `nuevo`, `usuario`, `comprar`, `ingresar`, `nosotros`, `productos`, `acerca`, `contacto`). If ≥50% of sampled strings are Spanish-leaning → language = `es`. Otherwise → `en`. **Default to `en` on tie or insufficient data** — the template ships English-first, and forcing a switch should only happen with clear majority-Spanish evidence.
 
    **Building the screen registry**: when you scan the metadata, pair desktop and mobile frames by naming convention. Common patterns:
    - Mobile frames often start with `M-`, `M_`, or `Mobile - ` prefix.
@@ -215,7 +222,7 @@ Two phases: scaffold all screens at once (5.1), then implement each one in detai
 
 > **Delegate to**: `Agent({ subagent_type: 'figma-scaffold' })` — runs in **Haiku**.
 
-Pass to the agent the full screen list from the gap analysis: each screen's name, page type, route, and route group (if any). All screens — both those with Figma sources and those that are TBD — get the same `"Próximamente"` placeholder for consistency. Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each, sets the placeholder content, ensures `metadata.alternates.canonical` is exported, and verifies routes are reachable.
+Pass to the agent the full screen list from the gap analysis: each screen's name, page type, route, and route group (if any), PLUS the `detectedLanguage` (`en` | `es`) and the current `<html lang>` from Step 0. All screens — both those with Figma sources and those that are TBD — get the same placeholder for consistency (`"Coming soon"` when language is `en`, `"Próximamente"` when language is `es`). Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each, sets the placeholder content in the right language, switches `<html lang>` and `openGraph.locale` in `src/app/layout.tsx` if they don't match the detected language, ensures `metadata.alternates.canonical` is exported, and verifies routes are reachable.
 
 After this step, **commit the scaffold as a checkpoint** before moving on.
 

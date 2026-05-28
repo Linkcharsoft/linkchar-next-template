@@ -12,9 +12,13 @@ A list of screens, each with:
 - Page type (`auth` | `public` | `protected`).
 - Route path (e.g. `/`, `/products`, `/products/[id]`).
 - **Route group** (optional, e.g. `(marketing-layout)`, `(landing-layout)`) — when the screen should live inside a route group instead of at the root level. The parent passes this for screens that need a specific layout wrapper from Step 4.
-- Whether the screen is from Figma or TBD (both use "Próximamente" placeholder for now).
+- Whether the screen is from Figma or TBD.
 
-If the list is missing, ask.
+Plus two batch-level fields:
+- `detectedLanguage` (`en` | `es`) — derived by the parent from the Figma frames in Step 0. Drives the placeholder text and whether to switch `<html lang>`. Defaults to `en` if the parent omits it.
+- `currentHtmlLang` (the actual value of `<html lang>` in `src/app/layout.tsx` as the parent read it in Step 0).
+
+If the screen list is missing, ask. If `detectedLanguage` is missing, default to `en` and log it in the output report.
 
 ## Steps
 
@@ -33,9 +37,13 @@ If the list is missing, ask.
    - `/new-screen` creates `src/app/page.tsx`
    - You move it to `src/app/(marketing-layout)/page.tsx`
 
-3. After all screens are scaffolded and (if needed) moved, edit each `src/screens/{Name}Page/{Name}Page.tsx` to set the placeholder content with title + "Próximamente". **Insert the `<section>` INSIDE the existing `<main id='main' className='{Name}Page'>` root that `/new-screen` already generated — do NOT overwrite the `<main>` wrapper, because that's the skip-to-content target and removing it is a Lighthouse a11y failure**.
+3. After all screens are scaffolded and (if needed) moved, edit each `src/screens/{Name}Page/{Name}Page.tsx` to set the placeholder content with title + the "coming soon" tag in the detected language. **Insert the `<section>` INSIDE the existing `<main id='main' className='{Name}Page'>` root that `/new-screen` already generated — do NOT overwrite the `<main>` wrapper, because that's the skip-to-content target and removing it is a Lighthouse a11y failure**.
 
-   Expected end state of the screen file:
+   Pick the placeholder copy from `detectedLanguage`:
+   - `en` → `"Coming soon"`
+   - `es` → `"Próximamente"`
+
+   Expected end state of the screen file (English example — swap the `<p>` text for Spanish when `detectedLanguage === 'es'`):
    ```tsx
    'use client'
    import './{Name}Page.sass'
@@ -44,7 +52,7 @@ If the list is missing, ask.
      <main id='main' className='{Name}Page'>
        <section className='container-custom flex min-h-[60vh] flex-col items-center justify-center gap-2 py-16'>
          <h1 className='text-extrabold-44 text-surface-900 text-center'>{title}</h1>
-         <p className='text-medium-18 text-surface-500 text-center'>Próximamente</p>
+         <p className='text-medium-18 text-surface-500 text-center'>Coming soon</p>
        </section>
      </main>
    )
@@ -54,7 +62,14 @@ If the list is missing, ask.
 
    `text-surface-900` (not `text-white`) is the safe default — the body background is light, so a white heading would be invisible. Layouts that ship a dark background can override per-screen later when the real content lands.
 
-   **Placeholder language**: the template ships `<html lang="es">` (see `src/app/layout.tsx`), so "Próximamente" is the correct placeholder. If you find `<html lang>` set to anything other than `es`, STOP and flag the mismatch back to the parent — placeholders in one language with `html lang` in another is both an SEO penalty (Google misclassifies the page) and an a11y failure (screen readers mispronounce the content). The user must decide whether to switch `lang` or rewrite the placeholder before the scaffolder proceeds.
+   **Language switch in `src/app/layout.tsx`** (only if `detectedLanguage !== currentHtmlLang`):
+   1. Edit `<html lang="{currentHtmlLang}">` → `<html lang="{detectedLanguage}">`.
+   2. Edit `openGraph.locale: '{matching old locale}'` → the matching new locale: `en` → `'en_US'`, `es` → `'es_AR'`. (If your project uses a different Spanish locale variant like `es_ES` or `es_MX`, the user can correct it after; default to `es_AR` since this template's primary audience is Argentina.)
+   3. Report the switch in your output as `LANG SWITCH: {old} → {new} based on Figma content`.
+
+   If `detectedLanguage === currentHtmlLang`, leave `src/app/layout.tsx` alone and skip this sub-step.
+
+   **Never mix languages**: the `<html lang>`, `openGraph.locale`, and the placeholder copy ALWAYS match. Shipping a placeholder in Spanish under `<html lang="en">` is both an SEO penalty (Google misclassifies the page) and an a11y failure (screen readers mispronounce the content).
 
 4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
 
