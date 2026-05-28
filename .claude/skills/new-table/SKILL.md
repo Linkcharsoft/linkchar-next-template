@@ -26,6 +26,23 @@ Derive:
 
 ---
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screens use PascalCase + `Page` suffix; types use `Type` suffix.
+- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — uses `CustomButton`, `SearchInput`, `Filters`.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — Tailwind vs SASS, the `@apply` LAST rule.
+- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)** — the tokens to use.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)** — `pt` passthrough, `classNames` from `primereact/utils`.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — generic A11y. The DataTable-specific A11y rules (Paginator aria-labels, sortable preservation, etc.) live in Step 4 below.
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — minimal metadata for the dashboard page wrapper.
+
+If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+---
+
 ## Step 0 — Recon & dedup
 
 Before writing anything, in parallel:
@@ -286,27 +303,22 @@ const {ScreenName} = ({ searchParams }: Props) => {
 export default {ScreenName}
 ```
 
-### Adaptation rules:
+### Adaptation rules
+
 - Replace every `{ScreenName}` with the actual PascalCase name.
 - Replace every `{ResourcesName}` with the plural PascalCase (e.g. `getUsers`).
 - Replace `{resource}` with the kebab-case plural (e.g. `users`).
 - Replace `{Title}` with a humanized title (e.g. `Users`).
 - If the user provided columns, replace the `{/* TODO: add real columns */}` marker with real `<Column field="..." header="..." sortable />` entries.
 - If the user provided filters, fill `FILTERS` and `defaultParams` accordingly. Use `ExamplePage` as the reference for every filter shape.
-- Imports must be alphabetized within groups: external → `@/` → relative → type imports LAST.
 - `'use client'` is mandatory (screens use hooks).
-- Never import `motion` — only `m` from `framer-motion`.
-- Never use `process.env` — only `@/constants/env`.
-- Use `classNames` from `primereact/utils` for conditional classes, never `clsx`.
 
-### Accessibility & Lighthouse rules (mandatory)
+The generic styling/import/A11y rules (alphabetized imports, `m` not `motion`, `classNames` not `clsx`, `@/constants/env` not `process.env`, etc.) come from [CONVENTIONS.md](../../CONVENTIONS.md) and apply automatically.
 
-These rules must hold for the screen to pass the project's a11y audits.
+### DataTable-specific A11y rules
 
-<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a DataTable-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. Some bullets are specific to PrimeReact's DataTable/Paginator and don't appear in CLAUDE.md — those are owned here, not mirrored. If you edit a generic bullet here AND the same rule appears in CLAUDE.md, update both. Skills with the same A11y mirror: new-screen, new-component, new-modal. -->
+The generic A11y rules live in [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility). The rules below are specific to PrimeReact's DataTable + Paginator and are NOT in CONVENTIONS.md — they apply ONLY to this skill.
 
-
-- **Single `<main>`**: the screen owns `<main id='main' className='{ScreenName}'>`. Layouts must NOT render `<main>` themselves — two `<main>` per rendered page is a Lighthouse a11y failure.
 - **`aria-label` on the DataTable**: tables need an accessible name so SR users hear what they contain. Pass it via `pt`:
 
   ```tsx
@@ -317,7 +329,7 @@ These rules must hold for the screen to pass the project's a11y audits.
   ```
 
   Without this, SR announces a generic "table" with no context.
-- **Result count as a live region**: wrap the count display in `aria-live='polite'` so SR users automatically hear updates when filters/search change the count. Update the templated count block to:
+- **Result count as a live region**: wrap the count display in `aria-live='polite'` so SR users automatically hear updates when filters/search change the count:
 
   ```tsx
   <div className='flex items-center gap-2' role='status' aria-live='polite'>
@@ -334,15 +346,13 @@ These rules must hold for the screen to pass the project's a11y audits.
     </div>
   }
   ```
-- **Paginator nav buttons** require `aria-label` via the `pt` prop (already templated above). PrimeReact's defaults are English; translate if the project ships in another locale.
-- **Empty-state and inline icons** (search, trash) use `aria-hidden='true'` (already templated). Same for any purely decorative icon inside the screen.
+- **Paginator nav buttons** require `aria-label` via the `pt` prop (already templated in the screen template above). PrimeReact's defaults are English; translate if the project ships in another locale.
 - **Sortable columns**: PrimeReact's `sortable` prop adds `aria-sort` automatically (`none` / `ascending` / `descending`) and exposes the column header as a button. NEVER override these via `pt` — you'll silently break sort announcements.
-- **DataTable**: keep `dataKey='id'` so screen readers announce stable row identifiers across page changes.
-- **SearchInput and Filters accessible names**: every search field and filter control needs a label. If `SearchInput` and `Filters` don't apply one internally, pass it explicitly (`<SearchInput aria-label='Search {resources}'/>`, `<Filters aria-label='Filter by'/>`). Verify with axe-core after wiring.
-- **Loading state**: `loading={isLoading}` on `DataTable` makes PrimeReact set `aria-busy='true'` on the table region while data is fetching. Keep it. Don't replace with a manual spinner that omits this attribute.
-- **Heading hierarchy**: the screen does not currently render an `<h1>` — the filter title is a `<span>`. If the consuming layout doesn't provide an h1 either, add a visually-hidden one inside `<main>`: `<h1 className='sr-only'>{Title}</h1>` to satisfy the Lighthouse heading-order audit.
-- **Tap targets**: `CustomButton` size variants already meet 44×44px on mobile. PrimeReact's Filter pills and Paginator controls inherit defaults — verify on mobile before shipping.
-- **Keyboard navigation**: tab order should flow Search → Filters → Table headers (sortable) → Table rows → Pagination. Verify after any layout change. PrimeReact wires this correctly out of the box; custom column templates with interactive elements (e.g. action icons inside cells) must keep tab order LTR and add `aria-label` per icon.
+- **`dataKey='id'`**: keep it so screen readers announce stable row identifiers across page changes.
+- **`SearchInput` and `Filters` accessible names**: if those components don't apply one internally, pass it explicitly (`<SearchInput aria-label='Search {resources}'/>`, `<Filters aria-label='Filter by'/>`).
+- **Loading state**: `loading={isLoading}` on `DataTable` makes PrimeReact set `aria-busy='true'` on the table region while data is fetching. Keep it; don't replace with a manual spinner that omits this attribute.
+- **Heading hierarchy**: the templated screen does not render an `<h1>` (the filter title is a `<span>`). If the consuming layout doesn't provide an h1 either, add a visually-hidden one inside `<main>`: `<h1 className='sr-only'>{Title}</h1>`.
+- **Keyboard navigation**: tab order should flow Search → Filters → Table headers (sortable) → Table rows → Pagination. PrimeReact wires this correctly out of the box; custom column templates with interactive elements must keep tab order LTR and add `aria-label` per icon.
 
 ---
 
@@ -491,19 +501,12 @@ Common failure modes to watch for:
 
 ---
 
-## Hard rules — never violate
+## Hard rules — skill-specific
 
-- The screen root is `<main id='main' className='{ScreenName}'>`. Layouts do NOT render `<main>` themselves — the screen owns it. Two `<main>` per page = a11y fail.
-- NEVER use `motion` from framer-motion (use `m` with `LazyMotion`).
-- NEVER use `process.env` (use `@/constants/env`).
-- NEVER use native HTML inputs (use PrimeReact `InputText`, `Dropdown`, etc.).
-- NEVER use `clsx` (use `classNames` from `primereact/utils`).
+These are enforcement rules specific to this skill. The generic project-wide rules (no `motion`, no `clsx`, no `process.env`, `@apply` LAST, single quotes, etc.) live in [CONVENTIONS.md](../../CONVENTIONS.md) and apply on top.
+
+- The screen root is `<main id='main' className='{ScreenName}'>`. The screen owns it; layouts do NOT render `<main>` themselves.
 - NEVER include `/api` prefix in `customFetch` paths.
 - NEVER export the `Props` interface unless another file needs it.
 - NEVER overwrite existing screen, API, or types files — reuse or abort.
-- ALWAYS use single quotes, no semicolons, 2-space indent.
-<!-- mirror: CLAUDE.md @apply LAST — keep the bullet below in sync with the canonical wording in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
-- ALWAYS place `@apply` as the LAST declaration in each `.sass` block scope (root, `&__Element`, `&--Modifier`, pseudo-state). Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser.
-- ALWAYS use `'use client'` on the screen (hooks).
-- ALWAYS use `text-{weight}-{size}` typography, never loose `text-xl` or `font-bold`.
 - ALWAYS pass `aria-label` to Paginator nav buttons via `pt`, matching the project's locale. PrimeReact's defaults are English; translate if the project ships in another language.

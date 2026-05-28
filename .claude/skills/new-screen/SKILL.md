@@ -18,17 +18,35 @@ Examples:
 
 ---
 
-## Step 0 — Recon & dedup
+## Step 0 — Read CONVENTIONS.md (mandatory)
+
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screens use PascalCase + `Page` suffix.
+- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — when to use Tailwind vs SASS, plain CSS vs `@apply`, the `@apply` LAST rule.
+- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)**, **[Breakpoints](../../CONVENTIONS.md#breakpoints)** — the tokens to use.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — `container-custom` is MANDATORY on every top-level `<section>`.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — every interactive element MUST meet these rules. The screen owns `<main id='main'>`.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — when the screen renders `<Image>`.
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — for the metadata exports in `page.tsx`.
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, modal scope, `dynamic` imports.
+
+If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+---
+
+## Step 1 — Recon & dedup
 
 Before creating anything:
-- Read `src/proxy.ts` to understand the current `AUTH_PATHS` and `PUBLIC_PATHS` sets. You will need this to decide if `proxy.ts` needs to be updated in Step 2.
+- Read `src/proxy.ts` to understand the current `AUTH_PATHS` and `PUBLIC_PATHS` sets. You will need this to decide if `proxy.ts` needs to be updated in Step 3.
 - Scan `src/app/` and `src/screens/` to detect collisions with the target route or screen name.
 
 If a matching page already exists, **stop and tell the user** which page they should reuse or extend instead. In particular: if the requested screen is a list/table with pagination, filters, or search — STOP and redirect the user to `/new-table`, which scaffolds the full stack (types + API + screen + filters + paginator).
 
 ---
 
-## Step 1 — Plan: file locations by page type
+## Step 2 — Plan: file locations by page type
 
 The page type determines where files go and whether `src/proxy.ts` needs updating:
 
@@ -36,7 +54,7 @@ The page type determines where files go and whether `src/proxy.ts` needs updatin
 
 - Screen: `src/screens/ScreenName/ScreenName.tsx` + `src/screens/ScreenName/ScreenName.sass`
 - Page: `src/app/{route}/page.tsx`
-- proxy.ts: **no changes needed** — all unmatched paths are protected by default
+- proxy.ts: **no changes needed** — all unmatched paths are protected by default.
 
 ### `auth`
 
@@ -48,15 +66,16 @@ The page type determines where files go and whether `src/proxy.ts` needs updatin
 
 - Screen: `src/screens/ScreenName/ScreenName.tsx` + `src/screens/ScreenName/ScreenName.sass`
 - Page: `src/app/{route}/page.tsx` (root level, no layout group)
-- proxy.ts: **add the route to `PUBLIC_PATHS`** — public pages require an explicit entry or they will redirect unauthenticated users to login
+- proxy.ts: **add the route to `PUBLIC_PATHS`** — public pages require an explicit entry or they will redirect unauthenticated users to login.
 
 ---
 
-## Step 2 — Mutate registries: `src/proxy.ts` (if needed)
+## Step 3 — Mutate registries: `src/proxy.ts` (if needed)
 
 Use Edit (not rewrite) to add the new entry.
 
 **For `auth`** — add to `AUTH_PATHS` only if not already covered:
+
 ```ts
 const AUTH_PATHS = new Set([
   '/login',
@@ -65,6 +84,7 @@ const AUTH_PATHS = new Set([
 ```
 
 **For `public`** — always add to `PUBLIC_PATHS`:
+
 ```ts
 const PUBLIC_PATHS = new Set([
   '/',
@@ -74,7 +94,7 @@ const PUBLIC_PATHS = new Set([
 
 ---
 
-## Step 3 — Create the Screen component
+## Step 4 — Create the Screen component
 
 ### Protected screen (`src/screens/ScreenName/ScreenName.tsx`)
 
@@ -97,8 +117,8 @@ export default ScreenName
 
 **Only add `searchParams` if the screen actually reads URL state** (filters, pagination, search, tabs). When you do:
 1. Use the `searchParams` Prop shape below in the screen.
-2. Switch the `page.tsx` wrapper to `async` so it awaits `searchParams` before passing them (see Step 5 — public dynamic listing variant).
-3. **Stop and reconsider**: if the screen is a paginated list with pagination + filters + search + sorting, use `/new-table` instead — it scaffolds the entire stack (types + API client + screen wired to `useTableParams` + page wrapper).
+2. Switch the `page.tsx` wrapper to `async` so it awaits `searchParams` before passing them (see Step 6 — public dynamic listing variant).
+3. **Stop and reconsider**: if the screen is a paginated list with pagination + filters + search + sorting, use `/new-table` instead.
 
 ```tsx
 'use client'
@@ -159,49 +179,21 @@ export default ScreenName
 
 The `<main>` className is `AuthLayout` (not `ScreenName`) because auth screens share the layout's BEM scope — the form's visual styling lives in `src/layouts/AuthLayout/AuthLayout.sass` and is shared across login, signup, password recovery, etc. Existing examples on disk: `src/screens/auth/LoginPage/LoginPage.tsx`, `src/screens/auth/SignupPage/SignupPage.tsx`, etc.
 
-Rules for all screen types:
-- Always `'use client'` (screens use hooks)
-- **The screen owns its `<main id='main'>` root** — the skip-to-content link in the root layout points to `#main`. Layouts must NOT render `<main>` themselves (they only render chrome around the screen slot); if you find a layout that does, fix the layout, not the screen. Two `<main>` per rendered page is a Lighthouse a11y failure.
-- Protected/public use `.ScreenName` BEM root class; auth uses `.AuthLayout`
-- No `export const metadata` — metadata belongs in `page.tsx` only
+### Skill-specific rules (in addition to CONVENTIONS.md)
 
-### Accessibility & Lighthouse rules (mandatory)
-
-These rules must hold for the screen to pass the project's Lighthouse audits.
-
-<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a screen-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. If you edit a bullet here AND the same rule appears in CLAUDE.md, update both — drift between them produces inconsistent agent behavior. Skills with the same A11y mirror: new-component, new-modal, new-table. -->
-
-
-- **Heading hierarchy** must start with `<h1>` and never skip levels (no `h1 → h3`). If the visual design has no h1, add a visually-hidden one: `<h1 className='sr-only'>{Page Title}</h1>`. Each rendered page must have exactly one h1.
-- **Card / list-item titles inside the screen** use `<p>` (not `<h3>` / `<h4>`). Heading elements pollute the document outline; reserve them for actual document structure.
-- **Single `<main>`**: the screen owns `<main id='main'>` and is the ONLY `<main>` on the rendered page (Lighthouse fails on duplicate `<main>`).
-- **Top-level `<section>`s**: every top-level section MUST anchor its content with `container-custom` so all sections share the same horizontal alignment + 16px lateral gutter. Never substitute with `max-w-[Xpx]` or `max-w-7xl`. AND each section must keep its own vertical padding (`py-*`/`pt-*`/`pb-*`) — `container-custom` does NOT provide vertical rhythm.
-- **Form inputs** (when present in the screen) set `autoComplete` (JSX prop) to the matching token: email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`.
-- **Form submission errors**: when a server or schema validation error fires on submit, focus MUST move to the first invalid field (call `.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Without this, screen-reader users don't know the form failed and assume the click did nothing.
-- **Icon-only buttons** rendered directly in the screen MUST set `aria-label`. External links (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
-- **Focus indicators**: never strip `outline` on interactive elements without replacing it. The project relies on browser defaults + `focus-visible` rings; verify nothing in your `.sass` clobbers them with `outline: none`.
-- **Carousels and horizontal scrolling lists** (`overflow-x-auto` on mobile for cards, products, testimonials) MUST use `<ul role='list' aria-label='...'>` + `<li>` children. SR users get the item count announced and a meaningful label for the carousel as a whole.
-- **Loading states**: never render the screen blank while data is fetching — use `<{Name}PageSkeleton/>` via `/new-skeleton`, or `<Loader/>` for sub-sections. Wrap the loading container with `aria-busy={isLoading}` so SR users know data is on the way.
-- **Color contrast**: WCAG AA — 4.5:1 for normal text, 3:1 for large text and UI. The project's `surface-*` tokens are chosen to meet this against standard pairings; verify custom combinations (e.g. brand color on a tinted background) with axe-core or Lighthouse.
-- **Reduced motion** is handled globally — the CSS reset in `general.sass` neutralizes all CSS animations/transitions, and `MotionConfig reducedMotion='user'` in `ProvidersContainer` disables every framer-motion animation. No per-screen config needed. Only override locally if a specific animation is essential to comprehension (e.g. a stepper progress indicator) AND must keep playing for users who opted out.
-- **Heavy client-only components** the screen renders (rich text editors, charts, maps) → `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
+- Always `'use client'` (screens use hooks).
+- **The screen owns `<main id='main'>` root** — the skip-to-content link in the root layout points to `#main`. Layouts MUST NOT render `<main>` themselves; if you find a layout that does, fix the layout, not the screen.
+- Protected/public use `.ScreenName` BEM root class; auth uses `.AuthLayout`.
+- No `export const metadata` on the screen — metadata belongs in `page.tsx` only.
 
 ---
 
-## Step 4 — Create the `.sass` file
+## Step 5 — Create the `.sass` file
 
 Create an empty `src/screens/ScreenName/ScreenName.sass` (protected and public) or `src/screens/auth/ScreenName/ScreenName.sass` (auth).
 
-Move styles here using BEM + `@apply` whenever:
-- Tailwind cannot express the style (custom animations, complex pseudo-elements, PrimeReact overrides)
-- An element uses **visual appearance classes**: colors, backgrounds, borders, shadows, `rounded-*`, typography (`text-*`), or interactive states (`hover:`, `focus:`)
-- An element accumulates **6 or more classes** of any kind
+Apply the [Styling Rules from CONVENTIONS.md](../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/spacing, `@apply` LAST in each block scope for design tokens. Reference skeleton:
 
-**Inline exceptions** (these may stay in JSX, skip the `.sass`):
-- **Layout-only** combos (`flex items-center gap-4`, `grid grid-cols-2`).
-- **One-off mix of 2–3 simple utilities** — even visual ones like `text-bold-18` or `bg-red-600` — when the combination isn't repeated in the screen AND doesn't need responsive/state variants.
-
-If styles are needed, use `.sass` indented syntax (no curly braces, no semicolons) with BEM:
 ```sass
 .ScreenName
   // styles
@@ -211,61 +203,17 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
 
   &--Modifier
     // styles
-
-  &__Element--Modifier
-    // styles
 ```
 
-**Inside `.sass`: prefer plain CSS, `@apply` only for design tokens.**
-
-- ✅ Plain CSS for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `cursor`, `overflow`, `transition`, `transform`
-- ✅ `@apply` for: project colors (`bg-surface-100`, `text-surface-700`), typography tokens (`text-bold-14`, `text-medium-16`), responsive prefixes (`md:flex-row`), pseudo-state tokens (`hover:bg-surface-100`)
-<!-- mirror: CLAUDE.md @apply LAST — keep the bullet below in sync with the canonical wording in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
-- ⚠️ **`@apply` MUST be the LAST declaration in each block scope** — root, `&__Element`, `&--Modifier`, pseudo-state. Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser. Nested child blocks (`&__X`, `&--X`) are allowed after `@apply` since they're a deeper scope.
-
-```sass
-// ✅ Good — plain CSS first, @apply LAST in each scope
-.MyScreen
-  display: flex
-  gap: 1rem
-  padding: 1.5rem
-  border-radius: 8px
-  @apply bg-white border border-surface-200 text-bold-14 text-surface-900
-
-  &__Hero
-    min-height: 480px
-    @apply bg-surface-50
-
-  &--Compact
-    padding: 0.75rem
-    @apply text-bold-14
-
-// ❌ Avoid — @apply between plain CSS declarations (SASS parser breaks)
-.MyScreen
-  display: flex
-  @apply bg-white
-  border-radius: 8px
-
-// ❌ Avoid — @apply for everything
-.MyScreen
-  @apply flex gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-bold-14 text-surface-900
-```
-
-Note that auth screens generally share their styles through the `src/layouts/AuthLayout`
+Auth screens generally inherit their styles from `src/layouts/AuthLayout/` — the colocated `.sass` can stay empty.
 
 ---
 
-## Step 5 — Create the `page.tsx` wrapper
+## Step 6 — Create the `page.tsx` wrapper
 
 The page is a **thin wrapper only** — no logic, no UI. It owns the page-level metadata and the parameters returned by Next.js (segmentName, searchParams, etc.).
 
-Pick the variant by page type:
-
-- **Public (indexable) page** → full metadata: `title`, `description`, `alternates.canonical`, `openGraph`, `twitter`. Lighthouse SEO requires all of these.
-- **Dynamic route** (`[id]`, `[slug]`, etc.) → use `generateMetadata` so the metadata reflects the actual resource.
-- **Listing with filters/pagination** → if the page handles `?search=`, `?page=`, `?category=`, etc., set `robots: { index: false, follow: true }` when those params are present (or use `generateMetadata` to switch dynamically).
-- **Protected dashboard/admin** → minimal metadata (`title` + `canonical` is enough). Robots already blocks dashboard via `robots.ts`, and no social previews are needed.
-- **Auth** → minimal metadata; these routes are disallowed by `robots.ts` too.
+Pick the variant by page type. See [CONVENTIONS.md > SEO & Metadata](../../CONVENTIONS.md#seo--metadata) for the full metadata rules.
 
 ### Public page — static metadata (`src/app/{route}/page.tsx`)
 
@@ -345,7 +293,7 @@ export default Page
 
 ### Dynamic detail route (`src/app/{route}/[id]/page.tsx`)
 
-Use `generateMetadata` to fetch the resource and derive metadata from it. If the resource is not found, return `robots: { index: false, follow: false }` so 404-equivalent pages don't get indexed.
+Use `generateMetadata` to fetch the resource and derive metadata from it. If the resource is not found, return `robots: { index: false, follow: false }`.
 
 ```tsx
 import { getResource } from '@/api/resources'
@@ -413,33 +361,7 @@ const Page = () => (
 export default Page
 ```
 
-**If the screen reads URL state**, switch to the async wrapper that awaits `searchParams` before passing them down (same shape as the public dynamic listing variant above):
-
-```tsx
-import ScreenName from '@/screens/ScreenName/ScreenName'
-import type { Metadata } from 'next'
-
-export const metadata: Metadata = {
-  title: 'Page Title',
-  alternates: { canonical: '/route' }
-}
-
-interface Props {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}
-
-const Page = async ({ searchParams }: Props) => {
-  const params = await searchParams
-
-  return (
-    <ScreenName searchParams={params}/>
-  )
-}
-
-export default Page
-```
-
-Same reminder as the screen template: a paginated list with pagination + filters + search + sorting should go through `/new-table` instead — that skill scaffolds the entire stack wired to `useTableParams`.
+**If the screen reads URL state**, switch to the async wrapper that awaits `searchParams` before passing them down (same shape as the public dynamic listing variant above).
 
 ### Auth page (`src/app/(auth-layout)/{route}/page.tsx`)
 
@@ -459,42 +381,43 @@ const Page = () => (
 export default Page
 ```
 
-### Rules:
+### Skill-specific page-wrapper rules
+
 - `metadata` (or `generateMetadata`) MUST always include `title` and `alternates.canonical`.
-- Public pages MUST include `description`, `openGraph`, and `twitter` — Lighthouse SEO requires them.
-- Dynamic routes use `generateMetadata`. Return `robots: { index: false, follow: false }` when the resource is not found.
-- Listings that accept filter/pagination params return `robots: { index: false, follow: true }` when those params are present.
+- Public pages MUST include `description`, `openGraph`, and `twitter` (see [CONVENTIONS.md > SEO & Metadata](../../CONVENTIONS.md#seo--metadata)).
+- Dynamic routes use `generateMetadata` with not-found handling.
+- Listings with filter/pagination params return `robots: { index: false, follow: true }` when those params are present.
 - Protected/auth pages can skip `openGraph`/`twitter` (they are disallowed by `robots.ts`).
-- **`async` only when the page reads URL state**: any page (protected, public, or auth) that takes `searchParams` or `params` MUST be `async` and await them before passing them down. Any page that does NOT read URL state stays synchronous (`const Page = () => <ScreenName/>`). The Protected page template above defaults to sync — switch to the async variant only when the screen actually needs `searchParams`. For paginated lists, prefer `/new-table` instead, which scaffolds the entire async wrapper + `useTableParams` wiring.
+- **`async` only when the page reads URL state**: any page (protected, public, or auth) that takes `searchParams` or `params` MUST be `async` and await them before passing them down. Any page that does NOT read URL state stays synchronous (`const Page = () => <ScreenName/>`).
 - Always named `Page`, always default export.
 - **Optional but recommended for bounded sets**: when the dynamic route's set of params is finite (e.g. a product catalog under ~10k items), also export `generateStaticParams` — Next.js will pre-render the routes at build time, drastically improving LCP/TTFB.
 
 ---
 
-## Step 6 — Conventions checklist + summary
+## Step 7 — Conventions checklist + summary
 
 Before closing, verify:
 - [ ] Screen at the correct location per page type (`src/screens/{Name}/` for protected/public, `src/screens/auth/{Name}/` for auth)
 - [ ] Screen owns `<main id='main'>` and is the ONLY `<main>` on the rendered page
 - [ ] `'use client'` is on the Screen component, NOT on the `page.tsx` wrapper
 - [ ] `page.tsx` is a thin wrapper — metadata only, no logic, no UI
-- [ ] Public pages export full metadata: `title`, `description`, `alternates.canonical`, `openGraph`, `twitter` (Lighthouse SEO requires all of these)
-- [ ] Dynamic routes use `generateMetadata` with not-found handling (`robots: { index: false, follow: false }` when the resource is missing)
+- [ ] Public pages export full metadata (`title`, `description`, `alternates.canonical`, `openGraph`, `twitter`)
+- [ ] Dynamic routes use `generateMetadata` with not-found handling
 - [ ] Listings with filter/pagination params return `robots: { index: false, follow: true }` when those params are present
-- [ ] Protected/auth pages have at least `title` + `alternates.canonical` (they can skip `openGraph`/`twitter` since `robots.ts` disallows them)
-- [ ] `proxy.ts` updated only if needed (auth route not covered by an existing `includes()` check, OR new public route)
+- [ ] Protected/auth pages have at least `title` + `alternates.canonical`
+- [ ] `proxy.ts` updated only if needed
 - [ ] Heading hierarchy starts at `<h1>` (visually-hidden `sr-only` if no visible h1)
 - [ ] Every top-level `<section>` is anchored with `container-custom` and has explicit vertical padding (`py-*`/`pt-*`/`pb-*`)
-- [ ] A11y rules from Step 3 satisfied (`autoComplete` on inputs, `aria-label` on icon-only buttons, `rel='noopener noreferrer'` on external links)
+- [ ] A11y rules from [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility) satisfied (`autoComplete` on inputs, `aria-label` on icon-only buttons, `rel='noopener noreferrer'` on external links)
 
 Then post a short summary:
-1. Files created (markdown links)
-2. Files modified (`proxy.ts` if updated, with what was added)
-3. A reminder of what to implement next inside the screen
+1. Files created (markdown links).
+2. Files modified (`proxy.ts` if updated, with what was added).
+3. A reminder of what to implement next inside the screen.
 
 ---
 
-## Step 7 — Validate
+## Step 8 — Validate
 
 Run these commands and fix any errors before finishing:
 

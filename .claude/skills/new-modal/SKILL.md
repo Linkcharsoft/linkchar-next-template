@@ -11,6 +11,22 @@ Derive from the name:
 
 ---
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — PascalCase for component, camelCase for the modal key.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — check whether `StateModal`, `LoadingModal`, or `setNotification()` already cover the use case.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)** — for `Dialog` + `pt` customization.
+- **[Framer Motion](../../CONVENTIONS.md#framer-motion)** — reduced-motion is handled globally; do NOT add per-modal `MotionConfig`.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — generic A11y. The Dialog-specific A11y rules (focus trap, initial focus, blockScroll, etc.) live in Step 3 below.
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — global vs local modal mounting decides whether the JS ships on every page.
+
+If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+---
+
 ## Step 0 — Recon & dedup
 
 Before creating anything, read these files to understand the exact current state:
@@ -90,14 +106,10 @@ Follow the exact pattern of `src/components/modals/StateModal/StateModal.tsx`:
 - Colors: `surface-50` to `surface-900` for grays. Semantic Tailwind defaults for others
 - Icons: PrimeIcons `pi pi-xxx` for icons (never inline SVGs if an icon exists)
 
-#### Accessibility & Lighthouse rules (mandatory)
+#### Dialog-specific A11y rules
 
-These rules must hold for the modal to pass the project's a11y audits.
+Generic A11y rules (icon-only buttons, autoComplete on inputs, tap targets, color contrast, etc.) live in [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility). The rules below are specific to PrimeReact's `Dialog` and apply only when you build modals with it.
 
-<!-- canonical-source: CLAUDE.md > Performance & Lighthouse Rules > Accessibility. The bullets below are a modal-focused subset mirrored from there so this skill works without re-reading CLAUDE.md. Several bullets are specific to PrimeReact's Dialog (focus trap, initial focus, blockScroll, etc.) and don't appear in CLAUDE.md — those are owned here, not mirrored. If you edit a generic bullet here AND the same rule appears in CLAUDE.md, update both. Skills with the same A11y mirror: new-screen, new-component, new-table. -->
-
-
-- **Icon-only action buttons** inside the modal MUST set `aria-label` (e.g. `aria-label='Close'`). PrimeReact's `Dialog` provides an accessible name for its built-in close button — preserve it if you customize `pt.closeButton`.
 - **Modal title**: use the `Dialog` `header` prop instead of a manual `<h2>` inside the body — `Dialog` renders the heading semantics for you and pairs it with `aria-labelledby` automatically.
 - **`role='dialog'` and `aria-modal='true'`**: `Dialog` sets these on the root container automatically. NEVER override them via `pt.root.role` — removing them turns the modal into a non-modal popover for assistive tech.
 - **Focus trap & Escape-to-close**: `Dialog` handles both out of the box. Do NOT override `onHide` to disable closing without an explicit accessibility reason.
@@ -105,9 +117,8 @@ These rules must hold for the modal to pass the project's a11y audits.
 - **Initial focus**: `Dialog`'s default sends focus to the first focusable element inside. For **destructive confirmations**, override the initial focus to land on the SAFE action (Cancel), not the destructive one — `useEffect` on `visible: true` + a `ref.current?.focus()` on the Cancel button. Prevents accidental confirms when a user mashes Enter.
 - **Body scroll lock**: keep Dialog's `blockScroll` enabled (default). Without it, users can scroll the page behind the modal, breaking the modal-context illusion and confusing screen reader users.
 - **Destructive confirmations**: never rely on the backdrop click as the ONLY dismissal — always provide an explicit "Cancel" `CustomButton` so keyboard users have a discoverable action. The destructive action label should be self-descriptive (`Delete account`, not `Yes`).
-- **Forms inside modals**: every input still needs an `autoComplete` token (JSX prop) and a visible label via `InputContainer`. Per-field validation errors get announced automatically — `InputError` (used via `InputContainer`) already wraps its message in `role='alert'`. For modal-level feedback that does NOT come from a form field (e.g. a "Server unreachable" banner inside the modal body), wrap your own message in `<div role='alert'>...</div>` so SR users hear it on appearance.
-- **Reduced motion** is handled globally — `ProvidersContainer` wraps the app in `<MotionConfig reducedMotion='user'>` so every framer-motion animation inside the modal respects the user preference automatically, and the global CSS reset in `general.sass` covers PrimeReact Dialog's built-in fade plus any custom CSS transitions. No per-modal config needed.
-- **Tap targets**: every interactive element on mobile must be at least `44×44px`. `CustomButton` size variants `medium`/`large` already meet this; if you need `size='detail'` ensure the parent provides at least 44×44 of effective hit area.
+- **Icon-only Dialog close customization**: PrimeReact's `Dialog` provides an accessible name for its built-in close button — preserve it if you customize `pt.closeButton`. Any extra icon-only action buttons inside the modal MUST set `aria-label` (covered by the generic rule in CONVENTIONS.md).
+- **Modal-level error banners** (NOT per-field): when displaying a "Server unreachable" or similar banner inside the modal body, wrap it in `<div role='alert'>...</div>` so SR users hear it on appearance. Per-field errors via `InputContainer`/`InputError` are already announced.
 
 ### `src/components/modals/ModalName/ModalName.sass`
 
@@ -135,40 +146,7 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
     // styles
 ```
 
-**Inside `.sass`: prefer plain CSS, `@apply` only for design tokens.**
-
-- ✅ Plain CSS for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `cursor`, `overflow`, `transition`, `transform`
-- ✅ `@apply` for: project colors (`bg-surface-100`, `text-surface-700`), typography tokens (`text-bold-14`, `text-medium-16`), responsive prefixes (`md:flex-row`), pseudo-state tokens (`hover:bg-surface-100`)
-<!-- mirror: CLAUDE.md @apply LAST — keep the bullet below in sync with the canonical wording in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
-- ⚠️ **`@apply` MUST be the LAST declaration in each block scope** — root, `&__Element`, `&--Modifier`, pseudo-state. Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser. Nested child blocks (`&__X`, `&--X`) are allowed after `@apply` since they're a deeper scope.
-
-```sass
-// ✅ Good — plain CSS first, @apply LAST in each scope
-.MyModal
-  display: flex
-  gap: 1rem
-  padding: 1.5rem
-  border-radius: 8px
-  @apply bg-white border border-surface-200 text-bold-14 text-surface-900
-
-  &__Header
-    margin-bottom: 16px
-    @apply text-bold-18
-
-  &--Destructive
-    border-color: red
-    @apply bg-red-50
-
-// ❌ Avoid — @apply between plain CSS declarations (SASS parser breaks)
-.MyModal
-  display: flex
-  @apply bg-white
-  border-radius: 8px
-
-// ❌ Avoid — @apply for everything
-.MyModal
-  @apply flex gap-4 p-6 rounded-[8px] bg-white border border-surface-200 text-bold-14 text-surface-900
-```
+Apply the [Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files) rules from CONVENTIONS.md — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
 
 ---
 

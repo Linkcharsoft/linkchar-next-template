@@ -16,6 +16,18 @@ Examples:
 
 ---
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — hooks are camelCase with `use` prefix.
+- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'` when needed, default exports, no `memo()`/`useCallback`/`useMemo` for memoization's sake (React Compiler).
+- **[Code Style](../../CONVENTIONS.md#code-style)** — imports, quotes, semicolons.
+
+If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+---
+
 ## Step 0 — Recon & dedup
 
 Before creating anything:

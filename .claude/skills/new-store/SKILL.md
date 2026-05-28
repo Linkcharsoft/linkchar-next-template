@@ -20,6 +20,18 @@ Derive from the name:
 
 ---
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — stores use camelCase + `Store` suffix; export is `use{Name}Store`.
+- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'` directive, default exports, no `memo()` (React Compiler).
+- **[Code Style](../../CONVENTIONS.md#code-style)** — imports, quotes, semicolons.
+
+If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+---
+
 ## Step 0 — Recon & dedup
 
 Before creating anything:

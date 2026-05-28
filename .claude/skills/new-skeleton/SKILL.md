@@ -17,6 +17,19 @@ This skill assumes `src/components/SkeletonBlock/SkeletonBlock.tsx` is the proje
 
 ---
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+
+- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
+- **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — for the CLS rules that motivate sizing the skeleton.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — generic A11y. The skeleton-specific rules (`aria-busy`, sr-only loading label, `aria-hidden` on root, no focusable leaves) live in Step 1 below.
+
+If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+---
+
 ## Step 0 — Recon & dedup
 
 Resolve where the target lives:
@@ -85,9 +98,9 @@ The goal is **visual parity at first glance** — the skeleton should occupy rou
 
 > **Lighthouse note**: Cumulative Layout Shift (CLS) is a Core Web Vital. A skeleton whose dimensions don't match the final UI is worse than no skeleton at all — every divergence becomes a CLS event on hydration/data-fetch. Match: total height, every internal padding/gap, image aspect-ratios, button heights, line spacing. When in doubt, oversize the skeleton container rather than undersize it; the content settling INTO a slightly-too-tall box doesn't shift other elements, but a too-short skeleton getting pushed by larger content does.
 
-### Accessibility rules (mandatory)
+### Skeleton-specific A11y rules
 
-Loading states have their own a11y obligations beyond visual parity. Without these, screen-reader users either hear nothing (silent loading) or get spammed by repeated "blank" announcements per `SkeletonBlock`. See "Performance & Lighthouse Rules" in `CLAUDE.md` for the broader set.
+Loading states have their own a11y obligations beyond visual parity. Without these, screen-reader users either hear nothing (silent loading) or get spammed by repeated "blank" announcements per `SkeletonBlock`. The generic A11y rules live in [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility); the rules below are specific to skeleton loaders.
 
 - **`aria-busy` on the loading container**: the CONSUMER must wrap the section being loaded with `aria-busy={isLoading}` on a parent element (the screen's `<main>`, the section, or the card container). When data arrives, the flag flips to false. This is the canonical SR signal that content is in flight.
 - **Screen-reader-only "Loading" label**: include `<span className='sr-only'>Loading content…</span>` (or a more specific label like `Loading products…`) inside the skeleton's root. Visual placeholders communicate nothing to non-sighted users; without this text the page sounds completely silent during fetch.
@@ -145,11 +158,8 @@ Template:
 - **Sizes** come from observing the target's rendered dimensions (read the target's `.sass` and Tailwind classes for actual heights, paddings, border-radius). Do NOT invent — match what's there.
 - **Layout** of the skeleton container should mirror the target's outer container: same `display`, `gap`, `padding`, `flex-direction`, and responsive breakpoints (`@apply lg:flex-row` if the target does that).
 - **Border-radius** must match the target (rounded buttons → rounded skeleton button; sharp lines → sharp skeleton).
-- **Plain CSS** for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `aspect-ratio`, `position`, `overflow`, `grid-template-columns`.
-- **`@apply`** only for design tokens: project colors (`bg-white`, `border-surface-200`, `text-surface-900`), typography (`text-bold-14`), responsive prefixes (`md:flex-row`, `lg:grid-cols-2`), and pseudo-state tokens.
-<!-- mirror: CLAUDE.md @apply LAST — keep the bullet below in sync with the canonical wording in CLAUDE.md > Styling Rules > "Inside `.sass` files". -->
-- ⚠️ **`@apply` MUST be the LAST declaration in each block scope** (root, `&__Element`, `&--Modifier`, pseudo-state). Plain CSS first, THEN a single `@apply` at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented parser. Nested child blocks are fine after `@apply` since they're a deeper scope.
-- Do NOT add shimmer or animation styles — `SkeletonBlock` handles its own animation; you only size the rectangle.
+- Generic `.sass` rules (plain CSS for layout/sizing, `@apply` LAST for design tokens) come from [CONVENTIONS.md > Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files).
+- Skeleton-specific: do NOT add shimmer or animation styles — `SkeletonBlock` handles its own animation; you only size the rectangle.
 
 ---
 
