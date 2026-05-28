@@ -465,7 +465,7 @@ export default Page
 - Dynamic routes use `generateMetadata`. Return `robots: { index: false, follow: false }` when the resource is not found.
 - Listings that accept filter/pagination params return `robots: { index: false, follow: true }` when those params are present.
 - Protected/auth pages can skip `openGraph`/`twitter` (they are disallowed by `robots.ts`).
-- Protected pages: `async`, await `searchParams`. Auth and public pages: synchronous unless they take params.
+- **`async` only when the page reads URL state**: any page (protected, public, or auth) that takes `searchParams` or `params` MUST be `async` and await them before passing them down. Any page that does NOT read URL state stays synchronous (`const Page = () => <ScreenName/>`). The Protected page template above defaults to sync — switch to the async variant only when the screen actually needs `searchParams`. For paginated lists, prefer `/new-table` instead, which scaffolds the entire async wrapper + `useTableParams` wiring.
 - Always named `Page`, always default export.
 - **Optional but recommended for bounded sets**: when the dynamic route's set of params is finite (e.g. a product catalog under ~10k items), also export `generateStaticParams` — Next.js will pre-render the routes at build time, drastically improving LCP/TTFB.
 
