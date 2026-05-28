@@ -2,9 +2,7 @@
 import './Filters.sass'
 import dayjs from 'dayjs'
 import { m, AnimatePresence } from 'framer-motion'
-import { Calendar } from 'primereact/calendar'
-import { Dropdown } from 'primereact/dropdown'
-import { MultiSelect } from 'primereact/multiselect'
+import dynamic from 'next/dynamic'
 import { classNames } from 'primereact/utils'
 import { useMemo, useRef, useState } from 'react'
 import { useMediaQuery } from 'usehooks-ts'
@@ -13,6 +11,10 @@ import Label from '../Label/Label'
 import type { TargetAndTransition } from 'framer-motion'
 import type { DropdownPassThroughOptions } from 'primereact/dropdown'
 import type { MultiSelectPassThroughOptions } from 'primereact/multiselect'
+
+const Calendar = dynamic(() => import('primereact/calendar').then(m => m.Calendar), { ssr: false })
+const Dropdown = dynamic(() => import('primereact/dropdown').then(m => m.Dropdown), { ssr: false })
+const MultiSelect = dynamic(() => import('primereact/multiselect').then(m => m.MultiSelect), { ssr: false })
 
 // Types
 type PrimitiveTypes = string | number | boolean
@@ -430,9 +432,10 @@ const Filters = ({
                         }
                         onChange={(e) => {
                           if(e.value) {
+                            const range = e.value as (Date | null)[]
                             filter.onChange({
-                              from: e.value[0] ? dayjs(e.value[0] as Date).format('YYYY-MM-DD') : undefined,
-                              to: e.value[1] ? dayjs(e.value[1] as Date).format('YYYY-MM-DD') : undefined
+                              from: range[0] ? dayjs(range[0]).format('YYYY-MM-DD') : undefined,
+                              to: range[1] ? dayjs(range[1]).format('YYYY-MM-DD') : undefined
                             })
                           } else {
                             filter.onChange({
