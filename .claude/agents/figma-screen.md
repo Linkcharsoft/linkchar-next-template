@@ -181,7 +181,13 @@ The parent will run `figma-tokens` to add the missing values, then re-invoke you
 
    Wrap each input in `InputContainer` so the project's `<Label>` + `<InputError>` pattern displays validation errors. Pass `formik.values.{field}`, `formik.handleChange`, and `formik.errors.{field}` to each input. The only TODO left is the API endpoint URL — never the validation or state wiring.
 
-9. **Animations — translate Figma hints to framer-motion `m` components**. The project uses `LazyMotion` (already wired in `ProvidersContainer`) — that means you MUST use `m.div` / `m.button` / etc., NEVER `motion.div`. Detect animation cues from the design context:
+9. **Animations — translate Figma hints to framer-motion `m` components**. The project uses `LazyMotion` AND `<MotionConfig reducedMotion='user'>` (both wired in `src/providers/ProvidersContainer.tsx`), and `src/styles/general.sass` ships a `@media (prefers-reduced-motion: reduce)` reset for CSS animations. That means:
+
+   - You MUST use `m.div` / `m.button` / etc. — NEVER `motion.div` (ESLint rejects it).
+   - You MUST NOT add a per-screen `<MotionConfig>` wrapper, `useReducedMotion()` checks, or manual opt-out logic — reduced-motion is already handled at the app boundary for the whole tree.
+   - Just write the animation as if it always plays; the global config handles the opt-out for users who have `prefers-reduced-motion: reduce` set.
+
+   Detect animation cues from the design context:
 
    - **Hover transitions on cards/buttons** (Figma "Smart Animate" between Default and Hover variants): wrap with `<m.div whileHover={{ ... }} transition={{ duration: 0.2 }}>`. Map the visual diff between variants to props (e.g. card hover scales up + adds shadow → `whileHover={{ scale: 1.02, boxShadow: '...' }}`).
    - **Scroll reveals** (sections that fade-in or slide-in): `<m.section initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-50px' }}>`.
