@@ -26,7 +26,9 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 ### 2. SEO completeness
 
 3. **`alternates.canonical` per page**: for every `src/app/**/page.tsx`, verify it exports `metadata` (or `generateMetadata`) including `alternates.canonical`. List any missing.
-4. **Full metadata for public pages**: every page that is NOT under `src/app/dashboard/`, `src/app/(auth-layout)/`, or otherwise listed as disallowed in `robots.ts` MUST export `title`, `description`, `alternates.canonical`, `openGraph`, and `twitter`. Read each public `page.tsx` and list any that lack `description`, `openGraph:`, or `twitter:` keys.
+4. **Full metadata for public pages**: every page that is NOT disallowed by `src/app/robots.ts` MUST export `title`, `description`, `alternates.canonical`, `openGraph`, and `twitter`. Read each public `page.tsx` and list any that lack `description`, `openGraph:`, or `twitter:` keys.
+
+   **How to derive "public":** read `src/app/robots.ts` first and extract the `disallow:` patterns (e.g. `/api/*`, `/dashboard`, `/login`, `/signup`, `/password-recovery`, `/change-password`). For each `src/app/**/page.tsx`, derive its route from the file path (stripping route groups like `(auth-layout)`), and consider it public if no disallow pattern matches. Do NOT hardcode `src/app/dashboard/` or `src/app/(auth-layout)/` — those names vary across projects forked from this template; the only authoritative source is `robots.ts`.
 5. **`generateMetadata` for dynamic routes**: every `src/app/**/[id]/page.tsx`, `src/app/**/[slug]/page.tsx`, and similar dynamic-segment file MUST use `export async function generateMetadata` instead of `export const metadata`. List any that still use the static form.
 6. **No `robots: { nocache: true }`**: grep `src/app/` for `nocache: true`. Any match is a violation (interferes with CDN caching, no SEO benefit).
 7. **`html lang`**: read `src/app/layout.tsx`, confirm `<html lang="...">` is set to the actual content language (not the default `"en"` if the project ships in another language). Report if `lang` is missing or looks wrong for the project.
@@ -61,8 +63,8 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 ### 6. Bundle architecture
 
 26. **`'use client'` on layouts**: grep `src/app/**/layout.tsx` for `'use client'`. Layouts should be Server Components — flag every match. (False positives: `(auth-layout)` etc. — check carefully.)
-27. **Third-party `Script` with `beforeInteractive`**: grep `src/` for `<Script` with `strategy='beforeInteractive'` or `strategy="beforeInteractive"`. Report each — only justified for scripts genuinely critical to first paint.
-28. **`fetch(` without explicit cache policy in server code**: grep `src/app/**/*.tsx` files that do NOT start with `'use client'`, plus `src/api/**/*.ts` (when called from server components). For each `fetch(` call, verify the second argument includes either `next: {` or `cache:`. Report plain `fetch(url)` without policy.
+27. **Third-party `Script` with `beforeInteractive`**: grep `src/` for `<Script` with `strategy='beforeInteractive'` or `strategy="beforeInteractive"`. Report each — only justified for scripts genuinely critical to first paint. **Known exception**: `src/app/layout.tsx` loads React Scan via `<Script strategy="beforeInteractive">` gated by `APP_ENV === 'development'` — that match is intentional (dev-only diagnostics) and should NOT be flagged. Skip any `<Script beforeInteractive>` whose nearest enclosing condition references `APP_ENV === 'development'`.
+28. **`fetch(` without explicit cache policy in server code**: grep `src/app/**/*.tsx` files that do NOT start with `'use client'`, plus `src/api/**/*.ts` (when called from server components). For each `fetch(` call, verify the second argument includes either `next: {` or `cache:`. Report plain `fetch(url)` without policy. **Exclude `src/api/customFetch.ts`** — that file IS the project's fetch wrapper; cache policy is decided per-call by the consumers that import it, not inside the wrapper itself. Flagging it would always produce a noise finding.
 29. **Modals registered globally but used in one screen**: read `src/providers/ModalsProvider.tsx` and list every modal it mounts. For each, grep `src/screens/` and `src/components/` for `openModal('<modalKey>'` usages. If a modal is opened from only ONE screen, flag it — it should be mounted locally inside that screen, not globally.
 
 ### 7. Token compliance
@@ -71,7 +73,7 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 ### 8. SASS `@apply` placement
 
-32. **`@apply` not at the end of its block**: in indented SASS, `@apply` MUST be the LAST declaration in each block scope (root selector, `&__Element`, `&--Modifier`, pseudo-state). Putting `@apply` between plain CSS declarations breaks the SASS indented parser at build time. Grep with ripgrep multiline:
+31. **`@apply` not at the end of its block**: in indented SASS, `@apply` MUST be the LAST declaration in each block scope (root selector, `&__Element`, `&--Modifier`, pseudo-state). Putting `@apply` between plain CSS declarations breaks the SASS indented parser at build time. Grep with ripgrep multiline:
 
     ```bash
     rg -nU --multiline --multiline-dotall '@apply[^\n]+\n[ \t]+[a-z][a-z-]*:' src --type-add 'sass:*.sass' --type sass
@@ -81,7 +83,7 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
 ### 9. Typography compliance
 
-31. **Forbidden typography utilities**: grep `src/screens/`, `src/components/`, and `src/layouts/` for any of the following as STANDALONE Tailwind classes. Report each violation with `path:line`.
+32. **Forbidden typography utilities**: grep `src/screens/`, `src/components/`, and `src/layouts/` for any of the following as STANDALONE Tailwind classes. Report each violation with `path:line`.
 
     **Tailwind default size utilities** (banned in favor of the project's custom scale — these are Tailwind core defaults so the list is stable across forks): `text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, `text-2xl`, `text-3xl`, `text-4xl`, `text-5xl`, `text-6xl`, `text-7xl`, `text-8xl`, `text-9xl`.
 
