@@ -15,6 +15,24 @@ A list of assets to download, each with:
 
 If the list is missing, ask.
 
+## Pre-flight: name sanitization (do this BEFORE format detection)
+
+Figma's `get_design_context` exposes asset names as the node's display name from the file. Designers frequently leave names like `imgImage21`, `Frame 1234`, `Group 567`, `Rectangle 8`, `Vector`, `Image_42` — generic Figma defaults with no semantic meaning. If the parent passes one of these as `Target file name`, the resulting WebP/SVG ends up as `src/assets/images/img-image-21.webp` — impossible to know what it contains without opening it.
+
+**Reject generic Figma names and derive a better one** before doing anything else:
+
+1. If the parent's `Target file name` matches one of these patterns (case-insensitive): `^img[-_]?image[-_]?\d+$`, `^frame[-_]?\d+$`, `^group[-_]?\d+$`, `^rectangle[-_]?\d+$`, `^vector[-_]?\d*$`, `^image[-_]?\d+$`, `^ellipse[-_]?\d+$`, `^untitled.*` — flag it as generic.
+2. **Try to derive a better name** from context:
+   - Look at the parent node's `name` in the design context — Figma frames often have semantic names ("Hero", "ProductCard", "Footer"). Combine with the asset's role-hint: `{parent-name-kebab}-{role-hint}-{N}` → e.g. `hero-background`, `product-card-photo-1`, `footer-brand-mark`.
+   - If multiple assets share the same derived name (e.g. 3 photos in a `ProductCard`), append a stable index from the design context: `product-card-photo-1`, `product-card-photo-2`, etc.
+3. **If you cannot derive a meaningful name** (no semantic parent node, no role-hint that helps), STOP and return to the parent with:
+
+   ```
+   NEEDS NAMING: Figma asset `{original-name}` ({source-url}) has no semantic context I can use. Please provide a meaningful target file name, then re-invoke me.
+   ```
+
+   Do not invent a placeholder like `asset-1.webp` — that's how the registry ends up with permanently anonymous files.
+
 ## Asset format detection (do this FIRST, before any conversion or write)
 
 A Figma MCP asset URL does NOT tell you the actual format — the server returns whatever the source node was exported as, which can be SVG, PNG, or JPEG. Iconify URLs always return SVG. Always confirm with `file`:
