@@ -119,6 +119,14 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
         - The slug name is just for the final file name; it does NOT participate in the dedup check.
      2. **If found by hash** → reuse the existing `.webp` via static import. No re-download, no re-conversion. Report `REUSED: {path}.webp (matched by {contentHash|urlHash})`.
      3. **If not found** → follow the cross-platform shell pattern from `figma-assets.md` (`curl` / `Invoke-WebRequest` to a temp file, then `ffmpeg -i {tmpPath} -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling with `{"url": "{urlHash}", "sha1": "{contentHash}"}`).
+
+       **Defense-in-depth — validate `screenSlug` BEFORE any path construction**. Even though Step's input check (`Expected input from the parent`) already requires `screenSlug`, an empty or malformed value here produces `src/assets/images//{slug}.webp` (double slash). POSIX tolerates that path; Windows and some bundlers/CDNs trip on the empty segment. Assert:
+
+       ```
+       screenSlug && /^[a-z][a-z0-9-]*$/.test(screenSlug)
+       ```
+
+       If the assertion fails, STOP and report `INVALID SCREEN SLUG: received "{value}" — expected non-empty kebab-case. Re-invoke with a valid slug.` Do NOT fall back to a flat path (`src/assets/images/{slug}.webp`) — flat is reserved for genuinely-shared assets (logos, brand graphics), and silently downgrading per-screen → flat scatters per-screen images into the shared bucket.
    - **Logos and shared assets**: if the content hash matches one of the already-existing logos in `src/assets/images/` (root-level, not under any `{screenSlug}/`), reuse those instead of saving a new copy in the per-screen folder.
 
    **Image rendering rules — full set in `CLAUDE.md > Performance & Lighthouse Rules > Image Performance`. Critical reminders** (the ones most often missed on Figma-driven work — if anything below conflicts with CLAUDE.md, CLAUDE.md wins):
