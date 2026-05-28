@@ -198,6 +198,27 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 
     Grep `src/screens/`, `src/components/`, `src/layouts/` for `*Icon` JSX elements that include `aria-hidden={false}` or `aria-hidden='false'`. For each match, verify the icon has its own `aria-label`, OR that the icon sits next to visible text describing it. Flag matches that have neither.
 
+### 12. Mock data convention
+
+40. **Mock data without canonical marker**: `figma-screen` writes inline mock arrays as `const MOCK_{KIND}` at the top of the screen file when the data layer hasn't been wired yet. The convention exists so deployed mocks are visible at a glance and the `openapi-import` flow can grep them to swap with real `customFetch` calls. Two sub-checks:
+
+    1. **Array-shaped constants in `src/screens/**/*.tsx`**: grep for top-level `const \w+ = \[` (array literal initializer at module scope, NOT inside a function/component body). For each match, verify either:
+       - The constant name matches `MOCK_[A-Z_]+` (correct convention), OR
+       - The array is consumed via `useSWR` / `customFetch` / an import from `@/api/*` somewhere in the same file (real data, not a mock).
+
+       Flag every match that is neither — those are unmarked mocks that bypassed the convention and will not be caught by future `openapi-import` runs.
+
+    2. **`MOCK_*` without TODO comment**: for every `MOCK_*` match from check 1, verify there is a `// TODO` comment within the 3 lines preceding the declaration mentioning either `openapi-import` or `API call` or `endpoint`. The marker tells future-you (or the `openapi-import` flow) what endpoint should replace the mock. A `MOCK_*` without a TODO is a deployment time bomb — the data looks real in dev and someone forgets it's mock when shipping.
+
+    Report findings as:
+
+    ```
+    MOCK_CONVENTION_VIOLATION: src/screens/X/X.tsx:NN — const NAME = [...] (not following MOCK_{KIND} naming and not API-wired)
+    MOCK_MISSING_TODO: src/screens/X/X.tsx:NN — MOCK_KIND declared without `// TODO: replace with API call once openapi-import has run for {endpoint}`
+    ```
+
+    Static parsing of "top-level constant" is non-trivial (a JSX file mixes module-scope and function-scope declarations). A best-effort heuristic: `const NAME = [` at column 0 (no leading indent) is module-scope; anything indented is inside a function or block. Flag the column-0 cases.
+
 ## Hard rules
 - **Report only, never fix** — unless the parent explicitly asks to fix a specific category.
 - **Group findings by category** (the section headers above) and use `path:line` references so the user can click to navigate.
