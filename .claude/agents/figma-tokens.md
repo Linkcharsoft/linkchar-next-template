@@ -127,7 +127,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
 7. **Append decisions to `figma-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
 
-8. Run `pnpm run type-check` and report PASS/FAIL.
+8. Run `pnpm run lint-check --fix` (auto-fixes any quote/comma/import-order drift introduced into `tailwind.config.js` or `src/app/layout.tsx`) followed by `pnpm run type-check`. Report PASS/FAIL for each.
 
 ## Hard rules
 - Never invent token values — use only what the parent provided.
@@ -169,5 +169,6 @@ Fonts (loaded via next/font/google in src/app/layout.tsx as --font-{name}):
 - {Removed legacy @import from src/styles/index.sass, or "no legacy import found"}
 - {Updated src/styles/general.sass + tailwind.config.js fontFamily to var(--font-{name}), or "no body font change"}
 
+Lint-check: ✅ clean / ❌ <errors>
 Type-check: ✅ clean / ❌ <errors>
 ```
