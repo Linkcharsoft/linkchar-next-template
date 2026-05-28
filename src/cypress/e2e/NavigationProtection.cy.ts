@@ -1,37 +1,88 @@
-describe('Navigation and Route Protection', () => {
-  // const baseUrl = Cypress.config('baseUrl')
-  // const protectedRoute = `${baseUrl}/`
-  // const loginRoute = `${baseUrl}/login`
+import { AUTHENTICATED_HOME_PATH, LISTENER_COOKIE_NAME, SESSION_COOKIE_NAME } from '@/constants/auth'
 
-  // before(() => {
-  //   // Load fixture data if needed, e.g., user credentials
-  //   cy.fixture('userData').then(function (data) {
-  //     this.data = data
-  //   })
-  // })
+const baseURL = Cypress.config().baseUrl
 
-  // context('Unauthenticated user', () => {
-  //   it('should redirect to login page when trying to access a protected route', function () {
-  //     cy.visit(protectedRoute)
-  //     cy.url().should('eq', loginRoute) // Assert redirection to login
-  //   })
-  // })
+describe('Navigation Protection: Unauthenticated 🔒', () => {
+  before(() => {
+    cy.clearCookies()
+  })
 
-  // context('Authenticated user', () => {
-  //   beforeEach(function () {
-  //     // Log in using custom command and store session
-  //     cy.login(this.data.email, this.data.password) // Make sure you have this command in commands.ts
-  //   })
+  it('Protected route redirects to login', () => {
+    cy.visit('/dashboard', { failOnStatusCode: false })
 
-  //   it('should access protected route after login', () => {
-  //     cy.visit(protectedRoute)
-  //     cy.url().should('eq', protectedRoute) // Assert the user is on the protected route
-  //     cy.contains('Powered by Linkchar') // Customize based on your dashboard content
-  //   })
+    cy.url().should('equal', `${baseURL}/login`)
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
+    cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
+  })
 
-  //   it('should redirect to home when visiting login page as authenticated user', () => {
-  //     cy.visit(loginRoute)
-  //     cy.url().should('eq', `${baseUrl}/`) // Assert redirection to home page
-  //   })
-  // })
+  it('Public root path loads without redirect', () => {
+    cy.visit('/')
+
+    cy.url().should('equal', `${baseURL}/`)
+  })
+})
+
+describe('Navigation Protection: Authenticated 🔐', () => {
+  before(() => {
+    cy.login()
+  })
+
+  it('Login auth path redirects to home', () => {
+    cy.visit('/login')
+
+    cy.url().should('equal', `${baseURL}${AUTHENTICATED_HOME_PATH}`)
+  })
+
+  it('Signup auth path redirects to home', () => {
+    cy.visit('/signup')
+
+    cy.url().should('equal', `${baseURL}${AUTHENTICATED_HOME_PATH}`)
+  })
+
+  it('Password recovery auth path redirects to home', () => {
+    cy.visit('/password-recovery')
+
+    cy.url().should('equal', `${baseURL}${AUTHENTICATED_HOME_PATH}`)
+  })
+
+  after(() => {
+    cy.logout()
+  })
+})
+
+describe('Navigation Protection: Corrupt Cookies 🧹', () => {
+  beforeEach(() => {
+    cy.clearCookies()
+  })
+
+  it('Orphan listener cookie redirects and purges', () => {
+    cy.setCookie(LISTENER_COOKIE_NAME, Date.now().toString())
+
+    cy.visit('/dashboard', { failOnStatusCode: false })
+
+    cy.url().should('equal', `${baseURL}/login`)
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
+    cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
+  })
+
+  it('Orphan session cookie redirects and purges', () => {
+    cy.setCookie(SESSION_COOKIE_NAME, 'not-a-real-encrypted-payload')
+
+    cy.visit('/dashboard', { failOnStatusCode: false })
+
+    cy.url().should('equal', `${baseURL}/login`)
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
+    cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
+  })
+
+  it('Corrupt session value with valid pair redirects and purges', () => {
+    cy.setCookie(SESSION_COOKIE_NAME, 'not-a-real-encrypted-payload')
+    cy.setCookie(LISTENER_COOKIE_NAME, Date.now().toString())
+
+    cy.visit('/dashboard', { failOnStatusCode: false })
+
+    cy.url().should('equal', `${baseURL}/login`)
+    cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
+    cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
+  })
 })
