@@ -54,6 +54,8 @@ If the list is missing, ask.
 
    `text-surface-900` (not `text-white`) is the safe default — the body background is light, so a white heading would be invisible. Layouts that ship a dark background can override per-screen later when the real content lands.
 
+   **Placeholder language**: the template ships `<html lang="es">` (see `src/app/layout.tsx`), so "Próximamente" is the correct placeholder. If you find `<html lang>` set to anything other than `es`, STOP and flag the mismatch back to the parent — placeholders in one language with `html lang` in another is both an SEO penalty (Google misclassifies the page) and an a11y failure (screen readers mispronounce the content). The user must decide whether to switch `lang` or rewrite the placeholder before the scaffolder proceeds.
+
 4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
 
    - **`auth` and `protected` (dashboard)**: minimal — `title` + `alternates.canonical`. Robots already blocks these via `robots.ts`; no social previews needed.

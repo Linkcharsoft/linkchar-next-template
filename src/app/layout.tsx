@@ -98,7 +98,7 @@ export const metadata: Metadata = {
         alt: 'Inferencia AI Solutions'
       }
     ],
-    locale: 'en_US'
+    locale: 'es_AR'
   },
   twitter: {
     card: 'summary_large_image',
@@ -173,7 +173,7 @@ interface Props {
 }
 
 const Layout = async ({ children }: Props) => (
-  <html lang="en" className={`${merriweatherSans.variable} ${primeIcons.variable}`}>
+  <html lang="es" className={`${merriweatherSans.variable} ${primeIcons.variable}`}>
     <head>
       {/* Tailwind */}
       <script
