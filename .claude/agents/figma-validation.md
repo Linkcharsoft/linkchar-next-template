@@ -16,6 +16,16 @@ If unspecified, run the full sweep on everything generated in this Figma import.
 
 Before running, briefly skim the `## Performance & Lighthouse Rules` section in `CLAUDE.md` so the grep patterns and judgement match the project's own definitions. The checks below are the audit form of those rules.
 
+## Regex conventions (read once, applies to every step below)
+
+JSX tags in this codebase routinely span multiple lines (`<button\n  className=...\n  onClick=...\n>`, `<Image\n  fill\n  sizes=...\n/>`). A single-line regex misses those.
+
+**Default for every regex in this audit: `multiline: true` + `--multiline-dotall`.** When using the Grep tool, set `multiline: true`. When invoking ripgrep directly, pass `-U --multiline-dotall`.
+
+Some steps explicitly call out `multiline: true` — that's a reminder for the most common multiline-prone cases (icon-only buttons spanning 3 lines, external links with `target` and `rel` on separate lines, `<Image fill>` with `sizes` further down). The absence of an explicit callout does NOT mean single-line is safe — the default is multiline everywhere.
+
+A few steps are inherently single-line (e.g. SEO completeness Step 6: `nocache\s*:\s*true` on a single literal key, or font-loading Step 23: `@import\s+url(\(['"]?https://` which appears as one statement). For those, multiline does no harm — leave it on.
+
 ## Steps
 
 ### 1. Commands
