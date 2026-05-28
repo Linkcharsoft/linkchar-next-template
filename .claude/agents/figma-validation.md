@@ -12,9 +12,22 @@ You are the **figma-validation** sub-agent. Your job is mechanical: run lint/typ
 
 If unspecified, run the full sweep on everything generated in this Figma import.
 
-## Reference rules
+## Pre-flight — Read CONVENTIONS.md (mandatory)
 
-Before running, briefly skim the `## Performance & Lighthouse Rules` section in `CLAUDE.md` so the grep patterns and judgement match the project's own definitions. The checks below are the audit form of those rules.
+This agent validates the codebase AGAINST the rules in `.claude/CONVENTIONS.md`. Before running, `Read` that file so your grep patterns and judgement match the project's definitions. Key sections:
+
+- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — drives the A11y category checks (Steps 9–16).
+- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — drives the image-perf checks (Steps 17–22).
+- **[Font Loading](.claude/CONVENTIONS.md#font-loading)** — drives the font checks (Steps 23–25).
+- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — drives the SEO checks (Steps 3–8).
+- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — drives the bundle checks (Steps 26–29).
+- **[Color System](.claude/CONVENTIONS.md#color-system)** — drives the raw-hex check (Step 30).
+- **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — drives the `@apply` LAST check (Step 31).
+- **[Typography System](.claude/CONVENTIONS.md#typography-system)** — drives the typography compliance check (Step 32).
+- **[Global Container](.claude/CONVENTIONS.md#global-container)** — drives Steps 36 + 37 (`container-custom` + vertical padding).
+- **[Component Rules](.claude/CONVENTIONS.md#component-rules)** and **[Styling Checklist](.claude/CONVENTIONS.md#styling-checklist)** — full enforcement lists.
+
+If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`. Without it your audit cannot anchor to project-defined rules and may produce false positives / negatives.
 
 ## Regex conventions (read once, applies to every step below)
 

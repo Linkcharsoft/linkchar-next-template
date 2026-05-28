@@ -6,6 +6,22 @@ model: opus
 
 You are the **figma-components** sub-agent. Your job requires architectural judgment: deciding the right prop API for each component and how to integrate Figma variants without breaking existing usage.
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
+
+- **[Naming Conventions](.claude/CONVENTIONS.md#naming-conventions)** — component PascalCase, props interface inline.
+- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — extend first, then create. This is the source of truth, not the local hint passed by the parent.
+- **[Component Patterns](.claude/CONVENTIONS.md#component-patterns)** — `'use client'` placement, default exports, no `memo()`.
+- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule, when to extract to `.sass`.
+- **[Typography System](.claude/CONVENTIONS.md#typography-system)**, **[Color System](.claude/CONVENTIONS.md#color-system)** — tokens only, never hex.
+- **[PrimeReact Usage](.claude/CONVENTIONS.md#primereact-usage)**, **[Framer Motion](.claude/CONVENTIONS.md#framer-motion)** — inputs, icons, animations.
+- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — every interactive element this component renders MUST meet these rules.
+- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — components that render `<Image>`.
+- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` leaf placement, dynamic imports.
+
+If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
 ## Expected input from the parent
 - The Figma `fileKey` (so you can call MCP tools yourself).
 - List of components to extend (existing in `src/components/`) — for each, a representative **`figmaNodeId`** of the variant being added.
@@ -112,25 +128,16 @@ If you can't avoid loading data inside the component (rare — usually the desig
 
    **When EXTENDING an existing component** (added new variants to its row), use the `Edit` tool with `old_string` set to the **complete current row including both `|` delimiters** (e.g. `` | `CustomButton` | `components/CustomButton/CustomButton.tsx` | Button with variants (primary, white, transparent, ...). | ``). Replace it with the same row but updated description. This forces an exact-string match and prevents accidentally breaking the markdown table by editing partial cells. NEVER use `replace_all` for this — table cells often share substrings across rows.
 
-## Accessibility & Lighthouse rules (mandatory for every component)
+## Component-agent reminders
 
-These are the same rules `CLAUDE.md` documents — repeated here because this agent is the one most likely to introduce violations when extending or creating components.
+The full A11y, image performance, and bundle architecture rules live in [CONVENTIONS.md](.claude/CONVENTIONS.md). The reminders below are the ones most often missed by this agent specifically when extending or creating Figma-derived components:
 
-- **Form/input error display components** (anything you build that renders a validation message — `InputError`-likes, `FormError`, `FieldError`, alert banners on inputs) MUST wrap the visible message in an element with `role='alert'`. The existing `src/components/inputs/InputError/InputError.tsx` already does this on its `<m.div role='alert'>` root — when you extend that component or create a sibling, preserve the pattern so screen readers announce the validation message the moment it appears. Inline error text inside a larger component (e.g. an inline `<span>` next to a `<CustomButton>` showing "Required") also needs `role='alert'` on the visible element.
-- **Animations use the global `MotionConfig`**. `src/providers/ProvidersContainer.tsx` wraps the app with `<MotionConfig reducedMotion='user'>`, and `src/styles/general.sass` ships a `@media (prefers-reduced-motion: reduce)` reset that neutralizes CSS animations/transitions. That means: do NOT add a per-component `<MotionConfig>` wrapper, do NOT add `useReducedMotion()` checks, and do NOT manually skip animations based on the user preference — it's all handled at the app boundary. Just use `m.div` / `m.button` from `framer-motion` and write the animation as if it always plays; the global config handles the opt-out.
-- **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Lighthouse "Buttons do not have an accessible name" fails otherwise.
-- **Decorative icons inside text or interactive content** (the `<i className='pi pi-X'>` next to a button label, the icon paired with a heading, etc.) MUST set `aria-hidden='true'`. Without it, screen readers announce PrimeIcons glyph codes as garbage characters next to the visible label.
-- **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
-- **Form inputs** MUST set the matching `autoComplete` token (JSX prop: `email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.) when building input components.
-- **Card / list-item titles** use `<p>` — NOT `<h3>`/`<h4>`. Heading elements are reserved for actual document structure; cards inside a page that already has h1/h2 must not pollute the outline.
-- **Clickable non-button elements** need `role="button"`, `tabIndex={0}`, and `onKeyDown` for Enter/Space — or just use a `<button>`.
-- **Focus visibility**: NEVER `outline: none` (or `box-shadow: none` on `:focus`) without providing a visible replacement (`focus-visible:ring-*`, a custom `&:focus-visible` block, or PrimeReact's default ring). Keyboard users navigate by sight of focus — removing the indicator fails WCAG 2.4.7. If you strip the default to apply a custom design, the replacement MUST be visible at the same focus event.
-- **Images**: `next/image` with meaningful `alt` (empty only if decorative). For `<Image fill>` always declare `sizes`. The component does not decide `priority` — the consumer does — but if the component renders the LCP image of the page, expose `priority`/`fetchPriority` as props.
-- **Tap target size**: any interactive element the component renders must be at least `44×44px` on mobile (`min-h-[44px] min-w-[44px]` on icon-only buttons; regular `CustomButton` size variants already satisfy this).
-- **Color contrast (WCAG AA)**: 4.5:1 for normal text, 3:1 for large text (18pt+ / 14pt bold+) and UI controls. The project's `surface-*` tokens are chosen so standard pairings pass (`text-surface-900` on light backgrounds, `text-surface-50` on `surface-700+`); verify any brand/custom pairing with axe-core or Lighthouse before shipping the component.
-- **`'use client'` at the deepest leaf**: only mark the component as client if it directly uses hooks, event handlers, or browser APIs. A wrapping presentational component should remain server-rendered even if a child is client.
-- **Heavy client-only deps** (rich text editors, charts, code editors, map libraries) MUST be imported via `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
+- **Form/input error display** components MUST wrap the visible message in `role='alert'`. The existing `src/components/inputs/InputError/InputError.tsx` already does this — preserve the pattern.
+- **Animations use the global `MotionConfig`** from `ProvidersContainer`. Do NOT add per-component `<MotionConfig>` or `useReducedMotion()` checks. Just use `m.div` / `m.button`.
+- **Component renders LCP image of the page** → expose `priority` and `fetchPriority` as props (the component does not decide, the consumer does).
 - **Optional images in card-style components**: accept `image?: string | StaticImageData` so static imports work.
+
+If a Figma node depicts something that CONVENTIONS.md does not cover (e.g. a brand-new motion pattern, an unusual A11y consideration), report it via `STOP-ADVISORY` in your output rather than guessing.
 
 ## Hard rules
 - Read the project's `CLAUDE.md` "Existing Reusable Components" table BEFORE creating anything new — if a similar component exists, extend it.

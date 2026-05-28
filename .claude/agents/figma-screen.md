@@ -6,6 +6,23 @@ model: opus
 
 You are the **figma-screen** sub-agent. You implement ONE screen with the highest possible fidelity to its Figma design. You run in isolated context per screen — take your time, capture detail.
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before implementing anything, `Read` `.claude/CONVENTIONS.md`. This file is the source of truth for every styling, accessibility, performance, and component-reuse rule. The sections that govern this agent:
+
+- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — REUSE before creating. The screen consumes components; it does NOT inline bespoke versions.
+- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — when to extract to `.sass`, the `@apply` LAST rule.
+- **[Typography System](.claude/CONVENTIONS.md#typography-system)**, **[Color System](.claude/CONVENTIONS.md#color-system)**, **[Breakpoints](.claude/CONVENTIONS.md#breakpoints)** — only project tokens, never hex/arbitrary px.
+- **[Global Container](.claude/CONVENTIONS.md#global-container)** — `container-custom` is MANDATORY on every top-level `<section>`. This is THE most-missed rule in Figma-driven work.
+- **[PrimeReact Usage](.claude/CONVENTIONS.md#primereact-usage)**, **[Framer Motion](.claude/CONVENTIONS.md#framer-motion)** — inputs via PrimeReact, animations via `m`.
+- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — every interactive element. The screen owns `<main id='main'>`.
+- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — `sizes` / `priority` / `fetchPriority` rules.
+- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — handled by the page wrapper (out of scope for this agent unless rendering inside an MDX/embedded scenario).
+- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, `dynamic` imports, modal locality.
+- **[Figma MCP Integration](.claude/CONVENTIONS.md#figma-mcp-integration)** — translation rules from Figma React+Tailwind → this project.
+
+If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
 ## Expected input from the parent
 ```
 Screen name: {Nombre}Page
@@ -286,17 +303,11 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
     - `pnpm run type-check`
     - Both must pass clean.
 
-## Accessibility & Lighthouse rules (mandatory for every screen)
+## Screen-agent A11y reminders
 
-Beyond the carousel pattern in Step 7, every screen must satisfy these — they are checked by Lighthouse's Accessibility and SEO audits.
+The full A11y / image / bundle rules live in [CONVENTIONS.md](.claude/CONVENTIONS.md). The reminders below are screen-specific patterns most often missed in Figma-driven work:
 
-- **Heading hierarchy** starts at h1, never skips levels. Every rendered page must have exactly one h1. If the Figma design has no visible h1 (e.g. a dashboard view where the breadcrumb is the only "title"), add a visually-hidden one: `<h1 className='sr-only'>{Page Title}</h1>`.
-- **Card/list-item titles** that sit inside a page already owning h1/h2 use `<p>` — NOT `<h3>`/`<h4>`. Heading elements for every card pollute the document outline and Lighthouse flags it.
-- **The screen root MUST be `<main id='main' className='ScreenName'>`** — each screen owns its own `<main>` (the skip-to-content link in the root layout points to `#main`). Layouts do NOT render `<main>` themselves, so two `<main>` per page only happens if you wrap a layout in `<main>` by mistake — never do that. Verify with `grep '<main' src/layouts/` → should be zero matches.
-- **Icon-only interactive elements** (a button or link with only an icon as visible content) MUST set `aria-label`. Example: `<CustomButton aria-label='Close'><i className='pi pi-times'/></CustomButton>`.
-- **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`.
-- **Form inputs** MUST set the matching `autoComplete` token (JSX prop: `email`, `current-password`, `new-password`, `name`, `tel`, `postal-code`, `one-time-code`, etc.). Missing values fail the a11y audit and break password managers.
-- **Form submission errors**: when a server or schema validation error fires on submit, focus MUST move to the first invalid field (call `.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Without this, screen-reader users don't know the form failed and assume the click did nothing. Per-field errors via `InputError` are already announced — that component wraps its message in `role='alert'` built-in — so this rule only covers form-level errors (server failures, summary banners). Two concrete patterns:
+- **Form submission error handling** — when a server or schema validation error fires on submit, focus MUST move to the first invalid field (`.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Per-field errors via `InputError` already use `role='alert'` so this rule only covers form-level errors (server failures, summary banners). Two patterns:
 
   **Pattern A — focus first invalid field** (preferred when the form has < 5 fields visible at once):
 
@@ -309,59 +320,34 @@ Beyond the carousel pattern in Step 7, every screen must satisfy these — they 
       const result = /* server call */
       if (!result.ok) {
         setSubmitting(false)
-        // Either set field-level errors from the server response:
         setErrors({ email: 'Email already in use' })
-        // ...then move focus to the first invalid input. Wrap in setTimeout to let React commit setErrors first.
         setTimeout(() => firstInvalidRef.current?.focus(), 0)
       }
     }
   })
 
   // In JSX:
-  <InputText
-    ref={firstInvalidRef}
-    name='email'
-    value={formik.values.email}
-    onChange={formik.handleChange}
-  />
+  <InputText ref={firstInvalidRef} name='email' value={formik.values.email} onChange={formik.handleChange} />
   ```
 
   **Pattern B — error summary banner** (preferred for long forms or when the error doesn't map to a single field):
 
   ```tsx
   const [submitError, setSubmitError] = useState<string | null>(null)
+  // ...on error:
+  setSubmitError(detectedLanguage === 'es'
+    ? 'No pudimos enviar el formulario. Probá de nuevo en unos segundos.'
+    : 'We could not submit the form. Please try again in a few seconds.')
 
-  const formik = useFormik<ContactFormType>({
-    // ...
-    onSubmit: async (values, { setSubmitting }) => {
-      const result = /* server call */
-      if (!result.ok) {
-        setSubmitting(false)
-        setSubmitError(detectedLanguage === 'es'
-          ? 'No pudimos enviar el formulario. Probá de nuevo en unos segundos.'
-          : 'We could not submit the form. Please try again in a few seconds.')
-      }
-    }
-  })
-
-  // In JSX, render the banner ONLY when submitError is non-null — and use role='alert' so SR users hear it on appearance:
+  // In JSX:
   {submitError && (
     <div role='alert' aria-live='assertive' className='FormError'>
       {submitError}
     </div>
   )}
   ```
-- **Loading states**: never render the screen blank while data is fetching — use a `{Name}PageSkeleton` (generated by the `/new-skeleton` skill) or `<Loader/>` for sub-sections. Wrap the loading container with `aria-busy={isLoading}` so SR users hear that data is on the way. When the data arrives, the consumer flips `aria-busy` to false; the skeleton itself stays `aria-hidden='true'`.
-- **Tap target size on mobile**: every interactive element must be at least `44×44px` with 8px gap to neighbors. Icon-only buttons need `min-h-[44px] min-w-[44px]`. Regular `CustomButton` size variants already satisfy this.
-- **Color contrast (WCAG AA)**: 4.5:1 for normal text, 3:1 for large text and UI. Verify any custom brand/tinted-background pair with axe-core or Lighthouse — the project's `surface-*` tokens are pre-validated for standard combinations only. Light text on a brand-tinted background is the most common silent regression.
-- **Viewport `user-scalable`**: never set the viewport meta to disable zoom — accessibility requires zoomable pages, and Lighthouse flags it. Use the Next.js root `viewport` export and leave zoom unrestricted.
-
-## Bundle architecture rules
-
-- **`'use client'` only when necessary** — pushed to the deepest leaf that uses hooks/events/browser APIs. A screen that simply renders server-rendered children should NOT be `'use client'`.
-- **Modals opened only by this screen** are mounted INSIDE the screen, not in the global `ModalsProvider`. Otherwise the modal's JS ships on every page in the app. After implementation, report in the output which modals you mounted locally (`SCREEN-LOCAL MODAL: <ModalName> — mounted at src/screens/{Name}Page/{Name}Page.tsx:NNN`) so the user can audit they're not duplicated globally. To decide locality at implementation time: if the modal is triggered only by interactions native to this screen (no other screen calls `openModal('xyz')`), it's screen-local.
-- **Heavy client-only deps** (rich text editor, chart, code editor, map library, etc.): use `dynamic(() => import('...'), { ssr: false })` from `next/dynamic` to keep them out of the initial bundle.
-- **Third-party scripts** (analytics, pixels, tag managers) go through Next.js `<Script>` with `strategy='afterInteractive'` or `'lazyOnload'`. NEVER `'beforeInteractive'`.
+- **Loading states**: never render the screen blank while data is fetching — use a `{Name}PageSkeleton` (generated by `/new-skeleton`) or `<Loader/>` for sub-sections. Wrap the loading container with `aria-busy={isLoading}` so SR users hear that data is on the way.
+- **Screen-local modals**: modals opened ONLY by this screen are mounted INSIDE the screen, not in the global `ModalsProvider`. After implementation, report which modals you mounted locally (`SCREEN-LOCAL MODAL: <ModalName> — mounted at src/screens/{Name}Page/{Name}Page.tsx:NNN`).
 
 ## Hard rules
 - Verbatim text from Figma — do NOT paraphrase or "improve" copy.
