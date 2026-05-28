@@ -58,12 +58,96 @@ If the list is missing, ask.
 
 4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
 
-   - **`auth` and `protected` (dashboard)**: minimal — `title` + `alternates.canonical`. Robots already blocks these via `robots.ts`; no social previews needed.
-   - **`public` static route**: full metadata — `title`, `description` (placeholder ok, e.g. `'TODO: page description (~155 chars)'`), `alternates.canonical`, `openGraph` and `twitter` blocks pointing at `/seo/social-banner.webp`. Per-page values can be placeholders; the SHAPE must be correct so a later edit only swaps strings.
-   - **`public` dynamic route** (`[id]`, `[slug]`, etc.): use `export async function generateMetadata(...)` from the start, not a static `metadata` const. The function can return placeholder values for now (the actual fetch wires in when the API exists), but the async signature must be there so the dynamic-metadata pattern is baked in.
-   - **Optional: `robots: { index: false, follow: false }`** while the page is a "Próximamente" placeholder. Drop it once real content ships. This prevents half-built pages from being indexed.
+   <!-- Source: keep in sync with `.claude/skills/new-screen/SKILL.md` Step 5. If you update the metadata templates there, propagate the same changes here so scaffolded pages match what `/new-screen` would generate manually. -->
 
-5. Verify all routes are reachable: read `src/proxy.ts` and confirm public ones are in `PUBLIC_PATHS`. If `/new-screen` didn't add a public route to `PUBLIC_PATHS` (the skill only handles auth paths automatically), add it manually.
+   - **`auth` and `protected` (dashboard)** — minimal metadata; `robots.ts` already blocks these from indexing.
+
+     ```tsx
+     import {Name}Page from '@/screens/{Name}Page/{Name}Page'  // or '@/screens/auth/{Name}Page/{Name}Page'
+     import type { Metadata } from 'next'
+
+     export const metadata: Metadata = {
+       title: '{Page title}',
+       alternates: { canonical: '/{route}' }
+     }
+
+     const Page = () => <{Name}Page/>
+
+     export default Page
+     ```
+
+   - **`public` static route** — full metadata so Lighthouse SEO passes from day one.
+
+     ```tsx
+     import {Name}Page from '@/screens/{Name}Page/{Name}Page'
+     import type { Metadata } from 'next'
+
+     export const metadata: Metadata = {
+       title: '{Page title}',
+       description: 'TODO: page description (~155 chars). Replace before launch.',
+       alternates: { canonical: '/{route}' },
+       openGraph: {
+         title: '{Page title} | {App name}',
+         description: 'TODO: page description (~155 chars). Replace before launch.',
+         url: '/{route}',
+         images: [{ url: '/seo/social-banner.webp', width: 1200, height: 630, alt: '{Page title} — {App name}' }]
+       },
+       twitter: {
+         title: '{Page title} | {App name}',
+         description: 'TODO: page description (~155 chars). Replace before launch.',
+         images: [{ url: '/seo/social-banner.webp', alt: '{Page title} — {App name}' }]
+       },
+       robots: { index: false, follow: false }   // remove this line once the real content ships
+     }
+
+     const Page = () => <{Name}Page/>
+
+     export default Page
+     ```
+
+   - **`public` dynamic route** (`[id]`, `[slug]`, etc.) — use `export async function generateMetadata(...)` from the start so the dynamic-metadata pattern is baked in.
+
+     ```tsx
+     import {Name}Page from '@/screens/{Name}Page/{Name}Page'
+     import type { Metadata } from 'next'
+
+     interface Props {
+       params: Promise<{ id: string }>
+     }
+
+     export async function generateMetadata ({ params }: Props): Promise<Metadata> {
+       const { id } = await params
+       // TODO: when the API for this resource lands, fetch it here and derive title/description/og.images from the resource.
+       return {
+         title: 'TODO: resource title',
+         description: 'TODO: resource description (~155 chars).',
+         alternates: { canonical: `/{route}/${id}` },
+         openGraph: {
+           title: 'TODO: resource title',
+           description: 'TODO: resource description (~155 chars).',
+           url: `/{route}/${id}`,
+           images: [{ url: '/seo/social-banner.webp', width: 1200, height: 630, alt: 'TODO: resource alt' }]
+         },
+         twitter: {
+           title: 'TODO: resource title',
+           description: 'TODO: resource description (~155 chars).',
+           images: [{ url: '/seo/social-banner.webp', alt: 'TODO: resource alt' }]
+         },
+         robots: { index: false, follow: false }   // remove this line once the resource fetch is wired and not-found handling returns it conditionally
+       }
+     }
+
+     const Page = async ({ params }: Props) => {
+       const { id } = await params
+       return <{Name}Page id={id}/>
+     }
+
+     export default Page
+     ```
+
+     The `robots: { index: false, follow: false }` block is the safe default while the page is a placeholder. Drop it (or make it conditional on a not-found check) once the resource fetch is wired and the page returns real content.
+
+5. Verify all routes are reachable: read `src/proxy.ts` and sanity-check that every public route ended up in `PUBLIC_PATHS` (`/new-screen` adds them automatically — see `.claude/skills/new-screen/SKILL.md` Step 2). If any public route from your scaffold list is missing from `PUBLIC_PATHS`, add it manually AND report the discrepancy in your output (it means `/new-screen` mis-handled this case and is worth investigating). For auth routes, also confirm they're in `AUTH_PATHS` unless they're already covered by an existing `pathname.includes(...)` check.
 
 6. Run `pnpm run lint-check --fix` + `pnpm run type-check`.
 
