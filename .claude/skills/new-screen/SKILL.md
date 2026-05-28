@@ -116,12 +116,13 @@ const ScreenName = () => {
 export default ScreenName
 ```
 
-### Auth screen (`src/screens/auth/ScreenName.tsx`)
+### Auth screen (`src/screens/auth/ScreenName/ScreenName.tsx`)
 
-Flat file inside `src/screens/auth/` — no subfolder, no `.sass` import:
+Auth screens follow the SAME folder pattern as protected/public (subfolder + colocated `.sass`). The `.sass` is allowed to stay empty when the visual styling is fully inherited from `AuthLayout`, but the file should still exist so the import stays consistent with the rest of the screens.
 
 ```tsx
 'use client'
+import './ScreenName.sass'
 
 const ScreenName = () => {
   return (
@@ -133,6 +134,8 @@ const ScreenName = () => {
 
 export default ScreenName
 ```
+
+The `<main>` className is `AuthLayout` (not `ScreenName`) because auth screens share the layout's BEM scope — the form's visual styling lives in `src/layouts/AuthLayout/AuthLayout.sass` and is shared across login, signup, password recovery, etc. Existing examples on disk: `src/screens/auth/LoginPage/LoginPage.tsx`, `src/screens/auth/SignupPage/SignupPage.tsx`, etc.
 
 Rules for all screen types:
 - Always `'use client'` (screens use hooks)
