@@ -142,6 +142,14 @@ Each component lives in its own folder (`src/components/ComponentName/`) with th
 | `StateModal` | `components/modals/StateModal/StateModal.tsx` | State-based modal (success, error, warn, info) |
 | `ToastNotifications` | `components/modals/ToastNotifications/ToastNotifications.tsx` | Toast notification display |
 
+## Design Tokens (Figma imports)
+
+Color, typography, and breakpoint tokens added through `/figma-design-import` are tracked in `figma-tokens-map.md` at the project root. That file is the canonical Figma variable → Tailwind token mapping — it documents which existing token a Figma variable was reused into, which new tokens were created, and the reasoning (heuristic match, namespace decision, etc.).
+
+**Consult `figma-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across Figma imports. If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-tokens` sub-agent maintains the map automatically during its runs.
+
+The `surface-50`…`surface-900` namespace is immutable and template-shipped (not Figma-derived), so it never appears in `figma-tokens-map.md`. Same for Tailwind defaults (`red-600`, `blue-600`, etc.).
+
 ## Modals & Notifications System
 
 Modals and notifications are managed globally via `useModalStore` (Zustand):
