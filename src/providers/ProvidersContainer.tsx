@@ -18,10 +18,7 @@ interface Props {
   children: ReactNode
 }
 
-// PrimeReact ES locale setup — kicked off at module evaluation so the JSON
-// downloads in parallel with the rest of the client bundle. Calendar's locale
-// lookup happens at render time, and dashboard screens (the only place it's
-// used) mount well after this resolves in practice.
+// PrimeReact ES locale setup
 if (typeof window !== 'undefined') {
   import('primelocale/es.json')
     .then(({ es }) => addLocale('es', es))
