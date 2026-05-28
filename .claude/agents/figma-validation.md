@@ -29,6 +29,12 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 4. **Full metadata for public pages**: every page that is NOT disallowed by `src/app/robots.ts` MUST export `title`, `description`, `alternates.canonical`, `openGraph`, and `twitter`. Read each public `page.tsx` and list any that lack `description`, `openGraph:`, or `twitter:` keys.
 
    **How to derive "public":** read `src/app/robots.ts` first and extract the `disallow:` patterns (e.g. `/api/*`, `/dashboard`, `/login`, `/signup`, `/password-recovery`, `/change-password`). For each `src/app/**/page.tsx`, derive its route from the file path (stripping route groups like `(auth-layout)`), and consider it public if no disallow pattern matches. Do NOT hardcode `src/app/dashboard/` or `src/app/(auth-layout)/` — those names vary across projects forked from this template; the only authoritative source is `robots.ts`.
+
+   **Also validate the `description` length** for each public page (when present):
+   - `description.length < 50` → flag "too short, may not provide enough SERP context".
+   - `description.length > 160` → flag "may be truncated in SERP (Google cuts at ~155 chars)".
+   - `50 ≤ length ≤ 160` → ✅ pass. Same length thresholds apply to `openGraph.description` and `twitter.description` when present.
+   - Placeholder text `TODO:` inside the description → flag as "placeholder description, replace before launch" (it's the convention used by figma-scaffold, fine on a scaffolded page but a violation if it survived to a real deploy).
 5. **`generateMetadata` for dynamic routes**: every `src/app/**/[id]/page.tsx`, `src/app/**/[slug]/page.tsx`, and similar dynamic-segment file MUST use `export async function generateMetadata` instead of `export const metadata`. List any that still use the static form.
 6. **No `robots: { nocache: true }`**: grep `src/app/` for `nocache: true`. Any match is a violation (interferes with CDN caching, no SEO benefit).
 7. **`html lang`**: read `src/app/layout.tsx`, confirm `<html lang="...">` is set to the actual content language (not the default `"en"` if the project ships in another language). Report if `lang` is missing or looks wrong for the project.
@@ -56,13 +62,17 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
 17. **`<Image fill>` without `sizes`**: multiline grep `src/` for `<Image[^>]*\bfill\b[^>]*>` (set `multiline: true`). For each match, verify the same `<Image>` tag also contains `sizes=`. Report each `fill` without `sizes` — Lighthouse "Properly size images" will fail otherwise.
 18. **`priority` without `fetchPriority='high'`**: grep for `<Image` tags that include `priority` (without `={false}`). For each, verify the same tag includes `fetchPriority='high'`. Report mismatches — both are required for the LCP audit.
 19. **Unconditional `priority` inside `.map(...)`**: grep for `.map(` callbacks containing `<Image` (or a custom card like `<ProductCard`) with `priority` set unconditionally (no `index <`, no boolean prop, no truthy expression). Report — only the first N items above the fold should be priority.
-20. **Empty `alt` on content images**: grep for `alt=''` or `alt=""` on `<Image>` tags inside `src/screens/` and `src/components/` (exclude `src/assets/`). Report each for human review — decorative images may legitimately have empty alt, but content images must not.
+20. **`alt` quality check on `<Image>` tags** inside `src/screens/` and `src/components/` (exclude `src/assets/`). Three sub-checks:
+    - **Empty alt on content images**: grep for `alt=''` or `alt=""`. Report each for human review — decorative images may legitimately have empty alt, but content images must not.
+    - **Placeholder garbage alt**: grep for `alt=['"]\s*(image|photo|picture|img|imagen|foto|untitled|asset|figure|graphic)\s*['"]` (case-insensitive). These are technically non-empty but convey nothing to a screen-reader user. Report each as "placeholder alt, replace with meaningful description of what the image shows".
+    - **Filename-looking alt**: grep for alt values matching `\.(webp|jpg|jpeg|png|svg|gif)['"]` or `^(hero|product|item|banner)[-_]?\d+['"]`. Report as "filename-shaped alt, replace with description".
+    - **Alt too long**: grep for `alt=['"]([^'"]{126,})['"]` — screen readers commonly cut alt at ~125 characters. Report values longer than 125 chars as "alt too long, screen readers may truncate".
 21. **`unoptimized` on `<Image>`**: grep `src/` for `unoptimized` on `next/image` tags. Report each — must be justified, otherwise defeats Next.js image optimization.
 22. **Mobile/desktop dual `<Image>` without `0vw` sizes**: search for pairs of adjacent `<Image>` tags where one has `className` containing `hidden md:block` (or `hidden lg:block`) and the other has `md:hidden` (or `lg:hidden`). For each pair, verify each tag's `sizes` value contains `0vw` for the opposite breakpoint (otherwise both variants download). Report pairs that don't.
 
 ### 5. Font loading
 
-23. **No remote `@import` of webfonts**: grep `src/styles/**/*.sass`, `src/styles/**/*.css`, and any `.sass`/`.css` under `src/` for `@import url('https://fonts.googleapis.com`. Any match is a violation — fonts must load via `next/font/google` or `next/font/local`.
+23. **No remote `@import` in CSS/SASS**: grep `src/**/*.sass`, `src/**/*.css`, and `src/**/*.scss` for `@import\s+url\(['"]?https://`. Any match is a violation — fonts (and any other remote resource) MUST load via `next/font/google` / `next/font/local` for fonts, or via `<Script>` / `<link>` in `app/layout.tsx` for non-font resources. The policy is uniform regardless of provider (Google Fonts, Typekit/Adobe, fonts.cdnfonts, fast.fonts.net, generic CDNs): remote `@import` in CSS is render-blocking, triggers an extra DNS+TLS roundtrip discovered late by the browser, and breaks Lighthouse "Eliminate render-blocking resources" + "Ensure text remains visible". Report every match with `path:line` — no severity tiers, all matches are blocking violations.
 24. **No literal font-family**: grep `.sass`/`.css` files for `font-family:` declarations. Any value that is not `var(--font-...)`, `sans-serif`, `serif`, `monospace`, or `inherit` is suspect — list each. Project fonts must reference the CSS variable from `next/font`.
 25. **Icon-font `font-display` override**: if the project uses an icon font whose default `@font-face` is `font-display: block` (PrimeIcons is the project example), confirm `src/styles/index.sass` (or equivalent) overrides it via `[icon-selector] { font-family: var(--font-X) !important }`. If missing, report.
 
@@ -106,6 +116,24 @@ Before running, briefly skim the `## Performance & Lighthouse Rules` section in 
     Optionally cross-check matches against `tailwind.config.js`'s `theme.extend.fontSize` keys to confirm the size exists in the project's scale at all. A `text-150` violation that ALSO isn't in the config is doubly broken (arbitrary px size + no weight) and should be flagged with a sharper message.
 
     Exclude `src/app/sentry-example-page/page.tsx` from the scan — it is a documented throwaway file scheduled for deletion before production.
+
+### 10. Figma tokens map sync
+
+33. **`figma-tokens-map.md` consistency with `tailwind.config.js`**: the `figma-tokens` agent maintains a project-root `figma-tokens-map.md` that documents the canonical Figma variable → Tailwind token mapping. Audit its sync state.
+
+    1. Check whether `figma-tokens-map.md` exists at the project root. If missing → skip the section as `n/a` (project hasn't run `/figma-design-import` yet; nothing to validate).
+    2. **Parse the map**: extract every row's `Figma variable` and `Tailwind token` columns from the markdown table.
+    3. **Build the set of Tailwind tokens that exist**: read `tailwind.config.js`, walk `theme.extend.colors` (recursing into nested namespaces — a nested `brand: { primary: '...' }` produces `brand-primary`; a flat `'brand-primary': '...'` produces the same key), `theme.extend.fontSize`, `theme.extend.screens`, `theme.extend.spacing` if present.
+    4. **Detect ORPHAN rows** (mapped to a token that no longer exists in `tailwind.config.js`):
+       - For each row in the map, check whether `tailwindToken` is in the set built in step 3.
+       - If missing → flag `ORPHAN: row {row} references {tailwindToken}, which is no longer in tailwind.config.js. Either restore the token, update the row to the new name, or delete the row if the mapping is obsolete.`
+    5. **Detect UNMAPPED tokens** (exist in `tailwind.config.js` but no row references them):
+       - For each token in the set, check whether any map row references it.
+       - Limit the check to namespaces typically populated from Figma imports (`brand-*`, `accent-*`, `border-*`, custom typography sizes added in the project's history, etc.). EXCLUDE Tailwind defaults and the immutable `surface-*` namespace (those are template-shipped, not Figma-derived).
+       - If a Figma-derived-shaped token is not in the map → flag `UNMAPPED: {tailwindToken} exists in tailwind.config.js but no figma-tokens-map.md row references it. Either it was created manually (consider adding a manual row for traceability), or figma-tokens skipped recording it (worth investigating).`
+    6. Report each violation with `figma-tokens-map.md:line` (for ORPHAN) or `tailwind.config.js` reference (for UNMAPPED).
+
+    The goal is that the map is the **canonical historical record** of which Figma variable maps to which Tailwind token. ORPHAN rows mean the map references a token that was deleted/renamed; UNMAPPED tokens mean a Figma-shaped token was added outside the agent flow (manual addition) — both are signals that the map needs maintenance, but neither blocks a deploy.
 
 ## Hard rules
 - **Report only, never fix** — unless the parent explicitly asks to fix a specific category.
