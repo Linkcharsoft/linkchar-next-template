@@ -10,3 +10,17 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - cypress@15.16.0
   - react-tooltip@6.0.5
+  - '@figma/code-connect@1.4.7'
+  - '@sentry-internal/browser-utils@10.55.0'
+  - '@sentry-internal/feedback@10.55.0'
+  - '@sentry-internal/replay-canvas@10.55.0'
+  - '@sentry-internal/replay@10.55.0'
+  - '@sentry/browser@10.55.0'
+  - '@sentry/core@10.55.0'
+  - '@sentry/nextjs@10.55.0'
+  - '@sentry/node-core@10.55.0'
+  - '@sentry/node@10.55.0'
+  - '@sentry/opentelemetry@10.55.0'
+  - '@sentry/react@10.55.0'
+  - '@sentry/vercel-edge@10.55.0'
+  - zustand@5.0.14
