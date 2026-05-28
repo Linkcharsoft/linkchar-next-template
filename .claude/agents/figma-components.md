@@ -93,4 +93,11 @@ These are the same rules `CLAUDE.md` documents — repeated here because this ag
 - **Full-bleed components (Navbar, Footer, Sidebar, top/bottom bars) MUST use `container-custom`**: when the root element has a background that spans 100vw, wrap the inner content with `<div className='container-custom ...'>` so that the component's content aligns horizontally with the screens' sections. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. NEVER hardcode `max-w-[Xpx]` or arbitrary `px-*` to define the inner content width — those numbers come from Figma's absolute frames and break alignment with the rest of the page. **Vertical padding (`py-*`) is NOT covered by `container-custom`** — always add it explicitly from the Figma design (e.g. `py-4` on a navbar, `py-12` on a footer); the class only handles horizontal.
 
 ## Output to parent
-A summary table: for each component (extended or created), the list of new variants/props added and the file paths touched. Plus lint/type-check status.
+A summary table: for each component (extended or created), the list of new variants/props added and the file paths touched. End with the standardized footer:
+
+```
+---
+Workload: model=opus, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "2 components extended (CustomButton, SearchInput), 3 created (ProductCard, Navbar, Footer)"}
+```

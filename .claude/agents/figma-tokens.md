@@ -173,6 +173,8 @@ Fonts (loaded via next/font/google in src/app/layout.tsx as --font-{name}):
 - {Removed legacy @import from src/styles/index.sass, or "no legacy import found"}
 - {Updated src/styles/general.sass + tailwind.config.js fontFamily to var(--font-{name}), or "no body font change"}
 
-Lint-check: ✅ clean / ❌ <errors>
-Type-check: ✅ clean / ❌ <errors>
+---
+Workload: model=haiku, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "6 colors + 4 sizes added, 1 font swapped"}
 ```

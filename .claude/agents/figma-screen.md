@@ -248,6 +248,13 @@ Beyond the carousel pattern in Step 7, every screen must satisfy these — they 
 ## Output to parent
 A short report:
 - Files created/modified (paths only).
-- Token cost approximation (e.g. "design_context: ~80K, screenshots: 2, images: 6 downloaded").
-- Lint/type-check status.
 - Tell the user to run `pnpm start`, navigate to the route, compare against Figma, report any visual gaps.
+
+End with the standardized footer:
+
+```
+---
+Workload: model=opus, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "HomePage implemented (desktop + mobile), 6 images downloaded (2 reused via hash), 4 reusable components consumed, 1 COMPONENT GAP reported"}
+```

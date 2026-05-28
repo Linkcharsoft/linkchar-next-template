@@ -74,4 +74,11 @@ If the list is missing, ask.
 - Dynamic routes always use `generateMetadata` (function), never `metadata` (const).
 
 ## Output to parent
-A list of created routes (route → screen file path) plus lint/type-check status.
+A list of created routes (route → screen file path), followed by the standardized footer:
+
+```
+---
+Workload: model=haiku, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "8 screens scaffolded (5 protected, 2 public, 1 auth), 3 moved into route groups, proxy.ts updated with 2 public paths"}
+```

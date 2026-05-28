@@ -103,4 +103,11 @@ Run `pnpm run lint-check --fix` (auto-fixes import order in the icons `index.ts`
 - Naming: PascalCase for icon component files (`{Name}Icon.tsx`), kebab-case for everything else (raster `.webp` and loose `.svg`).
 
 ## Output to parent
-A summary listing every file created (path + final size) and the lint/type-check status.
+A summary listing every file created (path + final size), followed by the standardized footer:
+
+```
+---
+Workload: model=haiku, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "14 raster (12 lossy + 2 lossless) + 5 SVG icons; 3 reused via hash dedup"}
+```

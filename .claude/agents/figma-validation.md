@@ -155,6 +155,13 @@ Single structured report. Format:
 - External link: add `rel='noopener noreferrer'` on Footer.tsx:42. → `figma-components` (Footer)
 - Server fetch: set `next: { revalidate: N }` or `cache: 'no-store'` on products.ts:14. → manual fix
 - Page metadata: extend foo/page.tsx with `description`, `openGraph`, `twitter`. → `figma-scaffold` or manual
+
+---
+Workload: model=haiku, tool_calls≈{N}, files_touched=0
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "9 categories scanned, 5 clean, 4 with findings (3 a11y + 1 image perf), 7 violations total"}
 ```
 
 Map each violation to the agent best suited to fix it so the parent can re-delegate without thinking. If a fix doesn't map cleanly to a sub-agent, label it "manual".
+
+`files_touched=0` is fixed because this agent only reads; if the parent ever invokes it with `--fix`, increment per file actually modified.

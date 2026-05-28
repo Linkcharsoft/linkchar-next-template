@@ -52,4 +52,11 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
 - **`container-custom` MANDATORY for layout chrome.** Every Navbar, Footer, Sidebar, or any layout-level bar that has a full-bleed background MUST wrap its content with `container-custom` so the chrome aligns with the screens' top-level sections at every breakpoint. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. Pattern: `<header className='Navbar'>{/* full-bleed bg */}<div className='container-custom flex items-center justify-between py-4'>{/* content */}</div></header>`. NEVER use `max-w-[Xpx]` or arbitrary horizontal padding to define the chrome's content width — that's the root cause of "the navbar/footer doesn't line up with the page sections". **Vertical padding (`py-*`) IS your responsibility** — `container-custom` doesn't set any, so always add the chrome's vertical rhythm from Figma (e.g. `py-4` on a navbar, `py-12` on a footer).
 
 ## Output to parent
-A summary: for each layout (adjusted or created), the file paths and the route groups wired up. Plus lint/type-check status.
+A summary: for each layout (adjusted or created), the file paths and the route groups wired up. End with the standardized footer:
+
+```
+---
+Workload: model=sonnet, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary, e.g. "1 layout created (LandingLayout), 1 adjusted (DashboardLayout), 2 route groups wired"}
+```

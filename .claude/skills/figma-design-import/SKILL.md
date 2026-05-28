@@ -20,15 +20,29 @@ Do not proceed past Step 0 with a partial design — the inventory will be wrong
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
-| Step | Sub-agent | Model | Duration | Tools used | Notes |
+| Step | Sub-agent | Model | Duration | Tool calls | Notes |
 |------|-----------|-------|----------|------------|-------|
-| 1 | figma-tokens | Haiku | 12s | Read×2, Edit×2, Bash×1 | 6 colors + 4 sizes added |
-| 2 | figma-assets | Haiku | 45s | Bash×16, Write×5 | 14 images, 5 icons |
-| 3 | figma-components | Opus | 3m | Read×8, Write×12, Bash×3 | 6 new + 1 extended |
+| 1 | figma-tokens | Haiku | 12s | ≈5 | 6 colors + 4 sizes added |
+| 2 | figma-assets | Haiku | 45s | ≈21 | 14 images, 5 icons |
+| 3 | figma-components | Opus | 3m | ≈23 | 6 new + 1 extended |
 | ... | ... | ... | ... | ... | ... |
 ```
 
-Source the data from each sub-agent's output report (every agent's "Output to parent" section includes a workload summary). If an agent doesn't report explicitly, derive from the visible tool calls in its run.
+**Where each column comes from** (every sub-agent ends its `Output to parent` with a standardized 3-line footer):
+
+```
+---
+Workload: model={haiku|sonnet|opus}, tool_calls≈{N}, files_touched={M}
+Validation: lint=✅/❌, type-check=✅/❌
+Notes: {one-line count summary}
+```
+
+- `Model` ← `Workload: model=...` from the footer.
+- `Duration` ← **measured by the orchestrator** from wall-clock time between the `Agent(...)` call start and return. Don't ask the sub-agent to self-report — it can't measure it accurately and the harness already exposes it.
+- `Tool calls` ← `Workload: tool_calls≈...` from the footer. If you need per-tool breakdown (`Read×8, Write×12, Bash×3`), derive it from the visible tool calls in the agent's run log — that detail is not part of the footer.
+- `Notes` ← `Notes:` line from the footer, used verbatim.
+
+Append the `Validation:` line of the footer to the checkpoint message after each step so the user sees lint/type-check status without scrolling through the agent's full report.
 
 **Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show approximate cost class:
 - Green: mostly Haiku/Sonnet (cheap)
