@@ -1,6 +1,6 @@
 ---
 name: figma-tokens
-description: Step 1 of figma-design-import — edits tailwind.config.js, src/app/layout.tsx, and src/styles/{index,general}.sass to add design tokens (colors, typography sizes, fonts) identified in the Step 0 gap analysis. Fonts are loaded via next/font/google (NEVER via CSS @import). Then validates with pnpm type-check. Mechanical edits, no architectural decisions.
+description: Step 1 of figma-design-import — edits tailwind.config.js (colors, typography sizes, breakpoints), src/app/layout.tsx (font instances), and src/styles/general.sass (body font-family). Also removes legacy font `@import url(...)` lines from src/styles/index.sass when present. Fonts are loaded via next/font/google (NEVER via CSS @import). Then validates with pnpm type-check. Mechanical edits, no architectural decisions.
 model: haiku
 ---
 
@@ -13,6 +13,27 @@ You are the **figma-tokens** sub-agent. Your job is to apply token changes alrea
 
 If the list is missing, ask before editing.
 
+**Example input** (illustrative — the orchestrator typically passes a structured list like this):
+
+```
+Colors:
+- {figmaVar: 'Brand/Primary', hex: '#1f3a5b'}
+- {figmaVar: 'Brand/Primary-Hover', hex: '#1a3151'}
+- {figmaVar: 'Accent/Warm-Gray', hex: '#9c8a7d'}     # not a surface-* match — needs new namespace
+
+Typography sizes:
+- 72 (used in hero title — not currently in fontSize map)
+- 38 (used in hero stats values — not currently in fontSize map)
+
+Fonts:
+- {family: 'Plus Jakarta Sans', weights: ['400','500','600','700','800'], usage: 'body'}
+- {family: 'Merriweather', weights: ['400','700'], usage: 'serif accents'}
+
+Breakpoints: (none new)
+```
+
+If the parent passes prose instead of a structured list ("the design uses Plus Jakarta Sans for the body and adds 4 new colors"), STOP and ask for the structured form — you cannot reliably extract token shapes from natural language.
+
 ## Token policy (HARD RULES — never violate)
 
 ### 1. Surface palette (`surface-50`...`surface-900`) is IMMUTABLE
@@ -20,6 +41,7 @@ If the list is missing, ask before editing.
 The surface scale is the project's canonical neutral palette. It is:
 - **Never overridden.** The hex values defined in the template stay forever — even if Figma uses a "similar but different" gray.
 - **Never extended.** No new `surface-150`, `surface-950`, etc. The scale is closed at the original 10 entries.
+- **Ships in flat form** — every entry lives as `'surface-50': '#FAFAFA'`, …, `'surface-900': '#212121'` directly under `theme.extend.colors` (not nested under a `surface: { 50: '...', 900: '...' }` object). When you read `tailwind.config.js`, expect that shape — and do NOT migrate it to a nested form even if you're touching nearby tokens.
 
 If Figma uses a gray that doesn't match an existing `surface-*` value, **CREATE a new token under a DIFFERENT namespace** (e.g. `accent-gray-soft`, `border-muted`, `brand-warm-gray`). NEVER reuse a `surface-*` key for it, NEVER extend the namespace.
 
@@ -27,17 +49,15 @@ If Figma uses a gray that doesn't match an existing `surface-*` value, **CREATE 
 
 Before creating any new non-surface token, compare its hex against every existing non-surface token in `tailwind.config.js`. If a token is perceptually close AND semantically compatible, REUSE it instead of creating a parallel token.
 
-**Similarity check (conservative heuristic).** Two non-surface tokens are "close enough to reuse" when BOTH conditions hold:
-- The maximum per-channel difference between the two hex values (R, G, B compared independently) is ≤ 4 in absolute value.
-- The hex codes share at least their first 4 nibbles (e.g. `#1f3a5b` and `#1f3a6c` share `1f3a`).
+**Similarity check (conservative heuristic).** Two non-surface tokens are "close enough to reuse" when the maximum per-channel difference between the two hex values (R, G, B compared independently) is ≤ 4 in absolute value. The earlier "shared leading nibbles" rule was dropped because it produced false negatives on perceptually identical pairs that happened to cross a nibble boundary (e.g. `#1f3a5b` vs `#203b5c` — channel diff ≤ 1, but they only share 1 nibble).
 
-When both hold AND the existing token is semantically compatible (the Figma role matches the existing token's role — both are "primary brand", both are "warning red", etc. — not an arbitrary color collision), REUSE the existing token. When in doubt, prefer CREATE: false-positive reuse hides intent and is hard to undo across multiple screens, while false-positive creation is just an extra row in the config that a future cleanup can collapse.
+When the channel diff ≤ 4 AND the existing token is semantically compatible (the Figma role matches the existing token's role — both are "primary brand", both are "warning red", etc. — not an arbitrary color collision), REUSE the existing token. When in doubt, prefer CREATE: false-positive reuse hides intent and is hard to undo across multiple screens, while false-positive creation is just an extra row in the config that a future cleanup can collapse.
 
 ### 3. Override of any existing token is forbidden by default
 
 NEVER silently overwrite an existing token's value. If the parent's input would cause an override (same key name, different hex):
 1. STOP. Do not edit the config.
-2. Grep the codebase for current usages of the conflicting token (`rg -l "{tokenName}\\b" src/`).
+2. Grep the codebase for current usages of the conflicting token (`rg -l "{tokenName}\\b" src/`). Caveat: this catches the token name as a whole word — it WILL miss usages built via runtime string interpolation (e.g. `` `bg-${color}-500` `` or `classNames({ 'bg-brand-primary': condition })` with dynamic keys). Flag this limitation in the report so the user knows the file count is a lower bound.
 3. Report the conflict in your output: existing hex, proposed hex, and the count + list of files that would be affected.
 4. The user decides via the parent. Proceed with the override ONLY when re-invoked with `confirmOverride: true` AND the token is NOT in the `surface-*` namespace (rule 1 still applies).
 
@@ -66,7 +86,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
    | a | `figmaVarName` already appears in `figma-tokens-map.md` | reuse the mapped Tailwind token; do nothing in `tailwind.config.js` | `MAPPED` |
    | b | Proposed action would override or extend `surface-*` | reject — force a new namespace instead | `REJECTED-SURFACE` |
    | c | Override request (same key, different hex, non-surface) without `confirmOverride: true` | block — emit conflict report, do not edit | `BLOCKED-OVERRIDE` |
-   | d | Heuristic match against an existing non-surface token (max channel diff ≤ 4 AND ≥ 4 leading nibbles shared) AND semantically compatible | reuse existing token; append mapping row | `REUSED` |
+   | d | Heuristic match against an existing non-surface token (max channel diff ≤ 4) AND semantically compatible | reuse existing token; append mapping row | `REUSED` |
    | e | Otherwise | create new token under a descriptive non-surface name; append mapping row | `CREATED` |
 
 4. **Edit `tailwind.config.js`** — apply only CREATE and (rare, confirmed) OVERRIDE actions:
@@ -98,6 +118,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
        })
        ```
      - If the family has italic, add `style: ['normal', 'italic']`. If it's a variable font (e.g. `Inter`), you can omit `weight` and let Next bundle the full range.
+     - **`preload: true` for the brand/body font** — the font that renders the page title and most of the body text is part of the LCP critical path. `next/font/google` defaults to `preload: true` (only the FIRST font instance with `preload: true` actually preloads), so when you have multiple `next/font` instances (e.g. body + accent + icons), explicitly set `preload: true` on the one used for the LCP text and `preload: false` on the secondary instances to avoid wasted preload tags. If there's only one font, the default already does the right thing — no action needed.
      - Apply the CSS variable on the `<html>` element: `<html lang="en" className={ {camelCaseName}.variable}>`. If multiple fonts, combine: `className={[font1.variable, font2.variable].join(' ')}`.
    - **Update `src/styles/general.sass`** body selector: `font-family: var(--font-{kebab-case-name}), sans-serif` (replaces the old `"FontName", sans-serif` form). **Touch ONLY the `body` selector's `font-family` line. Do NOT delete or rewrite any other rule in this file** — in particular: `.SkipToContent` (a11y skip-to-content link), `.container-custom` and its `@media` breakpoints (project's mandatory horizontal anchor), and the `@media (prefers-reduced-motion: reduce)` block (global a11y reset). Re-read the file after editing to confirm those blocks survived.
    - **Update `tailwind.config.js`** `fontFamily.sans`: `['var(--font-{kebab-case-name})', 'sans-serif']` (and any secondary family — e.g. `serif: ['var(--font-merriweather)', 'serif']`).
