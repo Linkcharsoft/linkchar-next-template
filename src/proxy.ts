@@ -25,7 +25,11 @@ const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|wo
 
 const REFRESH_THRESHOLD_SECONDS = 60
 
-// Per-instance dedup so N concurrent tabs share a single refresh request.
+// Per-instance dedup so concurrent requests inside the same edge worker share a single refresh.
+// Each edge instance has its own Map — multi-instance deploys don't dedup across instances.
+// In practice that's fine: each request hits a single instance, and the worst case is
+// O(instances) refreshes per token rotation rather than O(tabs). The Maps are small (one entry
+// per refresh token) and naturally evict as instances recycle on cold starts / deploys / idle.
 const refreshInFlight = new Map<string, Promise<SessionType | null>>()
 const refreshCache = new Map<string, { result: SessionType | null, timestamp: number }>()
 const REFRESH_CACHE_TTL_MS = 10_000
