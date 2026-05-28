@@ -71,6 +71,11 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
 4. **Edit `tailwind.config.js`** — apply only CREATE and (rare, confirmed) OVERRIDE actions:
    - Place new color entries inside `theme.extend.colors` under a non-surface namespace (e.g. `brand-*`, `accent-*`, `border-*`).
+   - **Match the existing form of the namespace if it already exists.** Tailwind supports two equivalent forms for a namespace:
+     - **Flat** with hyphenated keys: `'brand-primary': '#1f3a5b'` — generates `bg-brand-primary`.
+     - **Nested** as an object: `brand: { primary: '#1f3a5b' }` — also generates `bg-brand-primary`.
+
+     Both produce the same utility classes. **Mixing them within the same namespace is the failure mode** — if `brand` already lives as a nested object (`brand: { 500: '...' }`), adding `'brand-700': '...'` flat fragments the namespace across two definitions and makes future edits error-prone. **Read the namespace's current shape from `tailwind.config.js` BEFORE inserting; replicate that shape.** When you create a new namespace from scratch, prefer the nested object form — it scales better when the namespace grows past 2-3 shades and reads cleaner in the diff.
    - Add new typography sizes to BOTH the `fontSize` map AND the typography plugin's `sizes` array — they must stay in sync.
    - Add new breakpoints to `theme.extend.screens` if specified.
 
