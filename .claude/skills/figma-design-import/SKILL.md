@@ -150,7 +150,7 @@ You receive: confirmation of changes + type-check result.
 
 > **Delegate to**: `Agent({ subagent_type: 'figma-assets' })` — runs in **Haiku**.
 
-Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and target folder. The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `ffmpeg`, registers exports in `src/assets/icons/index.ts`.
+Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and `screenSlug` when the asset belongs to a single screen (omit for shared assets like logos). The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `ffmpeg`, registers exports in `src/assets/icons/index.ts`. Per-screen raster images land at `src/assets/images/{screenSlug}/{name}.webp`; shared raster assets land flat at `src/assets/images/{name}.webp`.
 
 Skip any asset where a PrimeIcon already covers the need (`pi pi-{name}`).
 
@@ -321,7 +321,11 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 - ❌ Manual scaffolding instead of invoking `/new-component`, `/new-screen`, `/new-modal` (sub-agents already follow this rule, but you might be tempted)
 - ❌ Pass components to `figma-components` as PROSE only (no `figmaNodeId`) — screenshots and text descriptions hide structure (e.g. which fill belongs to which node, auto-layout direction, exact paddings, hover/focus variants), and prose-driven components are the #1 source of rework. Resolve a representative nodeId for every component during Step 0.
 - ❌ Pre-extract the design context for each component in Step 0 and pass it as prose to `figma-components` — that is exactly the failure mode the nodeId-per-component rule prevents. Let the agent fetch its own design context per nodeId; that's the whole point of isolated sub-agent contexts.
-- ❌ Invent subfolders under `src/assets/icons/` or `src/assets/images/` per screen / feature (e.g. `src/assets/images/home/`, `src/assets/images/shared/patterns/`) — the convention is flat. Sub-agents that nest are getting it wrong; flatten on review.
+- ❌ Mis-route assets across the flat-vs-nested split. The convention is:
+  - **SVG icons** → ALWAYS flat at `src/assets/icons/{Name}Icon.tsx`. Icons are reused across screens.
+  - **Per-screen raster images** (hero photos, screen-specific illustrations) → nested at `src/assets/images/{screenSlug}/{name}.webp`. The orchestrator passes `screenSlug` to the asset agent when the image belongs to one screen.
+  - **Shared raster assets** (logos, repeated brand graphics) → flat at `src/assets/images/{name}.webp` (no `screenSlug` passed).
+  Don't invent further subfolders like `src/assets/images/shared/patterns/` — the two-level structure (`{screenSlug}/` OR flat) is it. Sub-agents that pick the wrong bucket are getting it wrong; the orchestrator decides the bucket via the `screenSlug` parameter, not the agent.
 
 ---
 
