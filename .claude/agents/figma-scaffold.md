@@ -26,20 +26,33 @@ If the list is missing, ask.
      1. Read the original `src/app/{route}/page.tsx` content.
      2. Create the new path `src/app/{(group)}/{route}/page.tsx` (use `mkdir -p` for nested directories).
      3. Write the same content to the new path.
-     4. Delete the original via `git rm` (or `rm` if not yet tracked).
+     4. Delete the original with `rm` (the file was just generated in this same run, so it's almost certainly untracked — don't bother with `git rm` / `git mv`, which would error on an untracked file and force an extra status check). Git will pick up the rename automatically when the user stages the changes.
      5. The route stays the same in the URL — route groups are transparent to routing — but the page now inherits the group's `layout.tsx`.
 
    Example: screen `HomePage`, route `/`, group `(marketing-layout)`:
    - `/new-screen` creates `src/app/page.tsx`
    - You move it to `src/app/(marketing-layout)/page.tsx`
 
-3. After all screens are scaffolded and (if needed) moved, edit each `src/screens/{Name}Page/{Name}Page.tsx` to set the placeholder content with title + "Próximamente":
+3. After all screens are scaffolded and (if needed) moved, edit each `src/screens/{Name}Page/{Name}Page.tsx` to set the placeholder content with title + "Próximamente". **Insert the `<section>` INSIDE the existing `<main id='main' className='{Name}Page'>` root that `/new-screen` already generated — do NOT overwrite the `<main>` wrapper, because that's the skip-to-content target and removing it is a Lighthouse a11y failure**.
+
+   Expected end state of the screen file:
    ```tsx
-   <section className='container-custom flex min-h-[60vh] flex-col items-center justify-center gap-2 py-16'>
-     <h1 className='text-extrabold-44 text-center text-white'>{title}</h1>
-     <p className='text-medium-18 text-center text-surface-400'>Próximamente</p>
-   </section>
+   'use client'
+   import './{Name}Page.sass'
+
+   const {Name}Page = () => (
+     <main id='main' className='{Name}Page'>
+       <section className='container-custom flex min-h-[60vh] flex-col items-center justify-center gap-2 py-16'>
+         <h1 className='text-extrabold-44 text-surface-900 text-center'>{title}</h1>
+         <p className='text-medium-18 text-surface-500 text-center'>Próximamente</p>
+       </section>
+     </main>
+   )
+
+   export default {Name}Page
    ```
+
+   `text-surface-900` (not `text-white`) is the safe default — the body background is light, so a white heading would be invisible. Layouts that ship a dark background can override per-screen later when the real content lands.
 
 4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
 
