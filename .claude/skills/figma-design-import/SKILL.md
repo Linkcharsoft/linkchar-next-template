@@ -13,6 +13,15 @@ If the argument is missing OR clearly points to a single screen/component, STOP 
 
 Do not proceed past Step 0 with a partial design — the inventory will be wrong and you'll have to refactor.
 
+## Pre-flight — Read CONVENTIONS.md (mandatory)
+
+Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). As the orchestrator, you need it for two distinct purposes:
+
+1. **Token / asset / component / layout / screen gap analysis (Step 0)** — the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. The [Color System](../../CONVENTIONS.md#color-system), [Typography System](../../CONVENTIONS.md#typography-system), and [Breakpoints](../../CONVENTIONS.md#breakpoints) define what is already in the template vs what's new.
+2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` or `STOP-ADVISORY` blocks following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol). You parse them and route as described in the "Handling agent STOPs" section below.
+
+If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the user — every sub-agent depends on it, so proceeding would compound errors.
+
 ---
 
 ## Workload tracking (cost telemetry across the flow)
@@ -350,6 +359,58 @@ Visual validation is the developer's job — they review the dev server side-by-
 Pass to the agent: scope (which screens/components to verify), or empty for full sweep. The agent runs `pnpm run lint-check --fix`, `pnpm run type-check`, plus structural checks: SEO metadata on every page, heading hierarchy, a11y on clickable non-buttons, raw hex compliance, typography compliance.
 
 You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-tokens` for hex, `figma-components` for a11y, etc).
+
+---
+
+## Handling agent STOPs
+
+Every sub-agent in this flow may emit a STOP at the end of its report following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol) defined in CONVENTIONS.md. As the orchestrator, you MUST parse and handle each STOP. The two severities:
+
+- **`STOP-BLOCKING`** — the sub-agent could NOT complete. You must resolve before re-invoking the same agent. Resolution path depends on the `next_agent` field.
+- **`STOP-ADVISORY`** — the sub-agent completed with a documented default (`default_applied:` field describes what). You continue the flow but MUST surface the advisory in the next per-screen checkpoint so the user can decide to re-delegate post-batch.
+
+### Decision tree per STOP
+
+When you see `STOP-BLOCKING`:
+
+| `next_agent` value | What to do |
+| ------------------ | ---------- |
+| `figma-tokens` | Delegate to `figma-tokens` with the `details:` payload, then re-invoke the original sub-agent. |
+| `figma-components` | Delegate to `figma-components` with the missing variant nodeId, then re-invoke. |
+| `figma-layouts` | Delegate to `figma-layouts` with the user's decision, then re-invoke. |
+| `user_decision` | Stop the batch, surface the STOP to the user with the exact `reason:` and `resolution:` quoted. Wait for the user's response, then proceed. |
+| `manual` | Stop the batch and ask the user how to resolve. Common case: re-invoke with corrected input. |
+
+When you see `STOP-ADVISORY`:
+
+1. Note the advisory in your internal ledger for the current screen/component.
+2. Continue the flow without stopping. The sub-agent already applied the default described in `default_applied:`.
+3. At the next per-screen checkpoint (or end-of-batch summary), include the advisory verbatim so the user can decide whether to ask for a post-batch refactor.
+
+Concrete example for a per-screen checkpoint with one advisory:
+
+```
+✅ HomePage implementada (6 imágenes, 1m 20s)
+   Ruta: /
+   Archivos: src/screens/HomePage/, src/assets/images/home-page/
+
+⚠️ Advisories surfaced during implementation:
+   - STOP-ADVISORY / COMPONENT_GAP: ProductCard does not cover the "compact" variant used in the Featured section.
+     Default applied: implemented inline with `// TODO: refactor into ProductCard variant 'compact'` comment.
+     If you want me to refactor into the component now, say so; otherwise we keep moving.
+
+¿Ajustes para HomePage o seguimos con AboutPage?
+```
+
+### Format parsing
+
+Each STOP is a fenced block. Parse the lines key by key (split on the first colon). The block ENDS at the first blank line or the next fenced block. `details:` is followed by indented key:value pairs forming an arbitrary tree — preserve the structure when re-delegating.
+
+If a sub-agent's STOP is malformed (missing `category:`, unknown category name, etc.), treat it as `STOP-BLOCKING / category: INVALID_INPUT / reason: malformed STOP from {sub-agent}` and surface to the user — do NOT silently retry or guess.
+
+### Ledger row for STOPs
+
+Every STOP contributes one row to the workload ledger with the `Notes` column quoting the category and severity (e.g. `Notes: 1 STOP-BLOCKING TOKENS_MISSING (delegated to figma-tokens)`). This makes per-batch STOP frequency visible — if `COMPONENT_GAP` advisories keep firing on the same component across multiple screens, the user can decide to upgrade the component once via `figma-components`.
 
 ---
 
