@@ -44,7 +44,15 @@ If the Figma design suggests a layout needs a feature that would require its own
    1. Place in `src/layouts/{LayoutName}/{LayoutName}.tsx` + colocated `.sass`.
    2. The component composes existing reusable components (header/navbar, footer, etc.) — does NOT inline that JSX.
    3. Render `{children}` directly (NO `<main>` wrapper) — **the screen owns its own `<main id='main'>` root**, not the layout. The skip-to-content link in the root layout points to `#main`, which lives on the screen's `<main>`. If the layout needs a wrapper around the screen slot for sizing, use a `<div className='flex-1'>` (or equivalent); use `<aside>` for purely decorative side-panels.
-   4. Include `<LoadingModal />` inside the layout. **It goes per-layout on purpose, not in the global `ModalsProvider`** — `AuthLayout` mounts it INSIDE the left-hand form `<section>` so the loader only covers the form half (the right-hand branding panel stays visible), while `DashboardLayout` / `GeneralLayout` mount it as a sibling of `{children}` so the loader covers the full viewport. When you create a new layout, decide which behavior matches the design: scope the `<LoadingModal/>` to the section it should cover (full layout vs. one panel). `ToastNotifications` and `StateModal` stay global in `ModalsProvider` because they always overlay the whole viewport; do NOT mount those per-layout.
+
+      **Defensive check**: if you encounter an existing layout that already wraps `{children}` in `<main>` (legacy from a prior project that didn't follow the per-screen-`<main>` rule), STOP and fix the LAYOUT — do NOT adapt the new layout to that broken pattern. Run `grep '<main' src/layouts/` after editing; the only valid result is zero matches.
+   4. Include `<LoadingModal />` inside the layout. **It goes per-layout on purpose, not in the global `ModalsProvider`** — different layouts want different scopes:
+      - **Multi-panel layout** (e.g. `AuthLayout`'s split form + branding): mount `<LoadingModal/>` INSIDE the `<section>` whose content should be loader-covered. The other panel stays visible.
+      - **Single-content layout** (e.g. `DashboardLayout`, `GeneralLayout`, most landing-page layouts): mount `<LoadingModal/>` as a SIBLING of `{children}` at the layout's root. The loader covers the full content area.
+
+      **Default for new layouts**: if the design has one main content slot (the typical case), use sibling-of-`{children}` mounting. Only go panel-scoped when the design has explicit visible regions that should NOT be obscured during loading (split flows, persistent sidebars with their own loading indicators, etc.).
+
+      `ToastNotifications` and `StateModal` stay global in `ModalsProvider` because they always overlay the whole viewport; do NOT mount those per-layout.
    5. **Server Component by default**: layouts should NOT be marked `'use client'`. A nested child that needs hooks (e.g. `MobileMenu`, `ScrollSpy`) is the one that gets `'use client'`, not the layout itself — otherwise the entire route subtree opts out of SSR.
 4. **Wire up** the layout in the matching `src/app/{(group-name)}/layout.tsx` route group (create the route group folder if needed). The route-group `layout.tsx` is a thin wrapper that delegates to the layout component.
 
@@ -57,7 +65,11 @@ If the Figma design suggests a layout needs a feature that would require its own
 Layouts render the chrome that wraps every screen — navbar, footer, sidebar, persistent CTAs. Errors here propagate to every page in the app, so the rules are blocking.
 
 - **Exactly one `<main>` per rendered page** — each SCREEN owns its `<main id='main'>` (set by `/new-screen`); layouts must NOT render `<main>` themselves. Use `<div>`/`<aside>` for layout chrome. Two `<main>` per page is a Lighthouse a11y failure.
-- **Navbar logo as LCP**: if the layout's navbar renders a logo image that may be the LCP on landing pages, the `<Image>` should carry `priority` + `fetchPriority='high'` plus an explicit `sizes` value tuned to the logo's rendered width.
+- **Navbar logo as LCP — be careful with `priority`**. A logo in the navbar competes with the screen's hero image for "LCP candidate" status. The navbar can't know what the screen renders, so the safe default is:
+  - Always set explicit `sizes` on the logo `<Image>` (tuned to its rendered width — e.g. `sizes='180px'`).
+  - Do NOT add `priority` / `fetchPriority='high'` on the logo by default — let the screen's hero claim LCP.
+  - Only add `priority` to the logo when the layout is exclusively used by pages with NO hero image (a marketing-microsite layout where the logo IS the largest element above the fold). Document the choice inline (`/* LCP candidate: layout used only on pages without hero */`).
+  - If two `priority` images race, Lighthouse picks one and flags the other as wasted preload — net loss.
 - **Tap targets**: every interactive element in the chrome (navbar links, hamburger button, footer links/icons) must be at least `44×44px` on mobile, with 8px gap to neighbors. Icon-only buttons in the chrome (hamburger, close, social) need `aria-label` AND `min-h-[44px] min-w-[44px]`.
 
 ## Hard rules
@@ -75,6 +87,21 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
   - **Private dashboard layouts** (`DashboardLayout`): typically render a sidebar + main work area where the main area expands to fill available width inside its parent container. Sections inside the dashboard SCREENS still use `container-custom` (per screen-level rules), but the LAYOUT shell itself uses raw flex/grid sizing because dashboard chrome is functional (resizable sidebar, full-bleed work area) rather than aligned to a marketing grid.
 
   **Heuristic**: ask "does the user perceive a horizontal rhythm shared between this chrome and the screen sections below/around it?" If yes → `container-custom`. If the layout's job is functional partitioning (auth split, dashboard panes) rather than marketing alignment → leave the layout chrome on raw Tailwind sizing.
+
+  **When the heuristic is ambiguous** (e.g. a hybrid layout with marketing-style nav AND functional split body), STOP and surface the decision to the parent rather than guessing. Phrase: `CONTAINER-CUSTOM DECISION: {LayoutName} has mixed marketing-grid + functional-split signals. Should the {Navbar|Footer|...} inner content anchor with container-custom?` Subjective calls made unilaterally here propagate to every screen the layout wraps — the cost of asking once is much cheaper than re-anchoring every section later.
+
+## Sidebar patterns (when Figma shows a persistent side panel)
+
+When the design includes a sidebar, decide its behavior from these signals:
+
+| Figma signal | Implementation |
+| ------------ | -------------- |
+| Sidebar visible at all breakpoints; main area resizes; user interaction triggers nothing | `fixed left-0 top-0 h-screen w-{N}` sidebar + `pl-{N}` on the layout's main slot. Stays mounted, no JS for show/hide. |
+| Sidebar visible on `md:+`, hidden below `md:`; the hidden state isn't shown in Figma | Use `hidden md:flex` on the sidebar; provide a hamburger trigger that opens a Drawer on mobile. Drawer can come from PrimeReact's `Sidebar` component (`primereact/sidebar`) — does NOT need to be a custom modal. |
+| Sidebar collapsible by user click (Figma shows both expanded + collapsed states) | Local `useState` on a child client component (sidebar nav) — NOT on the layout. Layout stays Server Component; the toggle UI is `'use client'`. |
+| Sidebar with persistent content + scroll independence | Add `overflow-y-auto` on the sidebar's inner content wrapper, `flex h-screen` on the layout root, `flex-1 overflow-y-auto` on the main slot. |
+
+If the sidebar pattern doesn't match any of the above (e.g. floating sidebar that auto-hides on scroll), STOP and surface to the parent as a design clarification request — those patterns usually need behavior decisions the design alone doesn't fully specify.
 
   NEVER use `max-w-[Xpx]` or arbitrary horizontal padding to fake `container-custom`'s job — that's the root cause of "the navbar/footer doesn't line up with the page sections" on landing-page work.
 
