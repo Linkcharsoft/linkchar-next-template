@@ -78,6 +78,28 @@ const PUBLIC_PATHS = new Set([
 
 ### Protected screen (`src/screens/ScreenName/ScreenName.tsx`)
 
+**Default — no `searchParams`** (settings, profile, account, dashboard summaries — most protected screens have no URL state):
+
+```tsx
+'use client'
+import './ScreenName.sass'
+
+const ScreenName = () => {
+  return (
+    <main id='main' className='ScreenName'>
+
+    </main>
+  )
+}
+
+export default ScreenName
+```
+
+**Only add `searchParams` if the screen actually reads URL state** (filters, pagination, search, tabs). When you do:
+1. Use the `searchParams` Prop shape below in the screen.
+2. Switch the `page.tsx` wrapper to `async` so it awaits `searchParams` before passing them (see Step 5 — public dynamic listing variant).
+3. **Stop and reconsider**: if the screen is a paginated list with pagination + filters + search + sorting, use `/new-table` instead — it scaffolds the entire stack (types + API client + screen wired to `useTableParams` + page wrapper).
+
 ```tsx
 'use client'
 import './ScreenName.sass'
@@ -99,7 +121,7 @@ export default ScreenName
 
 ### Public screen (`src/screens/ScreenName/ScreenName.tsx`)
 
-Same as protected, but without `searchParams` unless needed:
+Same as protected — default to no `searchParams`, add only if the screen reads URL state:
 
 ```tsx
 'use client'
@@ -369,6 +391,26 @@ export default Page
 
 ### Protected page (`src/app/{route}/page.tsx`)
 
+**Default — sync wrapper, no `searchParams`** (matches the default Protected screen template):
+
+```tsx
+import ScreenName from '@/screens/ScreenName/ScreenName'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Page Title',
+  alternates: { canonical: '/route' }
+}
+
+const Page = () => (
+  <ScreenName/>
+)
+
+export default Page
+```
+
+**If the screen reads URL state**, switch to the async wrapper that awaits `searchParams` before passing them down (same shape as the public dynamic listing variant above):
+
 ```tsx
 import ScreenName from '@/screens/ScreenName/ScreenName'
 import type { Metadata } from 'next'
@@ -392,6 +434,8 @@ const Page = async ({ searchParams }: Props) => {
 
 export default Page
 ```
+
+Same reminder as the screen template: a paginated list with pagination + filters + search + sorting should go through `/new-table` instead — that skill scaffolds the entire stack wired to `useTableParams`.
 
 ### Auth page (`src/app/(auth-layout)/{route}/page.tsx`)
 
