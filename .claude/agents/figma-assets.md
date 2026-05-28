@@ -11,6 +11,7 @@ A list of assets to download, each with:
 - Suggested role (`icon-or-logo` | `pattern-or-illustration` | `photo`) — this is a HINT, not the final routing decision. The real format/role is decided by inspecting the actual downloaded file (see "Asset format detection" below).
 - Source URL (Iconify URL like `https://api.iconify.design/{collection}/{icon}.svg` OR Figma URL like `https://www.figma.com/api/mcp/asset/{hash}`)
 - Target file name (e.g. `SellIcon`, `brand-logo`, `product-1`)
+- `screenSlug` (OPTIONAL) — when the asset belongs to a single screen, the parent passes the screen's kebab-case slug (e.g. `home-page`, `products-page`). This routes the raster output into `src/assets/images/{screenSlug}/`. OMIT when the asset is genuinely shared across multiple screens (logos, repeated brand graphics) — those stay flat at `src/assets/images/`.
 
 If the list is missing, ask.
 
@@ -61,24 +62,30 @@ const {Name}Icon = (props: SVGProps<SVGSVGElement>) => (
 
 ### Static-file SVG details (when size + role say "decorative")
 
-Just `cp` the file to `src/assets/images/{kebab-case-name}.svg`. No JSX, no wrapping component. The screen / component that uses it will `import name from '@/assets/images/{name}.svg'` and pass to `<Image src={name} />`.
+Just `cp` the file to the target path — `src/assets/images/{screenSlug}/{kebab-case-name}.svg` when the parent passed `screenSlug`, otherwise the flat `src/assets/images/{kebab-case-name}.svg` (only for SVGs genuinely shared across screens). No JSX, no wrapping component. The screen / component that uses it will `import name from '@/assets/images/{path}/{name}.svg'` and pass to `<Image src={name} />`.
 ## Raster routing (PNG / JPEG → WebP)
 
-Once a file is confirmed as PNG or JPEG by `file`, convert to WebP and place under `src/assets/images/`. Choose lossless vs lossy by signal:
+Once a file is confirmed as PNG or JPEG by `file`, convert to WebP. The save path depends on whether the parent passed a `screenSlug`:
 
-1. **Dedup check first**. If the URL has a stable hash (e.g. `figma.com/api/mcp/asset/{hash}`), check whether an asset for this hash already exists: glob `src/assets/images/**/*.hash.txt` for a sibling marker file containing the same hash. If a match is found → SKIP (reuse the existing `.webp`). Report `REUSED: {name}.webp`.
+- **`screenSlug` present** → `src/assets/images/{screenSlug}/{name}.webp` (per-screen subfolder). This is the default for screen-specific photos, illustrations, and hero images.
+- **`screenSlug` omitted** → `src/assets/images/{name}.webp` (flat). Reserve this for assets genuinely shared across multiple screens — logos, repeated brand graphics, global background patterns.
+
+Steps:
+
+1. **Dedup check first**. If the URL has a stable hash (e.g. `figma.com/api/mcp/asset/{hash}`), check whether an asset for this hash already exists: glob `src/assets/images/**/*.hash.txt` for a sibling marker file containing the same hash. If a match is found → SKIP (reuse the existing `.webp`, regardless of which screen folder it lives in — cross-screen reuse is fine). Report `REUSED: {existing-path}.webp`.
 2. **Inspect** with `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,pix_fmt /tmp/{name}.bin`.
 3. **Choose compression**:
    - **Lossless** when the source has an alpha channel (`pix_fmt` contains `rgba` or `bgra`) AND dimensions ≤ 512×512 — these are typically logos / UI graphics where crisp edges matter:
      ```
-     ffmpeg -i /tmp/{name}.bin -c:v libwebp -lossless 1 -y src/assets/images/{name}.webp
+     ffmpeg -i /tmp/{name}.bin -c:v libwebp -lossless 1 -y {targetPath}
      ```
    - **Lossy** (`-q:v 85`) otherwise — photos and large images where imperceptible quality loss is fine:
      ```
-     ffmpeg -i /tmp/{name}.bin -q:v 85 -y src/assets/images/{name}.webp
+     ffmpeg -i /tmp/{name}.bin -q:v 85 -y {targetPath}
      ```
-4. Use `mkdir -p` if the target folder doesn't exist.
-5. Write a sibling `.hash.txt` (e.g. `src/assets/images/{name}.hash.txt`) containing the URL hash so future invocations can dedup.
+   `{targetPath}` is `src/assets/images/{screenSlug}/{name}.webp` when the parent passed `screenSlug`, otherwise `src/assets/images/{name}.webp`.
+4. Use `mkdir -p` if the target folder doesn't exist (especially relevant the first time a `{screenSlug}` is used).
+5. Write a sibling `.hash.txt` (e.g. `src/assets/images/{screenSlug}/{name}.hash.txt`) containing the URL hash so future invocations can dedup.
 6. Do NOT keep the original raw file in the project — only the `.webp` + `.hash.txt`.
 
 ## Final step
@@ -89,7 +96,10 @@ Run `pnpm run lint-check --fix` (auto-fixes import order in the icons `index.ts`
 - NEVER skip the `file` detection step — formats lie based on URL extension or parent hints.
 - NEVER install icon libraries (`lucide-react`, `react-icons`, etc.). Only icon sets already installed in the project, or assets passed by the parent.
 - NEVER inline large SVGs as React components via `atob` + `dangerouslySetInnerHTML` — split into "icon component" vs "loose static file" by size + role, per the SVG routing rules.
-- Default flat folder structure: assets go directly under `src/assets/icons/` or `src/assets/images/`. Do NOT invent subfolders per screen / feature unless the parent explicitly asks — the convention in this kind of project is flat.
+- Folder structure depends on asset type and scope:
+  - **SVG icons** (`src/assets/icons/`) → always flat. Icons are reused across screens.
+  - **Raster images** (`src/assets/images/`) → nested under `{screenSlug}/` when the parent passes one (per-screen photos/illustrations); flat at the root only for assets shared across multiple screens (logos, brand graphics).
+  - **Loose SVGs** (`src/assets/images/{name}.svg`) → flat unless the parent passes `screenSlug`, in which case `src/assets/images/{screenSlug}/{name}.svg`.
 - Naming: PascalCase for icon component files (`{Name}Icon.tsx`), kebab-case for everything else (raster `.webp` and loose `.svg`).
 
 ## Output to parent
