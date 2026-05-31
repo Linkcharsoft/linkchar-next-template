@@ -190,7 +190,7 @@ Use the custom typography classes defined in `tailwind.config.js`:
 
 ## Breakpoints
 
-```text
+``` text
 2xs: 375px | xs: 480px | sm: 640px | md: 768px | lg: 1024px | xl: 1280px | 2xl: 1420px
 ```
 
@@ -212,6 +212,7 @@ Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. 
 **MANDATORY**: every top-level `<section>` of any screen (and the inner content of every layout: navbar, footer, sidebar) MUST anchor its content with `container-custom` so that ALL sections share the same horizontal alignment and lateral padding. If the section has a full-bleed background, keep the background on `<section>` and nest a `<div className='container-custom ...'>` for the content; otherwise apply `container-custom` directly on the `<section>`. NEVER substitute it with `max-w-[1600px]`, `max-w-7xl`, or custom horizontal per-section paddings — that's the #1 cause of misaligned sections in Figma-driven screens. (Vertical per-section paddings — `py-*` — are NOT covered by this rule; honor the Figma design.)
 
 **When `container-custom` does NOT apply**: layouts whose visual structure defines its own width by design, with no shared content grid expectation. Two examples in this codebase:
+
 - **Auth flow layouts** (`AuthLayout`): split-screen with the form on one side and a branding panel on the other (`w-[45%]` + `w-[55%]`). The form panel has its own internal width logic; the branding panel is decorative. Neither aligns with a "page section grid" — there is none. Wrapping with `container-custom` would actually break the split.
 - **Private dashboard layouts** (`DashboardLayout`): typically render a sidebar + main work area where the main area expands to fill available width inside its parent container. Sections inside the dashboard SCREENS still use `container-custom` (per screen-level rules), but the LAYOUT shell itself uses raw flex/grid sizing because dashboard chrome is functional (resizable sidebar, full-bleed work area) rather than aligned to a marketing grid.
 
@@ -443,7 +444,7 @@ Sub-agents (especially the figma-* family) emit STOPs when they cannot proceed w
 
 Sub-agents emit STOPs as a fenced block at the end of their report:
 
-```
+``` text
 STOP-BLOCKING
 category: <ONE_OF_THE_CATEGORIES_BELOW>
 reason: <one line — what's broken>
