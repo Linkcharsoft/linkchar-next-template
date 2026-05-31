@@ -29,6 +29,12 @@ yarn-error.log*
 .env*.local
 .env
 
+# /init-project transient marker (removed when the skill finishes)
+.init-in-progress
+
+# claude code — personal, per-developer settings (e.g. LINKCHAR_TEMPLATE_DEV bypass)
+.claude/settings.local.json
+
 # vercel
 .vercel
 

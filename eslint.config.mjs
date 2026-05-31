@@ -16,7 +16,7 @@ import jsoncParser from 'jsonc-eslint-parser'
 const ESLintConfig = [
   // --- Ignores ---
   {
-    ignores: ['node_modules/', 'dist/', 'build/', '.next/', '**/*.d.ts']
+    ignores: ['node_modules/', 'dist/', 'build/', '.next/', '**/*.d.ts', '.claude/']
   },
   // --- Base Recommended JS Rules ---
   js.configs.recommended,

@@ -1,1 +1,28 @@
+# Block commits until the project is initialized (run the /init-project skill).
+# Sentinel: package.json `name` still equals the template slug.
+#
+# Bypass for template maintainers: set LINKCHAR_TEMPLATE_DEV in the shell env OR in
+# .claude/settings.local.json ("env" key) — the SAME file the Claude PreToolUse hook
+# reads, so the bypass is configured in one place. Shell env wins if both are set.
+# Any non-empty value counts (presence-based) — remove it to re-arm enforcement.
+if node -e '
+  const fs = require("fs")
+  let bypass = process.env.LINKCHAR_TEMPLATE_DEV
+  if (!bypass) {
+    try { bypass = (JSON.parse(fs.readFileSync(".claude/settings.local.json", "utf8")).env || {}).LINKCHAR_TEMPLATE_DEV } catch {}
+  }
+  const uninitialized = require("./package.json").name === "linkchar-next-template"
+  process.exit(bypass || !uninitialized ? 0 : 1)
+'; then
+  : # bypassed or already initialized — carry on
+else
+  echo "❌ Project not initialized. Run the /init-project skill before committing."
+  echo ""
+  echo "   Maintaining the template itself? Set LINKCHAR_TEMPLATE_DEV in EITHER place:"
+  echo "     • .claude/settings.local.json:  { \"env\": { \"LINKCHAR_TEMPLATE_DEV\": \"1\" } }   (also unblocks the Claude hook)"
+  echo "     • PowerShell (this shell):      \$env:LINKCHAR_TEMPLATE_DEV = '1'"
+  echo "     • bash/zsh (this shell):        export LINKCHAR_TEMPLATE_DEV=1"
+  exit 1
+fi
+
 pnpm run check || exit 1
