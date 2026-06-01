@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
   typedRoutes: true,
+  serverExternalPackages: [
+    'require-in-the-middle',
+    'import-in-the-middle',
+    '@opentelemetry/instrumentation'
+  ],
   compiler: {
     // Keep error/warn in production.
     removeConsole: (process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production')
