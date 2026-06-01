@@ -6,8 +6,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   serverExternalPackages: [
+    '@sentry/nextjs',
+    '@sentry/node',
+    '@sentry/core',
     'require-in-the-middle',
-    'import-in-the-middle',
     '@opentelemetry/instrumentation'
   ],
   compiler: {

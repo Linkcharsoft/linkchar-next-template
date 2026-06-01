@@ -6,7 +6,7 @@ frontend:
         - nvm install 24
         - nvm use 24
         - corepack enable
-        - CI=true pnpm install --frozen-lockfile
+        - pnpm install --frozen-lockfile
         - env | grep -E "^(AUTH_|MAILSLURP_)" >> .env.production
     build:
       commands:
