@@ -1,5 +1,6 @@
 import 'server-only'
 import { cookies } from 'next/headers'
+import { unstable_rethrow } from 'next/navigation'
 import { getMyUser } from '@/api/auth'
 import { SESSION_COOKIE_NAME } from '@/constants/auth'
 import { decryptSession } from './crypto'
@@ -16,6 +17,7 @@ export const getServerSession = async (): Promise<SessionType | null> => {
     const session = await decryptSession(sessionCookie)
     return session
   } catch (error) {
+    unstable_rethrow(error)
     console.error('getServerSession failed:', error)
     return null
   }
@@ -34,6 +36,7 @@ export const getServerUser = async (): Promise<UserType | null> => {
     const { ok, data } = await getMyUser(token)
     return ok ? data : null
   } catch (error) {
+    unstable_rethrow(error)
     console.error('getServerUser failed:', error)
     return null
   }
