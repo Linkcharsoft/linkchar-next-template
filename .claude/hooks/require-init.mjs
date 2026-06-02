@@ -3,11 +3,13 @@
 // project files on a fresh template clone.
 //
 // Blocks Edit/Write/MultiEdit/NotebookEdit while the project is still the raw
-// template (package.json name === 'linkchar-next-template') UNLESS:
-//   - the /init-project skill is mid-run (a `.init-in-progress` marker exists,
-//     created via Bash so it isn't itself caught by this hook), or
-//   - the bypass LINKCHAR_TEMPLATE_DEV is set (template maintainers) — read from
-//     the process env OR straight from .claude/settings.local.json ("env" key).
+// template (package.json name === 'linkchar-next-template') UNLESS the bypass
+// LINKCHAR_TEMPLATE_DEV is set (template maintainers) — read from the process env
+// OR straight from .claude/settings.local.json ("env" key).
+//
+// /init-project's first action renames package.json `name` via the Bash tool (which
+// this hook does NOT intercept), so the rename itself lifts the block for the rest of
+// the run — no marker file needed.
 //
 // The Husky `pre-commit` guard (Layer 1) reads the SAME settings.local.json, so the
 // bypass is configured in ONE place and covers both layers. Reading the file directly
@@ -37,11 +39,9 @@ try {
   process.exit(0)
 }
 
-// Already initialized — the rename changed the name away from the template slug.
+// Already initialized — the rename (Step 1 of /init-project) changed the name away
+// from the template slug, so editing is unblocked from here on.
 if (pkg.name !== 'linkchar-next-template') process.exit(0)
-
-// /init-project is running right now — allow its own edits.
-if (fs.existsSync('.init-in-progress')) process.exit(0)
 
 console.error(
   '⛔ This project has not been initialized from the Linkchar template.\n' +
