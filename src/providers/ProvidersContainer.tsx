@@ -9,12 +9,9 @@ import { LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { CLARITY_ID } from '@/constants/env'
 import useUserStore from '@/stores/userStore'
 import ModalsProvider from './ModalsProvider'
-import type { UserType } from '@/types/auth'
 import type { ReactNode } from 'react'
 
 interface Props {
-  token?: string | null
-  user?: UserType | null
   children: ReactNode
 }
 
@@ -25,32 +22,10 @@ if (typeof window !== 'undefined') {
     .catch((error) => console.error('Failed to load PrimeReact ES locale', error))
 }
 
-const ProvidersContainer = ({ token, user, children }: Props) => {
-  const { setToken, setUser, removeToken, removeUser } = useUserStore()
+const ProvidersContainer = ({ children }: Props) => {
+  const { removeToken, removeUser } = useUserStore()
   const authListener = useRef<string | null>(null)
   const router = useRouter()
-
-
-  // Keep token alone on transient /users/me failure — only missing token means logout.
-  useEffect(() => {
-    if (token && user) {
-      setToken(token)
-      setUser(user)
-
-      Sentry.setUser({
-        id: user.id,
-        email: user.email,
-        username: `${user.first_name} ${user.last_name}`
-      })
-    } else if (!token) {
-      removeToken()
-      removeUser()
-      Sentry.setUser(null)
-    } else {
-      setToken(token)
-      removeUser()
-    }
-  }, [token, user])
 
   // Polling: session cookie is httpOnly, so storage/BroadcastChannel can't observe it.
   useEffect(() => {
@@ -70,6 +45,14 @@ const ProvidersContainer = ({ token, user, children }: Props) => {
 
       if (currentListener !== authListener.current) {
         authListener.current = currentListener
+
+        // Session ended: clear the store (static routes don't mount AuthHydrator).
+        if (!currentListener) {
+          removeToken()
+          removeUser()
+          Sentry.setUser(null)
+        }
+
         router.refresh()
       }
     }, 2000)

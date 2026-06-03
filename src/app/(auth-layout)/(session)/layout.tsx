@@ -1,4 +1,3 @@
-import DashboardLayout from '@/layouts/DashboardLayout/DashboardLayout'
 import AuthHydrator from '@/providers/AuthHydrator'
 import { getAccessToken, getServerUser } from '@/utils/auth'
 import type { ReactNode } from 'react'
@@ -7,6 +6,7 @@ interface Props {
   children: ReactNode
 }
 
+// Authenticated auth routes: fetch + hydrate the session (makes these routes dynamic).
 const Layout = async ({ children }: Props) => {
   const token = await getAccessToken()
   const user = await getServerUser()
@@ -14,7 +14,7 @@ const Layout = async ({ children }: Props) => {
   return (
     <>
       <AuthHydrator token={token} user={user} />
-      <DashboardLayout>{ children }</DashboardLayout>
+      { children }
     </>
   )
 }

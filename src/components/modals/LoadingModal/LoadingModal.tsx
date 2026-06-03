@@ -1,11 +1,19 @@
 'use client'
 import './LoadingModal.sass'
 import { AnimatePresence, m } from 'framer-motion'
+import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
 import useModalStore from '@/stores/modalStore'
 import Loader from '../../Loader/Loader'
 
 const LoadingModal = () => {
-  const { modals: { loadingModal } } = useModalStore()
+  const { modals: { loadingModal }, closeModal } = useModalStore()
+  const pathname = usePathname()
+
+  // Auto-dismiss on route change (covers the polling-driven login redirect delay).
+  useEffect(() => {
+    closeModal('loadingModal')
+  }, [pathname])
 
   return (
     <AnimatePresence>

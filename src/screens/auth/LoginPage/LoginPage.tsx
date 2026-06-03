@@ -9,7 +9,7 @@ import * as Yup from 'yup'
 import { resendEmailConfirmation } from '@/api/auth'
 import CustomButton from '@/components/CustomButton/CustomButton'
 import InputContainer from '@/components/inputs/InputContainer/InputContainer'
-import { AUTH_INPUT_ERRORS, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
+import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
 
@@ -69,31 +69,34 @@ const LoginPage = () => {
             summary: 'Login successful'
           })
 
-          router.replace(AUTHENTICATED_HOME_PATH)
-        } else {
-          const errors = await response.json()
-
-          if(errors.non_field_errors?.[0]?.includes('mail is not verified')) {
-            setNotification({
-              severity: 'error',
-              summary: 'Email not verified',
-              detail: 'Redirecting to email validation page...',
-              life: 5000
-            })
-            setErrors({ email: AUTH_INPUT_ERRORS['verify-email'] })
-
-            resendEmailConfirmation({ email: values.email })
-
-            setTimeout(() => {
-              router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
-            }, 1000)
-          } else {
-            setErrors({
-              email: AUTH_INPUT_ERRORS['invalid-email-or-password'],
-              password: AUTH_INPUT_ERRORS['invalid-email-or-password']
-            })
-          }
+          // Redirect is driven by the auth polling; keep the loading modal open until it lands.
+          return
         }
+
+        const errors = await response.json()
+
+        if(errors.non_field_errors?.[0]?.includes('mail is not verified')) {
+          setNotification({
+            severity: 'error',
+            summary: 'Email not verified',
+            detail: 'Redirecting to email validation page...',
+            life: 5000
+          })
+          setErrors({ email: AUTH_INPUT_ERRORS['verify-email'] })
+
+          resendEmailConfirmation({ email: values.email })
+
+          setTimeout(() => {
+            router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
+          }, 1000)
+        } else {
+          setErrors({
+            email: AUTH_INPUT_ERRORS['invalid-email-or-password'],
+            password: AUTH_INPUT_ERRORS['invalid-email-or-password']
+          })
+        }
+
+        closeModal('loadingModal')
       } catch (error) {
         setErrors({
           email: AUTH_INPUT_ERRORS.general,
@@ -102,7 +105,6 @@ const LoginPage = () => {
         // ! Sentry
         const message = error instanceof Error ? error.message : error
         console.error(`Error: ${message}`)
-      } finally {
         closeModal('loadingModal')
       }
     }
