@@ -19,14 +19,14 @@ Before doing anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). 
 
 ---
 
-## Step 0 — Guard: is it already initialized?
+## Step 0 — Guard: validate input & initialization state
 
-`Read` `package.json` and check the `name` field.
+First, validate the input: if `$ARGUMENTS` is empty, STOP and ask for the product display name before doing anything else.
+
+Then `Read` `package.json` and check the `name` field.
 
 - If `name` is **NOT** `linkchar-next-template`, the project was already initialized. **STOP** and tell the user: "This project looks already initialized (`name` is `<current>`). Re-running /init-project would overwrite product identity. Confirm explicitly if you want to proceed." Do not continue without an explicit go-ahead.
 - If `name` IS `linkchar-next-template`, continue.
-
-If `$ARGUMENTS` is empty, STOP and ask for the product display name.
 
 ---
 
@@ -161,7 +161,7 @@ Capture the initialized state as the project's first commit. By now `.husky/pre-
    git commit -m "[ CHORE ] Initialize project as <displayName>"
    ```
 
-If the pre-commit check fails, fix the reported errors and retry. Do NOT push — leave that to the developer.
+If the pre-commit check fails, fix the reported errors and retry — but **prefer fixing via the Bash tool here**. Step 7 already deleted `require-init.mjs`, yet this session still has the hook registered (it loaded at startup), so an `Edit`/`Write` now would make it run a missing script: `node` exits 1 (not 2), which Claude Code surfaces as a harmless warning and lets the edit through — it just adds noise. Bash edits sidestep it. Do NOT push — leave that to the developer.
 
 ---
 
