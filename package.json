@@ -34,7 +34,7 @@
     "primereact": "10.9.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "react-tooltip": "6.0.5",
+    "react-tooltip": "6.0.6",
     "server-only": "0.0.1",
     "sharp": "0.34.5",
     "swr": "2.4.1",
