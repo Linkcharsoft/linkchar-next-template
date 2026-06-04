@@ -341,7 +341,6 @@ const ExamplePage = ({ searchParams }: Props) => {
             size='large'
           />
           <CustomButton
-            variant='primary'
             onClick={async () => {
               await fetch('/api/auth/logout', {
                 method: 'POST',

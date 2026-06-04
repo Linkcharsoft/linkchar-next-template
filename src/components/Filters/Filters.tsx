@@ -179,7 +179,6 @@ const Filters = ({
   return (
     <div ref={containerRef} className="Filters">
       <CustomButton
-        variant='primary'
         onClick={cleanFilters}
         disabled={disabled}
       >

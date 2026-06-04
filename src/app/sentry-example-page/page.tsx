@@ -56,7 +56,6 @@ export default function Page () {
         <p className="description" style={{ maxWidth: '100%' }}>❌ Delete this page and his route handler after testing it. It is for testing purposes only ❌</p>
 
         <CustomButton
-          variant='primary'
           className='mt-8'
           onClick={async () => {
             Sentry.logger.info('User clicked the button, throwing a sample error')
@@ -77,7 +76,6 @@ export default function Page () {
         </CustomButton>
 
         <CustomButton
-          variant='primary'
           onClick={() => {
             throw new SentryExampleFrontendError('Client Error Test: ' + new Date().toISOString())
           }}
@@ -86,7 +84,6 @@ export default function Page () {
         </CustomButton>
 
         <CustomButton
-          variant='primary'
           onClick={() => {
             setShowBreak(true)
           }}
