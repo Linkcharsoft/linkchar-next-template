@@ -146,7 +146,7 @@ const GlobalErrorPage = ({
             <p className='text-regular-16 md:text-regular-18'>If you have any relevant information that could help us replicate the issue:</p>
 
             <CustomButton
-              variant='transparent'
+              variant='primary'
               className='GlobalErrorPage__Link'
               onClick={openFeedbackWidget}
             >
