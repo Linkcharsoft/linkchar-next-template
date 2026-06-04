@@ -1,4 +1,3 @@
-'use client'
 import { create } from 'zustand'
 import type { StateTypes } from '@/types/general'
 import type { ToastMessage } from 'primereact/toast'

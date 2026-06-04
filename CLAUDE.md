@@ -125,10 +125,10 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 
 ## State Management (Zustand)
 
-> To create a new store, use the `/new-store` skill — it generates the file with the correct naming (`xxxStore.ts` / `useXxxStore`), the `'use client'` directive, the `create<StoreType>()` boilerplate, and the conventions checklist (initial state as `undefined`, no derived data, optional `persist` middleware).
+> To create a new store, use the `/new-store` skill — it generates the file with the correct naming (`xxxStore.ts` / `useXxxStore`), the `create<StoreType>()` boilerplate, and the conventions checklist (initial state as `undefined`, no derived data, optional `persist` middleware).
 
 - Stores are in `src/stores/` with `create<StoreType>()` pattern.
-- Stores use `'use client'` directive.
+- Stores do NOT need a `'use client'` directive — `create()` runs no hooks at import; the store hook only runs inside consumers, which already carry `'use client'`.
 - Named `useXxxStore` and exported as default.
 - **Consume with atomic selectors** (`useStore((s) => s.field)`), one value per call — never destructure the whole store (`useStore()`), which re-renders on every state change. See [`.claude/CONVENTIONS.md > Zustand selectors`](./.claude/CONVENTIONS.md#zustand-selectors).
 

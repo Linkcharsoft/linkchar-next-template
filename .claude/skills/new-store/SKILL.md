@@ -1,6 +1,6 @@
 ---
 name: new-store
-description: Create a new Zustand store at `src/stores/{xxx}Store.ts` following project conventions (`use{Xxx}Store` default export, `'use client'` directive, `create<StoreType>()` pattern). For modal/toast state use `/new-modal` instead — modals share a single global `modalStore` with a dedicated skill that wires type + payload + provider. For auth/session/token state, extend the existing `userStore` rather than creating a parallel store.
+description: Create a new Zustand store at `src/stores/{xxx}Store.ts` following project conventions (`use{Xxx}Store` default export, `create<StoreType>()` pattern). For modal/toast state use `/new-modal` instead — modals share a single global `modalStore` with a dedicated skill that wires type + payload + provider. For auth/session/token state, extend the existing `userStore` rather than creating a parallel store.
 ---
 
 Create a new Zustand store. Arguments: **$ARGUMENTS**
@@ -49,7 +49,6 @@ If the requested store overlaps with an existing one, **stop and tell the user**
 Follow this exact template. Adapt the state shape and actions:
 
 ```ts
-'use client'
 import { create } from 'zustand'
 
 type StoreNameStoreType = {
@@ -74,7 +73,7 @@ export default useStoreNameStore
 ```
 
 ### Rules:
-- **`'use client'`** at the top — MANDATORY. Zustand stores subscribe to React state on the client; without `'use client'` they fail when imported by a server component. This is also the convention across every existing store in `src/stores/`.
+- **No `'use client'` directive.** Zustand stores don't need it: `create()` doesn't run React hooks at module load — the returned hook only calls `useSyncExternalStore` when invoked, which can only happen inside a consumer that is already `'use client'`. The directive on the store module would be redundant. Keep the file directive-free (matches `userStore.ts` / `modalStore.ts`).
 - **File naming**: `{storeFile}.ts` — camelCase, ending in `Store` (e.g. `cartStore.ts`). NEVER `useCartStore.ts` (the `use` prefix belongs to the export, not the file).
 - **Export naming**: `use{StoreName}Store` — `use` prefix, PascalCase noun, `Store` suffix. Matches the React-hook convention so it's recognized by the `react-hooks/exhaustive-deps` ESLint rule.
 - **Type definition**: declare `{StoreName}StoreType` as a `type` (not `interface`) above the `create<>()` call. Group state fields first, then actions, for readability.
@@ -131,7 +130,7 @@ export default useStoreNameStore
 
 Before closing, verify:
 - [ ] File at `src/stores/{storeFile}.ts` (camelCase, ends in `Store`)
-- [ ] `'use client'` at the top
+- [ ] No `'use client'` directive (not needed — consumers carry it)
 - [ ] Export `use{StoreName}Store` matches the file naming
 - [ ] Type `{StoreName}StoreType` declared as `type` (not `interface`) above the `create<>()` call
 - [ ] `export default use{StoreName}Store` at the bottom — no named exports
