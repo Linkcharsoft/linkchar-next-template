@@ -21,11 +21,9 @@ type LoginFormikType = {
 
 
 const LoginPage = () => {
-  const {
-    openModal,
-    closeModal,
-    setNotification
-  } = useModalStore()
+  const openModal = useModalStore((s) => s.openModal)
+  const closeModal = useModalStore((s) => s.closeModal)
+  const setNotification = useModalStore((s) => s.setNotification)
   const isClient = useIsClient()
   const router = useRouter()
 

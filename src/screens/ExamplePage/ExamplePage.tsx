@@ -22,8 +22,10 @@ interface Props {
 }
 
 const ExamplePage = ({ searchParams }: Props) => {
-  const { setNotification, openModal } = useModalStore()
-  const { token, user } = useUserStore()
+  const setNotification = useModalStore((s) => s.setNotification)
+  const openModal = useModalStore((s) => s.openModal)
+  const token = useUserStore((s) => s.token)
+  const user = useUserStore((s) => s.user)
   const router = useRouter()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [example, setExample] = useState<'status' | 'table' | null>(null)

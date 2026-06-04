@@ -25,10 +25,8 @@ type SignupFormikType = {
 
 
 const SignupPage = () => {
-  const {
-    openModal,
-    closeModal
-  } = useModalStore()
+  const openModal = useModalStore((s) => s.openModal)
+  const closeModal = useModalStore((s) => s.closeModal)
   const isClient = useIsClient()
   const router = useRouter()
   const [generalError, setGeneralError] = useState<string | null>(null)

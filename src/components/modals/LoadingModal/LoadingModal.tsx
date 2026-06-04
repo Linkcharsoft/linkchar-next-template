@@ -7,7 +7,8 @@ import useModalStore from '@/stores/modalStore'
 import Loader from '../../Loader/Loader'
 
 const LoadingModal = () => {
-  const { modals: { loadingModal }, closeModal } = useModalStore()
+  const loadingModal = useModalStore((s) => s.modals.loadingModal)
+  const closeModal = useModalStore((s) => s.closeModal)
   const pathname = usePathname()
 
   // Auto-dismiss on route change (covers the polling-driven login redirect delay).

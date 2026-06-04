@@ -155,7 +155,7 @@ interface Props {
 }
 
 const {ScreenName} = ({ searchParams }: Props) => {
-  const { token } = useUserStore()
+  const token = useUserStore((s) => s.token)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   const {

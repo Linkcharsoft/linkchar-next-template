@@ -102,7 +102,11 @@ The `surface-50`…`surface-900` namespace is immutable and template-shipped (no
 Modals and notifications are managed globally via `useModalStore` (Zustand):
 
 ```tsx
-const { openModal, closeModal, setNotification } = useModalStore()
+// Consume with atomic selectors — never destructure the whole store.
+// See .claude/CONVENTIONS.md > Zustand selectors
+const openModal = useModalStore((s) => s.openModal)
+const closeModal = useModalStore((s) => s.closeModal)
+const setNotification = useModalStore((s) => s.setNotification)
 
 // Open a loading modal
 openModal('loadingModal', { title: 'Loading...', content: 'Please wait' })
@@ -126,6 +130,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 - Stores are in `src/stores/` with `create<StoreType>()` pattern.
 - Stores use `'use client'` directive.
 - Named `useXxxStore` and exported as default.
+- **Consume with atomic selectors** (`useStore((s) => s.field)`), one value per call — never destructure the whole store (`useStore()`), which re-renders on every state change. See [`.claude/CONVENTIONS.md > Zustand selectors`](./.claude/CONVENTIONS.md#zustand-selectors).
 
 ## Forms (Formik + Yup)
 

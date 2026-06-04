@@ -18,7 +18,8 @@ const STATE_ICONS: {
 
 const ToastNotifications = () => {
   const toastRef = useRef<Toast>(null)
-  const { notification, setNotification } = useModalStore()
+  const notification = useModalStore((s) => s.notification)
+  const setNotification = useModalStore((s) => s.setNotification)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {

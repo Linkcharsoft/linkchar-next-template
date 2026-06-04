@@ -15,7 +15,8 @@ const STATE_ICONS: {
 }
 
 export default function StateModal () {
-  const { modals: { stateModal }, closeModal } = useModalStore()
+  const stateModal = useModalStore((s) => s.modals.stateModal)
+  const closeModal = useModalStore((s) => s.closeModal)
 
   return (
     <Dialog

@@ -90,6 +90,15 @@ export default useStoreNameStore
   }
   ```
 - **State updates from prior state**: use the functional `set((state) => ...)` form. For independent field updates, the object form `set({ field })` is fine and more concise.
+- **Consume with atomic selectors, NEVER whole-store destructuring.** Calling `useStore()` with no selector subscribes the component to the entire store, so it re-renders on *any* state change (even unrelated slices). Always select one value per hook call — actions are stable references and never trigger re-renders this way:
+  ```tsx
+  // ✅ atomic selectors — each subscribes to just its slice
+  const items = useCartStore((s) => s.items)
+  const addItem = useCartStore((s) => s.addItem)
+
+  // ❌ subscribes to the whole store — re-renders on every change
+  const { items, addItem } = useCartStore()
+  ```
 - **No `memo()` / `useCallback` / `useMemo`** wrapping selectors or actions — React Compiler is enabled and Zustand's `useStore((state) => state.field)` already handles selective re-renders.
 - **Persistence**: if the store needs to survive a page reload, wrap with `zustand/middleware`'s `persist`:
   ```ts
@@ -129,6 +138,7 @@ Before closing, verify:
 - [ ] Initial state uses `undefined` (not `null`) for unset values
 - [ ] No `memo()` / `useCallback` / `useMemo` (React Compiler handles memoization)
 - [ ] No derived data stored — compute via selectors in consumers
+- [ ] Consumers use atomic selectors (`useStore((s) => s.field)`), never whole-store destructuring (`useStore()`)
 - [ ] No `process.env` references — env vars come from `@/constants/env`
 - [ ] If modal-related: STOPPED and confirmed `/new-modal` isn't the right tool
 - [ ] If auth-related: STOPPED and confirmed `useUserStore` isn't the right tool

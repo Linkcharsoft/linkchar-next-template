@@ -11,7 +11,10 @@ interface Props {
 
 // Hydrates the client store + Sentry from the server-fetched session. Returns null.
 const AuthHydrator = ({ token, user }: Props) => {
-  const { setToken, setUser, removeToken, removeUser } = useUserStore()
+  const setToken = useUserStore((s) => s.setToken)
+  const setUser = useUserStore((s) => s.setUser)
+  const removeToken = useUserStore((s) => s.removeToken)
+  const removeUser = useUserStore((s) => s.removeUser)
 
   // Keep token alone on transient /users/me failure — only missing token means logout.
   useEffect(() => {

@@ -16,12 +16,10 @@ import useUserStore from '@/stores/userStore'
 
 
 const ChangePasswordPage = () => {
-  const {
-    openModal,
-    closeModal,
-    setNotification
-  } = useModalStore()
-  const { user } = useUserStore()
+  const openModal = useModalStore((s) => s.openModal)
+  const closeModal = useModalStore((s) => s.closeModal)
+  const setNotification = useModalStore((s) => s.setNotification)
+  const user = useUserStore((s) => s.user)
   const isClient = useIsClient()
   const router = useRouter()
   const [buttonDisabled, setButtonDisabled] = useState<boolean>(false)

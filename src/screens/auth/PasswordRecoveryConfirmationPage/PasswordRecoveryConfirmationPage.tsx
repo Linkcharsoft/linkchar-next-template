@@ -28,11 +28,9 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
 const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
-  const {
-    openModal,
-    closeModal,
-    setNotification
-  } = useModalStore()
+  const openModal = useModalStore((s) => s.openModal)
+  const closeModal = useModalStore((s) => s.closeModal)
+  const setNotification = useModalStore((s) => s.setNotification)
   const isClient = useIsClient()
   const router = useRouter()
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')

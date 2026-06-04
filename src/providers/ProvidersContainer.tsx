@@ -23,7 +23,8 @@ if (typeof window !== 'undefined') {
 }
 
 const ProvidersContainer = ({ children }: Props) => {
-  const { removeToken, removeUser } = useUserStore()
+  const removeToken = useUserStore((s) => s.removeToken)
+  const removeUser = useUserStore((s) => s.removeUser)
   const authListener = useRef<string | null>(null)
   const router = useRouter()
 

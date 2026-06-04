@@ -12,6 +12,7 @@ This file is the canonical reference for **how** to write code in this project. 
 
 - [Naming Conventions](#naming-conventions)
 - [Component Patterns](#component-patterns)
+- [Zustand selectors](#zustand-selectors)
 - [Existing Reusable Components](#existing-reusable-components)
 - [Styling Rules — TAILWIND-FIRST](#styling-rules--tailwind-first)
 - [Inside `.sass` files](#inside-sass-files)
@@ -72,6 +73,28 @@ Each component lives in its own folder (`src/components/ComponentName/`) with th
   3. Internal `@/` imports (alphabetical)
   4. Relative imports
   5. Type imports (last)
+
+---
+
+## Zustand selectors
+
+**Consume stores with atomic selectors — ONE value per `useStore` call. NEVER destructure the whole store.**
+
+Calling a store hook with no selector (`const { a, b } = useStore()`) subscribes the component to the *entire* store: Zustand compares state with `Object.is`, and every `set(...)` produces a new state object, so the component re-renders on **any** state change — even unrelated slices. Selecting one value at a time subscribes only to that slice; actions (`set`-based functions) are stable references and never trigger re-renders this way.
+
+```tsx
+// ✅ atomic selectors — each subscribes to just its slice
+const openModal = useModalStore((s) => s.openModal)
+const closeModal = useModalStore((s) => s.closeModal)
+const user = useUserStore((s) => s.user)
+
+// ❌ whole-store subscription — re-renders on every store change
+const { openModal, closeModal } = useModalStore()
+const { user } = useUserStore()
+```
+
+- Do **not** build an object/array inside a selector (`(s) => ({ a: s.a, b: s.b })`) — it returns a new reference each render and defeats the optimization. If you genuinely need multiple values in one call, use `useShallow` from `zustand/react/shallow`. For the common case (a couple of values), prefer separate atomic selectors — it's simpler and React Compiler handles the rest.
+- This applies to every store (`useModalStore`, `useUserStore`, and any new store from `/new-store`).
 
 ---
 

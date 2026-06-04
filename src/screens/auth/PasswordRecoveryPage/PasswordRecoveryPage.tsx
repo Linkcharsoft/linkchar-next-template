@@ -24,11 +24,9 @@ type PasswordRecoveryFormikType = {
 
 
 const PasswordRecoveryPage = () => {
-  const {
-    openModal,
-    closeModal,
-    setNotification
-  } = useModalStore()
+  const openModal = useModalStore((s) => s.openModal)
+  const closeModal = useModalStore((s) => s.closeModal)
+  const setNotification = useModalStore((s) => s.setNotification)
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
   const {

@@ -29,11 +29,9 @@ type TokenStatusType = 'loading' | 'valid' | 'invalid'
 
 
 const SignupConfirmationPage = ({ token }: Props) => {
-  const {
-    openModal,
-    closeModal,
-    setNotification
-  } = useModalStore()
+  const openModal = useModalStore((s) => s.openModal)
+  const closeModal = useModalStore((s) => s.closeModal)
+  const setNotification = useModalStore((s) => s.setNotification)
   const isClient = useIsClient()
   const [showEmails, setShowEmails] = useState<boolean>(false)
   const [tokenStatus, setTokenStatus] = useState<TokenStatusType>('loading')

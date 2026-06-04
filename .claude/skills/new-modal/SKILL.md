@@ -96,7 +96,11 @@ Follow the exact pattern of `src/components/modals/StateModal/StateModal.tsx`:
 - `'use client'` directive at top
 - Import `./ModalName.sass`
 - Use PrimeReact `Dialog` component
-- Get state from `useModalStore`: `const { modals: { modalKey }, closeModal } = useModalStore()`
+- Get state from `useModalStore` with **atomic selectors** (one per value — never destructure the whole store, see [CONVENTIONS.md > Zustand selectors](../../CONVENTIONS.md#zustand-selectors)):
+  ```tsx
+  const modalKey = useModalStore((s) => s.modals.modalKey)
+  const closeModal = useModalStore((s) => s.closeModal)
+  ```
 - Set `visible={modalKey.show}`
 - Set `onHide={() => closeModal('modalKey')}`
 - Use `CustomButton` (not native `<button>`) for actions
@@ -193,7 +197,7 @@ Before closing, verify:
 - [ ] `modalStore.ts` updated in three places: the new type, `ModalPayloads`, and `initialModals`
 - [ ] Component at `src/components/modals/{Name}/{Name}.tsx` + `{Name}.sass`
 - [ ] `.tsx` uses PrimeReact `Dialog`, `CustomButton`, and `classNames` from `primereact/utils` (never native `<button>`, never `clsx`)
-- [ ] Modal subscribed via `useModalStore` with `modals: { {modalKey} }` destructuring
+- [ ] Modal subscribed via `useModalStore` with **atomic selectors** (`(s) => s.modals.{modalKey}`, `(s) => s.closeModal`) — never whole-store destructuring
 - [ ] Wired according to Step 1 plan: registered in `ModalsProvider` (global) OR snippet shown to the user (local)
 - [ ] A11y rules from Step 3 satisfied (aria-label on icon-only buttons, `header` prop for the title, Cancel button for destructive confirmations)
 
@@ -202,7 +206,8 @@ Then post:
 2. Usage example:
 
 ```tsx
-const { openModal, closeModal } = useModalStore()
+const openModal = useModalStore((s) => s.openModal)
+const closeModal = useModalStore((s) => s.closeModal)
 
 // Open
 openModal('modalKey', {
