@@ -9,10 +9,7 @@ type CustomFetchType = {
   body?: object | FormData
   params?: string | URLSearchParams | Record<string, string> | string[][]
   headers?: Record<string, string>
-  // Cache controls — default is `no-store` (app data should be fresh). Override per call:
-  // - `cache: 'force-cache'` to opt in to full caching
-  // - `next: { revalidate: 60 }` for ISR
-  // - `next: { tags: ['user'] }` for on-demand revalidation
+  // Defaults to `no-store`; override per call with `cache` or `next` (ISR / tags)
   cache?: RequestCache
   next?: { revalidate?: number | false, tags?: string[] }
   _retryCount?: number
@@ -58,17 +55,14 @@ export const customFetch = async <T extends object>({
   next,
   _retryCount = 0
 }: CustomFetchType): Promise<CustomFetchResponse<T>> => {
-  // URL
   const urlPath = new URL(`/api${path}`, API_URL)
 
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
-  // Headers
   const requestHeaders = new Headers(headers)
   if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
   if (body instanceof FormData) requestHeaders.delete('Content-Type')
 
-  // Body
   const fetchOptions: FetchOptionsType = {
     method,
     headers: requestHeaders,
@@ -79,15 +73,12 @@ export const customFetch = async <T extends object>({
         : undefined
   }
 
-  // Cache policy — explicit to keep behavior stable across Next.js versions.
-  // Defaults to `no-store` (fresh app data); callers can override with `next.revalidate` for ISR.
   if (next) {
     fetchOptions.next = next
   } else {
     fetchOptions.cache = cache ?? 'no-store'
   }
 
-  // Fetch
   const response = await fetch(urlPath.toString(), fetchOptions)
 
   // Client-side only; the proxy handles server-side refresh proactively.

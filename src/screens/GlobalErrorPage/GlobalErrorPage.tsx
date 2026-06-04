@@ -11,9 +11,8 @@ import Waves from '@/components/Waves/Waves'
 // Support channel for the mailto fallback shown when feedback can't reach Sentry.
 const SUPPORT_EMAIL_ADDRESS = 'support@linkchar.com'
 
-// Probe the path the SDK transport actually uses (the first-party `tunnelRoute`, else
-// the ingest host). A blocker aborts the request and the fetch rejects — our signal to
-// fall back to mailto instead of opening a widget whose submission would fail anyway.
+// Probe the transport path (first-party `tunnelRoute`, else ingest host); a blocker
+// aborts it and the fetch rejects, so we fall back to mailto instead of the widget.
 const isFeedbackTransportReachable = async (): Promise<boolean> => {
   const client = getClient()
   if (!client) return false
@@ -69,9 +68,8 @@ const GlobalErrorPage = ({
     }
   }, [])
 
-  // Bundled feedback widget — renders from the app bundle (unlike showReportDialog's
-  // external script or feedbackIntegration's CDN modal, which blockers stop). Imported
-  // on click so its UI lands in an on-demand chunk, not the global-error bundle.
+  // Bundled widget renders without network (unlike showReportDialog/CDN modal that
+  // blockers stop); imported on click to keep its UI out of the global-error bundle.
   const openFeedbackWidget = async () => {
     let feedback = getFeedback()
 

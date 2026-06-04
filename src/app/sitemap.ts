@@ -1,9 +1,7 @@
 import { DOMAIN } from '@/constants/env'
 import type { MetadataRoute } from 'next'
 
-// Uncomment when wiring up dynamic entries (DB/API-sourced URLs) so the sitemap
-// reflects content changes. While all entries are static, leave it commented —
-// otherwise every sitemap request rebuilds for nothing.
+// Uncomment for dynamic (DB/API-sourced) entries; leave off while static to avoid needless rebuilds
 // export const dynamic = 'force-dynamic'
 
 const sitemap = async (): Promise<MetadataRoute.Sitemap> => {

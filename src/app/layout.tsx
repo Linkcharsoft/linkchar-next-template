@@ -10,8 +10,7 @@ import GeneralLayout from '@/layouts/GeneralLayout/GeneralLayout'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
-// Variable font — `weight` is omitted on purpose (one .woff2 covers all weights).
-// For non-variable fonts, specify only the weights used: `weight: ['400', '700']`.
+// Variable font — `weight` omitted on purpose (one .woff2 covers all weights)
 const merriweatherSans = Merriweather_Sans({
   subsets: ['latin'],
   style: ['normal', 'italic'],
@@ -19,13 +18,8 @@ const merriweatherSans = Merriweather_Sans({
   variable: '--font-merriweather-sans'
 })
 
-// Re-host PrimeIcons font with `display: 'swap'` to fix FOIT.
-// The library ships its own @font-face with `font-display: block` which hides icons
-// until the font loads (Lighthouse "Ensure text remains visible" fail).
-// Pointing `src` at node_modules keeps the file version-locked to package.json —
-// `pnpm update primeicons` auto-updates it. The .pi selector override in
-// src/styles/index.sass forces the icons to use this variable instead of the
-// library's font-family declaration.
+// Re-host PrimeIcons with `display: 'swap'` to fix FOIT (the library ships `block`).
+// Sourced from node_modules to stay version-locked; .pi override lives in styles/index.sass.
 const primeIcons = localFont({
   src: '../../node_modules/primeicons/fonts/primeicons.woff2',
   display: 'swap',

@@ -28,28 +28,17 @@ const values = {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Add optional integrations for additional features
-  // Session Replay is added lazily below to keep the heaviest Sentry chunk
-  // off the critical bundle.
+  // Session Replay is added lazily below to keep its chunk off the critical bundle
   integrations: [],
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: values.traces,
-  // Enable logs to be sent to Sentry
   enableLogs: !isDev,
-  // Enable debug mode in development to see more detailed logs from the Sentry SDK.
   debug: values.debug,
 
-  // Define how likely Replay events are sampled.
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
   replaysSessionSampleRate: values.replaysSession,
-
-  // Define how likely Replay events are sampled when an error occurs.
   replaysOnErrorSampleRate: values.replaysError,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
+  // Send user PII (only on staging here)
   sendDefaultPii: isStaging
 })
 
