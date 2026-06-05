@@ -36,6 +36,33 @@ Assign the LOWER severity in ambiguous cases. False BLOCKING is more expensive t
 
 ## Steps
 
+### Step 0 — Pre-flight & input validation
+
+Run BEFORE any other step. This is the gate that prevents the rest of the agent from working on broken or incomplete input.
+
+1. **Validate `parsedSpec`**: confirm it is a non-null object and contains a `paths` field. If missing or malformed, emit and STOP:
+   ```
+   STOP-BLOCKING / category: INVALID_INPUT / reason: openapi-spec-validate received no parsed spec — orchestrator Phase 0.5 must run before this agent
+   ```
+2. **Validate `resolvedSchemas`**: confirm it is a non-null object (may be empty — that is a valid INFO finding in Step 4.5, not a STOP). If `resolvedSchemas` is `undefined`, emit and STOP:
+   ```
+   STOP-BLOCKING / category: INVALID_INPUT / reason: resolvedSchemas missing — orchestrator Phase 0.5 ($ref resolution) did not produce a map
+   ```
+3. **Read `.claude/CONVENTIONS.md`** (used briefly for function-name inference grounding). If the file is missing, emit and STOP:
+   ```
+   STOP-BLOCKING / category: MISSING_FILE / reason: missing .claude/CONVENTIONS.md
+   ```
+4. **Read `.claude/skills/openapi-import/SKILL.md`** Phase 1 section (for terminology alignment on tag grouping and `BASE_PATH` derivation). If the file is missing, emit and STOP:
+   ```
+   STOP-BLOCKING / category: MISSING_FILE / reason: missing .claude/skills/openapi-import/SKILL.md
+   ```
+5. **Validate `paginatedResponseShape`**: confirm it is an object with the four DRF keys `count`, `next`, `previous`, `results`. If the orchestrator passed a different shape, the agent's Step 3.12 pagination check would silently use that other shape — surface a STOP so the user knows the orchestrator contract is broken:
+   ```
+   STOP-BLOCKING / category: INVALID_INPUT / reason: paginatedResponseShape does not match the DRF contract {count, next, previous, results}
+   ```
+
+After Step 0 passes, proceed to Step 1. The Expected input and Pre-flight sections above the Steps are the contract; Step 0 is the runtime enforcement of that contract.
+
 ### Step 1 — Iterate operations
 
 Walk `parsedSpec.paths`. For each path key and each method (`get`, `post`, `put`, `patch`, `delete`, `head`, `options`), if a value object is present, treat it as an **operation**. Build the operation list:
@@ -100,16 +127,24 @@ If both operations share the same tag, the file collision will simply skip the s
 
 #### 2.6 — Invalid schema
 
-For every schema in `resolvedSchemas` AND every inline schema reachable from operations, validate it has at least ONE of:
+**Scope: FULL recursion.** Walk every schema in `resolvedSchemas` AND every inline schema reachable from any operation in the filtered set, descending into `properties.*`, `items`, `additionalProperties`, `allOf[*]`, `oneOf[*]`, `anyOf[*]`, and `not` recursively. A leaf schema is any schema object that does not have a structural composition keyword (`allOf`/`oneOf`/`anyOf`/`not`) wrapping it.
+
+For every schema visited (root, nested, leaf), validate it has at least ONE of:
 - A `type` field (`'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object'`)
 - A `$ref`
 - A `oneOf` / `anyOf` / `allOf`
 
-A schema with none of those is an `INVALID_SCHEMA`:
+A schema with none of those is an `INVALID_SCHEMA`. The location report MUST cite the full JSON pointer so the user can find the offender even deep inside an inline object:
 
 ```
-INVALID_SCHEMA: components.schemas.{name} has no type, $ref, oneOf, anyOf, or allOf. Cannot derive a TypeScript representation.
+INVALID_SCHEMA: {location} has no type, $ref, oneOf, anyOf, or allOf. Cannot derive a TypeScript representation.
 ```
+
+Where `{location}` is one of:
+- `components.schemas.{name}` for a top-level schema
+- `components.schemas.{name}.properties.{prop}` for a nested property
+- `paths.{path}.{method}.requestBody.content.application/json.schema.properties.{prop}` for an inline operation schema
+- Generally, the JSON pointer path from the spec root to the offending object.
 
 ### Step 3 — WARNING checks (run can proceed)
 
@@ -181,13 +216,20 @@ BODY_ON_GET_DELETE: paths.{path}.{method} declares a requestBody. RFC 7231 permi
 
 #### 3.7 — Ambiguous 2xx response codes
 
-For every operation, count the 2xx response keys. If more than one 2xx is declared AND the schemas differ:
+For every operation, count the 2xx response keys. If more than one 2xx is declared, compare their schemas using this formal rule:
+
+1. **Resolve** each 2xx schema fully ($ref expanded, nested $refs expanded recursively).
+2. **Normalize** each resolved schema to a canonical JSON string: sort all object keys alphabetically, drop `description`/`example`/`summary` fields (annotations that do not affect the TS type), serialize with `JSON.stringify`.
+3. Two schemas are **equivalent** when their normalized canonical strings are byte-identical. They **diverge** otherwise.
+4. A 2xx response with NO schema (e.g. `204 No Content` declared as `description` only) is treated as the canonical string `"<empty>"` — it does NOT diverge from a 200 with a non-empty schema if the spec author's intent was "204 means empty" alongside "200 means data", which is idiomatic.
+
+Emit when more than one 2xx response is declared AND at least two of the non-empty canonical strings differ:
 
 ```
-AMBIGUOUS_2XX: paths.{path}.{method} declares multiple 2xx responses with different schemas ({list of codes}). The handler will type its return using the first one ({code}); the others are unreachable in the generated type.
+AMBIGUOUS_2XX: paths.{path}.{method} declares multiple 2xx responses with divergent schemas ({list of codes with their resolved type names}). The handler will type its return using the first one ({code}); the others are unreachable in the generated type.
 ```
 
-`200` + `204` (the same operation may return content OR no content) is the common case and is NOT a warning if the schemas resolve to the same type or if one is empty. Flag only when the schemas materially diverge.
+`200` + `204` where 204 has no schema is the common case and is NOT a warning (idiomatic "data or empty"). Flag only when two or more 2xx codes each carry a non-empty schema that does not canonically match.
 
 #### 3.8 — Nullable without base type
 
@@ -203,12 +245,37 @@ For every operation whose `requestBody.content['application/json'].schema` is an
 NO_REQUIRED_FIELDS: paths.{path}.{method} requestBody declares fields but no `required` array. The generated PayloadType will mark every field as optional, which is rarely the spec author's intent.
 ```
 
-#### 3.10 — Non-DRF pagination shape
+#### 3.10 — Mutation without JSON content type
 
-For every GET list operation, inspect the 2xx response schema. If it has paginated-looking properties (e.g. `count` or `total` or `meta`) but does NOT exactly match the DRF shape `{ count, next, previous, results }`:
+For every POST/PUT/PATCH operation, inspect `op.requestBody.content`. If the content map is missing entirely OR does not include a key matching `application/json` (the project's `customFetch` only serializes JSON request bodies; multipart is a separate flag, not this check):
 
 ```
-NON_DRF_PAGINATION: paths.{path}.{method} response is paginated but the shape ({observed shape}) does not match the project's strict DRF contract. Handlers will emit a local {Tag}PageType instead of reusing PaginatedResponse<T> — useTableParams compatibility is not guaranteed.
+NO_REQUEST_CONTENT_TYPE: paths.{path}.{method} is a mutation but declares no requestBody.content['application/json']. customFetch will not know how to serialize the body. Either add the content schema, or mark as multipart/form-data if uploads are intended.
+```
+
+Exception: POST/PUT/PATCH with no body at all (e.g. `POST /users/{id}/activate/` triggering a server-side action) — emit `BODY_ON_GET_DELETE`-equivalent INFO instead of this WARNING, since the agent already knows what to emit for no-body mutations.
+
+#### 3.11 — Unreachable error responses
+
+For every operation, count the response keys matching `/^[45]\d\d$/` (4xx and 5xx). If at least one is declared with a non-empty schema:
+
+```
+UNREACHABLE_ERROR_RESPONSE: paths.{path}.{method} declares {N} error response(s) ({list of codes}) with schemas, but the generated handler returns `CustomFetchResponse<T>` typed on the 2xx schema only. The error schemas are unreachable from the typed API — error bodies surface as `error: unknown` to the caller, who must cast manually.
+```
+
+This is informational for the spec author: the error schemas are not a code-generation bug, but the rich error types they wrote are not flowing into the TypeScript surface. Suggest documenting the cast pattern at the call site (the auth flow's `SignupPage.tsx` example: `const emailError = error as { email?: string[] }`).
+
+#### 3.12 — Non-DRF pagination shape
+
+For every GET list operation (path has no `{id}`-style params), inspect the 2xx response schema. The detection rule is formal:
+
+1. **Trigger condition**: the resolved 2xx schema is an `object` with a top-level property named `results` AND the property type is `array`. The presence of `results: array<T>` is the signal that the spec author intended a paginated wrapper. Operations whose 2xx is itself an array (`array<T>` at the top level) are NOT paginated; skip them.
+2. **Conformance check**: the schema's TOP-LEVEL properties match the DRF contract EXACTLY — `count` (integer), `next` (string nullable), `previous` (string nullable), `results` (array). Extra properties → non-DRF. Missing any of the four → non-DRF. Property name differences (e.g. `total` instead of `count`, `nextPageUrl` instead of `next`) → non-DRF.
+
+Emit when the trigger condition holds and the conformance check fails:
+
+```
+NON_DRF_PAGINATION: paths.{path}.{method} response has a `results` array (paginated) but the wrapper shape diverges from the project's strict DRF contract. Observed properties: [{property names found}]. Missing: [{DRF properties absent}]. Extra: [{non-DRF properties present}]. Handlers will emit a local {Tag}PageType instead of reusing PaginatedResponse<T> — useTableParams compatibility is not guaranteed.
 ```
 
 ### Step 4 — INFO checks (diagnostic only)
@@ -240,6 +307,16 @@ A rough complexity signal. If average depth > 3, flag it — deep nesting often 
 ```
 INFO: Average $ref depth = {value}. Specs with deep nesting (>3 levels) often hide schema bugs; consider flattening where possible.
 ```
+
+#### 4.5 — Empty components.schemas
+
+If `components.schemas` is absent OR an empty object, emit:
+
+```
+INFO: components.schemas is empty. All types in this spec are either primitive, inlined in operation request/response bodies, or omitted. Consider extracting reusable types into components.schemas for reuse across operations.
+```
+
+Inlining everything is valid but usually indicates a hand-written or generator-flat spec. Surfacing this lets the user catch unintentional flatness.
 
 ## Hard rules
 
@@ -281,7 +358,7 @@ STOP-BLOCKING / category: INVALID_SPEC / reason: {N} blocking finding(s) — see
 
 This is the literal cue the orchestrator looks for to halt the run.
 
-End every report with the standardized 3-line footer:
+End every report with the standardized 4-line footer (separator + 3 content lines):
 
 ```
 ---
