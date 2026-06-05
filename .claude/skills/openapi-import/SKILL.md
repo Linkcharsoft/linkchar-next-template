@@ -305,6 +305,7 @@ export const deleteUser = async (id: number | string, token: string) => {
 **Capture from each invocation:**
 - The agent's standardized footer (ADDED / MODIFIED / UNCHANGED / KEPT / POTENTIAL RENAME counts).
 - The list of files actually written.
+- **The per-tag list of `POTENTIAL RENAME` entries** (each entry: `{tag, oldName, newName, path, method}`). This list is critical for Phase 3 — see the filter step below.
 
 ---
 
@@ -314,8 +315,23 @@ export const deleteUser = async (id: number | string, token: string) => {
 
 Run ONLY AFTER all Phase 2 invocations have completed. Hooks depend on the handler output — they import from `src/api/{tag}.ts` files that must exist first.
 
+### Phase 2 → Phase 3 filter (CRITICAL — prevents broken imports)
+
+**Before** building the payload for `openapi-hooks`, the orchestrator MUST filter out every spec operation whose function name appears in any Phase 2 `POTENTIAL RENAME` entry's `newName` field. The reasoning:
+
+- When `openapi-handlers` detects POTENTIAL RENAME, it does NOT insert the spec-derived function (e.g. `getUsers`) — it leaves the existing function (e.g. `fetchUsers`) in place per Q2.
+- If the hooks payload still references `getUsers` from the spec, `openapi-hooks` will emit `import { getUsers } from '@/api/users'` — a broken import that fails type-check, because `getUsers` was never written.
+
+Concrete filter logic:
+
+1. Collect every `newName` across all Phase 2 `POTENTIAL RENAME` entries into a set: `suppressed = { 'users': ['getUsers'], 'orders': ['getOrders'], ... }`.
+2. When building `getOperationsByResource` for Phase 3, drop any GET operation whose `handlerName` is in `suppressed[tag]`.
+3. After filtering, log to the user: `Skipped hook generation for {N} operation(s) flagged as POTENTIAL RENAME — resolve those manually in src/api/{tag}.ts, then re-run /openapi-import to regenerate the hooks.`
+
+The filter applies at the orchestrator level — `openapi-hooks` itself does not need to know about POTENTIAL RENAME. The orchestrator's responsibility is to never ask hooks to wrap a function that does not exist on disk.
+
 **Pass to the agent:**
-- For each tag: list of GET operations (list + detail classifications only), their function names, and the handler file path (`src/api/{tag}.ts`).
+- For each tag: list of GET operations (list + detail classifications only) AFTER the POTENTIAL RENAME filter above. Each operation entry includes `handlerName`, `path`, `kind` ('list' or 'detail').
 - The `noAuth` flag.
 
 **The agent generates hooks for GET endpoints only (Q3 — no hooks for mutations).**
