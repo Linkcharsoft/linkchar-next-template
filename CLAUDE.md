@@ -33,6 +33,8 @@ This file describes **what** this project is: the tech stack, structure, and hig
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
 | Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
 | Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
+| Import a full OpenAPI YAML spec and wire the backend layer (handlers + GET hooks, no UI) — typically runs AFTER `/figma-design-import` | `/openapi-import` | `/openapi-import ./openapi.yaml --tags=users,products` |
+| Scaffold a single API resource by hand (no spec) — `src/api/{resource}.ts` with the canonical interleaved layout | `/new-api-resource` | `/new-api-resource Users` |
 
 > **`/init-project` is enforced on fresh clones.** Until it runs (sentinel: `package.json` `name` is still `linkchar-next-template`), two guards block work: the Husky **`pre-commit`** hook refuses commits, and a Claude **PreToolUse** hook (`.claude/hooks/require-init.mjs`) refuses `Edit`/`Write`. Running `/init-project` renames the app and disarms both. Maintainers working on the **template itself** bypass with `LINKCHAR_TEMPLATE_DEV` — set it once in `.claude/settings.local.json` (`"env"` key, gitignored) and both guards read it (the shell env also works and takes precedence).
 
@@ -158,15 +160,17 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 
 ## Swagger/OpenAPI-to-Code Workflow
 
-### Slash Command
+### Slash Commands
 
-- `/gen-from-spec {resource}` — Generate types + API client from an OpenAPI/Swagger spec.
+- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` scaffolds the UI. Delegates to three sub-agents in `.claude/agents/`: `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-validation` (Haiku).
+- **`/new-api-resource {ResourceName} [list,detail,create,update,delete] [no-auth]`** — single-file manual scaffold. No spec input, no merge logic. Use for ad-hoc endpoints not yet in the spec or for quick prototyping.
 
 ### Conventions
 
-- **Types**: `src/types/api/{resource}.ts` — use `interface` (not `type`), `Type` suffix for models.
-- **API client**: `src/api/{resource}.ts` — ALWAYS use `customFetch` from `@/api/customFetch`.
-- **SWR Hooks** (optional): `src/hooks/use{Resource}.ts` — `useSWR` pattern with API client functions.
+- **Layout** (current): types are **interleaved** with handlers in `src/api/{resource}.ts`. Each handler section starts with a `// ── {functionName} ──` header followed by the type(s) the handler needs, then the handler itself. Shared response types (e.g. `UserType` used by both list and detail) sit above the first handler that consumes them.
+- **Types**: use `interface` (not `type alias`) for object shapes; every model carries the `Type` suffix (`UserType`, `CreateUserPayloadType`).
+- **API client**: `src/api/{resource}.ts` — ALWAYS use `customFetch` from `@/api/customFetch`. Token is the LAST positional argument in authenticated handlers; OMITTED entirely for public endpoints.
+- **SWR Hooks** (GET only): `src/hooks/use{Resource}.ts` — `useSWR(token ? key : null, fetcher)` pattern with atomic `useUserStore((s) => s.token)` selector. Mutations stay imperative inside `onSubmit` handlers, matching the auth flow.
 
 ## Git Workflow
 
