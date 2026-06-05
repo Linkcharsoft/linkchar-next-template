@@ -198,10 +198,18 @@ Run one invocation per tag (not parallel — each invocation may modify the same
 
 **Pass to the agent per tag:**
 - `tagName` — the tag string (used for file naming and BASE_PATH)
-- `operations` — array of resolved operation objects: `{ method, path, operationId, pathParams, queryParams, requestBody, responseSchema, classification }`
+- `operations` — array of resolved operation objects, each with the OpenAPI 3.x native field names so the agent does not need to translate:
+  - `method` — `'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'`
+  - `path` — the URL template (e.g. `/users/{id}/`)
+  - `operationId` — string or `null`
+  - `parameters` — array of resolved param objects: `{ name, in: 'path' | 'query' | 'header', required, schema }`. The agent splits this internally into path params (used to derive function args) and query params (used to derive the `params?` object).
+  - `requestBody` — resolved schema (typed object) or `null`
+  - `responses` — map of HTTP status code → resolved schema (typically `{ '200': UserType, '201': ..., '404': ErrorType }`)
+  - `security` — array of security requirement objects. An empty array means the endpoint is public — the agent omits `token` for those. The orchestrator must NOT pre-strip this field; the agent reads it to classify per-operation.
+  - `classification` — `'list' | 'detail' | 'mutation' | 'action'` (the classification computed in Phase 1, included here as a hint so the agent does not need to re-classify).
 - `sharedSchemas` — the full `components.schemas` map (needed for $ref resolution within the agent)
 - `existingFilePath` — `src/api/{tag}.ts` if the file already exists; `null` if new
-- `noAuth` — boolean from the `--no-auth` flag
+- `flags: { noAuth: boolean }` — `noAuth` from the `--no-auth` flag. When `true`, the agent omits `token` from every emitted handler regardless of the per-operation `security` field (the user explicitly opted into a public-only contract).
 - `paginatedResponseShape` — the exact `{ count, next, previous, results }` shape to match for DRF pagination detection
 
 **The agent's merge algorithm (Q2):**
