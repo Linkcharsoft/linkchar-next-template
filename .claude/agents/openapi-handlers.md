@@ -94,10 +94,54 @@ Apply the OAS→TS mapping table:
 | `oneOf`/`anyOf` with discriminator   | discriminated union if a shared property separates types cleanly |
 | `oneOf`/`anyOf` complex, no clear discriminator | `unknown` + `// TODO: openapi-import — refine union, see {schemaName}` |
 
-**Tiered oneOf/anyOf fallback:**
-1. If all variants are primitive types → emit a plain union (`string | number`).
-2. If variants are objects sharing a common literal-typed property that uniquely identifies each variant (discriminator pattern) → emit a proper TypeScript discriminated union.
-3. Otherwise → emit `unknown` and append a schema-todo to the output report.
+**Tiered oneOf/anyOf fallback** — apply the rules in order, the first match wins:
+
+1. **All variants are primitive types** → emit a plain union (`string | number`).
+
+   Example:
+   ```yaml
+   PaymentReference:
+     oneOf:
+       - type: string
+       - type: integer
+   ```
+   → `type PaymentReference = string | number`
+
+2. **All variants are object types AND share a common property whose schema is a string `enum` with disjoint values across variants** → emit a TypeScript discriminated union. The "common property" must satisfy ALL of:
+   - Same property name in every variant
+   - Property is `required` in every variant
+   - Property schema is `{ type: 'string', enum: [SINGLE_VALUE] }` in each variant (one enum value per variant)
+   - The single enum values are pairwise disjoint across variants
+
+   Example:
+   ```yaml
+   Notification:
+     oneOf:
+       - type: object
+         required: [kind, message]
+         properties:
+           kind: { type: string, enum: [email] }
+           message: { type: string }
+       - type: object
+         required: [kind, body, attachment]
+         properties:
+           kind: { type: string, enum: [sms] }
+           body: { type: string }
+           attachment: { type: string }
+   ```
+   → `type Notification = { kind: 'email', message: string } | { kind: 'sms', body: string, attachment: string }`
+
+   If the `discriminator` field is explicitly present in the OpenAPI schema (`discriminator: { propertyName: 'kind' }`), treat that as the authoritative signal — the property name is given, the only check left is the disjoint-enum-values rule.
+
+3. **All variants are object types, but the conditions in rule 2 are NOT all met** (no shared discriminator, or shared property is not a literal-typed enum, or enum values overlap) → emit `unknown` and append a schema-todo to the output report:
+   ```
+   schema-todos:
+   - Notification: oneOf objects without clear discriminator (variants share no required string-enum property with disjoint values). Refine the union manually.
+   ```
+
+4. **Mixed primitive + object variants, or `anyOf` with overlap semantics** → emit `unknown` + schema-todo. These shapes are rare in REST APIs and almost always indicate a spec quality issue; flag for human review rather than guess.
+
+Rule 1 trumps rule 2: a `oneOf: [{ type: string }, { type: object, ... }]` falls through to rule 4 (mixed primitives + objects → `unknown` + TODO), NOT rule 1. Rule 1 requires ALL variants to be primitives.
 
 **Shared schemas:** if a `$ref` name appears in `sharedSchemas` and has already been emitted by a previous handler in this same file run (tracked in memory during Step 5), skip re-declaring it. If it was never declared, declare it before the first handler that uses it.
 
