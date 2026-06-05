@@ -47,11 +47,11 @@ Maintain a running ledger of every sub-agent invocation. Append a row after each
 |------|-----------|-------|----------|------------|-------|
 | 2 | openapi-handlers | Sonnet | 45s | ≈18 | 3 tags, 14 ADDED, 2 MODIFIED |
 | 3 | openapi-hooks | Haiku | 20s | ≈8 | 6 GET hooks generated |
-| 4 | openapi-validation | Haiku | 15s | ≈6 | lint ✅, type-check ✅ |
+| 4 | openapi-code-validate | Haiku | 15s | ≈6 | lint ✅, type-check ✅ |
 ```
 
 **Column sources:**
-- `Model` — read from the sub-agent's frontmatter `model:` field. Do NOT trust the footer string (it's the agent's self-reported declaration and can drift). **Before Phase 5 ledger emission, `Read` `.claude/agents/openapi-handlers.md`, `.claude/agents/openapi-hooks.md`, and `.claude/agents/openapi-validation.md` (just the frontmatter — first ~6 lines is enough) to source this column.**
+- `Model` — read from the sub-agent's frontmatter `model:` field. Do NOT trust the footer string (it's the agent's self-reported declaration and can drift). **Before Phase 5 ledger emission, `Read` `.claude/agents/openapi-handlers.md`, `.claude/agents/openapi-hooks.md`, and `.claude/agents/openapi-code-validate.md` (just the frontmatter — first ~6 lines is enough) to source this column.**
 - `Duration` — measured by the orchestrator from wall-clock time around the `Agent(...)` call.
 - `Tool calls` — `Workload: tool_calls≈...` from the sub-agent's standardized footer.
 - `Notes` — `Notes:` line from the footer, used verbatim.
@@ -69,7 +69,7 @@ Show the ledger in the Phase 5 final summary so cost-per-step is visible.
 | 0–1 | (you, the parent) | Opus | Spec ingest, gap analysis, STOP confirmation — needs judgment |
 | 2 | `openapi-handlers` | Sonnet | Schema-to-TS mapping, intelligent merge — moderate decisions |
 | 3 | `openapi-hooks` | Haiku | Mechanical SWR boilerplate from handler imports |
-| 4 | `openapi-validation` | Haiku | Run commands + categorized report |
+| 4 | `openapi-code-validate` | Haiku | Run commands + categorized report |
 
 Always pass enough context in each delegation — sub-agents start with a fresh context. Include tag names, resolved operations, file paths, and merge decisions already made.
 
@@ -387,9 +387,9 @@ export const useUser = (id: string | number | null) => {
 
 ---
 
-## Phase 4 — Delegate openapi-validation (Haiku, single run)
+## Phase 4 — Delegate openapi-code-validate (Haiku, single run)
 
-> **Delegate to**: `Agent({ subagent_type: 'openapi-validation' })` — runs in **Haiku**.
+> **Delegate to**: `Agent({ subagent_type: 'openapi-code-validate' })` — runs in **Haiku**.
 
 **Pass to the agent:**
 - List of all files emitted in Phases 2–3 (absolute paths).
@@ -460,7 +460,7 @@ Workload ledger:
 | Step | Sub-agent | Model | Duration | Tool calls | Notes |
 | 2    | openapi-handlers | Sonnet | {d} | ≈{N} | {notes} |
 | 3    | openapi-hooks | Haiku | {d} | ≈{N} | {notes} |
-| 4    | openapi-validation | Haiku | {d} | ≈{N} | {notes} |
+| 4    | openapi-code-validate | Haiku | {d} | ≈{N} | {notes} |
 ```
 
 ---
@@ -524,4 +524,4 @@ If the STOP-BLOCKING fires in Phase 2 for one tag out of many, you MAY ask the u
 | 1 | Gap analysis, classification, large-spec gate, STOP | (parent) | Opus | Parsed spec object |
 | 2 | Handler generation + intelligent merge, one run per tag (sequential) | `openapi-handlers` | Sonnet | tagName, operations (resolved), sharedSchemas, existingFilePath, noAuth |
 | 3 | SWR hook generation (single run, after Phase 2) | `openapi-hooks` | Haiku | GET operations per tag, handler import map, noAuth |
-| 4 | Lint + type-check + consumption check + census | `openapi-validation` | Haiku | Emitted file paths, POTENTIAL RENAME list, flag lists |
+| 4 | Lint + type-check + consumption check + census | `openapi-code-validate` | Haiku | Emitted file paths, POTENTIAL RENAME list, flag lists |
