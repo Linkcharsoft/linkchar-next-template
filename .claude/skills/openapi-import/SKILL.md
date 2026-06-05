@@ -45,13 +45,14 @@ Maintain a running ledger of every sub-agent invocation. Append a row after each
 ```
 | Step | Sub-agent | Model | Duration | Tool calls | Notes |
 |------|-----------|-------|----------|------------|-------|
+| 0.6 | openapi-spec-validate | Haiku | 8s | ≈4 | 0 BLOCKING, 5 WARNINGS |
 | 2 | openapi-handlers | Sonnet | 45s | ≈18 | 3 tags, 14 ADDED, 2 MODIFIED |
 | 3 | openapi-hooks | Haiku | 20s | ≈8 | 6 GET hooks generated |
 | 4 | openapi-code-validate | Haiku | 15s | ≈6 | lint ✅, type-check ✅ |
 ```
 
 **Column sources:**
-- `Model` — read from the sub-agent's frontmatter `model:` field. Do NOT trust the footer string (it's the agent's self-reported declaration and can drift). **Before Phase 5 ledger emission, `Read` `.claude/agents/openapi-handlers.md`, `.claude/agents/openapi-hooks.md`, and `.claude/agents/openapi-code-validate.md` (just the frontmatter — first ~6 lines is enough) to source this column.**
+- `Model` — read from the sub-agent's frontmatter `model:` field. Do NOT trust the footer string (it's the agent's self-reported declaration and can drift). **Before Phase 5 ledger emission, `Read` `.claude/agents/openapi-spec-validate.md`, `.claude/agents/openapi-handlers.md`, `.claude/agents/openapi-hooks.md`, and `.claude/agents/openapi-code-validate.md` (just the frontmatter — first ~6 lines is enough) to source this column.**
 - `Duration` — measured by the orchestrator from wall-clock time around the `Agent(...)` call.
 - `Tool calls` — `Workload: tool_calls≈...` from the sub-agent's standardized footer.
 - `Notes` — `Notes:` line from the footer, used verbatim.
@@ -67,6 +68,7 @@ Show the ledger in the Phase 5 final summary so cost-per-step is visible.
 | Step | Sub-agent | Model | Why this model |
 |------|-----------|-------|----------------|
 | 0–1 | (you, the parent) | Opus | Spec ingest, gap analysis, STOP confirmation — needs judgment |
+| 0.6 | `openapi-spec-validate` | Haiku | Mechanical pattern checks on the parsed spec; categorized BLOCKING/WARNING/INFO report |
 | 2 | `openapi-handlers` | Sonnet | Schema-to-TS mapping, intelligent merge — moderate decisions |
 | 3 | `openapi-hooks` | Haiku | Mechanical SWR boilerplate from handler imports |
 | 4 | `openapi-code-validate` | Haiku | Run commands + categorized report |
@@ -111,6 +113,31 @@ The command writes JSON to stdout when it succeeds and writes the parse error to
 ### 0.5 — $ref resolution
 
 Recursively resolve every `$ref` in `paths` and `requestBody` against `components.schemas`. Cache resolved shapes by ref path to avoid re-expanding cycles. Mark circular refs as `unknown` and flag them in the Phase 1 gap analysis.
+
+---
+
+## Phase 0.6 — Delegate openapi-spec-validate (Haiku, single run)
+
+> **Delegate to**: `Agent({ subagent_type: 'openapi-spec-validate' })` — runs in **Haiku**.
+
+Input-side audit pass that runs BEFORE any code is generated. Catches broken `$ref`s, missing 2xx responses, path-param mismatches, path collisions, function-name collisions, and emits a per-tag security audit table for the user to review at Phase 1.
+
+**Pass to the agent:**
+- `parsedSpec` — the in-memory JS object produced by Phase 0.3 + Phase 0.4
+- `resolvedSchemas` — the resolved `components.schemas` map from Phase 0.5
+- `tagsFilter` — the parsed `--tags=a,b,c` list, or `null` when the flag was not passed
+- `paginatedResponseShape` — the DRF shape `{ count, next, previous, results }` (so the agent can flag non-DRF pagination as a warning)
+
+**Capture from the invocation:**
+- The agent's output report (BLOCKING, WARNINGS including the security-audit table, INFO).
+- A `STOP-BLOCKING / category: INVALID_SPEC` line on the first row of the report if any BLOCKING findings were emitted.
+
+**Handle the result:**
+- **BLOCKING findings present** → emit the report verbatim to the user, then STOP the run. Do NOT proceed to Phase 1. Message: `"The OpenAPI spec has {N} blocking issue(s). Fix the spec and re-invoke /openapi-import."`
+- **WARNINGS only** → store the WARNINGS list (including the security audit table) for inclusion in the Phase 1 gap analysis (Phase 1.5 inserts them verbatim).
+- **INFO only or no findings** → continue to Phase 1; include INFO in the gap analysis as the "Spec quality summary" section.
+
+The orchestrator NEVER re-prompts to bypass BLOCKING. The user must fix the spec; that is non-negotiable.
 
 ---
 
@@ -176,6 +203,23 @@ Spec: {source} — OpenAPI {version}, {N} tags, {M} endpoints
 - uploads/binary endpoints (manual review): [list or "none"]
 - circular $refs: [list or "none"]
 
+### Spec quality (from openapi-spec-validate, Phase 0.6)
+
+#### Security audit per tag
+| Tag      | Public | Authenticated | Mixed? |
+|----------|--------|---------------|--------|
+| auth     | 8      | 4             | yes    |
+| users    | 1      | 7             | yes    |
+| products | 0      | 12            | no     |
+
+#### Warnings (review before confirming)
+- MIXED_SECURITY: tag `users` mixes public (1) and authenticated (7) operations. Confirm intentional.
+- NO_DOCS: 14 operation(s) declare no summary or description — emitted code will lack inline docs.
+- DEAD_SCHEMA: components.schemas.UnusedShape is declared but no operation references it.
+- ... (insert every warning from Phase 0.6 verbatim)
+
+(If Phase 0.6 returned no warnings, write: "No spec quality issues to surface.")
+
 ### Merge plan for existing files
 | File | ADDED | MODIFIED | UNCHANGED | KEPT | POTENTIAL RENAME |
 |------|-------|----------|-----------|------|-----------------|
@@ -185,6 +229,8 @@ Screens, proxy.ts, and layouts are NOT touched by this skill — they belong to 
 
 Confirm to proceed (y/n).
 ```
+
+When inserting the "Spec quality" section, paste the **Security audit per tag** table verbatim from Phase 0.6's output. Include the table even when no tag is mixed — the user benefits from the public/authenticated breakdown either way. The Warnings list is verbatim every WARNING the spec-validate agent emitted.
 
 **Do NOT proceed past Phase 1 without user confirmation.** Wait for an explicit "y", "yes", or similar affirmation.
 
@@ -521,7 +567,8 @@ If the STOP-BLOCKING fires in Phase 2 for one tag out of many, you MAY ask the u
 | Phase | What | Sub-agent | Model | Input from parent |
 |-------|------|-----------|-------|-------------------|
 | 0 | Spec ingest (URL or local, YAML parse, $ref resolution) | (parent) | Opus | First positional arg + flags |
-| 1 | Gap analysis, classification, large-spec gate, STOP | (parent) | Opus | Parsed spec object |
+| 0.6 | Spec validation: BLOCKING / WARNINGS / INFO + per-tag security audit table | `openapi-spec-validate` | Haiku | parsedSpec, resolvedSchemas, tagsFilter, paginatedResponseShape |
+| 1 | Gap analysis, classification, large-spec gate, STOP (includes Phase 0.6 warnings + audit table) | (parent) | Opus | Parsed spec object + Phase 0.6 report |
 | 2 | Handler generation + intelligent merge, one run per tag (sequential) | `openapi-handlers` | Sonnet | tagName, operations (resolved), sharedSchemas, existingFilePath, noAuth |
 | 3 | SWR hook generation (single run, after Phase 2) | `openapi-hooks` | Haiku | GET operations per tag, handler import map, noAuth |
-| 4 | Lint + type-check + consumption check + census | `openapi-code-validate` | Haiku | Emitted file paths, POTENTIAL RENAME list, flag lists |
+| 4 | Lint + type-check + consumption check + census | `openapi-code-validate` | Haiku | Emitted file paths, POTENTIAL RENAME list, flag lists, noAuth |
