@@ -17,6 +17,7 @@ A structured handoff describing what the previous phases emitted in THIS run:
 - `nonStandardPagination`: optional list of `{tag, functionName, shape}` entries flagged by `openapi-handlers` for endpoints whose response shape is paginated but does NOT match the DRF `{count, next, previous, results}` contract. Pass through verbatim.
 - `schemaTodos`: optional list of `{path, line, schemaName, reason}` entries for `oneOf`/`anyOf` shapes that were left as `unknown` in handlers. Pass through verbatim.
 - `manualReviewEndpoints`: optional list of `{tag, functionName, reason}` entries for binary download / multipart upload / no-body POST endpoints that need human review. Pass through verbatim.
+- `noAuth`: boolean. Mirrors the `--no-auth` flag the user passed to `/openapi-import`. When `true`, the emitted handlers/hooks were generated without `token` parameters and without token-gated SWR keys, and the atomic `useUserStore` selector is absent because the hooks do not import `useUserStore` at all. **You MUST branch on this flag** so that token-related checks (Step 4 token-last, Step 5 SWR key gate, Step 7 atomic Zustand selector) do not produce a wall of false-positive findings. See each step for the exact branching rule.
 
 If `emittedApiFiles` is empty, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: openapi-validation received no emitted files — nothing to audit`. Without a scope, the consumption check (Step 10) cannot run usefully.
 
@@ -51,6 +52,8 @@ Most signatures are single-line in this codebase (`export const fnName = async (
 
 4. **Every authenticated handler signature places `token` as the LAST positional parameter**. The contract (after the auth-refactor): public endpoints (login, signup, refreshToken, etc.) omit `token` entirely; authenticated endpoints place `token` last. Token appearing anywhere other than the last position is a violation.
 
+   **Skip this step entirely when `noAuth === true`** — the run produced handlers without `token` by design; flagging them as "missing token" would be a wall of false positives. Mark this section as `n/a (noAuth run)` in the report.
+
    For each path in `emittedApiFiles`, grep with `multiline: true`:
 
    ```
@@ -76,6 +79,8 @@ Most signatures are single-line in this codebase (`export const fnName = async (
    - Read the surrounding closure (~10 lines before the call). It MUST contain a token-truthiness gate such as `const key = token ? ... : null` or `token ? \`{path}\` : null` inline.
    - Calling `useSWR` with an unconditional string key when `token` is `null` triggers a failing request at first paint. Flag every `useSWR(` call whose key is not gated on `token`.
 
+   **Skip this step entirely when `noAuth === true`** — `--no-auth` hooks deliberately omit the token gate (the SWR key is the path string directly). Mark as `n/a (noAuth run)` in the report.
+
 ### 6. Atomic Zustand selector pattern
 
 7. **Hooks consume `useUserStore` with an atomic selector**. The pattern is `useUserStore((s) => s.token)` — one field per call. Bare destructure (`const { token } = useUserStore()`) re-renders on every state change.
@@ -83,6 +88,8 @@ Most signatures are single-line in this codebase (`export const fnName = async (
    For each path in `emittedHookFiles`:
    - Grep for `useUserStore\(\)` (no arguments) — flag every match as `path:line — bare useUserStore() destructure; use atomic selector useUserStore((s) => s.field)`.
    - Grep for `useUserStore\s*\(\s*\(s\)\s*=>` — these are correct selectors, no action.
+
+   **Skip this step entirely when `noAuth === true`** — `--no-auth` hooks do not import `useUserStore` at all (no token is needed). The check has no input. Mark as `n/a (noAuth run)` in the report.
 
 ### 7. No cross-layer imports
 

@@ -389,6 +389,7 @@ export const useUser = (id: string | number | null) => {
 - List of `non-standard-pagination` flags from Phase 2.
 - List of `schema-todos` (complex `oneOf`/`anyOf` left as `unknown`).
 - List of `uploads/binary` endpoints flagged in Phase 1.
+- The `noAuth` flag (boolean). When `true`, the validation agent SKIPS the token-related checks (token-last positional, SWR key gated on token, atomic `useUserStore` selector) since those invariants do not apply to handlers/hooks emitted without authentication. Without this flag, every `--no-auth` run would produce a wall of false-positive findings.
 
 **The agent runs:**
 
