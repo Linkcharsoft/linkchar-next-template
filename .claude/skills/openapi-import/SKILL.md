@@ -83,7 +83,14 @@ Always pass enough context in each delegation — sub-agents start with a fresh 
 
 ### 0.1 — Source detection
 
-- If the first arg starts with `https://` → use WebFetch to download the spec. Cache the raw text to `/tmp/openapi-{hash}.yaml` via Bash so subsequent steps don't re-fetch.
+- If the first arg starts with `https://` → use WebFetch to download the spec. Cache the raw text to a cross-platform temp directory so subsequent steps don't re-fetch. Derive the temp dir with Bash:
+
+  ```bash
+  TMPDIR=$(node -e "console.log(require('os').tmpdir())")
+  ```
+
+  Then write the spec to `$TMPDIR/openapi-{hash}.yaml`. Do NOT hardcode `/tmp/` — on Windows that path resolves to `C:tmp...` literally (a sibling of the C: root) and creates a rogue file at the wrong location. Past runs have leaked `C:tmpspec-parsed.json` into the project root because of this.
+
 - Otherwise treat the arg as a local file path. Verify it exists with `Read`. If it doesn't exist, STOP and tell the user.
 
 ### 0.2 — Format gate
@@ -94,13 +101,26 @@ Always pass enough context in each delegation — sub-agents start with a fresh 
 
 ### 0.3 — YAML parse
 
-Parse the YAML with Bash. Capture stdout ONLY — do NOT redirect stderr into stdout (`2>&1` would corrupt the JSON when `js-yaml` prints any warning):
+Parse the YAML with Bash. Capture stdout ONLY — do NOT redirect stderr into stdout (`2>&1` would corrupt the JSON when `js-yaml` prints any warning).
+
+Try in order until one returns non-empty stdout with exit code 0:
 
 ```bash
+# 1. npx (works on most systems with a global npm)
 npx -y js-yaml <file>
+
+# 2. pnpm dlx (REQUIRED fallback on Windows + pnpm projects — npx
+#    frequently fails to resolve the installed bin on Windows shells)
+pnpm dlx js-yaml <file>
+
+# 3. Last resort if neither resolves: use Node + the js-yaml package
+#    via pnpm dlx (no install required, runs in a temporary sandbox)
+pnpm dlx --package js-yaml node -e "console.log(JSON.stringify(require('js-yaml').load(require('fs').readFileSync(process.argv[1],'utf8'))))" <file>
 ```
 
-The command writes JSON to stdout when it succeeds and writes the parse error to stderr when it fails. Read the Bash result's stdout; if empty AND the exit code is non-zero, STOP and surface the stderr verbatim — do not guess at a fix.
+The first two commands write JSON to stdout when they succeed and the parse error to stderr when they fail. Read the Bash result's stdout; if empty AND the exit code is non-zero, try the next variant. If ALL three fail, STOP and surface the stderr from the LAST attempt verbatim — do not guess at a fix.
+
+Do NOT write the parsed JSON to a scratch file (e.g. `validate.js`, `/tmp/spec-parsed.json`) — capture the stdout directly into the orchestrator's in-memory state and pass it to subsequent phases as text. Scratch files leak into the project root and have polluted past runs.
 
 `JSON.parse` the captured stdout into an in-memory object for the rest of Phase 0.
 
