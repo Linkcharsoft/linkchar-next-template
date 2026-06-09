@@ -59,7 +59,7 @@ Before writing anything, in parallel:
 ### Decision rules:
 - If the screen file already exists → STOP and tell the user it exists. Do not overwrite.
 - If the types or API file exists → reuse them. Read them and integrate with whatever functions/types are already there. Do NOT overwrite.
-- If the API file is missing → create it from scratch in Step 3 using the `new-api` skill conventions.
+- If the API file is missing → create it from scratch in Step 3 using the `/new-api-resource` skill conventions (interleaved layout, token-last, `customFetch`-based). For spec-driven generation, the user should use `/openapi-import` instead, which understands OpenAPI YAML and handles many tags at once.
 
 ---
 

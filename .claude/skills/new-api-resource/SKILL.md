@@ -217,5 +217,5 @@ Do NOT post the full file contents back in the summary — the clickable link is
 - Do NOT touch `src/proxy.ts`, `tailwind.config.js`, or any provider.
 - Do NOT invoke `/openapi-import`, `/figma-design-import`, or any other skill from inside this one. This skill is a leaf.
 - Do NOT emit marker comments (`// @openapi-generated`, `// @manual`, etc.). The file looks like a hand-written file.
-- Do NOT split types and handlers into two halves with `// ── Types ──` / `// ── API ──` headers — that is the legacy `/new-api` layout. The current layout is INTERLEAVED, one `// ── {functionName} ──` header per handler.
+- Do NOT split types and handlers into two halves with `// ── Types ──` / `// ── API ──` headers — that is a legacy layout (used by older codebases before this template adopted the interleaved convention). The current layout is INTERLEAVED, one `// ── {functionName} ──` header per handler.
 - Do NOT put `token` anywhere except the LAST positional argument when it is present. The `customFetch` call inside the body can keep `token` anywhere (shorthand object property), but the function signature is strict: `(…, token: string)`.

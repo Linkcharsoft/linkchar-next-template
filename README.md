@@ -194,7 +194,8 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 | `/new-store` | Generate a Zustand store in `src/stores/` with `create<StoreType>()` and `useXxxStore` default export |
 | `/new-modal` | Wire up a new modal type across `modalStore`, the component file, and `ModalsProvider` |
 | `/new-skeleton` | Create a skeleton loader sibling for an existing component or screen using `SkeletonBlock` |
-| `/new-api` | Generate an API domain from an OpenAPI JSON spec (or a manual scaffold) — types + `customFetch` functions in a single file per tag |
+| `/new-api-resource` | Manually scaffold a single API resource (`src/api/{resource}.ts`) — types interleaved with `customFetch`-based handlers, token-last for authenticated endpoints. Use when there is NO OpenAPI spec |
+| `/openapi-import` | Orchestrate the API + hooks layer from a full OpenAPI 3.x YAML spec: spec validation → handlers per tag → SWR hooks for GETs → code validation. Use AFTER `/figma-design-import` |
 | `/figma-design-import` | Orchestrate a full Figma-to-code import: tokens → assets → components → layouts → screens → validation |
 
 All conventions enforced by these skills are documented in `CLAUDE.md` — the canonical project guide for any AI-assisted contribution.

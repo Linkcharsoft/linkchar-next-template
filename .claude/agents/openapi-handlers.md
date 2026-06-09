@@ -306,7 +306,7 @@ When `existingFilePath` is not null, the file already exists and contains user c
 
 - ALWAYS use `customFetch` from `./customFetch`. Never use raw `fetch` except for binary download handlers (Step 4), which must be flagged.
 - Token is the LAST positional argument when the endpoint is authenticated. Token is OMITTED entirely (no optional param) when `flags.noAuth === true` or when the operation's `security` field is empty (public endpoint). Never add `token?: string` optional params.
-- Types are interleaved with handlers (Q1). The legacy `// ── Types ──` / `// ── API ──` split from the old `/new-api` skill must NOT be used in files generated or merged by this agent.
+- Types are interleaved with handlers (Q1). The legacy global `// ── Types ──` / `// ── API ──` split (two halves of the file, all types grouped at the top) must NOT be used in files generated or merged by this agent — every type sits directly above the handler that consumes it.
 - No comment markers. Do NOT add `// @openapi-generated`, `// @generated`, `// auto-generated`, or any similar annotation to any line of the file.
 - Trailing slash on every `path` value inside `customFetch` calls (e.g. `'/users/'`, not `'/users'`).
 - Use `import type { X }` for type-only imports. Value imports use plain `import { X }`.
