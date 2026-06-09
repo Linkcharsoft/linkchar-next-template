@@ -172,11 +172,23 @@ This is the lowest-priority warning — keep it INFO-grade in terms of report fo
 
 #### 3.4 — Dead schemas in components
 
-For every schema name in `components.schemas`, check whether it is referenced (directly or transitively) by any operation in `parsedSpec.paths` (whether or not the operation is in `tagsFilter`). Unreferenced schemas:
+For every schema name in `components.schemas`, check whether it is referenced (directly OR transitively) by any operation in `parsedSpec.paths` (whether or not the operation is in `tagsFilter`).
+
+**Build the reference set TRANSITIVELY before flagging.** A naive check (only look at direct `$ref`s from operation parameters/bodies/responses) misses schemas reused as `items` of an array inside another schema, as nested `properties`, as `additionalProperties`, etc. Past runs have flagged genuinely-used schemas as dead because of this.
+
+Algorithm:
+
+1. Build `reachable = new Set()`.
+2. Initialize the queue with every `$ref` directly visible in `paths.*.*.{parameters,requestBody,responses}`.
+3. While the queue is non-empty: pop a ref, add the target schema name to `reachable`, then walk that schema's entire body (`properties.*`, `items`, `additionalProperties`, `allOf[*]`, `oneOf[*]`, `anyOf[*]`, `not`) recursively and enqueue every `$ref` found inside it that is not already in `reachable`.
+4. After the closure, the `reachable` set contains every schema usable from at least one operation, including transitively-used schemas.
+5. For every `name` in `components.schemas` NOT in `reachable`, emit:
 
 ```
-DEAD_SCHEMA: components.schemas.{name} is declared but no operation references it. Consider removing from the spec.
+DEAD_SCHEMA: components.schemas.{name} is declared but no operation references it (directly or transitively). Consider removing from the spec.
 ```
+
+Example: `PaginatedAdminCompetitorsListResponseList` is referenced directly by an operation response → reachable. Its `results.items.$ref` points to `AdminCompetitorsListResponse` → reachable transitively. `AdminCompetitorsListResponse.items.items.$ref` points to `AdminCompetitorRow` → reachable transitively. NONE of these three should appear as DEAD_SCHEMA.
 
 #### 3.5 — Mixed security per tag (security audit)
 
@@ -200,13 +212,20 @@ Build the security audit table and include it in the WARNINGS output verbatim (t
 | orders   | 0      | 5             | no     |
 ```
 
-For every tag where `Mixed? = yes`, also add one prose line in the WARNINGS section:
+For every tag where `Mixed? = yes` (and ONLY those), add ONE prose line in the WARNINGS section:
 
 ```
 MIXED_SECURITY: tag `{tagName}` mixes public ({N}) and authenticated ({M}) operations. The handlers agent will emit functions accordingly. Confirm this is intentional — if some endpoints were meant to require auth but were not declared with security, fix the spec before proceeding.
 ```
 
-The user sees the table AND the prose line in the gap analysis and decides `y/n`. Both balanced (`auth: 8/4`) and lopsided (`users: 1/7`) splits emit the same severity — the table makes the asymmetry visible, the user judges.
+**STRICT RULE — do NOT emit MIXED_SECURITY for tags that are not mixed.** A tag is mixed ONLY when BOTH `Public > 0` AND `Authenticated > 0`. Examples of what does NOT trigger the prose line:
+- `admin`: 0 public, 10 authenticated → NOT mixed → NO prose line. The table shows `Mixed? = no`.
+- `entries`: 4 public, 0 authenticated → NOT mixed → NO prose line. The table shows `Mixed? = no`.
+- `auth`: 7 public, 4 authenticated → MIXED → exactly ONE prose line: `MIXED_SECURITY: tag 'auth' mixes ...`.
+
+Past runs have over-flagged by emitting one prose line per tag regardless of the mixed state, contradicting the table. The audit table is always informational (shows all tags). The prose lines are warning-only (shows only mixed tags).
+
+The user sees the table AND the prose lines in the gap analysis and decides `y/n`. Both balanced (`auth: 8/4`) and lopsided (`users: 1/7`) splits emit the same severity — the table makes the asymmetry visible, the user judges.
 
 #### 3.6 — Body on GET or DELETE
 
@@ -286,6 +305,8 @@ NON_DRF_PAGINATION: paths.{path}.{method} response has a `results` array (pagina
 INFO: {N} operations across {M} tags. {K} schemas in components.
 ```
 
+**Use EXACT counts**, not rough estimates. Iterate the operation list built in Step 1 and use `operations.length` for `N`. Iterate the distinct tag set and use its size for `M`. Iterate `Object.keys(parsedSpec.components?.schemas ?? {})` for `K`. Do NOT eyeball the spec to guess; past runs have under-counted by 1-2 operations on specs with non-trivial path counts.
+
 #### 4.2 — Top tags by operation count
 
 ```
@@ -320,7 +341,12 @@ Inlining everything is valid but usually indicates a hand-written or generator-f
 
 ## Hard rules
 
-- **Read-only.** Never write, edit, or rename any file. Never run `pnpm`, `git`, or any command that mutates state. The agent runs purely on the parsed spec in memory.
+- **Read-only — NO file writes of ANY kind, including scratch/helper files.** Never write, edit, or rename any file in the project. Specifically forbidden:
+  - Writing helper scripts like `validate.js`, `parse-spec.mjs`, or any `.js`/`.mjs`/`.ts` file at the project root or anywhere in the repo to do the YAML parsing for you. Past runs have leaked `validate.js` (a Node script invoking `require('js-yaml')`) into the project root. If you need to parse YAML, the orchestrator already did it in Phase 0.3 and handed you `parsedSpec`. If for some reason you need to re-parse, invoke `pnpm dlx js-yaml <file>` via Bash directly (no intermediate script) and capture stdout.
+  - Writing JSON dumps like `/tmp/spec-parsed.json`, `spec-parsed.json`, or anywhere else. Hold the parsed spec in your conversational memory; do not persist.
+  - Modifying the input YAML, `tailwind.config.js`, `package.json`, or any other file.
+  - Running `pnpm`, `git commit`, `git mv`, or any command that mutates state.
+- The only Bash invocations allowed are: read-only OS introspection (e.g. `node -e "console.log(require('os').tmpdir())"` if you genuinely need a temp dir hint, though you should not need it), and the YAML parser CLI (`npx -y js-yaml <file>` / `pnpm dlx js-yaml <file>`) used to materialize the orchestrator's input if it was not already provided. All of these write to stdout, not to the filesystem.
 - **Severity assignment is final.** When a finding's severity is genuinely ambiguous between BLOCKING and WARNING, choose WARNING. False BLOCKING is more expensive than false WARNING.
 - **Per-finding citation.** Every finding must include enough information for the user to locate the issue in the spec — typically the path + method, or the schema name. Never emit a finding like `"some operation has no operationId"` without saying which one.
 - **No fixes proposed.** This agent reports; the user fixes the spec. Do not include suggested edits to the spec text — that is the spec author's responsibility and the agent does not know the larger design intent.
