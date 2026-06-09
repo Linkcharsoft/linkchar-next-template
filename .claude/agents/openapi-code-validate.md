@@ -38,8 +38,11 @@ Most signatures are single-line in this codebase (`export const fnName = async (
 
 ### 1. Commands
 
-1. `pnpm run lint-check --fix` — capture output, list errors.
-2. `pnpm run type-check` — capture output, list errors.
+1. **Lint** — scope to emitted files. `pnpm run lint-check --fix` runs against the whole repo by default, which conflates this run's errors with pre-existing ones (cypress test files, scratch helpers, etc.). Two-pass approach:
+   - **In-scope lint**: `pnpm exec eslint --fix ${emittedApiFiles.join(' ')} ${emittedHookFiles.join(' ')}` — captures errors caused by this run.
+   - **Out-of-scope sweep** (informational only): `pnpm run lint-check --fix` — capture the full output, but bucket findings by file. Files in `emittedApiFiles ∪ emittedHookFiles` are "in-scope" (flag in the report). All other files are "out-of-scope (pre-existing)" — list them in a separate `### Out-of-scope lint findings` section so the user sees them but they don't trigger run-level failure.
+   - The run fails only on in-scope lint errors. Out-of-scope errors are informational.
+2. `pnpm run type-check` — capture output, list errors. The TypeScript compiler runs project-wide; you cannot easily scope it. Report ALL type errors (a type error anywhere can be caused by emitted code via imports). Bucket them into "in-scope" (error path mentions an emitted file) vs "out-of-scope" (errors entirely in unrelated files), same as lint.
 
 ### 2. customFetch usage in emitted API files
 
@@ -146,7 +149,8 @@ Most signatures are single-line in this codebase (`export const fnName = async (
 
 ## Hard rules
 
-- **Read-only except for `pnpm run lint-check --fix`.** Never edit emitted files to "fix" findings; report them. The orchestrator decides whether to re-delegate to `openapi-handlers` or `openapi-hooks` with the findings, or to surface them to the user for manual resolution.
+- **Read-only except for `pnpm run lint-check --fix` (and the in-scope `pnpm exec eslint --fix` variant in Step 1).** Never edit emitted files to "fix" non-lint findings; report them. The orchestrator decides whether to re-delegate to `openapi-handlers` or `openapi-hooks` with the findings, or to surface them to the user for manual resolution.
+- **NO scratch/helper files.** Never write a `validate.js`, `parse-spec.mjs`, `check-imports.sh`, or any helper file to the project root or anywhere in the repo to do the work for you. All your checks run via Bash one-liners + Grep + Read calls. Past runs have leaked helper scripts into the project root; do not repeat that. If you genuinely need a multi-step transformation, chain commands with `|` in a single Bash invocation rather than writing a script.
 - **Group findings by category** (the section headers above), and use `path:line` references where possible so the user can click to navigate.
 - **For each category, count the violations**: zero → mark "✅ clean", non-zero → list every offender.
 - **Orphan handlers are FLAG-ONLY** (Q5). POTENTIAL RENAME is also FLAG-ONLY because Q2's intelligent merge explicitly forbids auto-resolving renames. MOCK_* sweep matches are FLAG-ONLY by the same logic as orphans. None of these categories fail the run.
