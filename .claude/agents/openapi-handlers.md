@@ -152,6 +152,20 @@ For each GET list endpoint response, inspect the resolved schema:
 - **Strict DRF match** — schema is `{ count: integer, next: string|null, previous: string|null, results: array<T> }` → reuse `PaginatedResponse<Array<T>>` from `@/types/general`. Do NOT redeclare this wrapper.
 - **Any other paginated shape** — emit a local `interface {Tag}PageType { ... }` and add `flag: non-standard-pagination` to the output report with the schema shape so the caller can decide whether to adapt it.
 
+**Double-pagination edge case (detect before emitting).** When the DRF outer matches but the `results` array's item type is ITSELF a page-shaped object (has `page`, `page_size`, `total`, `total_pages`, `items` properties, or similar pagination metadata), the spec is using DRF pagination wrapped around an already-paginated payload. This is structurally suspicious — emitting `PaginatedResponse<Array<{page, page_size, items: ...}>>` is type-correct but produces an unusable handler return (each `results[i]` is a full page envelope, not a row).
+
+Detection: an item schema is "page-shaped" when its property set contains AT LEAST 3 of: `page`, `page_size`, `total`, `total_pages`, `items`, `count`, `next`, `previous`, `results`.
+
+When detected:
+1. Still emit `customFetch<PaginatedResponse<Array<TItem>>>` for the handler return (faithfully reflects the spec).
+2. Add `flag: double-pagination` to the output report with both the outer wrapper name and the inner page-shaped type name and the property set you saw on the inner. Example:
+   ```
+   flag: double-pagination: handler {functionName} returns PaginatedResponse<Array<{InnerType}>>, but {InnerType} is itself page-shaped (properties: page, page_size, total, total_pages, items). Spec quirk — verify the backend actually returns this double-nested shape, or refactor the spec to flatten one layer.
+   ```
+3. Do NOT auto-flatten or invent a different return type — the spec is authoritative even when weird. Surface for human review.
+
+Past runs against DRF specs that wrap custom paginators (e.g. admin endpoints listing pre-batched pages) emitted the nested type silently and confused downstream consumers. The flag prevents that silent emit.
+
 ### Step 4 — Handle special body and response types
 
 - **Multipart / `multipart/form-data`** — type the `body` parameter as `FormData`. Add `flag: manual-review-multipart` to the output report. `customFetch` already strips `Content-Type` when it receives a `FormData` body (confirmed in `customFetch.ts` line 64).
