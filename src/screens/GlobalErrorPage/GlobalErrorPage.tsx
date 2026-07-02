@@ -53,6 +53,8 @@ const GlobalErrorPage = ({
       level: 'fatal'
     })
 
+    // captureException is a mount-only side effect; storing its returned id needs state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEventId(id)
   }, [error])
 

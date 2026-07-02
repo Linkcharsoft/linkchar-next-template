@@ -40,13 +40,6 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 
-  usePressKey('Enter', () => {
-    if (tokenStatus === 'valid') {
-      changeConfirmationFormik.handleSubmit()
-    }
-  })
-
-
   // Guard set AFTER user hydrates, otherwise a late hydration traps the page on 'loading'.
   useEffect(() => {
     if (!user) {
@@ -182,6 +175,13 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
       } finally {
         closeModal('loadingModal')
       }
+    }
+  })
+
+
+  usePressKey('Enter', () => {
+    if (tokenStatus === 'valid') {
+      changeConfirmationFormik.handleSubmit()
     }
   })
 

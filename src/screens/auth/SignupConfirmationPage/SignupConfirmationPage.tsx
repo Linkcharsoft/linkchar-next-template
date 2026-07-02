@@ -46,13 +46,6 @@ const SignupConfirmationPage = ({ token }: Props) => {
   })
 
 
-  usePressKey('Enter', () => {
-    if(tokenStatus === 'invalid') {
-      invalidTokenFormik.handleSubmit()
-    }
-  })
-
-
   // Verify token logic
   useEffect(() => {
     if (verifyTokenRef.current) return
@@ -124,6 +117,13 @@ const SignupConfirmationPage = ({ token }: Props) => {
       } finally {
         closeModal('loadingModal')
       }
+    }
+  })
+
+
+  usePressKey('Enter', () => {
+    if(tokenStatus === 'invalid') {
+      invalidTokenFormik.handleSubmit()
     }
   })
 

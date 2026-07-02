@@ -32,11 +32,6 @@ const SignupPage = () => {
   const [generalError, setGeneralError] = useState<string | null>(null)
 
 
-  usePressKey('Enter', () => {
-    signupFormik.handleSubmit()
-  })
-
-
   const signupFormik = useFormik<SignupFormikType>({
     initialValues: {
       email: '',
@@ -109,6 +104,11 @@ const SignupPage = () => {
         closeModal('loadingModal')
       }
     }
+  })
+
+
+  usePressKey('Enter', () => {
+    signupFormik.handleSubmit()
   })
 
 

@@ -219,6 +219,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
   }, [searchParams])
 
   // 2. Setup default params
+  const defaultParamsKey = JSON.stringify(defaultParams)
   const DEFAULT_PARAMS: ParamsMap & PaginationConfig = useMemo(() => ({
     page: {
       value: 1,
@@ -229,7 +230,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
       type: 'number'
     },
     ...defaultParams
-  }), [JSON.stringify(defaultParams)])
+  }), [defaultParamsKey])
 
   // 3. Current params: (URL search params + Default params + Auto-Parsing)
   const PARAMS: ReturnedParams<DefaultParams> = useMemo(() => {
