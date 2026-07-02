@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-namespace -- Cypress custom commands must augment the global Cypress.Chainable namespace via declaration merging. */
 /// <reference types="cypress" />
 import { AUTH_BACKEND_EMAIL_ADDRESS, SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME, AUTHENTICATED_HOME_PATH } from '@/constants/auth'
 import type { MailSlurp, InboxDto, Email } from 'mailslurp-client'
@@ -111,21 +111,19 @@ Cypress.Commands.add('createInbox', () => {
       return cy.mailslurp()
         .then((ms: MailSlurp) => Cypress.Promise
           .try(() => ms.getInbox(data.id))
-          .catch((err: any) => {
+          .catch((error: any) => {
             const errors = ['Error403Forbidden', 'Error404NotFound']
 
-            if (errors.includes(err.errorClass)) {
+            if (errors.includes(error.errorClass)) {
               return createAndSaveInbox()
             }
           })
         )
         .then((inbox: InboxDto) => {
-          if(!newUser) {
           // Check inbox expiration
-            if (!inbox.expiresAt || (inbox.expiresAt && new Date(inbox.expiresAt) < new Date())) {
+          if(!newUser && (!inbox.expiresAt || (inbox.expiresAt && new Date(inbox.expiresAt) < new Date()))) {
             // Expired -> create a new one
-              return createAndSaveInbox()
-            }
+            return createAndSaveInbox()
           }
 
           // Inbox still valid -> return the existing one
@@ -141,7 +139,7 @@ Cypress.Commands.add('getLastestEmail', (inboxId: string) => {
   return cy.then(() => {
     return cy
       .mailslurp()
-      .then((ms: MailSlurp) => ms.waitForLatestEmail(inboxId, 60000, false))
+      .then((ms: MailSlurp) => ms.waitForLatestEmail(inboxId, 60_000, false))
       .then((email: Email) => {
         expect(email.sender?.emailAddress).to.equal(AUTH_BACKEND_EMAIL_ADDRESS)
 

@@ -92,7 +92,7 @@ describe('Email Validation: Success ✅', () => {
 
     cy.get('@resend-button').should('be.disabled')
 
-    cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
+    cy.get('@resend-button', { timeout: 35_000 }).should('not.be.disabled')
 
     const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
@@ -113,7 +113,7 @@ describe('Email Validation: Success ✅', () => {
 
     const code = Cypress.expose('EMAIL_VALIDATION_CODE')
     cy.wrap(code).should('exist')
-    cy.visit(`/signup/confirmation/${code.slice(0, code.length - 1)}`)
+    cy.visit(`/signup/confirmation/${code.slice(0, - 1)}`)
 
     cy.wait('@validate-email').its('response.statusCode').should('eq', 404)
     cy.get('.pi-exclamation-triangle').should('exist')
@@ -129,7 +129,7 @@ describe('Email Validation: Success ✅', () => {
 
     cy.get('@resend-button').should('be.disabled')
 
-    cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
+    cy.get('@resend-button', { timeout: 35_000 }).should('not.be.disabled')
 
     const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {

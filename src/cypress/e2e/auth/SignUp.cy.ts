@@ -128,7 +128,7 @@ describe('Sign Up: Success ✅', () => {
 
     cy.get('@resend-button').should('be.disabled')
 
-    cy.get('@resend-button', { timeout: 35000 }).should('not.be.disabled')
+    cy.get('@resend-button', { timeout: 35_000 }).should('not.be.disabled')
 
     const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {

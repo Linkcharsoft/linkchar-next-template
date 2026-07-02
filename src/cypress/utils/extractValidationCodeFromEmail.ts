@@ -11,7 +11,8 @@ const extractValidationCodeFromEmail = (email: Email): string => {
   if (!link) throw new Error('No link found')
 
   const linkParts = link.split('/')
-  const code = linkParts[linkParts.length - 2]
+  const code = linkParts.at(-2)
+  if (!code) throw new Error('No validation code found')
 
   return code
 }
