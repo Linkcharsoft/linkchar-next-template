@@ -1,16 +1,22 @@
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments'
 import js from '@eslint/js'
 import nextPlugin from '@next/eslint-plugin-next'
 import stylistic from '@stylistic/eslint-plugin'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
+import boundaries from 'eslint-plugin-boundaries'
+import checkFile from 'eslint-plugin-check-file'
 import cypressPlugin from 'eslint-plugin-cypress'
 import granularSelectors from 'eslint-plugin-granular-selectors'
 import importPlugin from 'eslint-plugin-import'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
+import noSecrets from 'eslint-plugin-no-secrets'
 import nodeDeps from 'eslint-plugin-node-dependencies'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
+import sonarjs from 'eslint-plugin-sonarjs'
 import tailwind from 'eslint-plugin-tailwindcss'
+import unicorn from 'eslint-plugin-unicorn'
 import globals from 'globals'
 import jsoncParser from 'jsonc-eslint-parser'
 
@@ -48,7 +54,13 @@ const ESLintConfig = [
       react,
       stylistic,
       tailwindcss: tailwind,
-      'granular-selectors': granularSelectors
+      'granular-selectors': granularSelectors,
+      '@eslint-community/eslint-comments': eslintComments,
+      boundaries,
+      'check-file': checkFile,
+      'no-secrets': noSecrets,
+      sonarjs,
+      unicorn
     },
     settings: {
       react: { version: 'detect' },
@@ -56,7 +68,21 @@ const ESLintConfig = [
         typescript: {
           project: './tsconfig.json'
         }
-      }
+      },
+      'boundaries/include': ['src/**/*.{ts,tsx}'],
+      'boundaries/elements': [
+        { type: 'app', pattern: 'src/app/**/*', mode: 'full' },
+        { type: 'screens', pattern: 'src/screens/**/*', mode: 'full' },
+        { type: 'layouts', pattern: 'src/layouts/**/*', mode: 'full' },
+        { type: 'providers', pattern: 'src/providers/**/*', mode: 'full' },
+        { type: 'components', pattern: 'src/components/**/*', mode: 'full' },
+        { type: 'hooks', pattern: 'src/hooks/**/*', mode: 'full' },
+        { type: 'stores', pattern: 'src/stores/**/*', mode: 'full' },
+        { type: 'api', pattern: 'src/api/**/*', mode: 'full' },
+        { type: 'utils', pattern: 'src/utils/**/*', mode: 'full' },
+        { type: 'constants', pattern: 'src/constants/**/*', mode: 'full' },
+        { type: 'types', pattern: 'src/types/**/*', mode: 'full' }
+      ]
     },
     rules: {
       // @stylistic
@@ -133,11 +159,6 @@ const ESLintConfig = [
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
-      // '@typescript-eslint/no-unused-vars': ['warn', {
-      //   argsIgnorePattern: '^_',
-      //   varsIgnorePattern: '^_'
-      //   caughtErrorsIgnorePattern: "^_",
-      // }],
 
       // Web (A11y)
       ...jsxA11y.configs.recommended.rules,
@@ -146,6 +167,92 @@ const ESLintConfig = [
       ...tailwind.configs.recommended.rules,
       'tailwindcss/no-custom-classname': 'off',
 
+      // SonarJS — bug detection + complexity
+      ...sonarjs.configs.recommended.rules,
+      'sonarjs/no-duplicate-string': 'off',
+      'sonarjs/no-nested-conditional': 'off',
+      'sonarjs/no-small-switch': 'off',
+      'sonarjs/cognitive-complexity': 'warn',
+      'sonarjs/no-nested-functions': 'warn',
+      'sonarjs/no-nested-template-literals': 'warn',
+      'sonarjs/no-redundant-jump': 'warn',
+      'sonarjs/regex-complexity': 'warn',
+      'sonarjs/todo-tag': 'warn',
+
+      // Unicorn — best practices (opinionated/style rules relaxed for this project)
+      ...unicorn.configs['flat/recommended'].rules,
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/filename-case': 'off',
+      'unicorn/no-null': 'off',
+      'unicorn/no-array-reduce': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'unicorn/prefer-ternary': 'off',
+      'unicorn/no-useless-undefined': 'off',
+      'unicorn/prefer-module': 'off',
+      'unicorn/prefer-query-selector': 'off',
+      'unicorn/no-empty-file': 'off',
+      // toSorted/toReversed need Safari 16.4; the project's browserslist targets Safari 15.4.
+      'unicorn/no-array-sort': 'off',
+      'unicorn/no-array-reverse': 'off',
+      // Breaks TypeScript discriminated-union narrowing when the compared field drives type guards.
+      'unicorn/prefer-includes-over-repeated-comparisons': 'off',
+      // Rewrites http→https on XML/SVG namespace URIs (immutable identifiers, not navigable URLs).
+      'unicorn/prefer-https': 'off',
+
+      // eslint-comments — every disable must justify its WHY
+      '@eslint-community/eslint-comments/require-description': ['error', { ignore: [] }],
+      '@eslint-community/eslint-comments/no-unused-disable': 'error',
+
+      // no-secrets — catch hardcoded high-entropy secrets/tokens
+      'no-secrets/no-secrets': ['error', { tolerance: 4.8 }],
+
+      // Architecture boundaries — enforce the layered import direction (v6 object selectors)
+      'boundaries/dependencies': ['error', {
+        default: 'allow',
+        rules: [
+          {
+            from: { type: 'api' },
+            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores'] } },
+            message: 'API layer must not import UI/state/hooks — keep it a leaf on the data side.'
+          },
+          {
+            from: { type: 'utils' },
+            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores'] } },
+            message: 'Utils must not import UI or state (importing the API layer is allowed).'
+          },
+          {
+            from: { type: ['constants', 'types'] },
+            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores', 'api'] } },
+            message: 'Constants/types must be pure leaves — no feature-layer imports.'
+          },
+          {
+            from: { type: 'stores' },
+            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks'] } },
+            message: 'Stores must not import UI or hooks.'
+          },
+          {
+            from: { type: 'hooks' },
+            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components'] } },
+            message: 'Hooks must not import UI layers.'
+          },
+          {
+            from: { type: 'components' },
+            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers'] } },
+            message: 'Components must not import screens/layouts/app/providers.'
+          },
+          {
+            from: { type: 'layouts' },
+            disallow: { to: { type: ['app', 'screens'] } },
+            message: 'Layouts must not import screens or app routes.'
+          },
+          {
+            from: { type: 'screens' },
+            disallow: { to: { type: ['app'] } },
+            message: 'Screens must not import app routes.'
+          }
+        ]
+      }],
+
       // Zustand — atomic selectors only
       'granular-selectors/granular-selectors': ['error', { include: ['use.*Store'] }],
       'no-restricted-syntax': [
@@ -153,6 +260,10 @@ const ESLintConfig = [
         {
           selector: 'CallExpression[callee.name=/^use.*Store$/][arguments.length=0]',
           message: 'Consume Zustand stores with an atomic selector: useXxxStore((s) => s.field). Calling the hook with no arguments re-renders on every state change.'
+        },
+        {
+          selector: 'MemberExpression[object.name="process"][property.name="env"]',
+          message: 'Do not read process.env directly — import the value from @/constants/env.'
         }
       ],
 
@@ -169,6 +280,37 @@ const ESLintConfig = [
           ]
         }
       ]
+    }
+  },
+  // --- File naming conventions ---
+  {
+    files: ['src/{components,screens,layouts}/**/*.{ts,tsx}'],
+    rules: {
+      'check-file/filename-naming-convention': ['error', {
+        '**/*.{ts,tsx}': 'PASCAL_CASE'
+      }, { ignoreMiddleExtensions: true }]
+    }
+  },
+  {
+    files: ['src/{hooks,stores,utils,api}/**/*.ts'],
+    rules: {
+      'check-file/filename-naming-convention': ['error', {
+        '**/*.ts': 'CAMEL_CASE'
+      }, { ignoreMiddleExtensions: true }]
+    }
+  },
+  // --- Infra files: process.env is sanctioned here ---
+  {
+    files: ['src/constants/env.ts', 'src/instrumentation.ts', 'src/instrumentation-client.ts', '*.config.{ts,js,mjs}', 'next.config.ts'],
+    rules: {
+      'no-restricted-syntax': 'off'
+    }
+  },
+  // --- SVG path data / test fixtures trip the entropy detector ---
+  {
+    files: ['src/assets/**/*.{ts,tsx}', 'src/cypress/**/*.{ts,tsx}'],
+    rules: {
+      'no-secrets/no-secrets': 'off'
     }
   },
   // --- Dependencies ---
@@ -201,18 +343,15 @@ const ESLintConfig = [
     plugins: { cypress: cypressPlugin },
     rules: {
       ...cypressPlugin.configs.recommended.rules,
-      'cypress/unsafe-to-chain-command': 'off'
+      'cypress/unsafe-to-chain-command': 'off',
+      // Cypress asserts via .should() chains and uses mocha's `this`; test data is non-crypto.
+      'sonarjs/assertions-in-tests': 'off',
+      'sonarjs/no-empty-test-file': 'off',
+      'sonarjs/pseudo-random': 'off',
+      'unicorn/prefer-spread': 'off',
+      'unicorn/no-this-outside-of-class': 'off'
     }
   }
-  // // --- Config Files ---
-  // {
-  //   files: ['*.config.js', '*.config.ts', 'next.config.js', 'cypress.config.ts'],
-  //   languageOptions: {
-  //     globals: {
-  //       ...globals.node
-  //     }
-  //   }
-  // }
 ]
 
 export default ESLintConfig
