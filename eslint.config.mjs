@@ -4,6 +4,7 @@ import stylistic from '@stylistic/eslint-plugin'
 import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
 import cypressPlugin from 'eslint-plugin-cypress'
+import granularSelectors from 'eslint-plugin-granular-selectors'
 import importPlugin from 'eslint-plugin-import'
 import jsxA11y from 'eslint-plugin-jsx-a11y'
 import nodeDeps from 'eslint-plugin-node-dependencies'
@@ -46,7 +47,8 @@ const ESLintConfig = [
       '@next/next': nextPlugin,
       react,
       stylistic,
-      tailwindcss: tailwind
+      tailwindcss: tailwind,
+      'granular-selectors': granularSelectors
     },
     settings: {
       react: { version: 'detect' },
@@ -105,15 +107,16 @@ const ESLintConfig = [
       }],
       'import/no-unresolved': 'error',
 
-      // React & Web (A11y)
+      // React
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
-      ...jsxA11y.configs.recommended.rules,
       'react/jsx-filename-extension': [1, { 'extensions': ['.jsx', '.tsx'] }],
       'react/no-unstable-nested-components': 'error',
       'react/prop-types': 'off',
-      // 'react-hooks/exhaustive-deps': 'warn',
-      'react-hooks/rules-of-hooks': 'error',
+
+      // React Hooks + React Compiler rules (v7 flat recommended)
+      ...reactHooks.configs['recommended-latest'].rules,
+      'react-hooks/exhaustive-deps': 'off',
 
       // Next
       ...nextPlugin.configs.recommended.rules,
@@ -136,9 +139,22 @@ const ESLintConfig = [
       //   caughtErrorsIgnorePattern: "^_",
       // }],
 
+      // Web (A11y)
+      ...jsxA11y.configs.recommended.rules,
+
       // Tailwind
       ...tailwind.configs.recommended.rules,
       'tailwindcss/no-custom-classname': 'off',
+
+      // Zustand — atomic selectors only
+      'granular-selectors/granular-selectors': ['error', { include: ['use.*Store'] }],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.name=/^use.*Store$/][arguments.length=0]',
+          message: 'Consume Zustand stores with an atomic selector: useXxxStore((s) => s.field). Calling the hook with no arguments re-renders on every state change.'
+        }
+      ],
 
       // Framer motion
       'no-restricted-imports': [
