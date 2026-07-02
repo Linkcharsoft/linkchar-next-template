@@ -8,9 +8,9 @@ const usePressKey = (key: string, callback: () => void) => {
   }
 
   useEffect(() => {
-    window.addEventListener('keydown', handlePressEnterKey)
+    globalThis.addEventListener('keydown', handlePressEnterKey)
     return () => {
-      window.removeEventListener('keydown', handlePressEnterKey)
+      globalThis.removeEventListener('keydown', handlePressEnterKey)
     }
   }, [key, callback])
 }

@@ -21,7 +21,7 @@ const isFeedbackTransportReachable = async (): Promise<boolean> => {
 
   let url: string
   if (tunnel) {
-    url = new URL(tunnel, window.location.origin).toString()
+    url = new URL(tunnel, globalThis.location.origin).toString()
   } else {
     const dsn = client.getDsn()
     if (!dsn) return false
@@ -53,8 +53,7 @@ const GlobalErrorPage = ({
       level: 'fatal'
     })
 
-    // captureException is a mount-only side effect; storing its returned id needs state.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- captureException is a mount-only side effect; storing its returned id requires state.
     setEventId(id)
   }, [error])
 

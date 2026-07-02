@@ -206,13 +206,13 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
     const params = new URLSearchParams()
 
     if(searchParams) {
-      Object.entries(searchParams).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(searchParams)) {
         if (Array.isArray(value)) {
-          value.forEach(v => params.append(key, v))
+          for (const v of value) params.append(key, v)
         } else if (value !== undefined) {
           params.set(key, value)
         }
-      })
+      }
     }
 
     return params
@@ -236,7 +236,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
   const PARAMS: ReturnedParams<DefaultParams> = useMemo(() => {
     const currentParams: Record<string, unknown> = {}
 
-    Object.keys(DEFAULT_PARAMS).forEach((k) => {
+    for (const k of Object.keys(DEFAULT_PARAMS)) {
       const defaultParam = DEFAULT_PARAMS[k]
 
       if (defaultParam.isArray) {
@@ -244,11 +244,13 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
 
         if (paramValues.length > 0) {
           switch (defaultParam.type) {
-            case 'number':
+            case 'number': {
               currentParams[k] = paramValues.filter(v => v !== '').map(Number)
               break
-            default:
+            }
+            default: {
               currentParams[k] = paramValues
+            }
           }
         } else {
           currentParams[k] = []
@@ -256,22 +258,25 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
       } else {
         const paramValue = urlParams.get(k)
 
-        if(paramValue !== null) {
-          switch (defaultParam.type) {
-            case 'number':
-              currentParams[k] = paramValue !== '' ? Number(paramValue) : undefined
-              break
-            case 'boolean':
-              currentParams[k] = paramValue !== '' ? paramValue === 'true' : undefined
-              break
-            default:
-              currentParams[k] = paramValue
-          }
-        } else {
+        if(paramValue === null) {
           currentParams[k] = defaultParam.value
+        } else {
+          switch (defaultParam.type) {
+            case 'number': {
+              currentParams[k] = paramValue === '' ? undefined : Number(paramValue)
+              break
+            }
+            case 'boolean': {
+              currentParams[k] = paramValue === '' ? undefined : paramValue === 'true'
+              break
+            }
+            default: {
+              currentParams[k] = paramValue
+            }
+          }
         }
       }
-    })
+    }
 
     return currentParams as ReturnedParams<DefaultParams>
   }, [urlParams, DEFAULT_PARAMS])
@@ -286,7 +291,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
         params.set('page', '1')
       }
 
-      Object.entries(newParams).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(newParams)) {
         if(!(key in DEFAULT_PARAMS)) throw new Error(`[${key}] is not defined in defaultParams`)
 
         const valueIsValid = value !== undefined && value !== null && value !== ''
@@ -294,22 +299,22 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
         if (valueIsValid) {
           if (Array.isArray(value)) {
             params.delete(key)
-            value.forEach(v => params.append(key, String(v)))
+            for (const v of value) params.append(key, String(v))
           } else {
             params.set(key, String(value))
           }
         } else {
-          if(key === 'page' || key === 'page_size') return
+          if(key === 'page' || key === 'page_size') continue
 
           const hasDefault = DEFAULT_PARAMS[key].value
 
-          if (hasDefault !== undefined) {
-            params.set(key, '')
-          } else {
+          if (hasDefault === undefined) {
             params.delete(key)
+          } else {
+            params.set(key, '')
           }
         }
-      })
+      }
 
       replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
     },
@@ -320,6 +325,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
   const setParam = useCallback(
     <K extends keyof ReturnedParams<DefaultParams>>(key: K, value: ReturnedParams<DefaultParams>[K]) => {
       const newParams: Partial<ReturnedParams<DefaultParams>> = {}
+      // eslint-disable-next-line unicorn/no-immediate-mutation -- computed-key indexed assignment; the object literal { [key]: value } widens the key and breaks the mapped-type narrowing.
       newParams[key] = value
 
       setParams(newParams)
@@ -330,7 +336,7 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
   const resetParams = useCallback(() => {
     const params = new URLSearchParams()
 
-    Object.entries(DEFAULT_PARAMS).forEach(([key, param]) => {
+    for (const [key, param] of Object.entries(DEFAULT_PARAMS)) {
       const defaultValue = param.value
 
       if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
@@ -338,31 +344,31 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
           const valueIsValid = defaultValue.length > 0
 
           if (valueIsValid) {
-            defaultValue.forEach(v => params.append(key, String(v)))
+            for (const v of defaultValue) params.append(key, String(v))
           }
         } else {
           params.set(key, String(defaultValue))
         }
       }
-    })
+    }
 
     replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
   }, [pathname, replace, DEFAULT_PARAMS])
   const clearParams = useCallback(() => {
     const params = new URLSearchParams()
 
-    Object.entries(DEFAULT_PARAMS).forEach(([key, param]) => {
+    for (const [key, param] of Object.entries(DEFAULT_PARAMS)) {
       const defaultValue = param.value
 
       if(key === 'page' || key === 'page_size') {
         params.set(key, String(defaultValue))
-        return
+        continue
       } else {
         if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
           params.set(key, '')
         }
       }
-    })
+    }
 
     replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
   }, [pathname, replace, DEFAULT_PARAMS])

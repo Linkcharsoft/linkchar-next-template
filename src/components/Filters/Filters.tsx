@@ -166,9 +166,7 @@ const Filters = ({
             count += 1
         }
       }
-      if(filter.type === 'date-range') {
-        if(filter.selected.from || filter.selected.to) count += 1
-      }
+      if(filter.type === 'date-range' && (filter.selected.from || filter.selected.to)) count += 1
     }
 
     return count
@@ -392,19 +390,19 @@ const Filters = ({
                         placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
                         value={filter.multiple
                           ? filter.selected.map(s => dayjs(s).toDate())
-                          : filter.selected
+                          : (filter.selected
                             ? dayjs(filter.selected).toDate()
-                            : null
+                            : null)
                         }
                         onChange={(e) => {
                           if(filter.multiple) {
-                            if(!e.value) filter.onChange([])
-                            else filter.onChange((e.value as Date[])
+                            if(e.value) {filter.onChange((e.value as Date[])
                               .sort((a, b) => a.getTime() - b.getTime())
-                              .map(v => dayjs(v).format('YYYY-MM-DD')))
+                              .map(v => dayjs(v).format('YYYY-MM-DD')))}
+                            else {filter.onChange([])}
                           } else {
-                            if(!e.value) filter.onChange(undefined)
-                            else filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))
+                            if(e.value) {filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))}
+                            else {filter.onChange(undefined)}
                           }
                         }}
                         selectionMode={filter.multiple ? 'multiple' : 'single'}

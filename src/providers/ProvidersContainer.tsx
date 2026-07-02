@@ -16,7 +16,7 @@ interface Props {
 }
 
 // PrimeReact ES locale setup
-if (typeof window !== 'undefined') {
+if (globalThis.window !== undefined) {
   import('primelocale/es.json')
     .then(({ es }) => addLocale('es', es))
     .catch((error) => console.error('Failed to load PrimeReact ES locale', error))
@@ -35,8 +35,8 @@ const ProvidersContainer = ({ children }: Props) => {
       return document.cookie
         .split(';')
         .map(c => c.trim())
-        .filter(cookie => cookie.substring(0, nameLenPlus) === `${name}=`)
-        .map(cookie => decodeURIComponent(cookie.substring(nameLenPlus)))[0] || null
+        .filter(cookie => cookie.slice(0, Math.max(0, nameLenPlus)) === `${name}=`)
+        .map(cookie => decodeURIComponent(cookie.slice(Math.max(0, nameLenPlus))))[0] || null
     }
 
     authListener.current = getCookie(LISTENER_COOKIE_NAME) || null

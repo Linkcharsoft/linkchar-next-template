@@ -9,19 +9,19 @@ const MAX_TIME_VALUE = 10
 const PRODUCT_NAME = 'Linkchar'
 
 
+function oscilateTime (time: number) {
+  const boundedTime = time % (2 * MAX_TIME_VALUE)
+  const oscillatingTime = boundedTime > MAX_TIME_VALUE ? 2 * MAX_TIME_VALUE - boundedTime : boundedTime
+  return oscillatingTime
+}
+
+
 // Delete the contents of this component when developing the app and run this command:
 // pnpm remove three @types/three
 const HomePage = () => {
   const containerRef = useRef<HTMLElement>(null)
   const vertexRef = useRef<HTMLScriptElement>(null)
   const fragmentRef = useRef<HTMLScriptElement>(null)
-
-
-  function oscilateTime (time: number) {
-    const boundedTime = time % (2 * MAX_TIME_VALUE)
-    const oscillatingTime = boundedTime > MAX_TIME_VALUE ? 2 * MAX_TIME_VALUE - boundedTime : boundedTime
-    return oscillatingTime
-  }
 
 
   // Background
@@ -48,7 +48,7 @@ const HomePage = () => {
         })
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
         this.renderer.setSize(width, height)
-        container.appendChild(this.renderer.domElement)
+        container.append(this.renderer.domElement)
         this.scene = new THREE.Scene()
         const fieldOfView = 50
         const nearPlane = .1
@@ -105,7 +105,7 @@ const HomePage = () => {
 
       stop () {
         if (requestId) {
-          window.cancelAnimationFrame(requestId)
+          globalThis.cancelAnimationFrame(requestId)
           requestId = undefined
         }
       }
@@ -141,7 +141,7 @@ const HomePage = () => {
       mousePos.x = e.clientX
       mousePos.y = e.clientY
       mousePos.px = mousePos.x / container.offsetWidth
-      mousePos.py = 1.0 - mousePos.y / container.offsetHeight
+      mousePos.py = 1 - mousePos.y / container.offsetHeight
       world.mouseMove(mousePos)
     }
 

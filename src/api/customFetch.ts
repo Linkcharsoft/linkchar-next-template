@@ -68,9 +68,9 @@ export const customFetch = async <T extends object>({
     headers: requestHeaders,
     body: body instanceof FormData
       ? body
-      : body
+      : (body
         ? JSON.stringify(body)
-        : undefined
+        : undefined)
   }
 
   if (next) {
@@ -85,7 +85,7 @@ export const customFetch = async <T extends object>({
   if (
     response.status === 401 &&
     _retryCount < MAX_RETRIES &&
-    typeof window !== 'undefined'
+    globalThis.window !== undefined
   ) {
     try {
       const newAccessToken = await handleRefreshToken()
@@ -152,8 +152,8 @@ const handleUnauthorizedLogout = async () => {
   // Relative URL — absolute would set delete-cookie on the wrong response.
   try {
     await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
-  } catch (e) {
-    console.error('Logout request failed:', e)
+  } catch (error) {
+    console.error('Logout request failed:', error)
   } finally {
     redirect('/login')
   }
