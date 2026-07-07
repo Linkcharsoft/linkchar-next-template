@@ -317,7 +317,7 @@ When `existingFilePath` is not null, the file already exists and contains user c
 - No `/api` prefix in any path value — `customFetch` prepends `/api` internally via `new URL(\`/api${path}\`, API_URL)`.
 - `PaginatedResponse<Array<T>>` must be reused (not redeclared) whenever the response matches the strict DRF shape. Import it as `import type { PaginatedResponse } from '@/types/general'`.
 - Types use `interface` (not `type alias`) for object shapes. Every model has the `Type` suffix (`UserType`, `CreateUserPayloadType`).
-- `UpdateXPayloadType` extends `Partial<CreateXPayloadType>` when the PATCH schema is a subset of POST. Redeclare independently when the schemas diverge.
+- `UpdateXPayloadType` is a `type` alias `= Partial<CreateXPayloadType>` when the PATCH schema is a subset of POST. Do NOT write `interface UpdateXPayloadType extends Partial<CreateXPayloadType> {}` — the empty interface body trips the project's `no-empty-object-type` ESLint rule (enabled in this template). Redeclare independently when the schemas diverge.
 
 ## Output to parent
 

@@ -12,7 +12,7 @@ The orchestrator passes a single payload describing every GET endpoint emitted b
 
 - `getOperationsByResource`: map of `resourceName → list of GET operations`. **`resourceName` is the PascalCase plural form derived from the tag** (e.g. tag `users` → resource `Users`; tag `order-items` → resource `OrderItems`). This is the form used in the hook file name (`useUsers.ts`, `useOrderItems.ts`) and in the list hook name (`useUsers`, `useOrderItems`). Each operation entry includes at minimum:
   - `kind: 'list' | 'detail'` (list = collection endpoint with optional query params; detail = `/{id}/` endpoint)
-  - `handlerName` (the function name in `src/api/{tag}.ts`, e.g. `getUsers`, `getUser`) — the hook reuses this name verbatim with `get` swapped for `use` (`getUsers` → `useUsers`, `getUser` → `useUser`). NEVER append `s` or compute a plural form; the handler name is the source of truth.
+  - `handlerName` (the function name in `src/api/{tag}.ts`, e.g. `getUsers`, `getUser`) — the hook reuses this name verbatim with `get` swapped for `use` (`getUsers` → `useUsers`, `getUser` → `useUser`). NEVER append `s` or compute a plural form; the handler name is the source of truth. **Fallback when the handler has no leading `get`:** DRF-style operationIds produce names like `widgetsList` / `widgetsRetrieve` (no `get` prefix), so the swap does not apply. In that case name the list hook `use{Resource}` and the detail hook the singular of that (`Widgets` → list `useWidgets`, detail `useWidget`), where `{Resource}` is the PascalCase plural the orchestrator passed. Import the handler under its real name (`widgetsList`, `widgetsRetrieve`) regardless — never invent a `get*` handler that does not exist on disk.
   - `path` (URL template the handler hits, e.g. `/users/`, `/users/{id}/`)
 - `handlerImports`: map of `resourceName → tag-file basename` for the `from '@/api/{tag}'` import (e.g. `Users → 'users'`, `OrderItems → 'order-items'`).
 - `noAuth`: boolean. When `true`, every emitted hook drops the token gate (the SWR key becomes the path string directly, the fetcher omits the `token!` argument). Matches the orchestrator's `--no-auth` flag.
@@ -56,10 +56,10 @@ For each resource cleared in Step 0, write `src/hooks/use{resourceName}.ts` usin
 ```ts
 export const useUsers = (stringParams?: string) => {
   const token = useUserStore((s) => s.token)
-  const safe = stringParams ?? ''
-  const key = token ? `/users/${safe ? `?${safe}` : ''}` : null
+  const query = stringParams ? `?${stringParams}` : ''
+  const key = token ? `/users/${query}` : null
 
-  return useSWR(key, () => getUsers(`/users/${safe ? `?${safe}` : ''}`, token!))
+  return useSWR(key, () => getUsers(`/users/${query}`, token!))
 }
 ```
 
@@ -82,10 +82,10 @@ The `${id}` interpolation replaces the OpenAPI `{id}` (or `{slug}`, `{pk}`, etc.
 
 ```ts
 export const useUsers = (stringParams?: string) => {
-  const safe = stringParams ?? ''
-  const key = `/users/${safe ? `?${safe}` : ''}`
+  const query = stringParams ? `?${stringParams}` : ''
+  const key = `/users/${query}`
 
-  return useSWR(key, () => getUsers(`/users/${safe ? `?${safe}` : ''}`))
+  return useSWR(key, () => getUsers(`/users/${query}`))
 }
 ```
 
@@ -109,7 +109,7 @@ Report PASS/FAIL for each. If type-check fails, the most common cause is a handl
 - **`'use client'` directive is mandatory** — first line of every emitted file.
 - **Atomic Zustand selector only.** `const token = useUserStore((s) => s.token)`. NEVER `const { token } = useUserStore()` and NEVER `useUserStore()` without a selector — both cause re-renders on any store change.
 - **Gate the SWR key on token truthiness.** `const key = token ? path : null`. `useSWR(null, ...)` is the documented way to defer the request until auth is ready — this prevents unauthenticated 401 floods and matches the `ExamplePage` pattern.
-- **List hook signature**: `(stringParams?: string)` with safe fallback `stringParams ?? ''`. This matches the `useTableParams` output contract — consumers pass `stringParams` directly without manipulation.
+- **List hook signature**: `(stringParams?: string)`. Build the query segment once with `const query = stringParams ? \`?${stringParams}\` : ''` and interpolate `query` into both the key and the fetcher path — do NOT inline a `stringParams ? \`?${stringParams}\` : ''` ternary inside the path template, which produces a nested template literal that trips `sonarjs/no-nested-template-literals`. This matches the `useTableParams` output contract — consumers pass `stringParams` directly without manipulation.
 - **Detail hook signature**: `(id: string | number | null)`. The `null` branch lets consumers conditionally skip the fetch (e.g. before a route param has resolved) without an extra wrapper hook.
 - **Never import from `src/screens/` or `src/components/`.** Hooks are leaf utilities; reverse imports break the dependency graph and can pull screen-only client code into shared chunks.
 - **Never override SWR defaults.** No `refreshInterval`, no `revalidateOnFocus: false`, no `dedupingInterval`. SWR's defaults are correct for this project; per-call overrides are added at the call site if and when a screen needs them.

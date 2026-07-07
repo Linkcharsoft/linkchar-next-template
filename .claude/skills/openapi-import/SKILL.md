@@ -356,7 +356,7 @@ export const createUser = async (body: CreateUserPayloadType, token: string) => 
 }
 
 // ── updateUser ──
-export interface UpdateUserPayloadType extends Partial<CreateUserPayloadType> {}
+export type UpdateUserPayloadType = Partial<CreateUserPayloadType>
 export const updateUser = async (id: number | string, body: UpdateUserPayloadType, token: string) => {
   return await customFetch<UserType>({
     path: `${BASE_PATH}${id}/`,
@@ -422,10 +422,10 @@ import useUserStore from '@/stores/userStore'
 
 export const useUsers = (stringParams?: string) => {
   const token = useUserStore((s) => s.token)
-  const safe = stringParams ?? ''
-  const key = token ? `/users/${safe ? `?${safe}` : ''}` : null
+  const query = stringParams ? `?${stringParams}` : ''
+  const key = token ? `/users/${query}` : null
 
-  return useSWR(key, () => getUsers(`/users/${safe ? `?${safe}` : ''}`, token!))
+  return useSWR(key, () => getUsers(`/users/${query}`, token!))
 }
 
 export const useUser = (id: string | number | null) => {
@@ -438,7 +438,7 @@ export const useUser = (id: string | number | null) => {
 
 **Hook rules:**
 - File: `src/hooks/use{Resource}.ts` where `{Resource}` is the **PascalCase plural** derived from the tag (e.g. tag `users` → file `src/hooks/useUsers.ts`; tag `order-items` → `src/hooks/useOrderItems.ts`). This is the same form used by the list hook name. The orchestrator passes this name verbatim to the agent; do NOT derive plurals inside the agent.
-- Each named export corresponds to one GET handler — hook name = handler name with `get` swapped for `use` (handler `getUsers` → hook `useUsers`, handler `getUser` → hook `useUser`). Never append `s` to compute a plural.
+- Each named export corresponds to one GET handler — hook name = handler name with `get` swapped for `use` (handler `getUsers` → hook `useUsers`, handler `getUser` → hook `useUser`). Never append `s` to compute a plural. When the handler has no leading `get` (DRF operationIds produce `widgetsList` / `widgetsRetrieve`), the swap does not apply: name the list hook `use{Resource}` and the detail hook the singular of it (`useWidgets` / `useWidget`), while still importing the handler under its real name.
 - `'use client'` directive at top — hooks run in client components.
 - Token from `useUserStore((s) => s.token)` — atomic selector, no destructuring.
 - SWR key is `null` when token is absent — disables the fetch.
