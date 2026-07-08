@@ -25,4 +25,8 @@ else
   exit 1
 fi
 
-pnpm run check || exit 1
+# Lint only the staged files (report-only, no auto-fix — same as `lint-check`), then
+# type-check the whole project. lint-staged runs `eslint` on staged JS/TS and package.json;
+# tsc must see the full project so it stays whole-repo. Full-repo lint still runs in CI via `pnpm run check`.
+pnpm exec lint-staged || exit 1
+pnpm run type-check || exit 1

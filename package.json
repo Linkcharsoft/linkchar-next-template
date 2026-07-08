@@ -81,6 +81,7 @@
     "globals": "17.7.0",
     "husky": "9.1.7",
     "jsonc-eslint-parser": "2.4.2",
+    "lint-staged": "17.0.8",
     "mailslurp-client": "17.2.0",
     "playwright-webkit": "1.61.1",
     "postcss": "8.5.16",
