@@ -100,7 +100,7 @@ node .claude/skills/orchestrators/claude-design-import/unpack.mjs "<EXPORT_URL>"
 
 It writes: `template.html`, `jsx/*` (component source), `assets/img/*` (decoded images), `fonts.json`, `tokens.json`, `nav-graph.json`, `components.json`, and `inventory.json`.
 
-**Read `inventory.json` first** — it is your map for Step 0.5 (`flavor`, `targetSignals`, counts, `registries`, `screens` with role+file, `jsxFiles`/`images` with `uuid`, `fontFamilies`, `brand`, `tokenNamespaces`).
+**Read `inventory.json` first** — it is your map for Step 0.5 (`flavor`, `targetSignals`, counts, `registries`, `screens` — **one entry per registry KEY**, with `key`/`component`/`role`/`file`, `jsxFiles`/`images` with `uuid`, `fontFamilies` (superset) + `brandFonts` (the fonts actually used at runtime — load THESE), `brand`, `tokenNamespaces`).
 
 **Flavor gate:** if `inventory.flavor !== 'babel-inline'`, surface it — the fully-supported case is `babel-inline` (React + Babel runtime, inline styles). For `react` / `next` / `vanilla` exports, tell the user the extraction may be partial and proceed with extra care (the structured artifacts may be thinner). If `unpack.mjs` exits non-zero (missing `__bundler` blocks), STOP and report — likely a non-standard export or a format change.
 
@@ -125,7 +125,7 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 - Brand preset: `{brand}` from tokens.json (THEMES[brand]) — the canonical palette/typography.
 - Already mapped (design-tokens-map.md): [`figmaVar/themeKey` → `tailwindToken`]
 - Add: [new colors (hex), typography sizes, breakpoints the tokens agent should REUSE/CREATE/BLOCK]
-- Fonts: [families from inventory.fontFamilies] → next/font/google
+- Fonts: [from `inventory.brandFonts` — the brand preset's actual runtime fonts] → next/font/google. Do NOT pass `inventory.fontFamilies` (that lists every embedded `@font-face` — a superset covering all THEMES presets, most of which are dead at runtime; loading them all is a bundle/LCP regression).
 - **Warnings**: any proposed token that would override `surface-*` or an existing token — flag it.
 
 ## Assets
@@ -143,8 +143,11 @@ This is the equivalent of Figma's nodeId gate — claude-design-components reads
 - Reuse as-is: [list]
 
 ## State / Stores  (D6 — Zustand vs mock)
-- Shared stateful logic (cart, contributions, RSVP…) in the App/entry file → Zustand store(s) to create.
-- Demo/filler data (EVENT, GUESTS, GIFTS…) → inline `MOCK_*` in screens (data layer deferred to openapi-import).
+**Derive the full store shape HERE, up front** (analogous to deriving component primitives) — do NOT leave it for Step 5.2 to discover piecemeal across isolated per-screen contexts (that produces divergent store APIs). Read the App/entry file's centralized state and reducers, then for each Zustand store to create, specify its COMPLETE shape:
+- **State fields** (e.g. `gifts`, `contribs`, `cart`, `draft`).
+- **Actions — including cross-entity reducers no single screen owns** (e.g. `addContribution` mutates `gifts` AND `contribs` atomically; `confirmContribution` recomputes both). These are exactly what gets lost if left to per-screen discovery.
+- Which screens consume which store.
+Pass this store spec to Step 5.1 (scaffold creates each store WITH this full shape) and Step 5.2 (screens consume it, never redefine it). Demo/filler data (EVENT, GUESTS, GIFTS…) → inline `MOCK_*` in screens (data layer deferred to openapi-import), NEVER in stores.
 
 ## Layouts
 - Chrome detected: TopBar / BottomTabBar (HOST_TABS) / iOS status bar.
@@ -153,11 +156,11 @@ This is the equivalent of Figma's nodeId gate — claude-design-components reads
 
 ## Screens — hybrid nav mapping  (D6)
 Classify every registry screen (from nav-graph) as route | step | modal | skip:
-- **route** — first-level destination → `src/app/**/page.tsx` + screen. Give: name, type (auth|public|protected), route, role, source file.
+- **route** — first-level destination → `src/app/**/page.tsx` + screen. Give: name, type (auth|public|protected), route, role, source file, AND **`component`** (the function name from `inventory.screens[].component` — REQUIRED; several screens share one file, and Step 5.2 must know which function to implement). If two keys map to the same component (e.g. `playlist` + `postboda` → `ContentHub`), keep BOTH routes and render the shared component in each (route-group/param disambiguates) — do not drop either.
 - **step** — sub-step of a wizard/flow (onboarding HOb*, gift pay steps) → internal stepper state inside the flow's anchor route. Group them under their route.
 - **modal** — overlay (cart, confirmations) → `/new-modal`.
 - **skip** — demo chrome not portable (FlowMenu, role switcher, IOSDevice).
-Cross-check: every `nav-graph.transitions` target must land in exactly one bucket.
+Authoritative list = **every registry key** in `inventory.screens` / `inventory.registries` — classify each into exactly one bucket. `nav-graph.transitions` is only a PARTIAL hint: it captures literal `go('x')` calls but NOT data-driven nav (`go(item.screen)`) or tab nav, so it under-reports (≈30 of GIVXO's 42 keys). Do NOT use `transitions` as the complete screen list — the registries are the source of truth.
 
 ## Detected language
 - Sample visible strings from screen JSX (`characters`/JSX text). Decision `en`|`es` + reasoning.
@@ -174,7 +177,7 @@ Cross-check: every `nav-graph.transitions` target must land in exactly one bucke
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-tokens' })` — **Haiku**.
 
-Pass: the brand preset object from `tokens.json` (colors + typography), the loose hex/size list from `rawScan`, and the font families. The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
+Pass: the brand preset object from `tokens.json` (colors + typography), the loose hex/size list from `rawScan`, and the **brand fonts** (`inventory.brandFonts`, not the full `fontFamilies` superset). The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
 
 ---
 
@@ -224,8 +227,10 @@ Because the design context is local files, cost is far lower than Figma's per-sc
 Screen name: {Name}Page
 Screen type: {auth|public|protected}
 Screen slug: {kebab-case}
-Source JSX: {unpacked}/jsx/NN_*.jsx  (the screen component + any `step` components it absorbs)
+Source JSX: {unpacked}/jsx/NN_*.jsx  (the file — it may contain several screens + helpers)
+Screen component: {FunctionName}     # from inventory.screens[].component — WHICH function in that file IS this screen (REQUIRED; the agent STOPs without it)
 Absorbed steps: [{stepScreenKey → component}, ...]   # wizard sub-steps to implement as internal stepper
+Store spec: {store name → {state fields, actions}}   # from Step 0.5 — the screen consumes these, never redefines them
 Local modals: [{modalScreenKey → component}, ...]     # implement as screen-local modals / /new-modal
 Target: {mobile-app|web}                              # drives responsive synthesis
 Detected language: {en|es}
@@ -313,6 +318,6 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 2 | Assets | `claude-design-assets` | Haiku | `assets/img/*` + `inventory.images` + `Icon` glyph list |
 | 3 | Components | `claude-design-components` | Opus | Extend/create list, each with **source JSX file** + token names |
 | 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target |
-| 5.1 | Scaffold routes + stores | `claude-design-scaffold` | Haiku | `route` screens (name, type, route, group, role) + stores + language |
-| 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX**, absorbed steps, modals, target, language, reuse list |
+| 5.1 | Scaffold routes + stores | `claude-design-scaffold` | Haiku | `route` screens (name, type, route, group, role, **component**) + store specs (full shape) + language |
+| 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX + component**, absorbed steps, modals, target, language, reuse list, store spec |
 | 6 | Validation | `design-validation` | Haiku | Scope (or empty) + `importFlow: 'claude-design-import'` |

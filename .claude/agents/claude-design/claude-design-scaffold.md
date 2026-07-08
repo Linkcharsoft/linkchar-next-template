@@ -35,7 +35,7 @@ If the screen list is missing, ask.
 
 ## Steps
 
-1. **Create stores first** (if the parent passed any) via the `/new-store {Name}` skill — it generates `src/stores/{name}Store.ts` with the `create<StoreType>()` + `useXxxStore` boilerplate. Leave the state shape minimal/`undefined` initial — Step 5.2 fills real fields as screens consume them. Do NOT put mock data in stores.
+1. **Create stores first** (if the parent passed any) via the `/new-store {Name}` skill — it generates `src/stores/{name}Store.ts` with the `create<StoreType>()` + `useXxxStore` boilerplate. **Implement the FULL shape the parent derived in Step 0.5** (the `Store spec`: state fields + actions, INCLUDING cross-entity reducers like `addContribution` that mutate several fields atomically). Do NOT leave it minimal for Step 5.2 to fill piecemeal — isolated per-screen contexts would grow divergent store APIs. Initial state values stay `undefined`/empty, but every field and action signature is defined now. Do NOT put mock data in stores.
 
 2. For each **route** screen, invoke `/new-screen` with the right args — it creates the screen folder, the thin `page.tsx` wrapper (with the correct metadata shape per type + `alternates.canonical`), the `<main id='main' className='...'>` root, and updates `src/proxy.ts`.
 

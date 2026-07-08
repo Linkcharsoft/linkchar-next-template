@@ -92,7 +92,7 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
 
 4. **Edit `tailwind.config.js`** — apply CREATE and (rare, confirmed) OVERRIDE only:
    - New colors under a non-surface namespace (`brand-*`, `accent-*`, `border-*`). **Match the namespace's existing shape** (flat hyphenated vs nested object) — read it before inserting; when creating a namespace from scratch, prefer the nested object form.
-   - New typography sizes go in BOTH the `fontSize` map AND the typography plugin's `sizes` array (keep them in sync).
+   - New typography sizes go in BOTH the `fontSize` map AND the typography plugin's `sizes` array (keep them in sync). **Only create a token for an intentional DISPLAY size clearly outside the scale (e.g. 72).** Do NOT create tokens for ordinary or fractional sizes (13, 13.5, 11) — the screen/components agents SNAP those to the nearest existing scale step, so a `text-*-13.5` token must never exist. **Radii are not tokens** (CONVENTIONS treats `border-radius` as plain CSS) — if the input lists a radius, decline it with a note; never add a radius token.
    - New breakpoints in `theme.extend.screens` if specified.
 
 5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`** (auto-hosts, preloads, adds `font-display: swap`):

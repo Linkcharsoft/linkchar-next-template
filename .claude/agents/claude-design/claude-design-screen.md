@@ -35,6 +35,7 @@ Detected language: {en | es}
 Images: {unpacked}/assets/img/                    # local files; dedup by hash, convert to WebP under src/assets/images/{slug}/
 Existing components to reuse: [{Component} (variants) → path, ...]
 Tokens available: [list from Step 1]
+Store spec: {store → {state fields, actions}}     # from Step 0.5; CONSUME this shape, never redefine it (only when the screen touches shared state)
 Adjustment notes (only on re-runs): {text}
 ```
 
@@ -57,17 +58,17 @@ If any required field (name, type, slug, source JSX, screen component, target, l
 
 ## Reading the prototype source (what to translate, what to drop)
 
-The prototype screen is a React function styled with inline `style={{}}` objects + CSS vars, receiving a prop-drilled `ctx` (`go`, `back`, `gifts`, `cart`, `draft`, `setDraft`, …). Map it:
+The prototype screen is a React function styled with inline `style={{}}` objects + CSS vars. The App spreads its context object as individual props (`<Screen {...ctx} />`), so the screen **destructures them and calls them BARE** — e.g. `function Gifts({ go, back, gifts, cart, draft, setDraft }) { … go('giftDetail') … }`, NOT `ctx.go`. Map it:
 
-- **Inline `style={{}}` → Tailwind + tokens + BEM `.sass`.** `var(--accent)` → the brand/accent token; `var(--ink)` → the ink/text token; `var(--radius)` → the project radius; hardcoded hex → the matching token (via the token gate). Fixed `px` font sizes → `text-{weight}-{size}`. NEVER keep inline hex/px or emit `text-[Npx]`/`bg-[#...]`.
-- **`ctx.go(screen)` / `ctx.back()` navigation** → real navigation: `next/link` / `useRouter().push` to the target route, or (for an absorbed `step`) advance the internal stepper, or (for a `modal`) open the local modal. NEVER reproduce the prototype's `window.HOST/GUEST` stack router.
-- **`ctx.gifts` / `ctx.cart` / `ctx.contribs` (shared state)** → the Zustand store created in 5.1 (`useCartStore`, etc.), consumed with atomic selectors. Local-only UI state → `useState`.
+- **Inline `style={{}}` → Tailwind + tokens + BEM `.sass`.** `var(--accent)` → the brand/accent token; `var(--ink)` → the ink/text token; hardcoded hex → the matching token (via the token gate). Numeric/`px` font sizes → `text-{weight}-{size}` (SNAP to the scale — see the gate). NEVER keep inline hex/px or emit `text-[Npx]`/`bg-[#...]`. **Radii** (`var(--radius)`, `calc(var(--radius)…)`) are NOT tokens → translate to the nearest Tailwind `rounded-*` (18px ≈ `rounded-2xl`) or a plain `.sass` `border-radius`.
+- **`go(target)` / `back()` navigation** (bare, destructured — not `ctx.go`) → real navigation: `next/link` / `useRouter().push` to the target route, or (for an absorbed `step`) advance the internal stepper, or (for a `modal`) open the local modal. NEVER reproduce the prototype's `window.HOST/GUEST` stack router.
+- **`gifts` / `cart` / `contribs` (destructured shared state)** → the Zustand store created in 5.1, consumed with atomic selectors, **using the shape the parent derived in Step 0.5**. Do NOT redefine the store's fields/actions here — if the screen needs something the store spec lacks, emit `STOP-ADVISORY` rather than adding a divergent shape. Local-only UI state → `useState`.
 - **Mock/demo data** (`EVENT`, `GUESTS`, `GIFTS`, `INITIAL_CONTRIBS`) → inline `const MOCK_{KIND}` at the top of the screen file, each with `// TODO: replace with API call once openapi-import has run for {endpoint}`. Do NOT split into a sibling `.ts` (that signals permanence). Do NOT add `customFetch`/SWR/`src/api/*` — the data layer is `openapi-import`'s job.
 - **Demo chrome** (`FlowMenu`, role switcher, `IOSStatusBar`/`IOSDevice`, splash) → DROP. It's prototype scaffolding, not product UI.
 
 ## Token validation gate (between reading the source and writing JSX)
 
-Scan every value the source uses (colors as hex or `var(--x)`, font sizes, weights, radii, spacing that carries token meaning, breakpoints) against `tailwind.config.js`. If ANY has no token, STOP — do not invent arbitrary Tailwind values:
+Scan the source's **colors** (hex or `var(--x)`), **font weights**, and **breakpoints** against `tailwind.config.js`. If a COLOR / WEIGHT / BREAKPOINT has no token, STOP — do not invent arbitrary Tailwind values (font sizes and radii are handled by the snapping/plain-CSS rules below, NOT by this STOP):
 
 ```
 STOP-BLOCKING
@@ -78,11 +79,15 @@ next_agent: claude-design-tokens
 details:
   colors:
     - {hex} (prototype: {--var / THEMES key}) → suggest '{token-name}'
-  typography_sizes:
+  typography_sizes:   # ONLY intentional display sizes with no near scale neighbor (e.g. 72); ordinary/fractional sizes are snapped, not tokenized
     - {px} (used in {where})
 ```
 
-**Exception** — layout-only arbitrary values (not design tokens) are fine as-is: `aspect-[4/3]`, `grid-cols-[1fr_2fr]`, a fixed carousel-card `w-[292px]`, `top-[64px]`, fine-tune `translate-x-[-12px]`. NOT covered: colors, font sizes, weights, radii, standard spacing — those carry token meaning.
+**Font sizes — SNAP, don't STOP.** The project scale is a fixed set of integer sizes (`text-{weight}-{10|12|14|…}`). When a source `fontSize` isn't in the scale, **round to the nearest scale step** (13.5 → 14, 11 → 12, 9.5 → 10) and pair it with the weight — do NOT emit `text-[Npx]` and do NOT STOP. Only emit `TOKENS_MISSING` for a **clearly-intentional large display size** far from any scale step (e.g. 72) that the design means as a distinct size.
+
+**Radii are NOT tokens** — `var(--radius)` maps to the nearest Tailwind `rounded-*`, or to a plain `.sass` `border-radius: Npx` (CONVENTIONS treats border-radius as plain CSS). Never emit `TOKENS_MISSING` for a radius.
+
+**Exception** — layout-only arbitrary values (not design tokens) are fine as-is: `aspect-[4/3]`, `grid-cols-[1fr_2fr]`, a fixed carousel-card `w-[292px]`, `top-[64px]`, `translate-x-[-12px]`, and radii like `rounded-[18px]`. NOT covered: colors (`bg-[#...]`), font weights, and breakpoints — those carry token meaning and go through the gate above.
 
 ## Steps
 
