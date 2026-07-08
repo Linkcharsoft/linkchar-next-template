@@ -1,7 +1,7 @@
 import './NotFoundPage.sass'
 import Image from 'next/image'
-import Link from 'next/link'
 import Logo from '@/assets/images/logo.svg'
+import CustomButton from '@/components/CustomButton/CustomButton'
 import Waves from '@/components/Waves/Waves'
 
 const NotFoundPage = () => {
@@ -20,12 +20,11 @@ const NotFoundPage = () => {
         />
         <h1 className='text-bold-32 md:text-bold-56'>Page Not Found</h1>
         <p className='text-regular-16 md:text-regular-18'>We&apos;re sorry, the page you&apos;re looking for doesn&apos;t exist or has been moved</p>
-        <Link
-          className='NotFoundPage__Link'
+        <CustomButton
           href="/"
         >
           Back to Home
-        </Link>
+        </CustomButton>
       </div>
 
       <Waves/>

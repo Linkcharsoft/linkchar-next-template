@@ -34,7 +34,7 @@ const checkPasswordErrors = ({
   inputAlias: string
   submitAlias: string
 }) => {
-  PASSWORD_TESTS.forEach(test => {
+  for (const test of PASSWORD_TESTS) {
     it(test.name, () => {
       cy.get(inputAlias).type(test.value)
 
@@ -44,7 +44,7 @@ const checkPasswordErrors = ({
         message: test.error
       })
     })
-  })
+  }
 }
 
 export default checkPasswordErrors

@@ -107,7 +107,7 @@ describe('Password Recovery: Success ✅', () => {
 
     cy.get('@send-button').should('be.disabled')
 
-    cy.get('@send-button', { timeout: 35000 }).should('not.be.disabled')
+    cy.get('@send-button', { timeout: 35_000 }).should('not.be.disabled')
 
     const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
@@ -123,7 +123,7 @@ describe('Password Recovery: Success ✅', () => {
 
     const code = Cypress.expose('PASSWORD_RECOVERY_CODE')
     cy.wrap(code).should('exist')
-    cy.visit(`/password-recovery/confirmation/${code.slice(0, code.length - 1)}`)
+    cy.visit(`/password-recovery/confirmation/${code.slice(0, - 1)}`)
 
     cy.wait('@validate-token').its('response.statusCode').should('eq', 404)
     cy.get('.pi-exclamation-triangle').should('exist')

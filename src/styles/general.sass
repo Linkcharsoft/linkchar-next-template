@@ -71,3 +71,13 @@ h1, h2, h3, h4, h5, h6
     animation-iteration-count: 1 !important
     transition-duration: 0.01ms !important
     scroll-behavior: auto !important
+
+// Password: Fix icon position
+.p-password
+  .p-icon-field
+    width: 100%
+    > .p-input-icon
+      width: 16px
+      height: 16px
+      margin-top: unset
+      transform: translateY(-50%)

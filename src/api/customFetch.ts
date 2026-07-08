@@ -32,6 +32,41 @@ type FetchOptionsType = {
 
 const MAX_RETRIES = 1
 
+// FormData is passed through untouched; plain objects are JSON-serialized.
+const serializeBody = (body?: object | FormData): string | FormData | undefined => {
+  if (body instanceof FormData) return body
+  return body ? JSON.stringify(body) : undefined
+}
+
+// Injects the bearer token and drops the JSON Content-Type when sending FormData
+// (the browser must set the multipart boundary itself).
+const buildRequestHeaders = (
+  headers: Record<string, string>,
+  token?: string,
+  body?: object | FormData
+): Headers => {
+  const requestHeaders = new Headers(headers)
+  if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
+  if (body instanceof FormData) requestHeaders.delete('Content-Type')
+  return requestHeaders
+}
+
+// Reads the response body as JSON when present. 204 and non-JSON responses yield {}.
+const parseResponseData = async <T extends object>(response: Response): Promise<T> => {
+  if (response.status === 204) return {} as T
+
+  try {
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      return await response.json() as T
+    }
+    return {} as T
+  } catch (error) {
+    console.error(error)
+    throw new Error('The response was not a JSON')
+  }
+}
+
 /**
  * `fetch` wrapper: URL construction, token injection, client-side 401 refresh + retry,
  * forced logout on refresh failure. Server-side 401s are returned as-is (proxy handles refresh).
@@ -59,18 +94,10 @@ export const customFetch = async <T extends object>({
 
   if (params) urlPath.search = new URLSearchParams(params).toString()
 
-  const requestHeaders = new Headers(headers)
-  if (token) requestHeaders.append('Authorization', `Bearer ${token}`)
-  if (body instanceof FormData) requestHeaders.delete('Content-Type')
-
   const fetchOptions: FetchOptionsType = {
     method,
-    headers: requestHeaders,
-    body: body instanceof FormData
-      ? body
-      : body
-        ? JSON.stringify(body)
-        : undefined
+    headers: buildRequestHeaders(headers, token, body),
+    body: serializeBody(body)
   }
 
   if (next) {
@@ -85,7 +112,7 @@ export const customFetch = async <T extends object>({
   if (
     response.status === 401 &&
     _retryCount < MAX_RETRIES &&
-    typeof window !== 'undefined'
+    globalThis.window !== undefined
   ) {
     try {
       const newAccessToken = await handleRefreshToken()
@@ -108,19 +135,7 @@ export const customFetch = async <T extends object>({
     }
   }
 
-  let data: T = {} as T
-
-  if (response.status !== 204) {
-    try {
-      const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json()
-      }
-    } catch (error) {
-      console.error(error)
-      throw new Error('The response was not a JSON')
-    }
-  }
+  const data = await parseResponseData<T>(response)
 
   return {
     response,
@@ -152,8 +167,8 @@ const handleUnauthorizedLogout = async () => {
   // Relative URL — absolute would set delete-cookie on the wrong response.
   try {
     await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
-  } catch (e) {
-    console.error('Logout request failed:', e)
+  } catch (error) {
+    console.error('Logout request failed:', error)
   } finally {
     redirect('/login')
   }

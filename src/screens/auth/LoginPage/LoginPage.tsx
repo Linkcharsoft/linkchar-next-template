@@ -28,11 +28,6 @@ const LoginPage = () => {
   const router = useRouter()
 
 
-  usePressKey('Enter', () => {
-    loginFormik.handleSubmit()
-  })
-
-
   const loginFormik = useFormik<LoginFormikType>({
     initialValues: {
       email: '',
@@ -106,6 +101,11 @@ const LoginPage = () => {
         closeModal('loadingModal')
       }
     }
+  })
+
+
+  usePressKey('Enter', () => {
+    loginFormik.handleSubmit()
   })
 
 

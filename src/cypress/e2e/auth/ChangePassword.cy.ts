@@ -57,7 +57,7 @@ describe('Change Password: Success ✅', () => {
 
     cy.get('@send-button').should('be.disabled')
 
-    cy.get('@send-button', { timeout: 35000 }).should('not.be.disabled')
+    cy.get('@send-button', { timeout: 35_000 }).should('not.be.disabled')
 
     const inboxId = Cypress.expose('INBOX_ID')
     cy.getLastestEmail(inboxId).then((email) => {
@@ -73,7 +73,7 @@ describe('Change Password: Success ✅', () => {
 
     const code = Cypress.expose('CHANGE_PASSWORD_CODE')
     cy.wrap(code).should('exist')
-    cy.visit(`/change-password/confirmation/${code.slice(0, code.length - 1)}`)
+    cy.visit(`/change-password/confirmation/${code.slice(0, - 1)}`)
 
     cy.wait('@validate-token').its('response.statusCode').should('eq', 404)
     cy.get('.pi-exclamation-triangle').should('exist')

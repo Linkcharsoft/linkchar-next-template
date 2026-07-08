@@ -27,13 +27,13 @@ const AuthHydrator = ({ token, user }: Props) => {
         email: user.email,
         username: `${user.first_name} ${user.last_name}`
       })
-    } else if (!token) {
+    } else if (token) {
+      setToken(token)
+      removeUser()
+    } else {
       removeToken()
       removeUser()
       Sentry.setUser(null)
-    } else {
-      setToken(token)
-      removeUser()
     }
   }, [token, user])
 

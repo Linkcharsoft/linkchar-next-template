@@ -13,13 +13,13 @@ const values = {
   enabled: !isDev, // Disable Sentry on dev
 
   // Local: 0% | Staging: 100% | Prod: 10%
-  traces: isDev ? 0 : isStaging ? 1.0 : 0.1,
+  traces: isDev ? 0 : (isStaging ? 1 : 0.1),
 
   // Local: 0% | Staging: 100% | Prod: 10%
-  replaysSession: isDev ? 0 : isStaging ? 1.0 : 0.1,
+  replaysSession: isDev ? 0 : (isStaging ? 1 : 0.1),
 
   // Local: 0% | Staging: 100% | Prod: 100%
-  replaysError: isDev ? 0 : 1.0,
+  replaysError: isDev ? 0 : 1,
 
   // Debug: Only on staging
   debug: isStaging

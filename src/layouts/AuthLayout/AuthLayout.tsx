@@ -10,13 +10,13 @@ interface Props {
 
 const AuthLayout = ({ children }: Props) => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
-      <section className="relative flex w-[45%] items-center justify-center bg-white">
+    <div className="AuthLayout__Container">
+      <section className="AuthLayout__Form">
         { children }
         <LoadingModal/>
       </section>
 
-      <aside className="flex h-full w-[55%] items-center justify-center bg-black" aria-hidden="true">
+      <aside className="AuthLayout__Aside" aria-hidden="true">
         <Image
           src={Logo}
           width={256}

@@ -34,11 +34,6 @@ const ChangePasswordPage = () => {
   })
 
 
-  usePressKey('Enter', () => {
-    if(!buttonDisabled) handleGetEmail()
-  })
-
-
   const handleGetEmail = async () => {
     openModal('loadingModal', {
       title: 'Sending email',
@@ -81,6 +76,11 @@ const ChangePasswordPage = () => {
       setButtonDisabled(false)
     }
   }
+
+
+  usePressKey('Enter', () => {
+    if(!buttonDisabled) handleGetEmail()
+  })
 
 
   if (!isClient || !user) return null

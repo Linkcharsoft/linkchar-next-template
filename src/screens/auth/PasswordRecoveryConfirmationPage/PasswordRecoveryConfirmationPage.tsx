@@ -38,13 +38,6 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
   const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
 
-  usePressKey('Enter', () => {
-    if (tokenStatus === 'valid') {
-      recoveryConfirmationFormik.handleSubmit()
-    }
-  })
-
-
   // Verify token logic
   useEffect(() => {
     if (verifyTokenRef.current) return
@@ -147,6 +140,13 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
       } finally {
         closeModal('loadingModal')
       }
+    }
+  })
+
+
+  usePressKey('Enter', () => {
+    if (tokenStatus === 'valid') {
+      recoveryConfirmationFormik.handleSubmit()
     }
   })
 

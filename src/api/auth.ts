@@ -10,7 +10,7 @@ export const getMyUser = async (token: string) => {
   })
 }
 
-export const updateMyUser = async (token: string, body: Partial<UserType>) => {
+export const updateMyUser = async (body: Partial<UserType>, token: string) => {
   return await customFetch({
     path: '/users/me/',
     method: 'PATCH',
@@ -19,7 +19,7 @@ export const updateMyUser = async (token: string, body: Partial<UserType>) => {
   })
 }
 
-export const completeRegister = async (token: string, body: Partial<UserType>) => {
+export const completeRegister = async (body: Partial<UserType>, token: string) => {
   return await customFetch({
     path: '/users/complete-register/',
     method: 'PATCH',

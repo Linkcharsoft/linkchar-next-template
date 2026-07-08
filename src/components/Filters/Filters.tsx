@@ -140,6 +140,252 @@ const DROPDOWN_PT: DropdownPassThroughOptions = {
   }
 }
 
+// Returns whether a single filter currently has an active selection.
+const isFilterActive = (filter: Filter): boolean => {
+  if (filter.type === 'date-range') return Boolean(filter.selected.from || filter.selected.to)
+  if (filter.multiple) return filter.selected.length > 0
+  return filter.selected !== undefined && filter.selected !== null && filter.selected !== ''
+}
+
+// Header "clear" button — its visibility and onChange payload depend on the filter type.
+const FilterClearButton = ({ filter, disabled }: { filter: Filter, disabled: boolean }) => {
+  if (filter.type === 'pill' || filter.type === 'dropdown') {
+    if (filter.multiple && filter.selected.length > 1) {
+      return (
+        <CustomButton
+          variant='transparent'
+          size='detail'
+          className='hover:text-red-600'
+          aria-label='Clear selection'
+          onClick={() => filter.onChange([])}
+          disabled={disabled}
+        >
+          <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
+        </CustomButton>
+      )
+    }
+    return null
+  }
+
+  if (filter.type === 'date') {
+    if ((filter.multiple && filter.selected.length > 0) || (!filter.multiple && filter.selected)) {
+      return (
+        <CustomButton
+          variant='transparent'
+          size='detail'
+          className='hover:text-red-600'
+          aria-label='Clear date'
+          onClick={() => {
+            if(filter.multiple) filter.onChange([])
+            else filter.onChange(undefined)
+          }}
+          disabled={disabled}
+        >
+          <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
+        </CustomButton>
+      )
+    }
+    return null
+  }
+
+  if (filter.selected.from || filter.selected.to) {
+    return (
+      <CustomButton
+        variant='transparent'
+        size='detail'
+        className='hover:text-red-600'
+        aria-label='Clear date range'
+        onClick={() => filter.onChange({ from: undefined, to: undefined })}
+        disabled={disabled}
+      >
+        <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
+      </CustomButton>
+    )
+  }
+  return null
+}
+
+// Pill options — single or multiple selection toggled per option.
+const PillControl = ({ filter, index }: { filter: PillFilter, index: number }) => {
+  const togglePillOption = (value: PrimitiveTypes) => {
+    if(filter.multiple) {
+      if(filter.selected.includes(value)) {
+        filter.onChange(filter.selected.length > 1 ? filter.selected.filter(v => v !== value) : [])
+      } else {
+        filter.onChange([...filter.selected, value])
+      }
+    } else {
+      if (filter.selected === value) {
+        filter.onChange(undefined)
+      } else {
+        filter.onChange(value)
+      }
+    }
+  }
+
+  return (
+    <>
+      {filter.options.map((option, optionIndex) => (
+        <button
+          id={`filter-${index}`}
+          type='button'
+          key={`FilterItem-${index}-${optionIndex}`}
+          className={classNames('Filters__Item', {
+            'Disabled': filter.multiple ? !filter.selected.includes(option.value) : filter.selected !== option.value,
+            'Selected': filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
+          })}
+          onClick={() => togglePillOption(option.value)}
+        >
+          {option.color && (
+            <div
+              className="Filters__Circle"
+              style={{ backgroundColor: option.color }}
+            />
+          )}
+          <span className="text-regular-14">{option.label}</span>
+        </button>
+      ))}
+    </>
+  )
+}
+
+// Dropdown — single value via Dropdown, multiple via MultiSelect.
+const DropdownControl = ({ filter, index }: { filter: DropdownFilter, index: number }) => (
+  <>
+    {filter.multiple ? (
+      <MultiSelect
+        placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
+        value={filter.selected}
+        onChange={(e) => filter.onChange(e.value)}
+        options={filter.options}
+        loading={filter.loading}
+        filter
+        showClear={filter.selected.length > 0}
+        disabled={filter.disabled || filter.loading}
+        pt={{
+          ...MULTISELECT_PT,
+          input: {
+            id: `filter-${index}`
+          }
+        }}
+      />
+    ) : (
+      <Dropdown
+        className='w-full'
+        placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
+        value={filter.selected}
+        onChange={(e) => filter.onChange(e.value)}
+        options={filter.options}
+        loading={filter.loading}
+        filter
+        showClear={Boolean(filter.selected)}
+        disabled={filter.disabled || filter.loading}
+        pt={{
+          ...DROPDOWN_PT,
+          input: {
+            id: `filter-${index}`
+          }
+        }}
+      />
+    )}
+  </>
+)
+
+// Single/multiple date selection.
+const DateControl = ({ filter, locale }: { filter: DateFilter, locale: 'en' | 'es' }) => (
+  <Calendar
+    className='w-full'
+    placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
+    value={filter.multiple
+      ? filter.selected.map(s => dayjs(s).toDate())
+      : (filter.selected
+        ? dayjs(filter.selected).toDate()
+        : null)
+    }
+    onChange={(e) => {
+      if(filter.multiple) {
+        if(e.value) {filter.onChange((e.value as Date[])
+          .sort((a, b) => a.getTime() - b.getTime())
+          .map(v => dayjs(v).format('YYYY-MM-DD')))}
+        else {filter.onChange([])}
+      } else {
+        if(e.value) {filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))}
+        else {filter.onChange(undefined)}
+      }
+    }}
+    selectionMode={filter.multiple ? 'multiple' : 'single'}
+    dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+    locale={locale}
+    // pt={{
+    //   input: {
+    //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
+    //   }
+    // }}
+  />
+)
+
+// From/to date-range selection.
+const DateRangeControl = ({ filter, locale }: { filter: DateRangeFilter, locale: 'en' | 'es' }) => (
+  <Calendar
+    className='w-full'
+    placeholder={filter.placeholder || 'Select a date range'}
+    value={filter.selected.from || filter.selected.to
+      ? [
+        filter.selected.from ? dayjs(filter.selected.from).toDate() : null,
+        filter.selected.to ? dayjs(filter.selected.to).toDate() : null
+      ]
+      : null
+    }
+    onChange={(e) => {
+      if(e.value) {
+        const range = e.value as (Date | null)[]
+        filter.onChange({
+          from: range[0] ? dayjs(range[0]).format('YYYY-MM-DD') : undefined,
+          to: range[1] ? dayjs(range[1]).format('YYYY-MM-DD') : undefined
+        })
+      } else {
+        filter.onChange({
+          from: undefined,
+          to: undefined
+        })
+      }
+    }}
+    selectionMode='range'
+    dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
+    locale={locale}
+    // pt={{
+    //   input: {
+    //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
+    //   }
+    // }}
+  />
+)
+
+// Dispatches the body control by filter type (narrowing preserved per branch).
+const FilterControl = ({ filter, index, locale }: { filter: Filter, index: number, locale: 'en' | 'es' }) => {
+  if (filter.type === 'pill') return <PillControl filter={filter} index={index} />
+  if (filter.type === 'dropdown') return <DropdownControl filter={filter} index={index} />
+  if (filter.type === 'date') return <DateControl filter={filter} locale={locale} />
+  return <DateRangeControl filter={filter} locale={locale} />
+}
+
+// One filter row: label + header clear button + body control.
+const FilterField = ({ filter, index, disabled, locale }: { filter: Filter, index: number, disabled: boolean, locale: 'en' | 'es' }) => (
+  <div className="flex w-full flex-col items-start gap-2">
+    <div className="flex w-full items-center justify-between gap-2">
+      <Label htmlFor={`filter-${index}`}>
+        { filter.title }
+      </Label>
+
+      <FilterClearButton filter={filter} disabled={disabled} />
+    </div>
+
+    <div className="align-center flex w-full flex-wrap gap-2">
+      <FilterControl filter={filter} index={index} locale={locale} />
+    </div>
+  </div>
+)
+
 const Filters = ({
   filters,
   cleanFilters,
@@ -150,36 +396,13 @@ const Filters = ({
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  const ACTIVE_FILTERS = useMemo(() => {
-    let count = 0
-
-    for (const filter of filters) {
-      if (filter.type === 'pill' || filter.type === 'dropdown' || filter.type === 'date') {
-        if(filter.multiple) {
-          if(filter.selected.length > 0) count += 1
-        } else {
-          if (
-            filter.selected !== undefined &&
-            filter.selected !== null &&
-            filter.selected !== ''
-          )
-            count += 1
-        }
-      }
-      if(filter.type === 'date-range') {
-        if(filter.selected.from || filter.selected.to) count += 1
-      }
-    }
-
-    return count
-  }, [filters])
+  const ACTIVE_FILTERS = useMemo(() => filters.filter((filter) => isFilterActive(filter)).length, [filters])
 
   const MOTION_PROPS = isMobile ? MOBILE_MOTION_PROPS : DESKTOP_MOTION_PROPS
 
   return (
     <div ref={containerRef} className="Filters">
       <CustomButton
-        variant='primary'
         onClick={cleanFilters}
         disabled={disabled}
       >
@@ -244,218 +467,13 @@ const Filters = ({
               </div>
 
               {filters.map((filter, index) => (
-                <div
+                <FilterField
                   key={`Filter-${index}`}
-                  className="flex w-full flex-col items-start gap-2"
-                >
-                  <div className="flex w-full items-center justify-between gap-2">
-                    <Label htmlFor={`filter-${index}`}>
-                      { filter.title }
-                    </Label>
-
-                    {(filter.type === 'pill' || filter.type === 'dropdown') && (
-                      <>
-                        {(filter.multiple && filter.selected.length > 1) && (
-                          <CustomButton
-                            variant='transparent'
-                            size='detail'
-                            className='hover:text-red-600'
-                            aria-label='Clear selection'
-                            onClick={() => filter.onChange([])}
-                            disabled={disabled}
-                          >
-                            <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
-                          </CustomButton>
-                        )}
-                      </>
-                    )}
-
-                    {filter.type === 'date' && (
-                      <>
-                        {((filter.multiple && filter.selected.length > 0) || (!filter.multiple && filter.selected)) && (
-                          <CustomButton
-                            variant='transparent'
-                            size='detail'
-                            className='hover:text-red-600'
-                            aria-label='Clear date'
-                            onClick={() => {
-                              if(filter.multiple) filter.onChange([])
-                              else filter.onChange(undefined)
-                            }}
-                            disabled={disabled}
-                          >
-                            <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
-                          </CustomButton>
-                        )}
-                      </>
-                    )}
-
-                    {filter.type === 'date-range' && (
-                      <>
-                        {(filter.selected.from || filter.selected.to) && (
-                          <CustomButton
-                            variant='transparent'
-                            size='detail'
-                            className='hover:text-red-600'
-                            aria-label='Clear date range'
-                            onClick={() => filter.onChange({ from: undefined, to: undefined })}
-                            disabled={disabled}
-                          >
-                            <i className="pi pi-times text-regular-14" aria-hidden="true"></i>
-                          </CustomButton>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-
-                  <div className="align-center flex w-full flex-wrap gap-2">
-                    {(filter.type === 'pill')
-                    && filter.options.map((option, optionIndex) => (
-                      <button
-                        id={`filter-${index}`}
-                        type='button'
-                        key={`FilterItem-${index}-${optionIndex}`}
-                        className={classNames('Filters__Item', {
-                          'Disabled': filter.multiple ? !filter.selected.includes(option.value) : filter.selected !== option.value,
-                          'Selected': filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
-                        })}
-                        onClick={() => {
-                          if(filter.multiple) {
-                            if(filter.selected.includes(option.value)) {
-                              filter.onChange(filter.selected.length > 1 ? filter.selected.filter(v => v !== option.value) : [])
-                            } else {
-                              filter.onChange([...filter.selected, option.value])
-                            }
-                          } else {
-                            if (filter.selected === option.value) {
-                              filter.onChange(undefined)
-                            } else {
-                              filter.onChange(option.value)
-                            }
-                          }
-                        }}
-                      >
-                        {option.color && (
-                          <div
-                            className="Filters__Circle"
-                            style={{ backgroundColor: option.color }}
-                          />
-                        )}
-                        <span className="text-regular-14">{option.label}</span>
-                      </button>
-                    ))}
-
-                    {filter.type === 'dropdown' && (
-                      <>
-                        {filter.multiple ? (
-                          <MultiSelect
-                            placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
-                            value={filter.selected}
-                            onChange={(e) => filter.onChange(e.value)}
-                            options={filter.options}
-                            loading={filter.loading}
-                            filter
-                            showClear={filter.selected.length > 0}
-                            disabled={filter.disabled || filter.loading}
-                            pt={{
-                              ...MULTISELECT_PT,
-                              input: {
-                                id: `filter-${index}`
-                              }
-                            }}
-                          />
-                        ) : (
-                          <Dropdown
-                            className='w-full'
-                            placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
-                            value={filter.selected}
-                            onChange={(e) => filter.onChange(e.value)}
-                            options={filter.options}
-                            loading={filter.loading}
-                            filter
-                            showClear={Boolean(filter.selected)}
-                            disabled={filter.disabled || filter.loading}
-                            pt={{
-                              ...DROPDOWN_PT,
-                              input: {
-                                id: `filter-${index}`
-                              }
-                            }}
-                          />
-                        )}
-                      </>
-                    )}
-
-                    {filter.type === 'date' && (
-                      <Calendar
-                        className='w-full'
-                        placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
-                        value={filter.multiple
-                          ? filter.selected.map(s => dayjs(s).toDate())
-                          : filter.selected
-                            ? dayjs(filter.selected).toDate()
-                            : null
-                        }
-                        onChange={(e) => {
-                          if(filter.multiple) {
-                            if(!e.value) filter.onChange([])
-                            else filter.onChange((e.value as Date[])
-                              .sort((a, b) => a.getTime() - b.getTime())
-                              .map(v => dayjs(v).format('YYYY-MM-DD')))
-                          } else {
-                            if(!e.value) filter.onChange(undefined)
-                            else filter.onChange(dayjs(e.value as Date).format('YYYY-MM-DD'))
-                          }
-                        }}
-                        selectionMode={filter.multiple ? 'multiple' : 'single'}
-                        dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
-                        locale={locale}
-                        // pt={{
-                        //   input: {
-                        //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
-                        //   }
-                        // }}
-                      />
-                    )}
-
-                    {filter.type === 'date-range' && (
-                      <Calendar
-                        className='w-full'
-                        placeholder={filter.placeholder || 'Select a date range'}
-                        value={filter.selected.from || filter.selected.to
-                          ? [
-                            filter.selected.from ? dayjs(filter.selected.from).toDate() : null,
-                            filter.selected.to ? dayjs(filter.selected.to).toDate() : null
-                          ]
-                          : null
-                        }
-                        onChange={(e) => {
-                          if(e.value) {
-                            const range = e.value as (Date | null)[]
-                            filter.onChange({
-                              from: range[0] ? dayjs(range[0]).format('YYYY-MM-DD') : undefined,
-                              to: range[1] ? dayjs(range[1]).format('YYYY-MM-DD') : undefined
-                            })
-                          } else {
-                            filter.onChange({
-                              from: undefined,
-                              to: undefined
-                            })
-                          }
-                        }}
-                        selectionMode='range'
-                        dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
-                        locale={locale}
-                        // pt={{
-                        //   input: {
-                        //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
-                        //   }
-                        // }}
-                      />
-                    )}
-                  </div>
-                </div>
+                  filter={filter}
+                  index={index}
+                  disabled={disabled}
+                  locale={locale}
+                />
               ))}
             </m.div>
           </>

@@ -28,6 +28,7 @@ export async function POST (req: NextRequest) {
       }
 
       // Returns error if key session data is missing
+      // eslint-disable-next-line unicorn/prefer-includes -- Object.values() is typed (string | number)[]; .includes(undefined) would not type-check.
       if(Object.values(session).some(value => value === undefined)) {
         return NextResponse.json({
           message: AUTH_ERRORS['session-invalid']

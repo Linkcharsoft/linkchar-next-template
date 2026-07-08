@@ -3,7 +3,7 @@ import './SearchInput.sass'
 import { IconField } from 'primereact/iconfield'
 import { InputIcon } from 'primereact/inputicon'
 import { InputText } from 'primereact/inputtext'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
 
 interface Props {
@@ -24,12 +24,14 @@ const SearchInput = ({
   className
 }: Props) => {
   const [searchValue, setSearchValue] = useState<string>(initialValue || '')
+  const [prevInitialValue, setPrevInitialValue] = useState(initialValue)
 
   const debouncedUpdateSearch = useDebounceCallback(onChange, 500)
 
-  useEffect(() => {
-    if(initialValue === undefined) setSearchValue('')
-  }, [initialValue])
+  if (initialValue !== prevInitialValue) {
+    setPrevInitialValue(initialValue)
+    if (initialValue === undefined) setSearchValue('')
+  }
 
   return (
     <IconField iconPosition="right">

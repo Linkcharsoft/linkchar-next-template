@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    minimumCacheTTL: 31536000,
+    minimumCacheTTL: 31_536_000,
     formats: ['image/avif', 'image/webp']
     // Add per-project when loading images from external origins (CDN, CMS, S3, etc.):
     // remotePatterns: [

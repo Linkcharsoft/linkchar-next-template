@@ -1,25 +1,11 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "es6",
-    "lib": [
-      "es6",
-      "dom"
-    ],
     "types": [
       "cypress",
       "node"
     ],
-    "noEmit": true,
-    "isolatedModules": false,
-    "typeRoots": [
-      "../../node_modules/@types"
-    ],
-    "paths": {
-      "@/*": [
-        "../../src/*"
-      ]
-    },
+    "isolatedModules": false
   },
   "include": [
     "**/*.cy.ts",

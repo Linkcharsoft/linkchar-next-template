@@ -309,16 +309,15 @@ const ExamplePage = ({ searchParams }: Props) => {
     token ? `/notifications/?${stringParams}` : null,
     (path) => getTestData(path, token!),
     {
-      refreshInterval: 60000
+      refreshInterval: 60_000
     }
   )
 
   return (
     <main id='main' className='ExamplePage'>
       <header className='flex w-full items-center justify-between border-b-2 px-6'>
-        {!example
-          ? <div></div>
-          : <CustomButton
+        {example
+          ? <CustomButton
             variant='transparent'
             size='detail'
             aria-label='Back'
@@ -326,6 +325,7 @@ const ExamplePage = ({ searchParams }: Props) => {
           >
             <i className="pi pi-chevron-left" aria-hidden="true"></i>
           </CustomButton>
+          : <div></div>
         }
 
         <div className="flex items-center gap-4">
@@ -341,7 +341,6 @@ const ExamplePage = ({ searchParams }: Props) => {
             size='large'
           />
           <CustomButton
-            variant='primary'
             onClick={async () => {
               await fetch('/api/auth/logout', {
                 method: 'POST',

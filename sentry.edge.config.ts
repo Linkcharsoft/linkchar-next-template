@@ -14,7 +14,7 @@ Sentry.init({
 
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  tracesSampleRate: isDev ? 0 : isStaging ? 1.0 : 0.1, // Local: 0% | Staging: 100% | Prod: 10%
+  tracesSampleRate: isDev ? 0 : (isStaging ? 1 : 0.1), // Local: 0% | Staging: 100% | Prod: 10%
 
   enableLogs: !isDev,
 

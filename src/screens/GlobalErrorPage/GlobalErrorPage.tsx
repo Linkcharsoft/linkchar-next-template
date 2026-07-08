@@ -21,7 +21,7 @@ const isFeedbackTransportReachable = async (): Promise<boolean> => {
 
   let url: string
   if (tunnel) {
-    url = new URL(tunnel, window.location.origin).toString()
+    url = new URL(tunnel, globalThis.location.origin).toString()
   } else {
     const dsn = client.getDsn()
     if (!dsn) return false
@@ -53,6 +53,7 @@ const GlobalErrorPage = ({
       level: 'fatal'
     })
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- captureException is a mount-only side effect; storing its returned id requires state.
     setEventId(id)
   }, [error])
 
@@ -101,7 +102,7 @@ const GlobalErrorPage = ({
   const showMailtoFallback = eventId && feedbackReachable === false
 
   const mailtoHref = `mailto:${SUPPORT_EMAIL_ADDRESS}?subject=${encodeURIComponent(
-    `Critical error report${eventId ? ` (${eventId})` : ''}`
+    `Critical error report: (${eventId})`
   )}`
 
   return (
@@ -146,7 +147,7 @@ const GlobalErrorPage = ({
             <p className='text-regular-16 md:text-regular-18'>If you have any relevant information that could help us replicate the issue:</p>
 
             <CustomButton
-              variant='transparent'
+              variant='primary'
               className='GlobalErrorPage__Link'
               onClick={openFeedbackWidget}
             >

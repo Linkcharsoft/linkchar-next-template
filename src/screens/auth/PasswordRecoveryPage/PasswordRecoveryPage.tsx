@@ -39,11 +39,6 @@ const PasswordRecoveryPage = () => {
   })
 
 
-  usePressKey('Enter', () => {
-    passwordRecoveryFormik.handleSubmit()
-  })
-
-
   const passwordRecoveryFormik = useFormik<PasswordRecoveryFormikType>({
     initialValues: {
       email: ''
@@ -92,6 +87,11 @@ const PasswordRecoveryPage = () => {
         closeModal('loadingModal')
       }
     }
+  })
+
+
+  usePressKey('Enter', () => {
+    passwordRecoveryFormik.handleSubmit()
   })
 
 
