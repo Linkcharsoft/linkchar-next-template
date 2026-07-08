@@ -33,12 +33,13 @@ This file describes **what** this project is: the tech stack, structure, and hig
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
 | Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
 | Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
-| Import a full OpenAPI YAML spec and wire the backend layer (handlers + GET hooks, no UI) — typically runs AFTER `/figma-design-import` | `/openapi-import` | `/openapi-import ./openapi.yaml --tags=users,products` |
+| Import a full Claude Design prototype — a "Standalone HTML" export — to code (unpack → tokens → assets → components → layouts → screens) | `/claude-design-import` | `/claude-design-import https://inferencia-demo.s3.amazonaws.com/.../PROTOTIPO.html` |
+| Import a full OpenAPI YAML spec and wire the backend layer (handlers + GET hooks, no UI) — typically runs AFTER `/figma-design-import` or `/claude-design-import` | `/openapi-import` | `/openapi-import ./openapi.yaml --tags=users,products` |
 | Scaffold a single API resource by hand (no spec) — `src/api/{resource}.ts` with the canonical interleaved layout | `/new-api-resource` | `/new-api-resource Users` |
 
 > **`/init-project` is enforced on fresh clones.** Until it runs (sentinel: `package.json` `name` is still `linkchar-next-template`), two guards block work: the Husky **`pre-commit`** hook refuses commits, and a Claude **PreToolUse** hook (`.claude/hooks/require-init.mjs`) refuses `Edit`/`Write`. Running `/init-project` renames the app and disarms both. Maintainers working on the **template itself** bypass with `LINKCHAR_TEMPLATE_DEV` — set it once in `.claude/settings.local.json` (`"env"` key, gitignored) and both guards read it (the shell env also works and takes precedence).
 
-Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma/OpenAPI orchestrators, `init-project/` at the root). Subfolders are for organization only — Claude Code discovers skills recursively and the slash command is still the skill's own directory name (e.g. `/new-component`), independent of the parent folder. Do not duplicate their logic in chat — invoke them.
+Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma / Claude Design / OpenAPI orchestrators, `init-project/` at the root). Subfolders are for organization only — Claude Code discovers skills recursively and the slash command is still the skill's own directory name (e.g. `/new-component`), independent of the parent folder. Do not duplicate their logic in chat — invoke them.
 
 > **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
 
@@ -91,13 +92,13 @@ src/
 - Layout components live in `src/layouts/LayoutName/LayoutName.tsx` with colocated styles.
 - `GeneralLayout` handles auth token/user fetching and wraps with `ProvidersContainer`.
 
-## Design Tokens (Figma imports)
+## Design Tokens (Figma & Claude Design imports)
 
-Color, typography, and breakpoint tokens added through `/figma-design-import` are tracked in `design-tokens-map.md` at the project root. That file is the canonical Figma variable → Tailwind token mapping — it documents which existing token a Figma variable was reused into, which new tokens were created, and the reasoning (heuristic match, namespace decision, etc.).
+Color, typography, and breakpoint tokens added through `/figma-design-import` or `/claude-design-import` are tracked in `design-tokens-map.md` at the project root — a **single map shared by both import flows**. That file is the canonical source-variable → Tailwind token mapping (the source variable is a Figma variable for Figma imports, or a Claude Design `THEMES` key / rawScan value for Claude Design imports) — it documents which existing token each source variable was reused into, which new tokens were created, and the reasoning (heuristic match, namespace decision, etc.).
 
-**Consult `design-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across Figma imports. If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-tokens` sub-agent maintains the map automatically during its runs.
+**Consult `design-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across imports (from either source). If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-tokens` and `claude-design-tokens` sub-agents maintain the map automatically during their runs.
 
-The `surface-50`…`surface-900` namespace is immutable and template-shipped (not Figma-derived), so it never appears in `design-tokens-map.md`. Same for Tailwind defaults (`red-600`, `blue-600`, etc.).
+The `surface-50`…`surface-900` namespace is immutable and template-shipped (not import-derived), so it never appears in `design-tokens-map.md`. Same for Tailwind defaults (`red-600`, `blue-600`, etc.).
 
 ## Modals & Notifications System
 
@@ -162,7 +163,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 
 ### Slash Commands
 
-- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` scaffolds the UI. Delegates to four sub-agents in `.claude/agents/openapi/`: `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-spec-validate` (Haiku) for input spec audit, `openapi-code-validate` (Haiku) for emitted code audit.
+- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` or `/claude-design-import` scaffolds the UI (both leave screens rendering `MOCK_*` data with a `// TODO: openapi-import` marker for this flow to replace). Delegates to four sub-agents in `.claude/agents/openapi/`: `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-spec-validate` (Haiku) for input spec audit, `openapi-code-validate` (Haiku) for emitted code audit.
 - **`/new-api-resource {ResourceName} [list,detail,create,update,delete] [no-auth]`** — single-file manual scaffold. No spec input, no merge logic. Use for ad-hoc endpoints not yet in the spec or for quick prototyping.
 
 ### Conventions
