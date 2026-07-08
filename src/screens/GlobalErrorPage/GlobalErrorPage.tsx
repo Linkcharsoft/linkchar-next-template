@@ -102,7 +102,7 @@ const GlobalErrorPage = ({
   const showMailtoFallback = eventId && feedbackReachable === false
 
   const mailtoHref = `mailto:${SUPPORT_EMAIL_ADDRESS}?subject=${encodeURIComponent(
-    `Critical error report${eventId ? ` (${eventId})` : ''}`
+    `Critical error report: (${eventId})`
   )}`
 
   return (

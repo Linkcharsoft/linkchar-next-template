@@ -111,10 +111,11 @@ Cypress.Commands.add('createInbox', () => {
       return cy.mailslurp()
         .then((ms: MailSlurp) => Cypress.Promise
           .try(() => ms.getInbox(data.id))
-          .catch((error: any) => {
+          .catch((error: unknown) => {
             const errors = ['Error403Forbidden', 'Error404NotFound']
+            const errorClass = (error as { errorClass?: string }).errorClass
 
-            if (errors.includes(error.errorClass)) {
+            if (errorClass && errors.includes(errorClass)) {
               return createAndSaveInbox()
             }
           })

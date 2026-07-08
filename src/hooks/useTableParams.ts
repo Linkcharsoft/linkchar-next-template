@@ -362,7 +362,6 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
 
       if(key === 'page' || key === 'page_size') {
         params.set(key, String(defaultValue))
-        continue
       } else {
         if(defaultValue !== undefined && defaultValue !== null && defaultValue !== '') {
           params.set(key, '')

@@ -21,6 +21,7 @@ const PUBLIC_PATHS = new Set([
   '/sentry-example-page' // Delete
 ])
 
+// eslint-disable-next-line sonarjs/regex-complexity -- flat extension allowlist; readability beats micro-optimizing the alternation count
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|xml|pdf|zip|map)$/i
 
 const REFRESH_THRESHOLD_SECONDS = 60
