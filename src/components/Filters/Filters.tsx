@@ -140,6 +140,13 @@ const DROPDOWN_PT: DropdownPassThroughOptions = {
   }
 }
 
+// Returns whether a single filter currently has an active selection.
+const isFilterActive = (filter: Filter): boolean => {
+  if (filter.type === 'date-range') return Boolean(filter.selected.from || filter.selected.to)
+  if (filter.multiple) return filter.selected.length > 0
+  return filter.selected !== undefined && filter.selected !== null && filter.selected !== ''
+}
+
 const Filters = ({
   filters,
   cleanFilters,
@@ -150,27 +157,7 @@ const Filters = ({
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  const ACTIVE_FILTERS = useMemo(() => {
-    let count = 0
-
-    for (const filter of filters) {
-      if (filter.type === 'pill' || filter.type === 'dropdown' || filter.type === 'date') {
-        if(filter.multiple) {
-          if(filter.selected.length > 0) count += 1
-        } else {
-          if (
-            filter.selected !== undefined &&
-            filter.selected !== null &&
-            filter.selected !== ''
-          )
-            count += 1
-        }
-      }
-      if(filter.type === 'date-range' && (filter.selected.from || filter.selected.to)) count += 1
-    }
-
-    return count
-  }, [filters])
+  const ACTIVE_FILTERS = useMemo(() => filters.filter((filter) => isFilterActive(filter)).length, [filters])
 
   const MOTION_PROPS = isMobile ? MOBILE_MOTION_PROPS : DESKTOP_MOTION_PROPS
 
