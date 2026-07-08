@@ -71,17 +71,17 @@ const ESLintConfig = [
       },
       'boundaries/include': ['src/**/*.{ts,tsx}'],
       'boundaries/elements': [
-        { type: 'app', pattern: 'src/app/**/*', mode: 'full' },
-        { type: 'screens', pattern: 'src/screens/**/*', mode: 'full' },
-        { type: 'layouts', pattern: 'src/layouts/**/*', mode: 'full' },
-        { type: 'providers', pattern: 'src/providers/**/*', mode: 'full' },
-        { type: 'components', pattern: 'src/components/**/*', mode: 'full' },
-        { type: 'hooks', pattern: 'src/hooks/**/*', mode: 'full' },
-        { type: 'stores', pattern: 'src/stores/**/*', mode: 'full' },
-        { type: 'api', pattern: 'src/api/**/*', mode: 'full' },
-        { type: 'utils', pattern: 'src/utils/**/*', mode: 'full' },
-        { type: 'constants', pattern: 'src/constants/**/*', mode: 'full' },
-        { type: 'types', pattern: 'src/types/**/*', mode: 'full' }
+        { type: 'app', pattern: 'src/app/**', partialMatch: false },
+        { type: 'screens', pattern: 'src/screens/**', partialMatch: false },
+        { type: 'layouts', pattern: 'src/layouts/**', partialMatch: false },
+        { type: 'providers', pattern: 'src/providers/**', partialMatch: false },
+        { type: 'components', pattern: 'src/components/**', partialMatch: false },
+        { type: 'hooks', pattern: 'src/hooks/**', partialMatch: false },
+        { type: 'stores', pattern: 'src/stores/**', partialMatch: false },
+        { type: 'api', pattern: 'src/api/**', partialMatch: false },
+        { type: 'utils', pattern: 'src/utils/**', partialMatch: false },
+        { type: 'constants', pattern: 'src/constants/**', partialMatch: false },
+        { type: 'types', pattern: 'src/types/**', partialMatch: false }
       ]
     },
     rules: {
@@ -206,48 +206,48 @@ const ESLintConfig = [
       // no-secrets — catch hardcoded high-entropy secrets/tokens
       'no-secrets/no-secrets': ['error', { tolerance: 4.8 }],
 
-      // Architecture boundaries — enforce the layered import direction (v6 object selectors)
+      // Architecture boundaries — enforce the layered import direction (v7 entity selectors)
       'boundaries/dependencies': ['error', {
         default: 'allow',
-        rules: [
+        policies: [
           {
-            from: { type: 'api' },
-            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores'] } },
+            from: { element: { type: 'api' } },
+            disallow: { to: { element: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores'] } } },
             message: 'API layer must not import UI/state/hooks — keep it a leaf on the data side.'
           },
           {
-            from: { type: 'utils' },
-            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores'] } },
+            from: { element: { type: 'utils' } },
+            disallow: { to: { element: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores'] } } },
             message: 'Utils must not import UI or state (importing the API layer is allowed).'
           },
           {
-            from: { type: ['constants', 'types'] },
-            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores', 'api'] } },
+            from: { element: { type: ['constants', 'types'] } },
+            disallow: { to: { element: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks', 'stores', 'api'] } } },
             message: 'Constants/types must be pure leaves — no feature-layer imports.'
           },
           {
-            from: { type: 'stores' },
-            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks'] } },
+            from: { element: { type: 'stores' } },
+            disallow: { to: { element: { type: ['app', 'screens', 'layouts', 'providers', 'components', 'hooks'] } } },
             message: 'Stores must not import UI or hooks.'
           },
           {
-            from: { type: 'hooks' },
-            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers', 'components'] } },
+            from: { element: { type: 'hooks' } },
+            disallow: { to: { element: { type: ['app', 'screens', 'layouts', 'providers', 'components'] } } },
             message: 'Hooks must not import UI layers.'
           },
           {
-            from: { type: 'components' },
-            disallow: { to: { type: ['app', 'screens', 'layouts', 'providers'] } },
+            from: { element: { type: 'components' } },
+            disallow: { to: { element: { type: ['app', 'screens', 'layouts', 'providers'] } } },
             message: 'Components must not import screens/layouts/app/providers.'
           },
           {
-            from: { type: 'layouts' },
-            disallow: { to: { type: ['app', 'screens'] } },
+            from: { element: { type: 'layouts' } },
+            disallow: { to: { element: { type: ['app', 'screens'] } } },
             message: 'Layouts must not import screens or app routes.'
           },
           {
-            from: { type: 'screens' },
-            disallow: { to: { type: ['app'] } },
+            from: { element: { type: 'screens' } },
+            disallow: { to: { element: { type: ['app'] } } },
             message: 'Screens must not import app routes.'
           }
         ]
