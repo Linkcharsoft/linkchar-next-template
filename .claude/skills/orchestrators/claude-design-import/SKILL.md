@@ -98,11 +98,18 @@ Run the extractor. Pick a scratch output directory **outside** the repo `src/` t
 node .claude/skills/orchestrators/claude-design-import/unpack.mjs "<EXPORT_URL>" "<SCRATCH_DIR>/unpacked"
 ```
 
-It writes: `template.html`, `jsx/*` (component source), `assets/img/*` (decoded images), `fonts.json`, `tokens.json`, `nav-graph.json`, `components.json`, and `inventory.json`.
+It writes: `source/*` (component source — babel: `source/jsx/*.jsx`; dclogic: `source/{screen}.markup.html` + `source/{screen}.logic.js`; vanilla: `source/index.markup.html`), `assets/img/*` (decoded images), `fonts.json`, `tokens.json`, `nav-graph.json`, `components.json`, and `inventory.json`. (`inventory.screens[].file` points at the right source file for each screen — always use that, never a hardcoded path.)
 
-**Read `inventory.json` first** — it is your map for Step 0.5 (`flavor`, `targetSignals`, counts, `registries`, `screens` — **one entry per registry KEY**, with `key`/`component`/`role`/`file`, `jsxFiles`/`images` with `uuid`, `fontFamilies` (superset) + `brandFonts` (the fonts actually used at runtime — load THESE), `brand`, `tokenNamespaces`).
+**Read `inventory.json` first** — your map for Step 0.5: `format` (babel|dclogic|vanilla), `navModel` (screen-registry|single-page-sections|multi-page|single-page), `tokenSource` (themes-object|inline+helmet|inline+css), `targetSignals` (with a mobile-app|web `guess`), counts, `screens` (the authoritative list — each `key`/`component`/`role`/`file`; babel = one per registry KEY, dclogic multi-page = one per page, dclogic single-page = one per section), `components`, `brandFonts` (`{body, display, families}` — load `families`, preload `body`), `fontFamilies` (superset), `images` with `uuid`, `brand`, `tokenNamespaces`, `registries`/`tabs` (babel only), and `notes` (**READ THESE** — they carry per-format orchestration guidance the parser inferred).
 
-**Flavor gate:** if `inventory.flavor !== 'babel-inline'`, surface it — the fully-supported case is `babel-inline` (React + Babel runtime, inline styles). For `react` / `next` / `vanilla` exports, tell the user the extraction may be partial and proceed with extra care (the structured artifacts may be thinner). If `unpack.mjs` exits non-zero (missing `__bundler` blocks), STOP and report — likely a non-standard export or a format change.
+**Format handling (read `inventory.format`).** `unpack.mjs` normalizes 3 flavors into the SAME IR:
+- `babel` — React SPA (GIVXO). **Fully supported end-to-end.**
+- `dclogic` — Claude Design's native `.dc.html` (`<x-dc>` markup + `class Component extends DCLogic` + `<helmet>`); `navModel` = `single-page-sections` or `multi-page`; `tokenSource` = `inline+helmet`; no `THEMES` (tokens from inline styles + `<helmet>`).
+- `vanilla` — plain HTML/CSS/JS (best-effort; no reference sample — treat with care).
+
+> **Implementation status (IMPORTANT, temporary):** extraction is done for all three, but the per-screen agent implementation is currently wired for **`babel` only**. For `dclogic`/`vanilla`, run Steps 0–0.5 (extraction + gap analysis are already useful), then **STOP before Step 5.2** and tell the user: _"Extracción + inventory listos para este export {format}, pero la implementación por-pantalla de {format} en los agentes todavía se está cableando — la generación end-to-end hoy soporta babel."_ This gate is removed as the dclogic/vanilla agent path lands.
+
+If `unpack.mjs` exits non-zero, STOP and report — unrecognized/unsupported export or a format change.
 
 ---
 
@@ -112,7 +119,7 @@ It writes: `template.html`, `jsx/*` (component source), `assets/img/*` (decoded 
 
 Read the extracted artifacts AND the codebase, then produce a written gap-analysis report **in chat** (not a `.md` file unless asked).
 
-1. **Design context** — read `inventory.json`, `tokens.json`, `nav-graph.json`, `components.json`, and skim the relevant `jsx/*` files (the App/entry file for state + routing, the primitives file for components, a few screen files for copy/patterns).
+1. **Design context** — read `inventory.json`, `tokens.json`, `nav-graph.json`, `components.json`, and skim the relevant source files under `source/` (babel: the App/entry `.jsx` for state+routing, the primitives file; dclogic: the `.logic.js` for state/routing + the `.markup.html` for structure/copy).
 2. **Codebase context** — `tailwind.config.js`, `design-tokens-map.md`, `src/styles/index.sass`, `src/components/` (Glob folders, cross-ref the CONVENTIONS reuse table), `src/layouts/`, `src/stores/`, `src/proxy.ts`, `src/assets/icons/index.ts`.
 3. **Produce the report:**
 
@@ -135,13 +142,13 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 - Icons: the `Icon` component's named glyphs → split into individual React icon components.
 - Pre-filter: icons covered by PrimeIcons → note `→ pi pi-{name}`, do NOT pass to the assets agent.
 
-## Components (each with its SOURCE JSX FILE — mandatory)
-Every primitive to extend/create MUST cite its source file in the unpacked tree (e.g. `jsx/03_display.jsx`).
-This is the equivalent of Figma's nodeId gate — claude-design-components reads the real JSX, never prose.
+## Components (each with its SOURCE FILE — mandatory)
+Every primitive to extend/create MUST cite its source file in the unpacked tree (babel: `source/jsx/03_display.jsx`; dclogic: the `source/{screen}.markup.html` where the primitive's markup lives, or a `<dc-import>` child listed in `components.json`).
+This is the equivalent of Figma's nodeId gate — claude-design-components reads the real source, never prose.
 - Extend existing:
-  - `CustomButton` ← `Btn` in `jsx/03_display.jsx` (variants: primary/accent/outline/ghost/soft)
+  - `CustomButton` ← `Btn` in `source/jsx/03_display.jsx` (variants: primary/accent/outline/ghost/soft)
 - Create new:
-  - `{Name}` ← `{Fn}` in `jsx/NN_*.jsx`
+  - `{Name}` ← `{Fn}` in `source/...`
 - Reuse as-is: [list]
 
 ## State / Stores  (D6 — Zustand + seeding vs per-screen mock)
@@ -232,7 +239,7 @@ Because the design context is local files, cost is far lower than Figma's per-sc
 Screen name: {Name}Page
 Screen type: {auth|public|protected}
 Screen slug: {kebab-case}
-Source JSX: {unpacked}/jsx/NN_*.jsx  (the file — it may contain several screens + helpers)
+Source: {unpacked}/{inventory.screens[].file}  (babel: source/jsx/NN_*.jsx — may hold several screens; dclogic: source/{screen}.markup.html + sibling .logic.js)
 Screen component: {FunctionName}     # from inventory.screens[].component — WHICH function in that file IS this screen (REQUIRED; the agent STOPs without it)
 Absorbed steps: [{stepScreenKey → component}, ...]   # wizard sub-steps to implement as internal stepper
 Store spec: {store → {seeded initial state, fields, action bodies}}   # from Step 0.5 — consume it, never redefine it; shared data comes from the (seeded) store, NOT MOCK_*
