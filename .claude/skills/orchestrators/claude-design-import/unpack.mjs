@@ -203,7 +203,9 @@ const familyOf = (stack) => { const m = (stack || '').match(/^\s*['"]?([^'",]+)/
 let brandFonts = null
 if (themes && brand && themes[brand]) {
   const t = themes[brand]
-  brandFonts = [...new Set([familyOf(t.fontBody), familyOf(t.fontDisplay)].filter(Boolean))] // body first → the preload/LCP font
+  const body = familyOf(t.fontBody), display = familyOf(t.fontDisplay)
+  // role-labelled so the tokens agent preloads the BODY font (the LCP text), not a distinct display font
+  brandFonts = { body, display, families: [...new Set([body, display].filter(Boolean))] }
 }
 const rawScan = {
   hexColors: [...new Set([...allSrc.matchAll(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g)].map((m) => m[0].toLowerCase()))].sort(),
@@ -232,13 +234,20 @@ for (const m of allSrc.matchAll(/Object\.assign\(\s*window\.([A-Z][A-Z0-9_]*)\s*
 }
 dropEmptyRegistries()
 // fallback for prototypes that don't use window.* — (export) const NAME = { ... } / Object.assign(NAME, { ... }).
-// Only runs when the window.* pass found nothing, so it can't pollute the common case with data-object false positives.
+// Only runs when the window.* pass found nothing. A capitalized-value filter alone is NOT enough here: an
+// ALL-CAPS data map (CATEGORIES, ICON_MAP) satisfies `key: CapitalizedIdent` just like a screen registry,
+// so also require the NAME to plausibly denote routing, and flag that the heuristic was used.
+let usedRegistryFallback = false
 if (!Object.keys(registries).length) {
+  usedRegistryFallback = true
+  const routingName = /^(GUEST|HOST|ROUTES?|SCREENS?|PAGES?|VIEWS?|NAV|STACK|ROUTER)/
   for (const m of allSrc.matchAll(/(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=\s*\{/g)) {
+    if (!routingName.test(m[1])) continue
     const objText = extractBalanced(allSrc, allSrc.indexOf('{', m.index))
     if (objText) mergeRegistry(m[1], objText)
   }
   for (const m of allSrc.matchAll(/Object\.assign\(\s*([A-Z][A-Z0-9_]*)\s*,\s*\{/g)) {
+    if (!routingName.test(m[1])) continue
     const objText = extractBalanced(allSrc, allSrc.indexOf('{', m.index + m[0].length - 1))
     if (objText) mergeRegistry(m[1], objText)
   }
@@ -261,10 +270,12 @@ const navGraph = {
 const fnToFile = {}
 for (const f of jsxFiles) {
   const src = readFileSync(join(outDir, f.file), 'utf8')
+  // TOP-LEVEL only (`^` anchored, no indent) — nested closures like an indented `const TotalBar = …`
+  // inside a screen are NOT reusable primitives and must not enter the component inventory.
   // `function Name(`
-  for (const m of src.matchAll(/function\s+([A-Z][A-Za-z0-9]*)\s*\(/g)) if (!fnToFile[m[1]]) fnToFile[m[1]] = f.file
+  for (const m of src.matchAll(/^(?:export\s+)?function\s+([A-Z][A-Za-z0-9]*)\s*\(/gm)) if (!fnToFile[m[1]]) fnToFile[m[1]] = f.file
   // arrow / const components: `const Name = (...) =>` or `const Name = function` (other prototypes declare screens this way)
-  for (const m of src.matchAll(/const\s+([A-Z][A-Za-z0-9]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z0-9_]+)\s*=>|const\s+([A-Z][A-Za-z0-9]*)\s*=\s*(?:async\s*)?function\b/g)) {
+  for (const m of src.matchAll(/^(?:export\s+)?const\s+([A-Z][A-Za-z0-9]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z0-9_]+)\s*=>|^(?:export\s+)?const\s+([A-Z][A-Za-z0-9]*)\s*=\s*(?:async\s*)?function\b/gm)) {
     const n = m[1] || m[2]
     if (n && !fnToFile[n]) fnToFile[n] = f.file
   }
@@ -318,7 +329,7 @@ const inventory = {
   targetSignals,
   counts: {
     manifestEntries: Object.keys(manifest).length,
-    images: images.length, fonts: fontFamilies.length, brandFonts: brandFonts ? brandFonts.length : 0,
+    images: images.length, fonts: fontFamilies.length, brandFonts: brandFonts ? brandFonts.families.length : 0,
     jsxFiles: jsxFiles.length, functions: components.length,
     screens: screenList.length, screenComponents: screenComponents.length,
     primitives: components.length - screenComponents.length,
@@ -337,7 +348,8 @@ const inventory = {
     `flavor=${flavor} (${flavor === 'babel-inline' ? 'React + Babel runtime, inline styles — the fully-supported case' : 'non-primary flavor — orchestrator should adapt / flag'})`,
     `target guess=${targetSignals.guess} — parent confirms at Step 0.5 checkpoint`,
     dupComponents ? `NOTE: ${screenList.length} registry keys map to ${screenComponents.length} unique components — some components serve multiple routes; all keys are listed in screens[].` : null,
-    !Object.keys(registries).length ? 'WARNING: no screen registries found (no window.HOST/GUEST nor const registry). screens[] is empty — the prototype may use an unrecognized routing pattern; inspect jsx/ manually.' : null,
+    usedRegistryFallback ? 'NOTE: no window.* registries — screens derived via the const-registry NAME heuristic (GUEST/HOST/ROUTES/SCREENS/…). Double-check inventory.screens for spurious entries (data maps named like a route registry).' : null,
+    !Object.keys(registries).length ? 'WARNING: no screen registries found (no window.HOST/GUEST nor a routing-named const registry). screens[] is empty — the prototype may use an unrecognized routing pattern; inspect jsx/ manually.' : null,
     !brandFonts ? 'WARNING: no THEMES[brand] preset found — could not derive brandFonts; inspect the screens for the fonts actually used.' : null,
   ].filter(Boolean),
 }
@@ -345,7 +357,7 @@ write('inventory.json', inventory)
 
 // ─────────────────────────────────────────────────────────── done
 console.log(`[unpack] flavor=${flavor} target≈${targetSignals.guess}`)
-console.log(`[unpack] jsx=${jsxFiles.length} images=${images.length} fonts=${fontFamilies.length} (brand: ${brandFonts ? brandFonts.join('+') : 'none'}) screens=${screenList.length} primitives=${inventory.counts.primitives}`)
+console.log(`[unpack] jsx=${jsxFiles.length} images=${images.length} fonts=${fontFamilies.length} (brand: ${brandFonts ? brandFonts.families.join('+') : 'none'}) screens=${screenList.length} primitives=${inventory.counts.primitives}`)
 console.log(`[unpack] registries: ${Object.entries(inventory.registries).map(([k, v]) => `${k}(${v.length})`).join(', ') || 'none'}${navGraph.tabs ? ` tabs(${navGraph.tabs.length})` : ''}`)
 if (dupComponents) console.warn(`[unpack] note: ${screenList.length} keys → ${screenComponents.length} unique components (some routes share a component)`)
 if (!Object.keys(registries).length) console.warn('[unpack] WARNING: no screen registries found — screens[] is empty (unrecognized routing pattern?)')

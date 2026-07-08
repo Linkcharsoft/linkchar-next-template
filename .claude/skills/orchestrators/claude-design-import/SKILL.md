@@ -125,7 +125,9 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 - Brand preset: `{brand}` from tokens.json (THEMES[brand]) — the canonical palette/typography.
 - Already mapped (design-tokens-map.md): [`figmaVar/themeKey` → `tailwindToken`]
 - Add: [new colors (hex), typography sizes, breakpoints the tokens agent should REUSE/CREATE/BLOCK]
-- Fonts: [from `inventory.brandFonts` — the brand preset's actual runtime fonts] → next/font/google. Do NOT pass `inventory.fontFamilies` (that lists every embedded `@font-face` — a superset covering all THEMES presets, most of which are dead at runtime; loading them all is a bundle/LCP regression).
+- Typography snapping: ordinary/fractional source sizes are SNAPPED by the screen/components agents to the nearest scale step (ties round UP — deterministic, so isolated per-screen runs agree). If the design clearly relies on midpoint sizes the scale lacks (e.g. GIVXO's 22/26/30/34 — all exact midpoints of `{…20,24,28,32,36…}`), decide HERE whether to instead add them as tokens (ONE decision, applied everywhere) rather than snap — pick one and record it so every screen agrees.
+- Radius: the prototype's `var(--radius)` is a SINGLE design constant used everywhere for consistency — decide ONE canonical translation here (a specific `rounded-*` step, or add one `borderRadius` token like `rounded-card` if no step is close) and pass it to Steps 3 + 5.2 so every component renders the SAME radius (no per-component drift). Radii are otherwise plain CSS, not per-value tokens.
+- Fonts: [from `inventory.brandFonts` — `{ body, display, families }` from the brand preset; load `families`, preload `body`] → next/font/google. Do NOT pass `inventory.fontFamilies` (that lists every embedded `@font-face` — a superset covering all THEMES presets, most of which are dead at runtime; loading them all is a bundle/LCP regression).
 - **Warnings**: any proposed token that would override `surface-*` or an existing token — flag it.
 
 ## Assets
@@ -142,12 +144,15 @@ This is the equivalent of Figma's nodeId gate — claude-design-components reads
   - `{Name}` ← `{Fn}` in `jsx/NN_*.jsx`
 - Reuse as-is: [list]
 
-## State / Stores  (D6 — Zustand vs mock)
-**Derive the full store shape HERE, up front** (analogous to deriving component primitives) — do NOT leave it for Step 5.2 to discover piecemeal across isolated per-screen contexts (that produces divergent store APIs). Read the App/entry file's centralized state and reducers, then for each Zustand store to create, specify its COMPLETE shape:
-- **State fields** (e.g. `gifts`, `contribs`, `cart`, `draft`).
-- **Actions — including cross-entity reducers no single screen owns** (e.g. `addContribution` mutates `gifts` AND `contribs` atomically; `confirmContribution` recomputes both). These are exactly what gets lost if left to per-screen discovery.
+## State / Stores  (D6 — Zustand + seeding vs per-screen mock)
+**Derive the full store spec HERE, up front** (analogous to deriving component primitives) — do NOT leave it for Step 5.2's isolated per-screen contexts (that produces divergent store APIs). Read the App/entry file's centralized state + reducers and, for each Zustand store, specify:
+- **State fields** (`gifts`, `contribs`, `cart`, `draft`, …).
+- **Initial seed** — the prototype seeds shared state from demo data (`useState(INITIAL_CONTRIBS)`, `setGifts(GIFTS.map(...))`). So the store's INITIAL STATE **is that mock seed**, defined in the store file and marked `// TODO: openapi-import — replace seeded mock with fetched data`. Screens then read POPULATED data from the store (never a blank list). Do NOT scatter shared-state mock as `MOCK_*` in screens — that leaves the store empty and the screen rendering `[]`.
+- **Action bodies — including cross-entity reducers no single screen owns** (`addContribution` mutates `gifts` AND `contribs` atomically; `confirmContribution` recomputes both). **Author the full bodies here** — you (the Opus parent) have the App source, so translate the atomic logic now; the spec carries the IMPLEMENTATIONS, not just signatures, because scaffold runs on Haiku and must not invent atomic logic from a signature.
 - Which screens consume which store.
-Pass this store spec to Step 5.1 (scaffold creates each store WITH this full shape) and Step 5.2 (screens consume it, never redefine it). Demo/filler data (EVENT, GUESTS, GIFTS…) → inline `MOCK_*` in screens (data layer deferred to openapi-import), NEVER in stores.
+Pass this spec to Step 5.1 (scaffold transcribes each store — seed + fields + reducer bodies — verbatim) and Step 5.2 (screens consume it, never redefine it).
+
+**Store vs `MOCK_` rule of thumb**: the prototype's App holds it (shared across screens) → **store, seeded** with the demo data. Only one screen holds it (a static list that screen shows) → `MOCK_*` inline in that screen. Either way the data layer is deferred to `openapi-import` via the TODO — the difference is only WHERE the seed lives.
 
 ## Layouts
 - Chrome detected: TopBar / BottomTabBar (HOST_TABS) / iOS status bar.
@@ -193,7 +198,7 @@ Pass: the path to `assets/img/*` + `inventory.images` (file, uuid, alias, mime, 
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-components' })` — **Opus**.
 
-Pass: the extend list + create list, **each with its source JSX file** in the unpacked tree, plus the token names added in Step 1. The agent reads the real JSX source per primitive (the gate against prose-driven errors — inline `style={{}}` variants are explicit in the code), reads existing `.tsx`/`.sass`, greps usages, extends/creates per conventions, validates each. If any component lacks a source file reference, the agent refuses — resolve it in Step 0.5.
+Pass: the extend list + create list, **each with its source JSX file** in the unpacked tree, the token names added in Step 1, and the **radius translation** decided in Step 0.5 (the single `rounded-*`/token every `var(--radius)` maps to). The agent reads the real JSX source per primitive (the gate against prose-driven errors — inline `style={{}}` variants are explicit in the code), reads existing `.tsx`/`.sass`, greps usages, extends/creates per conventions, validates each. If any component lacks a source file reference, the agent refuses — resolve it in Step 0.5.
 
 ---
 
@@ -230,7 +235,8 @@ Screen slug: {kebab-case}
 Source JSX: {unpacked}/jsx/NN_*.jsx  (the file — it may contain several screens + helpers)
 Screen component: {FunctionName}     # from inventory.screens[].component — WHICH function in that file IS this screen (REQUIRED; the agent STOPs without it)
 Absorbed steps: [{stepScreenKey → component}, ...]   # wizard sub-steps to implement as internal stepper
-Store spec: {store name → {state fields, actions}}   # from Step 0.5 — the screen consumes these, never redefines them
+Store spec: {store → {seeded initial state, fields, action bodies}}   # from Step 0.5 — consume it, never redefine it; shared data comes from the (seeded) store, NOT MOCK_*
+Radius translation: {the single canonical `rounded-*` / token the parent decided in Step 0.5}   # use this exact value for every radius — no per-component choice
 Local modals: [{modalScreenKey → component}, ...]     # implement as screen-local modals / /new-modal
 Target: {mobile-app|web}                              # drives responsive synthesis
 Detected language: {en|es}
