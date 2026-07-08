@@ -90,7 +90,7 @@ You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 
 | 4 | `figma-layouts` | Sonnet | Moderate decisions, known patterns |
 | 5.1 | `figma-scaffold` | Haiku | Mechanical `/new-screen` invocations |
 | 5.2 | `figma-screen` | Opus | Pixel-perfect fidelity, heaviest token user |
-| 6 | `figma-validation` | Haiku | Run commands + report findings |
+| 6 | `design-validation` | Haiku | Run commands + report findings (shared agent) |
 
 **Always pass enough context** in each delegation prompt — sub-agents start fresh, they don't see your conversation. Include relevant gap-analysis data, file paths, and decisions already made.
 
@@ -352,7 +352,7 @@ Pass any provided fields to `figma-screen`; fall back to the registry for the re
 
 ## Step 6 — Code validation
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-validation' })` — runs in **Haiku**.
+> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — runs in **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping. This is the **shared** validation agent (also used by `claude-design-import`).
 
 Visual validation is the developer's job — they review the dev server side-by-side with Figma and request adjustments via the per-screen checkpoint in Step 5.2. This step is a final automated code sweep only.
 
@@ -452,4 +452,4 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 | 4 | Layouts | `figma-layouts` | Sonnet | Current layouts state + Figma findings |
 | 5.1 | Scaffold screens | `figma-scaffold` | Haiku | Screen list (name, **screenType**, route, routeGroup, Figma-or-TBD) + `detectedLanguage` + `currentHtmlLang` |
 | 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
-| 6 | Validation | `figma-validation` | Haiku | Scope (or empty for full sweep) |
+| 6 | Validation | `design-validation` | Haiku | Scope (or empty for full sweep) + `importFlow: 'figma-design-import'` |

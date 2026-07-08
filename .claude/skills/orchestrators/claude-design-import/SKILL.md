@@ -78,7 +78,7 @@ You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0
 | 4 | `claude-design-layouts` | Sonnet | Moderate decisions, known patterns |
 | 5.1 | `claude-design-scaffold` | Haiku | Mechanical `/new-screen` + `/new-store` |
 | 5.2 | `claude-design-screen` | Opus | Highest-fidelity re-styling + responsive |
-| 6 | `claude-design-validation` | Haiku | Run commands + report |
+| 6 | `design-validation` | Haiku | Run commands + report (shared agent) |
 
 **Always pass enough context** in each delegation — sub-agents start fresh. Above all, pass the **path to the unpacked working tree** and the **specific extracted file(s)** each agent needs (its source of truth), plus decisions already made.
 
@@ -258,7 +258,7 @@ Branch on the reply exactly like the figma flow (empty/"siguiente"→next; free 
 
 ## Step 6 — Code validation
 
-> **Delegate to**: `Agent({ subagent_type: 'claude-design-validation' })` — **Haiku**.
+> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'claude-design-import'` so it names `claude-design-*` agents in the suggested-fixers mapping. This is the **shared** validation agent (also used by `figma-design-import`); it includes source-import leak checks (untranslated inline styles, leaked prototype CSS vars, stack-router remnants).
 
 Final automated code sweep only (visual review is the developer's job via the 5.2 checkpoints). Pass scope (or empty for full sweep). The agent runs `pnpm run lint-check --fix`, `pnpm run type-check`, plus structural checks (SEO metadata, heading hierarchy, a11y on clickable non-buttons, raw-hex compliance, typography compliance). Returns a categorized report with `path:line`. Don't auto-fix — surface and offer to delegate to the relevant agent.
 
@@ -315,4 +315,4 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target |
 | 5.1 | Scaffold routes + stores | `claude-design-scaffold` | Haiku | `route` screens (name, type, route, group, role) + stores + language |
 | 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX**, absorbed steps, modals, target, language, reuse list |
-| 6 | Validation | `claude-design-validation` | Haiku | Scope (or empty) |
+| 6 | Validation | `design-validation` | Haiku | Scope (or empty) + `importFlow: 'claude-design-import'` |
