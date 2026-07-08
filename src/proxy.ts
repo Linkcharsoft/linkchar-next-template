@@ -75,33 +75,65 @@ async function refreshAccessToken (session: SessionType): Promise<SessionType | 
   }
 }
 
+// Static resources, API routes, Next.js chunks, and public paths skip auth entirely.
+const shouldBypassProxy = (pathname: string): boolean =>
+  STATIC_RESOURCES_REGEX.test(pathname) ||
+  pathname.startsWith('/api') ||
+  pathname.startsWith('/_next') ||
+  PUBLIC_PATHS.has(pathname)
+
+// Redirect to /login, optionally purging the session cookies on the way out.
+function redirectToLogin (req: NextRequest, clearCookies = false): NextResponse {
+  const response = NextResponse.redirect(new URL('/login', req.url))
+  if (clearCookies) clearSessionCookies(response.cookies)
+  return response
+}
+
+// Result of the proactive-refresh phase: either keep going with an (optionally
+// refreshed) session, or signal the caller to kill the session and redirect.
+type ResolvedSessionType =
+  | { kill: true }
+  | { kill: false, session: SessionType, refreshed: boolean }
+
+async function resolveActiveSession (session: SessionType): Promise<ResolvedSessionType> {
+  try {
+    const accessExp = new Date(session.access_expiration).getTime()
+    const secondsLeft = (accessExp - Date.now()) / 1000
+
+    if (secondsLeft < REFRESH_THRESHOLD_SECONDS) {
+      const refreshed = await refreshAccessToken(session)
+      if (!refreshed) {
+        // Refresh failed — refresh token expired or revoked. Kill the session.
+        console.error(AUTH_ERRORS['refresh-token'])
+        return { kill: true }
+      }
+      return { kill: false, session: refreshed, refreshed: true }
+    }
+  } catch (error) {
+    console.error('Proxy refresh check failed:', error)
+  }
+
+  return { kill: false, session, refreshed: false }
+}
+
 export async function proxy (req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // ⛔ Ignore static resources
-  if (STATIC_RESOURCES_REGEX.test(pathname)) return NextResponse.next()
-  // ⛔ Ignore API routes
-  if (pathname.startsWith('/api')) return NextResponse.next()
-  // ⛔ Ignore Next.js chunks
-  if (pathname.startsWith('/_next')) return NextResponse.next()
-  // ⛔ Ignore public paths (exact match)
-  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next()
+  // ⛔ Skip static resources, API routes, Next.js chunks, and public paths
+  if (shouldBypassProxy(pathname)) return NextResponse.next()
 
   const isAuthFlow = AUTH_PATHS.has(pathname) || AUTH_PATH_PREFIXES.some(prefix => pathname.startsWith(prefix))
 
   const authCookie = req.cookies.get(SESSION_COOKIE_NAME)
   const listenerCookie = req.cookies.get(LISTENER_COOKIE_NAME)
 
-  // 🔄 If only one of the two auth cookies exists, the pair is corrupt — purge both
-  if ((authCookie && !listenerCookie) || (!authCookie && listenerCookie)) {
-    const response = NextResponse.redirect(new URL('/login', req.url))
-    clearSessionCookies(response.cookies)
-    return response
-  }
+  // 🔄 If only one of the two auth cookies exists, the pair is corrupt — purge both.
+  // Boolean(a) !== Boolean(b) is XOR: true iff exactly one cookie is present.
+  if (Boolean(authCookie) !== Boolean(listenerCookie)) return redirectToLogin(req, true)
 
   // 🔄 No session at all
   if (!authCookie) {
-    if (!isAuthFlow) return NextResponse.redirect(new URL('/login', req.url))
+    if (!isAuthFlow) return redirectToLogin(req)
     return NextResponse.next()
   }
 
@@ -119,46 +151,18 @@ export async function proxy (req: NextRequest) {
       clearSessionCookies(response.cookies)
       return response
     }
-    const response = NextResponse.redirect(new URL('/login', req.url))
-    clearSessionCookies(response.cookies)
-    return response
+    return redirectToLogin(req, true)
   }
 
   // ♻️ Proactive refresh — keeps access token alive ahead of expiry
-  let activeSession: SessionType = session
-  let sessionRefreshed = false
+  const resolved = await resolveActiveSession(session)
+  if (resolved.kill) return redirectToLogin(req, true)
 
-  try {
-    const accessExp = new Date(session.access_expiration).getTime()
-    const secondsLeft = (accessExp - Date.now()) / 1000
-
-    if (secondsLeft < REFRESH_THRESHOLD_SECONDS) {
-      const refreshed = await refreshAccessToken(session)
-      if (refreshed) {
-        activeSession = refreshed
-        sessionRefreshed = true
-      } else {
-        // Refresh failed — refresh token expired or revoked. Kill the session.
-        console.error(AUTH_ERRORS['refresh-token'])
-        const response = NextResponse.redirect(new URL('/login', req.url))
-        clearSessionCookies(response.cookies)
-        return response
-      }
-    }
-  } catch (error) {
-    console.error('Proxy refresh check failed:', error)
-  }
-
-  // ✅ Authenticated user landing on an auth flow → bounce to home
-  if (isAuthFlow) {
-    const response = NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
-    if (sessionRefreshed) await setSessionCookies(response.cookies, activeSession)
-    return response
-  }
-
-  // ✅ Authenticated user on a protected route → proceed
-  const response = NextResponse.next()
-  if (sessionRefreshed) await setSessionCookies(response.cookies, activeSession)
+  // ✅ Authenticated: auth-flow paths bounce home, protected routes proceed
+  const response = isAuthFlow
+    ? NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
+    : NextResponse.next()
+  if (resolved.refreshed) await setSessionCookies(response.cookies, resolved.session)
   return response
 }
 
