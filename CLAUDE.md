@@ -41,6 +41,27 @@ This file describes **what** this project is: the tech stack, structure, and hig
 
 Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma / Claude Design / OpenAPI orchestrators, `init-project/` at the root). Subfolders are for organization only — Claude Code discovers skills recursively and the slash command is still the skill's own directory name (e.g. `/new-component`), independent of the parent folder. Do not duplicate their logic in chat — invoke them.
 
+### Keep `figma-design-import` and `claude-design-import` in sync
+
+These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
+
+**When you change or improve one flow — the orchestrator `SKILL.md` OR any of its sub-agents — apply the equivalent change to its counterpart in the same commit**, so the two do not drift. Counterpart map:
+
+| figma-design-import | claude-design-import |
+| ------------------- | -------------------- |
+| `skills/orchestrators/figma-design-import/SKILL.md` | `skills/orchestrators/claude-design-import/SKILL.md` |
+| `agents/figma/figma-tokens.md` | `agents/claude-design/claude-design-tokens.md` |
+| `agents/figma/figma-assets.md` | `agents/claude-design/claude-design-assets.md` |
+| `agents/figma/figma-components.md` | `agents/claude-design/claude-design-components.md` |
+| `agents/figma/figma-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
+| `agents/figma/figma-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
+| `agents/figma/figma-screen.md` | `agents/claude-design/claude-design-screen.md` |
+| `agents/shared/design-validation.md` | *(same file — already shared; a validation change benefits both automatically)* |
+
+**Sync the SHARED concerns**: styling / token / accessibility / performance rules, the STOP protocol, the workload-ledger footer, `container-custom` handling, the mock-data (`MOCK_*` + `// TODO: openapi-import`) convention, the output/report format, and any bug fix or quality improvement to a step's logic.
+
+**Do NOT force-sync the source-ingestion mechanics**, which diverge *by design*: how the design context is read (Figma `get_design_context` / screenshots / asset URLs vs `unpack.mjs`'s `jsx/`, `tokens.json`, `nav-graph.json`, local `assets/img/`), the "spec gate" (a Figma `nodeId` vs a source-JSX file path), asset acquisition (download vs decode-from-manifest), navigation (Figma frames → screens vs the prototype's stack-router → hybrid route/step/modal mapping), and responsive strategy (Figma desktop+mobile frames vs target detection). Improving one of these does not require touching the other.
+
 > **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
 
 ## Project Structure
