@@ -19,10 +19,15 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 
 ## Expected input from the parent
 
-**Only `route`-classified screens** (the parent's hybrid nav mapping already excluded `step`/`modal`/`skip`). Each with:
+**Only the screens the parent's nav mapping resolved to ROUTES.** The route list already depends on `inventory.navModel`, so you just scaffold what the parent passes — but sanity-check the count matches the model:
+- `screen-registry` (babel): the parent excluded `step`/`modal`/`skip`; you get the `route` screens.
+- `multi-page` (dclogic web): ONE route per `.dc` page (entry → `/`, rest → `/{slug}`). Usually all `public`.
+- `single-page-sections` (dclogic landing) / `single-page` (vanilla): exactly **ONE route** (usually `/`, `public`) even though `inventory.screens` lists several SECTIONS — the sections are internal state, NOT routes. If the parent hands you one route for a many-section export, that's correct; do NOT scaffold a route per section.
+
+Each screen with:
 - Screen name (PascalCase, ending `Page`).
 - Page type (`auth` | `public` | `protected`).
-- Route path (e.g. `/`, `/gifts`, `/dashboard`).
+- Route path (e.g. `/`, `/gifts`, `/about`).
 - **Route group** (optional, e.g. `(host-layout)`, `(guest-layout)`) from Step 4.
 - Role (`host`|`guest`) — informational, drives the route group.
 

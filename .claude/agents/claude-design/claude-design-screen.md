@@ -26,8 +26,10 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 Screen name: {Name}Page
 Screen type: {auth | public | protected}
 Screen slug: {kebab-case}
-Source JSX: {unpacked}/jsx/NN_*.jsx              # the prototype screen component (+ helpers in the same file)
-Screen component: {FunctionName}                 # which function in that file is THIS screen (e.g. HostHome)
+Source: {unpacked}/{inventory.screens[].file}   # babel: a .jsx (may hold several screens); dclogic: a .markup.html + sibling .logic.js
+Format: {babel | dclogic}                         # from inventory.format — picks the JSX path vs the DCLogic markup+logic path
+navModel: {screen-registry | single-page-sections | multi-page}   # from inventory — drives section-vs-route handling
+Screen component: {FunctionName | page-slug | App}   # babel: which function in the file; dclogic multi-page: page slug; dclogic single-page: App
 Absorbed steps: [{stepKey → ComponentName}, ...]  # wizard sub-steps to implement as an internal stepper
 Local modals: [{modalKey → ComponentName}, ...]   # overlays to mount as screen-local modals / via /new-modal
 Target: {mobile-app | web}                        # drives responsive synthesis
@@ -58,13 +60,39 @@ If any required field (name, type, slug, source JSX, screen component, target, l
 
 ## Reading the prototype source (what to translate, what to drop)
 
-The prototype screen is a React function styled with inline `style={{}}` objects + CSS vars. The App spreads its context object as individual props (`<Screen {...ctx} />`), so the screen **destructures them and calls them BARE** — e.g. `function Gifts({ go, back, gifts, cart, draft, setDraft }) { … go('giftDetail') … }`, NOT `ctx.go`. Map it:
+**Two source shapes, same target.** Check `inventory.format`. `babel` → a React `.jsx` file (this section). `dclogic` → a `.markup.html` + `.logic.js` pair (see the DCLogic subsection below). Either way the OUTPUT is the same project screen (Tailwind + tokens + `container-custom` + BEM), and the inline-style → Tailwind translation is identical.
+
+**Babel (`.jsx`):** the prototype screen is a React function styled with inline `style={{}}` objects + CSS vars. The App spreads its context object as individual props (`<Screen {...ctx} />`), so the screen **destructures them and calls them BARE** — e.g. `function Gifts({ go, back, gifts, cart, draft, setDraft }) { … go('giftDetail') … }`, NOT `ctx.go`. Map it:
 
 - **Inline `style={{}}` → Tailwind + tokens + BEM `.sass`.** `var(--accent)` → the brand/accent token; `var(--ink)` → the ink/text token; hardcoded hex → the matching token (via the token gate). Numeric/`px` font sizes → `text-{weight}-{size}` (SNAP to the scale — see the gate). NEVER keep inline hex/px or emit `text-[Npx]`/`bg-[#...]`. **Radii** (`var(--radius)`, `calc(var(--radius)…)`) → use the SINGLE radius translation the parent decided in Step 0.5 (the `Radius translation` prompt field) — the SAME value on every radius; never pick your own per-component (that reintroduces radius drift).
 - **`go(target)` / `back()` navigation** (bare, destructured — not `ctx.go`) → real navigation: `next/link` / `useRouter().push` to the target route, or (for an absorbed `step`) advance the internal stepper, or (for a `modal`) open the local modal. NEVER reproduce the prototype's `window.HOST/GUEST` stack router.
 - **`gifts` / `cart` / `contribs` (destructured shared state)** → the Zustand store created in 5.1, consumed with atomic selectors, **using the shape the parent derived in Step 0.5**. Do NOT redefine the store's fields/actions here — if the screen needs something the store spec lacks, emit `STOP-ADVISORY` rather than adding a divergent shape. Local-only UI state → `useState`.
 - **Mock/demo data** — split by ownership: if it's SHARED state the App seeds (`INITIAL_CONTRIBS`, `GIFTS` used across screens), it lives SEEDED IN THE STORE (per the Step 0.5 store spec) → read it from the store, do NOT re-declare it here (re-declaring leaves you reading the empty store or duplicating the seed). Only PER-SCREEN demo data (a static list only THIS screen shows) becomes an inline `const MOCK_{KIND}` at the top of the file, marked `// TODO: replace with API call once openapi-import has run for {endpoint}`. Never split mock into a sibling `.ts`; never add `customFetch`/SWR/`src/api/*` — the data layer is `openapi-import`'s job.
 - **Demo chrome** (`FlowMenu`, role switcher, `IOSStatusBar`/`IOSDevice`, splash) → DROP. It's prototype scaffolding, not product UI.
+
+### DCLogic source (`inventory.format` = `dclogic`)
+
+The source is a `.markup.html` + sibling `.logic.js` pair (from `inventory.screens[].file`), NOT JSX. Translate to the SAME target React screen; only the syntax you READ differs. The inline-style → Tailwind+tokens+`container-custom` translation (and the radius/font-size rules) are IDENTICAL to babel.
+
+- **`.markup.html`** — inline-styled HTML. Same `style="…"` hex/px → Tailwind+tokens translation; radius via the parent's single `Radius translation`; font-sizes SNAP to scale. DCLogic tags to translate:
+  - `{{ path }}` hole → the value/handler named `path` from the logic's `renderVals()` (dotted lookup, no expressions) → wire to real state/handler.
+  - `<sc-if value="{{ cond }}">…</sc-if>` → `{cond && (…)}`.
+  - `<sc-for list="{{ items }}" as="item">…</sc-for>` → `{items.map(item => …)}` (semantic `<ul>/<li>`; apply the horizontal-scroll a11y rules when it's a carousel).
+  - `<dc-import name="Card" x="{{ y }}">` → a reused/created child component (listed in `components.json`; run the reuse audit on it).
+  - `<img src="{uuid}">` → the WebP from `src/assets/images/` (dedup by hash; same image-perf rules).
+  - `<helmet>` (`@font-face`/`@keyframes`) → fonts are already handled by the tokens agent (`next/font/google`); do NOT copy `@font-face` into the screen. Keyframes → framer-motion `m` or a `.sass` keyframe.
+  - **`style-hover="…"`** (and `style-active`/`style-focus`) → Tailwind `hover:`/`active:`/`focus:` utilities, or a `&:hover` block in the `.sass` when it's many props. **This is the dominant interactivity construct in near-static dclogic sites (StreetBuild has ~200) — never drop it or leave it as an invalid attribute.**
+  - **`data-{x}="{{ stateVal }}"`** (state-driven attribute, e.g. `data-open="{{ menuOpen }}"`, with CSS that keys off `[data-open]`) → a `useState` + a **conditional `className`** (translate the `[data-x]`-gated styles into the conditional branch). A static `data-*` with no hole → keep only if semantic (aria/testing), else drop.
+  - **A hole INSIDE a `style="…"` value** (e.g. `style="color:{{ activeColor }}"` where `activeColor` is state-conditional in `renderVals`) → a **conditional className** (`className={section === 'inicio' ? 'text-brand' : 'text-muted'}`), NOT a static token — preserve the state-driven styling (active-section highlight, open/closed menu, etc.).
+  - **Inline `<svg>`** → keep it inline; its `fill`/`stroke` hex is brand identity, NOT a styling token (does not count as a raw-hex violation). Extract to `src/assets/icons/` only if the same glyph repeats.
+- **`.logic.js`** — `class Component extends DCLogic { state = {…}; renderVals(){…}; go(){…}; handlers }`. Map by kind: `state` → `useState`; `renderVals()` returns a MIX — plain **values** (→ derived consts feeding `{{holes}}`; state-conditional ones → conditional classes per above), **handlers** (`goInicio`, `resetForm` → functions bound to `onClick`/`onSubmit`), and **refs**; `setState(...)` → the setters; forms (`upd`/`doSubmit`) → Formik+Yup.
+- **Imperative logic (INTERIM — full translation is WIP).** If the `.logic.js` is imperative rather than declarative — `componentDidMount` + `querySelector`/`addEventListener`/`IntersectionObserver`/`setInterval`/`requestAnimationFrame` over `ref=`/`data-*` (dropdowns, scroll-reveals, carousels/marquee, sticky-shrink headers) — the mapping above does NOT cover it yet. For now: implement the static structure + `style-hover` + tokens, **do NOT drop the `data-*`/`ref=` the logic targets**, and transcribe each imperative behavior as a marked `// TODO: port imperative behavior ({dropdown|scroll-reveal|marquee|sticky-header}) from {file}.logic.js`. Report the TODOs so the parent warns the user. (The real translation — `IntersectionObserver`→`whileInView`/`useInView`, `setInterval`/rAF→`useEffect`+framer-motion, listeners→state+handlers, `ref=`→`useRef` — lands with the imperative-DCLogic path.)
+- **Navigation by `inventory.navModel`:**
+  - `single-page-sections` → this IS one screen; implement sections as internal state (`const [section, setSection] = useState('inicio')`), each section's markup gated by it; `go(x)` → `setSection(x)`. NOT routes.
+  - `multi-page` → you implement ONE page (route); `go('/other')` → `next/link` / `useRouter().push` to the sibling route.
+- **Drop** the same demo chrome; shared state → store; per-screen demo → `MOCK_*`.
+
+Everything below (token gate, container-custom, a11y, images, forms, animations, validate) applies identically to both source shapes.
 
 ## Token validation gate (between reading the source and writing JSX)
 

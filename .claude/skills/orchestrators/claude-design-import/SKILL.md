@@ -107,7 +107,7 @@ It writes: `source/*` (component source — babel: `source/jsx/*.jsx`; dclogic: 
 - `dclogic` — Claude Design's native `.dc.html` (`<x-dc>` markup + `class Component extends DCLogic` + `<helmet>`); `navModel` = `single-page-sections` or `multi-page`; `tokenSource` = `inline+helmet`; no `THEMES` (tokens from inline styles + `<helmet>`).
 - `vanilla` — plain HTML/CSS/JS (best-effort; no reference sample — treat with care).
 
-> **Implementation status (IMPORTANT, temporary):** extraction is done for all three, but the per-screen agent implementation is currently wired for **`babel` only**. For `dclogic`/`vanilla`, run Steps 0–0.5 (extraction + gap analysis are already useful), then **STOP before Step 5.2** and tell the user: _"Extracción + inventory listos para este export {format}, pero la implementación por-pantalla de {format} en los agentes todavía se está cableando — la generación end-to-end hoy soporta babel."_ This gate is removed as the dclogic/vanilla agent path lands.
+> **Implementation status.** `babel` (React) and `dclogic` **single-page-sections** (declarative — `state`/`renderVals()`/`{{holes}}`/`sc-if`, e.g. Hologramas) are wired **end-to-end**. `dclogic` **multi-page**: the shared-chrome **layout**, static structure, tokens and `style-hover` ARE wired — **but imperative interactivity is NOT yet translated.** A `.logic.js` built on `componentDidMount` + `querySelector`/`addEventListener`/`IntersectionObserver`/`setInterval` over refs + `data-*` (dropdowns, scroll-reveals, carousels/marquee — e.g. StreetBuild) will render **static**. **Before running a multi-page export, read its `.logic.js`: if it's imperative (no `state`/`renderVals`), WARN the user** that dropdowns/reveals/carousels will come out as TODOs until the imperative-DCLogic path lands. `vanilla` is **best-effort**. If extraction is thin (empty `screens`, missing `brandFonts` — see `inventory.notes` WARNINGs), surface it first.
 
 If `unpack.mjs` exits non-zero, STOP and report — unrecognized/unsupported export or a format change.
 
@@ -129,7 +129,7 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 - Decision: `mobile-app` | `web` — with reasoning. Drives Step 5.2 responsive strategy.
 
 ## Tokens
-- Brand preset: `{brand}` from tokens.json (THEMES[brand]) — the canonical palette/typography.
+- Source (read `inventory.tokenSource`): `themes-object` (babel) → the brand preset `{brand}` in `tokens.json` (THEMES[brand]) is the canonical palette/typography. `inline+helmet`/`inline+css` (dclogic/vanilla) → **no THEMES**; palette/sizes come from `tokens.json.rawScan` (inline `hexColors` + `fontSizes`) + `<helmet>` CSS vars, fonts from `brandFonts` (helmet `@font-face`). Also check `rawScan.clampFontSizes` — responsive display sizes not captured; read them from source if a big heading size is missing.
 - Already mapped (design-tokens-map.md): [`figmaVar/themeKey` → `tailwindToken`]
 - Add: [new colors (hex), typography sizes, breakpoints the tokens agent should REUSE/CREATE/BLOCK]
 - Typography snapping: ordinary/fractional source sizes are SNAPPED by the screen/components agents to the nearest scale step (ties round UP — deterministic, so isolated per-screen runs agree). If the design clearly relies on midpoint sizes the scale lacks (e.g. GIVXO's 22/26/30/34 — all exact midpoints of `{…20,24,28,32,36…}`), decide HERE whether to instead add them as tokens (ONE decision, applied everywhere) rather than snap — pick one and record it so every screen agrees.
@@ -161,18 +161,23 @@ Pass this spec to Step 5.1 (scaffold transcribes each store — seed + fields + 
 
 **Store vs `MOCK_` rule of thumb**: the prototype's App holds it (shared across screens) → **store, seeded** with the demo data. Only one screen holds it (a static list that screen shows) → `MOCK_*` inline in that screen. Either way the data layer is deferred to `openapi-import` via the TODO — the difference is only WHERE the seed lives.
 
-## Layouts
-- Chrome detected: TopBar / BottomTabBar (HOST_TABS) / iOS status bar.
-- Roles: host / guest → route groups + protected/public.
-- Existing match vs to-create.
+## Layouts (branches on `navModel`)
+- `screen-registry` (babel): chrome detected (TopBar / BottomTabBar / iOS status bar); roles host/guest → route groups; existing match vs to-create.
+- **`multi-page` (dclogic web): shared chrome → ONE layout.** The header/nav/footer repeats in EVERY `.dc` page's markup — it must be extracted to a single layout wrapping all N routes in a route-group, with the nav populated from the page list (entry → `/`). Do NOT let each page re-inline the chrome (8× duplication). Flag this for Step 4.
+- `single-page-sections` / `single-page` (dclogic landing / vanilla): the sticky header/nav is part of the ONE screen (section switching), NOT a separate layout — no layout work unless a genuine shared shell exists.
 
-## Screens — hybrid nav mapping  (D6)
-Classify every registry screen (from nav-graph) as route | step | modal | skip:
-- **route** — first-level destination → `src/app/**/page.tsx` + screen. Give: name, type (auth|public|protected), route, role, source file, AND **`component`** (the function name from `inventory.screens[].component` — REQUIRED; several screens share one file, and Step 5.2 must know which function to implement). If two keys map to the same component (e.g. `playlist` + `postboda` → `ContentHub`), keep BOTH routes and render the shared component in each (route-group/param disambiguates) — do not drop either.
-- **step** — sub-step of a wizard/flow (onboarding HOb*, gift pay steps) → internal stepper state inside the flow's anchor route. Group them under their route.
+## Screens — nav mapping (branches on `inventory.navModel`)
+
+**`screen-registry` (babel — e.g. GIVXO): hybrid route/step/modal/skip.** Classify every registry key:
+- **route** — first-level destination → `src/app/**/page.tsx` + screen. Give: name, type (auth|public|protected), route, role, source file, AND **`component`** (from `inventory.screens[].component` — REQUIRED; several screens share one file). If two keys map to the same component (`playlist` + `postboda` → `ContentHub`), keep BOTH routes rendering the shared component — do not drop either.
+- **step** — sub-step of a wizard/flow (onboarding, pay steps) → internal stepper state inside the flow's anchor route.
 - **modal** — overlay (cart, confirmations) → `/new-modal`.
 - **skip** — demo chrome not portable (FlowMenu, role switcher, IOSDevice).
-Authoritative list = **every registry key** in `inventory.screens` / `inventory.registries` — classify each into exactly one bucket. `nav-graph.transitions` is only a PARTIAL hint: it captures literal `go('x')` calls but NOT data-driven nav (`go(item.screen)`) or tab nav, so it under-reports (≈30 of GIVXO's 42 keys). Do NOT use `transitions` as the complete screen list — the registries are the source of truth.
+Authoritative list = **every registry key** in `inventory.screens`. `nav-graph.transitions` is only a PARTIAL hint (literal `go('x')` only; misses data-driven/tab nav — ≈30 of GIVXO's 42) — the registries are the source of truth, not transitions.
+
+**`multi-page` (dclogic web — e.g. StreetBuild): one route per page.** Each `.dc` in `inventory.screens` = one **route**, type `public`, `component` = the page slug, `file` = its `.markup.html`. The `entry` page → `/`; the rest → `/{slug}`. No step/modal/skip decomposition — these are real web pages. (No registries; `transitions` is n/a.) ⚠ **Imperative interactivity is WIP** (see Implementation status) — if the pages' `.logic.js` is imperative (`querySelector`/`IntersectionObserver`/`setInterval`, no `state`), warn the user that dropdowns/reveals/carousels will be TODOs.
+
+**`single-page-sections` (dclogic landing — e.g. Hologramas) / `single-page` (vanilla): ONE screen, one route.** The whole export is a single screen (usually `/`, `public`); the `inventory.screens` entries are **SECTIONS of that one screen** (navigated by internal state — `go(section)` / `state.page`), NOT separate routes/steps/modals. Scaffold ONE route; Step 5.2 implements the section switching internally (like a stepper). Do not create a route per section.
 
 ## Detected language
 - Sample visible strings from screen JSX (`characters`/JSX text). Decision `en`|`es` + reasoning.
@@ -213,7 +218,7 @@ Pass: the extend list + create list, **each with its source JSX file** in the un
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-layouts' })` — **Sonnet**.
 
-Pass: current `src/layouts/` state, the chrome findings (TopBar/BottomTabBar/iOS status bar), the host/guest roles, and the `target`. The agent creates/adjusts layouts, wires route groups, and translates or drops mobile chrome per target (a bottom tab bar becomes a top navbar on `web`, stays a bottom nav on `mobile-app`). It composes existing components, never duplicates JSX.
+Pass: current `src/layouts/` state, the chrome findings, the host/guest roles, the `target`, AND the `navModel`. The agent creates/adjusts layouts, wires route groups, and translates or drops mobile chrome per target. **For `navModel = multi-page`** (dclogic web) pass the list of `.dc` pages + the path to any one page's `.markup.html` — the shared header/nav/footer must become ONE layout wrapping all pages (nav from the page list), NOT re-inlined per page. It composes existing components, never duplicates JSX.
 
 ---
 

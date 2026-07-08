@@ -23,9 +23,21 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 - **Chrome findings** from the prototype: which screens share a `TopBar`, a bottom tab bar (`HOST_TABS`), a header/footer — plus the source JSX files.
 - **Roles**: the prototype's `host` / `guest` split (from the registries) and how they map to route groups + protected/public.
 - **Target**: `mobile-app` | `web` (from Step 0.5). This decides how mobile chrome translates.
+- **`navModel`** (from `inventory`): `screen-registry` (babel) | `multi-page` (dclogic web) | `single-page-sections`/`single-page`.
 - Names of any new layout to create.
 
 If any of those are missing, ask.
+
+## navModel = `multi-page` (dclogic web — e.g. StreetBuild): extract the shared chrome to ONE layout
+
+A dclogic multi-page export is N `.dc` pages (`inventory.screens`), and the **header / nav / footer repeats in EVERY page's `.markup.html`** (a corporate site's shared shell). Your #1 job here:
+
+1. Read one or two pages' `.markup.html` (the parent points you at them) and identify the shared chrome — the top nav (with links to the other pages), any announcement bar, the footer. It's the markup that's byte-similar across pages.
+2. **Create ONE layout** (`src/layouts/{Name}Layout/`) holding that chrome. The shared header/footer are raw `<header>`/`<footer>` markup **regions** (NOT `<dc-import>` children), so **create the Navbar/Footer components yourself from the region** (you have the markup — translate its inline styles/`style-hover` the same way) or inline them in the layout. Do NOT route this through `claude-design-components` — its dclogic path only handles `<dc-import>` children listed in `components.json`, not arbitrary markup regions. The nav's links = the page list (entry → `/`, others → `/{slug}`), using `next/link`. **If the header contains imperative behavior** (sticky-shrink on scroll, dropdowns — see the screen agent's imperative note), transcribe it as a `// TODO: port imperative behavior` for now.
+3. **Wrap all N routes in a single route-group** (`src/app/(site-layout)/…`) whose `layout.tsx` delegates to the layout. So every page inherits the chrome ONCE.
+4. Translate the chrome's `style-hover`/inline styles the same way the screen agent does (Tailwind `hover:` / tokens / `container-custom`).
+
+Without this, each of the N `claude-design-screen` runs would re-inline the header/nav/footer (N× duplication) — that is the failure this step prevents. For `single-page-sections`/`single-page`, the sticky header is part of the ONE screen (no layout needed) unless a genuine shared shell exists.
 
 ## Pre-flight (read BEFORE creating/adjusting)
 1. `tailwind.config.js` — tokens only, no hex.

@@ -19,9 +19,11 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 
 ## Where the tokens come from
 
-A Claude Design prototype styles itself with inline `style={{}}` objects driven by a `THEMES` token object (presets like `givxo`/`clasico`/`moderno`) and CSS custom properties. `unpack.mjs` wrote:
-- `tokens.json` → `{ brand, themes, rawScan }`. `themes[brand]` is the **canonical** palette/typography (bg/surface/ink/muted/accent/soft/line/fontDisplay/fontBody/displayWeight/radius/tracking). `rawScan` lists loose `hexColors`, `fontSizes`, `fontFamiliesInCss`, `cssVars` found across the JSX (values that bypassed `THEMES`).
-- `fonts.json` → the font families referenced (these are Google Fonts — map by name, do NOT re-embed the woff2 in the manifest).
+The token source depends on `inventory.tokenSource` (the parent tells you which):
+- **`themes-object` (babel):** the prototype has a `THEMES` object. `tokens.json` → `{ brand, themes, rawScan }`; `themes[brand]` is the **canonical** palette/typography (bg/surface/ink/muted/accent/soft/line/fontDisplay/fontBody/displayWeight/radius/tracking). `rawScan` lists loose values that bypassed `THEMES`.
+- **`inline+helmet` / `inline+css` (dclogic / vanilla):** there is **NO `THEMES`** (`tokens.json.themes` is `null`). The palette/sizes come entirely from `tokens.json.rawScan` (`hexColors` + `fontSizes` scanned from inline styles + `<helmet>`/`<style>`), and fonts from `inventory.brandFonts` (`{body, display, families}`, derived from `@font-face` weights). The parent's gap analysis already picked WHICH rawScan values to promote — you just apply the SAME REUSE/CREATE/BLOCK policy to them. `rawScan.clampFontSizes` is a count of responsive `clamp()` sizes NOT captured — if the parent flags a missing large display size, it came from there.
+
+`unpack.mjs` also wrote `fonts.json` → the font families referenced (all are Google Fonts — map by name via `next/font/google`, do NOT re-embed the woff2 in the manifest). Preload `brandFonts.body`; do not guess body/display from order — the labels are authoritative.
 
 ## Expected input from the parent
 - The brand preset (from `tokens.json` → `themes[brand]`) with each color's hex and each typography size, as a structured list.
