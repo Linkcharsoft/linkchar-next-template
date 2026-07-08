@@ -171,9 +171,9 @@ A few steps are inherently single-line (e.g. SEO completeness Step 6: `nocache\s
 
 ### 10. Figma tokens map sync
 
-33. **`figma-tokens-map.md` consistency with `tailwind.config.js`**: the `figma-tokens` agent maintains a project-root `figma-tokens-map.md` that documents the canonical Figma variable → Tailwind token mapping. Audit its sync state.
+33. **`design-tokens-map.md` consistency with `tailwind.config.js`**: the `figma-tokens` agent maintains a project-root `design-tokens-map.md` that documents the canonical Figma variable → Tailwind token mapping. Audit its sync state.
 
-    1. Check whether `figma-tokens-map.md` exists at the project root. If missing → skip the section as `n/a` (project hasn't run `/figma-design-import` yet; nothing to validate).
+    1. Check whether `design-tokens-map.md` exists at the project root. If missing → skip the section as `n/a` (project hasn't run `/figma-design-import` yet; nothing to validate).
     2. **Parse the map**: extract every row's `Figma variable` and `Tailwind token` columns from the markdown table.
     3. **Build the set of Tailwind tokens that exist**: read `tailwind.config.js`, walk `theme.extend.colors` (recursing into nested namespaces — a nested `brand: { primary: '...' }` produces `brand-primary`; a flat `'brand-primary': '...'` produces the same key), `theme.extend.fontSize`, `theme.extend.screens`, `theme.extend.spacing` if present.
     4. **Detect ORPHAN rows** (mapped to a token that no longer exists in `tailwind.config.js`):
@@ -182,8 +182,8 @@ A few steps are inherently single-line (e.g. SEO completeness Step 6: `nocache\s
     5. **Detect UNMAPPED tokens** (exist in `tailwind.config.js` but no row references them):
        - For each token in the set, check whether any map row references it.
        - Limit the check to namespaces typically populated from Figma imports (`brand-*`, `accent-*`, `border-*`, custom typography sizes added in the project's history, etc.). EXCLUDE Tailwind defaults and the immutable `surface-*` namespace (those are template-shipped, not Figma-derived).
-       - If a Figma-derived-shaped token is not in the map → flag `UNMAPPED: {tailwindToken} exists in tailwind.config.js but no figma-tokens-map.md row references it. Either it was created manually (consider adding a manual row for traceability), or figma-tokens skipped recording it (worth investigating).`
-    6. Report each violation with `figma-tokens-map.md:line` (for ORPHAN) or `tailwind.config.js` reference (for UNMAPPED).
+       - If a Figma-derived-shaped token is not in the map → flag `UNMAPPED: {tailwindToken} exists in tailwind.config.js but no design-tokens-map.md row references it. Either it was created manually (consider adding a manual row for traceability), or figma-tokens skipped recording it (worth investigating).`
+    6. Report each violation with `design-tokens-map.md:line` (for ORPHAN) or `tailwind.config.js` reference (for UNMAPPED).
 
     The goal is that the map is the **canonical historical record** of which Figma variable maps to which Tailwind token. ORPHAN rows mean the map references a token that was deleted/renamed; UNMAPPED tokens mean a Figma-shaped token was added outside the agent flow (manual addition) — both are signals that the map needs maintenance, but neither blocks a deploy.
 

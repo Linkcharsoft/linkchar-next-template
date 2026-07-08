@@ -60,7 +60,7 @@ Also verify `src/api/customFetch.ts` exists — the generated file imports from 
 
 ## Step 1 — Mutate registries
 
-Nothing to do. This skill does NOT touch `src/proxy.ts`, `tailwind.config.js`, `figma-tokens-map.md`, or any provider. API files are leaves in the dependency graph and are picked up by consumers (screens, hooks) by import path alone.
+Nothing to do. This skill does NOT touch `src/proxy.ts`, `tailwind.config.js`, `design-tokens-map.md`, or any provider. API files are leaves in the dependency graph and are picked up by consumers (screens, hooks) by import path alone.
 
 ---
 

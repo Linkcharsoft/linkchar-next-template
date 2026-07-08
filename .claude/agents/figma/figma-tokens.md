@@ -74,13 +74,13 @@ NEVER silently overwrite an existing token's value. If the parent's input would 
 
 ### 4. Figma → token mapping is persistent
 
-Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config.json`). Read it at the start of every invocation; append every CREATE and REUSE decision so future invocations and other agents/screens consult the same mapping. This prevents palette fragmentation across multiple Figma imports.
+Maintain a `design-tokens-map.md` file at the project root (next to `figma.config.json`). Read it at the start of every invocation; append every CREATE and REUSE decision so future invocations and other agents/screens consult the same mapping. This prevents palette fragmentation across multiple Figma imports.
 
 ## Steps
 
 1. **Audit existing tokens** — read `tailwind.config.js` and build an inventory: token name, hex, namespace. Note which keys belong to `surface-*`.
 
-2. **Read or initialize `figma-tokens-map.md`** at the project root. If it doesn't exist, create it with this header (no entries yet):
+2. **Read or initialize `design-tokens-map.md`** at the project root. If it doesn't exist, create it with this header (no entries yet):
    ```markdown
    # Figma → Tailwind Token Mapping
 
@@ -94,7 +94,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
    | Order | Condition | Action | Report tag / STOP category |
    | ----- | --------- | ------ | -------------------------- |
-   | a | `figmaVarName` already appears in `figma-tokens-map.md` | reuse the mapped Tailwind token; do nothing in `tailwind.config.js` | `MAPPED` |
+   | a | `figmaVarName` already appears in `design-tokens-map.md` | reuse the mapped Tailwind token; do nothing in `tailwind.config.js` | `MAPPED` |
    | b | Proposed action would override or extend `surface-*` | reject — force a new namespace instead | `STOP-BLOCKING / REJECTED_SURFACE` |
    | c | Override request (same key, different hex, non-surface) without `confirmOverride: true` | block — emit conflict STOP, do not edit | `STOP-BLOCKING / OVERRIDE_BLOCKED` |
    | d | Heuristic match against an existing non-surface token (max channel diff ≤ 4) AND semantically compatible | reuse existing token; append mapping row | `REUSED` |
@@ -168,7 +168,7 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 
    Skip this step if the project does not add a NEW icon font with `font-display: block`. Most modern icon sets shipped as SVG components (Lucide, Heroicons, etc.) are not affected.
 
-7. **Append decisions to `figma-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
+7. **Append decisions to `design-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
 
 8. Run `pnpm run lint-check --fix` (auto-fixes any quote/comma/import-order drift introduced into `tailwind.config.js` or `src/app/layout.tsx`) followed by `pnpm run type-check`. Report PASS/FAIL for each.
 
@@ -178,8 +178,8 @@ Maintain a `figma-tokens-map.md` file at the project root (next to `figma.config
 - Never override `surface-50`...`surface-900`. Never extend that namespace.
 - Never override ANY non-surface token without an explicit `confirmOverride: true` from the parent.
 - Never load fonts via `@import url('https://fonts.googleapis.com/...')` in any `.sass` / `.css` file — always use `next/font/google` in `src/app/layout.tsx` and expose them as CSS variables. If you encounter a legacy `@import` for a Google Font, delete it.
-- Always read `figma-tokens-map.md` FIRST and prefer mapped reuse over any new action.
-- Always append your decisions to `figma-tokens-map.md` so the mapping survives future imports.
+- Always read `design-tokens-map.md` FIRST and prefer mapped reuse over any new action.
+- Always append your decisions to `design-tokens-map.md` so the mapping survives future imports.
 
 ## Output to parent
 
@@ -188,9 +188,9 @@ A structured report. If any `STOP-BLOCKING / OVERRIDE_BLOCKED` or `STOP-BLOCKING
 <!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its ledger (the footer string is just for the human reader), so a drift here doesn't poison cost telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
 
 ```
-Token changes applied to tailwind.config.js + figma-tokens-map.md:
+Token changes applied to tailwind.config.js + design-tokens-map.md:
 
-MAPPED (already in figma-tokens-map.md):
+MAPPED (already in design-tokens-map.md):
 - {figmaVarA} → {projectToken} (existing)
 
 REUSED (heuristic match against existing token):

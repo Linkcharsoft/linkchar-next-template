@@ -206,7 +206,7 @@ Use the custom typography classes defined in `tailwind.config.js`:
 - **Surface colors**: `text-surface-50` through `text-surface-900` / `bg-surface-50` through `bg-surface-900`.
 - **Semantic colors**: Use Tailwind defaults (`text-red-600`, `bg-blue-600`, `text-green-600`, etc.).
 - **Custom surface palette**: `50(#FAFAFA) 100(#F5F5F5) 200(#EEEEEE) 300(#E0E0E0) 400(#BDBDBD) 500(#9E9E9E) 600(#757575) 700(#616161) 800(#424242) 900(#212121)`.
-- **Brand/extra tokens** added via Figma imports live as new namespaces (e.g. `brand-*`, `accent-*`). Never reuse `surface-*` for them. See `figma-tokens-map.md` for the canonical mapping.
+- **Brand/extra tokens** added via Figma imports live as new namespaces (e.g. `brand-*`, `accent-*`). Never reuse `surface-*` for them. See `design-tokens-map.md` for the canonical mapping.
 - **NEVER hardcode hex** in screens, components, layouts, or stylesheets. Every color must resolve to a Tailwind token. The only exception is multi-color brand glyphs inside `src/assets/icons/*.tsx` where the hex IS the brand identity.
 
 ---
