@@ -52,7 +52,7 @@ Maintain a running ledger of every sub-agent invocation. Append a row after each
 ```
 
 **Column sources:**
-- `Model` — read from the sub-agent's frontmatter `model:` field. Do NOT trust the footer string (it's the agent's self-reported declaration and can drift). **Before Phase 5 ledger emission, `Read` `.claude/agents/openapi-spec-validate.md`, `.claude/agents/openapi-handlers.md`, `.claude/agents/openapi-hooks.md`, and `.claude/agents/openapi-code-validate.md` (just the frontmatter — first ~6 lines is enough) to source this column.**
+- `Model` — read from the sub-agent's frontmatter `model:` field. Do NOT trust the footer string (it's the agent's self-reported declaration and can drift). **Before Phase 5 ledger emission, `Read` `.claude/agents/openapi/openapi-spec-validate.md`, `.claude/agents/openapi/openapi-handlers.md`, `.claude/agents/openapi/openapi-hooks.md`, and `.claude/agents/openapi/openapi-code-validate.md` (just the frontmatter — first ~6 lines is enough) to source this column.**
 - `Duration` — measured by the orchestrator from wall-clock time around the `Agent(...)` call.
 - `Tool calls` — `Workload: tool_calls≈...` from the sub-agent's standardized footer.
 - `Notes` — `Notes:` line from the footer, used verbatim.

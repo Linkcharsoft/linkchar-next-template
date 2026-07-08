@@ -213,7 +213,7 @@ Do NOT post the full file contents back in the summary — the clickable link is
 ## Hard rules
 
 - Do NOT support multi-resource batch input. One resource per invocation. For many resources at once, the user should run `/openapi-import` against a YAML spec.
-- Do NOT generate a hook. Hook scaffolding belongs to `/new-hook` for manual one-off cases. If you scaffolded the resource here and want a list/detail SWR hook with the same shape `/openapi-import` produces, mirror the canonical hook layout documented in `.claude/agents/openapi-hooks.md` (`'use client'`, atomic `useUserStore` selector, token-gated SWR key, list signature `(stringParams?: string)`, detail signature `(id: string | number | null)`).
+- Do NOT generate a hook. Hook scaffolding belongs to `/new-hook` for manual one-off cases. If you scaffolded the resource here and want a list/detail SWR hook with the same shape `/openapi-import` produces, mirror the canonical hook layout documented in `.claude/agents/openapi/openapi-hooks.md` (`'use client'`, atomic `useUserStore` selector, token-gated SWR key, list signature `(stringParams?: string)`, detail signature `(id: string | number | null)`).
 - Do NOT touch `src/proxy.ts`, `tailwind.config.js`, or any provider.
 - Do NOT invoke `/openapi-import`, `/figma-design-import`, or any other skill from inside this one. This skill is a leaf.
 - Do NOT emit marker comments (`// @openapi-generated`, `// @manual`, etc.). The file looks like a hand-written file.
