@@ -139,8 +139,8 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 
 ## Assets
 - Images (from inventory.images): [file, alias, uuid] → convert to WebP; per-screen vs shared.
-- Icons: the `Icon` component's named glyphs → split into individual React icon components.
-- Pre-filter: icons covered by PrimeIcons → note `→ pi pi-{name}`, do NOT pass to the assets agent.
+- Icons: babel → the `Icon` component's named glyphs; flat dclogic (empty `components.json`) → the inline `<svg>` glyphs, counted by repetition.
+- **Pre-filter per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph)** — NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (tabulate every inline `<svg>`'s `stroke-width`/style): if it does, **every member keeps its source glyph and the import yields zero PrimeIcons** — that is the correct outcome, not an oversight. Only when there is no set do generic glyphs become `pi pi-{name}`. Brand marks always keep their source path — and use the **majority** path across instances, not the longest (a nav instance may carry an extra sub-path the other N don't; extracting that outlier silently re-draws every call site). Of the kept glyphs, pass the ones reused **2+ times** to the assets agent for extraction; single-use ones stay inline. Decide this here; do NOT ask the user.
 
 ## Components (each with its SOURCE FILE — mandatory)
 Every primitive to extend/create MUST cite its source file in the unpacked tree (babel: `source/jsx/03_display.jsx`; dclogic: the `source/{screen}.markup.html` where the primitive's markup lives, or a `<dc-import>` child listed in `components.json`).
@@ -202,7 +202,7 @@ Pass: the brand preset object from `tokens.json` (colors + typography), the loos
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-assets' })` — **Haiku**.
 
-Pass: the path to `assets/img/*` + `inventory.images` (file, uuid, alias, mime, and `screenSlug` when per-screen), and the `Icon` glyph list to split into React icon components. The agent converts raster → WebP (ffmpeg), builds icon components (`GmailIcon.tsx` pattern), registers `src/assets/icons/index.ts`, writes `.hash.txt` siblings. You pre-filter PrimeIcons before delegating.
+Pass: the path to `assets/img/*` + `inventory.images` (file, uuid, alias, mime, and `screenSlug` when per-screen), and — for babel, or a repeated dclogic glyph — the icon glyph list to split into React icon components (for a flat dclogic whose glyphs are all single-use, omit it: inline `<svg>` stays in the screen). The agent converts raster → WebP via `sharp` (no ffmpeg), builds any icon components (`GmailIcon.tsx` pattern), registers `src/assets/icons/index.ts`, writes `.hash.txt` siblings. You pre-filter icons per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) before delegating (role-based, not name-based — brand marks and coherent sets keep their source glyph).
 
 ---
 

@@ -32,7 +32,7 @@ Detect the platform from the `Platform` field in your environment (`win32` → P
 ## Expected input from the parent
 - The path to the unpacked working tree (so you can read `inventory.json`, `assets/img/*`, and `jsx/*`).
 - **Images**: from `inventory.images` — each `{ file (path under unpacked/assets/img), uuid, alias, mime }`, plus a `screenSlug` when the parent decided the image belongs to a single screen (omit for shared assets like logos).
-- **Icons**: the path to the prototype's `Icon` component JSX file (e.g. `{unpacked}/jsx/02_icon.jsx`) and the list of glyph names the parent wants as React components (from the `Icon` component's internal `name → svg` map). The parent pre-filters glyphs already covered by PrimeIcons.
+- **Icons** (may be EMPTY): for **babel**, the path to the prototype's `Icon` component JSX file (e.g. `{unpacked}/jsx/02_icon.jsx`) + the list of glyph names to split (from the `Icon` component's `name → svg` map). For **dclogic with an empty `components.json`**, there is no `Icon` component — the parent passes an icon list for any glyph **used 2+ times (it repeats)**; single-use glyphs stay inline (parent omits them; see "Icons" below). The parent pre-filters the list **by role, per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) — NOT by "a PrimeIcon with that name exists"**: when the design ships a coherent icon set, every member keeps its source glyph and the list you receive contains **zero** PrimeIcon-covered names. That is the correct outcome, not an oversight — build every glyph the parent passes you, even one whose name matches a `pi pi-*`.
 
 If the input is missing, ask.
 
@@ -61,9 +61,56 @@ Rule per image (do them all in ONE batch `sharp` script):
 5. Write a sibling `{name}.hash.txt` containing `{"url": "{alias-or-uuid}", "sha1": "{contentHash}"}` so future runs dedup.
 6. Do NOT keep the raw source in the project — only the `.webp` + `.hash.txt`.
 
-## Icons (split the prototype's `Icon` component)
+**Batch script skeleton** — write it to a `.mjs` file **inside the repo** (e.g. `./_assets_convert.mjs`), run `node ./_assets_convert.mjs` from the project root, then delete it. Fill `IMAGES` from the parent's list + `screenSlug`:
 
-The prototype ships ONE `Icon` component that switches on a `name` prop and renders inline SVG paths (e.g. `function Icon({ name, size }) { const paths = { sparkles: <>…</>, link: <>…</>, … }; return <svg …>{paths[name]}</svg> }`). For each glyph name the parent asked for:
+```js
+import sharp from 'sharp'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, globSync } from 'node:fs'
+import { dirname } from 'node:path'
+
+// IMAGES: [{ src: '<unpacked>/assets/img/xxx.png', out: 'src/assets/images/<slug?>/<name>.webp', uuid: '...' }]
+const IMAGES = []
+
+// Build the sha1 -> existing .webp index ONCE, from every hash sibling already on disk.
+// This is what makes the dedup cross-FILE: the same source under a different output name is
+// found here. (Checking only `out`'s own hash sibling would answer a much weaker question —
+// "was this exact output already made from this exact source?" — and never fire on a rename.)
+// NOTE: globSync returns BACKSLASH paths on Windows — normalise, or the path you report
+// back becomes a broken `@/assets/images\home\x.webp` import in the screen.
+const posix = (p) => p.replaceAll('\\', '/')
+const index = new Map()
+for (const hf of globSync('src/assets/images/**/*.hash.txt')) {
+  try { index.set(JSON.parse(readFileSync(hf, 'utf8')).sha1, posix(hf).replace(/\.hash\.txt$/, '.webp')) } catch {}
+}
+
+for (const { src, out, uuid } of IMAGES) {
+  const buf = readFileSync(src)
+  const sha1 = createHash('sha1').update(buf).digest('hex')
+  const hit = index.get(sha1)
+  if (hit && existsSync(hit)) { console.log(`REUSED ${hit}  <- ${out} (matched by contentHash)`); continue }
+  const m = await sharp(buf).metadata()
+  const lossless = m.hasAlpha && m.width <= 512 && m.height <= 512
+  mkdirSync(dirname(out), { recursive: true })
+  await sharp(buf).webp(lossless ? { lossless: true } : { quality: 85 }).toFile(out)
+  writeFileSync(out.replace(/\.webp$/, '.hash.txt'), JSON.stringify({ url: uuid, sha1 }))
+  index.set(sha1, out) // so a later IMAGES entry with the same source reuses this one
+  console.log(`${lossless ? 'LOSSLESS' : 'lossy'}  ${out}`)
+}
+```
+
+**When you report `REUSED`, tell the parent the path that actually exists** — the screen agent imports the path YOU report, not the `out` it asked for.
+
+> **The `.hash.txt` files are import-scoped scratch, not source.** They exist so this dedup works within the run (and so `figma-screen` can skip a re-download at Step 5.2). **Step 6 deletes them** once the import ends — do not treat them as a deliverable, and do not expect them to survive to the next import.
+
+## Icons
+
+**Which path applies depends on `inventory.format` / the parent's icon list:**
+
+- **babel (an `Icon` switch component exists)** — the prototype ships ONE `Icon` component that switches on a `name` prop and renders inline SVG paths (e.g. `function Icon({ name, size }) { const paths = { sparkles: <>…</>, link: <>…</>, … }; return <svg …>{paths[name]}</svg> }`). Split it (steps below).
+- **dclogic with an EMPTY `components.json`** — there is **no `Icon` component to split**; icons are inline `<svg>` scattered through the markup. By default **do NOT create icon components** — inline `<svg>` stay in the screen (the screen agent keeps them; their `stroke`/`fill` hex is brand identity, not a token violation). **Extract a glyph to `src/assets/icons/` when the SAME glyph is used 2 or more times (i.e. it appears more than once / repeats)** — e.g. a WhatsApp CTA icon used ~8×, or any glyph reused twice. A glyph used exactly once stays inline. The parent passes exactly the repeated glyphs in the icon list. If the parent passed **no icon list** (the common flat-dclogic case), **skip this whole section** and report `Icons: none (inline SVG stays in screen)`.
+
+**To split** (babel, or the extract-a-repeated-glyph case) — for each glyph name the parent asked for:
 
 1. Read the `Icon` JSX and extract that glyph's inner SVG (`<path>` / shapes) plus the root `<svg>`'s `viewBox`, `stroke`/`fill` conventions (many are stroke-based, `stroke='currentColor'`).
 2. Create a React component at `src/assets/icons/{Name}Icon.tsx` following the project's existing icon pattern (look at any file in `src/assets/icons/`):

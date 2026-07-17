@@ -247,7 +247,7 @@ Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. 
 
 - PrimeReact is configured with Tailwind passthrough (`pt: Tailwind`) in `ProvidersContainer`.
 - Use PrimeReact components for inputs: `InputText`, `Password`, `Calendar`, `Dropdown`, `MultiSelect`. **NO native HTML inputs.**
-- Use PrimeIcons for icons: `<i className="pi pi-{icon-name}" />`. **NO inline SVGs when a PrimeIcon exists.**
+- Use PrimeIcons for icons: `<i className="pi pi-{icon-name}" />`. **NO inline SVGs when a PrimeIcon exists.** (Writing code from scratch, this is absolute. The design-import flows carve a narrow, role-based exception — brand marks and coherent stroke-matched icon sets keep the source glyph; see [`design-import-shared.md` § B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph).)
 - Customize PrimeReact components via the `pt` (passthrough) prop.
 - Use `classNames` from `primereact/utils` for conditional classes — **NEVER `clsx`**.
 
@@ -419,7 +419,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 - **MANDATORY**: Before generating ANY new component, check `src/components/` and the [Existing Reusable Components](#existing-reusable-components) table. Reuse `CustomButton`, `InputContainer`, `Label`, `InputError`, `SearchInput`, `Filters`, `PasswordValidator`, `Loader`, `Waves`, `LoadingModal`, `StateModal`, `ToastNotifications` whenever the Figma node maps to one of them.
 - **Buttons**: Always `CustomButton`. NEVER render a raw `<button>` or another button library.
 - **Inputs**: ALWAYS PrimeReact wrapped in `InputContainer`. NEVER native HTML inputs.
-- **Icons**: ALWAYS PrimeIcons (`<i className="pi pi-{name}" />`) when the icon exists in the PrimeIcons set. Only fall back to a custom SVG component if PrimeIcons doesn't have it.
+- **Icons**: ALWAYS PrimeIcons (`<i className="pi pi-{name}" />`) when the icon exists in the PrimeIcons set. Only fall back to a custom SVG component if PrimeIcons doesn't have it. **Design-import exception**: this section is the from-scratch rule; when translating a design, brand marks and members of a coherent stroke-matched icon set keep the source glyph even if PrimeIcons ships that name — see [`design-import-shared.md` § B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph).
 - **Conditional classes**: `classNames` from `primereact/utils`. NEVER `clsx` or template-string concatenation.
 - **Animations**: `m` from `framer-motion` + `LazyMotion` + `AnimatePresence`. NEVER `motion`.
 - **Links / navigation**: `next/link` or `CustomButton` with the `href` prop. NEVER raw `<a>` for internal routes.
@@ -443,7 +443,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 
 1. **REUSE**: Check the [Existing Reusable Components](#existing-reusable-components) table BEFORE creating new ones. NEVER duplicate functionality.
 2. **PrimeReact** for inputs (`InputText`, `Dropdown`, `Calendar`, `MultiSelect`). NO native HTML inputs.
-3. **PrimeIcons** (`pi pi-xxx`) for icons. NO inline SVGs when a PrimeIcon exists.
+3. **PrimeIcons** (`pi pi-xxx`) for icons. NO inline SVGs when a PrimeIcon exists — except the design-import carve-out for brand marks and coherent icon sets ([§ B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph)).
 4. **Conditional classes**: `classNames()` from `primereact/utils`. NOT `clsx`.
 5. **Images**: `next/image` + WebP in `src/assets/images/`. See [Image Performance](#image-performance) for `sizes` / `priority` / `fetchPriority` requirements.
 6. **Links**: `next/link` or `CustomButton` with `href` prop. External `target='_blank'` MUST include `rel='noopener noreferrer'`.
