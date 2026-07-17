@@ -111,7 +111,9 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 - Only scaffold `route` screens — `step`/`modal`/`skip` are NOT routes (Step 5.2 absorbs steps into a flow's route; modals are mounted by screens).
 - Page wrappers stay THIN (metadata + render the screen). No logic in `page.tsx`.
 - Screen root MUST be `<main id='main' className='{Name}Page'>` (or `AuthLayout` for auth) — verify after `/new-screen`.
-- Do NOT put mock data in stores — Step 5.2 handles mock data as `MOCK_*` inside screens.
+- Mock data splits by OWNERSHIP, per [§ B6](../../docs/design-import-shared.md#b6-data-is-out-of-scope--mock_-or-seeded-store-always-deferred-to-openapi-import) — this is NOT "no mock data in stores":
+  - **Shared state the prototype's App seeds and several screens read** → it IS the store's initial state. Transcribe the parent's `Store spec` seed verbatim (Step 1 above) with the `// TODO: openapi-import — replace seeded mock with fetched data` marker. Dropping the seed leaves the store empty and every screen rendering `[]` — the exact failure the spec exists to prevent.
+  - **Per-screen demo data** (a static list only one screen shows) → NOT your job; Step 5.2 inlines it as `MOCK_*` in that screen. Do not create a store for it.
 
 ## Output to parent
 A list of created routes (route → screen file) + stores created, then the footer:
