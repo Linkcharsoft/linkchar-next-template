@@ -361,11 +361,15 @@ function parseDcDoc(docStr, slug) {
   }
   const markupFile = write(`source/${slug}.markup.html`, markup)
   const logicFile = write(`source/${slug}.logic.js`, logic)
+  // The helmet holds the doc's REAL CSS — @media breakpoints, @font-face, CSS vars — and the markup above
+  // strips it out. Write it as its own file or that CSS reaches disk for single-page only (via template.html)
+  // and NOT AT ALL for multi-page, leaving the design's breakpoints unreadable in the format that has N of them.
+  const helmetFile = helmet.trim() ? write(`source/${slug}.helmet.css`, helmet) : null
   // state.page section keys (single-page routing) + go() targets
   const pageVals = uniq([...docStr.matchAll(/(?:page:\s*|page\s*===\s*|go\(\s*)['"]([a-zA-Z0-9_-]+)['"]/g)].map((m) => m[1]))
   // dc-import child components
   const imports = uniq([...docStr.matchAll(/<dc-import\s+name="([^"]+)"/g)].map((m) => m[1]))
-  return { slug, markupFile, logicFile, helmet, logic, docStr, pageVals, imports, bytes: markup.length + logic.length }
+  return { slug, markupFile, logicFile, helmetFile, helmet, logic, docStr, pageVals, imports, bytes: markup.length + logic.length }
 }
 
 function parseDcLogic() {
