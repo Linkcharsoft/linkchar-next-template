@@ -69,6 +69,106 @@ const scanHex = (s) => uniq([...s.matchAll(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/
 const scanCssVars = (s) => uniq([...s.matchAll(/var\((--[a-z-]+)/g)].map((m) => m[1])).sort()
 // CSS font-size scan: px + rem (rem→px @16). clamp()/vw responsive sizes aren't captured (reported separately).
 const scanFontSizes = (s) => uniq([...s.matchAll(/font-size:\s*(\d+(?:\.\d+)?)\s*(px|rem)/g)].map((m) => (m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1])))).sort((a, b) => a - b)
+
+// ── Color clustering (design-import-shared.md § B2) ───────────────────────────
+// A `tokenSource=inline+helmet` rawScan dumps 40+ hexes; the parent must reduce that to a
+// token palette by hand — slow and irreproducible. So pre-group it here: tag each hex with
+// the CSS role(s) it appears in + a usage count, then single-link cluster by per-channel
+// Δ ≤ 4 (B2.3: at that distance it's the same colour to the eye — role NAMES a cluster, it
+// never splits one). Output is a HINT: the parent reviews and names, it does not recompute.
+const HEX = '#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{3}\\b'
+const expandHex = (h) => (h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h)
+const rgbOf = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+const chanDelta = (a, b) => { const x = rgbOf(a), y = rgbOf(b); return Math.max(...x.map((v, i) => Math.abs(v - y[i]))) }
+const lumaOf = (h) => { const [r, g, b] = rgbOf(h); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 }
+const satOf = (h) => { const [r, g, b] = rgbOf(h).map((v) => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx === 0 ? 0 : (mx - mn) / mx }
+
+// Role of a CSS/JSX property name. Handles kebab CSS (`background-color`, dclogic/vanilla) and camel JSX
+// (`backgroundColor`, babel) in one place — normalising away the `-` makes both collapse onto the same prefix.
+// Returns null for properties that can't carry a palette colour, so the scan skips them.
+function roleOfProp (prop) {
+  if (prop.startsWith('--')) return 'var' // a CSS custom property IS the token source for inline+helmet
+  const p = prop.toLowerCase().replace(/-/g, '')
+  if (p.startsWith('background')) return 'background'
+  if (p.startsWith('border') || p.startsWith('outline')) return 'border'
+  if (p === 'color') return 'text'
+  if (p.endsWith('shadow')) return 'shadow'
+  if (p === 'fill' || p === 'stroke' || p === 'stopcolor') return 'icon'
+  if (p === 'accentcolor' || p === 'caretcolor') return 'text'
+  return null
+}
+
+// Every `…-gradient(...)` expression, paren-balanced so nested `rgba(...)` stops don't truncate it.
+function gradientSpans (src) {
+  const out = []
+  const re = /(?:linear|radial|conic)-gradient\(/g
+  let m
+  while ((m = re.exec(src))) {
+    let depth = 0
+    for (let i = m.index + m[0].length - 1; i < src.length && i - m.index < 800; i++) {
+      if (src[i] === '(') depth++
+      else if (src[i] === ')' && --depth === 0) { out.push(src.slice(m.index, i + 1)); break }
+    }
+  }
+  return out
+}
+
+// A HINT for the parent, not a decision — it reviews and names. Role wins FIRST: a gradient stop or a
+// border keeps its role's family even when saturated (a saturated brand colour whose dominantRole is
+// `border` comes out `line`, never `brand-or-semantic`). Only past those two does saturated
+// mid-lightness → brand/semantic, and past that the CSS role + luminance pick the family.
+function suggestFamily (hex, role) {
+  const l = lumaOf(hex), s = satOf(hex)
+  if (role === 'gradient') return 'gradient-stop'
+  if (role === 'border') return 'line'
+  if (s >= 0.55 && l > 0.25 && l < 0.8) return 'brand-or-semantic'
+  if (role === 'text' || role === 'icon') return l < 0.25 ? 'ink' : l < 0.65 ? 'muted' : 'muted-light'
+  if (role === 'background' || role === 'shadow') return l > 0.85 ? 'tint' : l < 0.25 ? 'ink' : 'brand-or-semantic'
+  return l < 0.25 ? 'ink' : l > 0.85 ? 'tint' : 'muted'
+}
+
+function clusterHexes (src) {
+  const roles = {}, total = {}
+  const bump = (h, role) => { h = expandHex(h.toLowerCase()); (roles[h] ||= {})[role] = (roles[h][role] || 0) + 1; total[h] = (total[h] || 0) + 1 }
+
+  // 1) Gradients FIRST — every stop (not just the first), balanced-paren so a nested `rgba(...)` can't
+  //    truncate the span. Then MASK each span out: otherwise the `background:` declaration below re-counts
+  //    stop 1 and inflates `uses` / skews `dominantRole` (most gradients are `background:<gradient>`).
+  let masked = src
+  for (const g of gradientSpans(src)) {
+    for (const m of g.matchAll(new RegExp(HEX, 'g'))) bump(m[0], 'gradient')
+    masked = masked.replace(g, ' '.repeat(g.length)) // same length keeps the rest of the string intact
+  }
+
+  // 2) Every `prop: value` declaration, and EVERY hex in the value — a lazy `[^;}]*?(hex)` stops at the
+  //    first one, silently dropping e.g. the 2nd colour of `box-shadow:0 1px 0 #fff, 0 8px 24px #0d2740`.
+  for (const m of masked.matchAll(/(--[a-zA-Z][\w-]*|[a-zA-Z][\w-]*)\s*:\s*([^;{}]*)/g)) {
+    const role = roleOfProp(m[1])
+    if (!role) continue
+    for (const h of m[2].matchAll(new RegExp(HEX, 'g'))) bump(h[0], role)
+  }
+
+  // 3) SVG presentation ATTRIBUTES (`stroke="#..."`), which are not `prop: value` declarations.
+  for (const m of masked.matchAll(new RegExp(`(?:stroke|fill|stop-color)\\s*=\\s*["'](${HEX})`, 'g'))) bump(m[1], 'icon')
+
+  // B2.1: pure white/black are Tailwind defaults, never tokens — keep them out of the clusters.
+  const NEUTRAL = new Set(['#ffffff', '#000000'])
+  const pool = uniq(scanHex(src).map(expandHex)).filter((h) => !NEUTRAL.has(h)).sort((a, b) => lumaOf(a) - lumaOf(b))
+
+  const groups = []
+  for (const h of pool) {
+    const hit = groups.find((g) => g.some((x) => chanDelta(x, h) <= 4))
+    if (hit) hit.push(h); else groups.push([h])
+  }
+  return groups.map((hexes) => {
+    const roleTally = {}
+    let uses = 0
+    for (const h of hexes) { uses += total[h] || 0; for (const [r, n] of Object.entries(roles[h] || {})) roleTally[r] = (roleTally[r] || 0) + n }
+    const dominantRole = Object.entries(roleTally).sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown'
+    const representative = hexes.slice().sort((a, b) => (total[b] || 0) - (total[a] || 0))[0]
+    return { representative, hexes, uses, roles: roleTally, dominantRole, suggestedFamily: suggestFamily(representative, dominantRole) }
+  }).sort((a, b) => b.uses - a.uses)
+}
 // pick body/display from @font-face weights: lightest family → body text, heaviest → display/headings.
 // (first/last-by-appearance is a coin flip — StreetBuild's Gotham Ultra 400-900 vs Gill Sans 400 needs the weight.)
 function pickBrandFonts(faces) {
@@ -167,6 +267,7 @@ function scanFontFaces(str) {
 // ─────────────────────────────────────────────────────────── 5. per-format parsers → normalized IR
 // Each parser returns: { sourceFiles:[{file,bytes}], screens:[{key,component,role,file,section?}],
 //   components:[{name,file,kind}], tokens:{themes?,brand?,rawScan}, brandFonts, fonts, extra:{} }
+//   rawScan.clusters:[{representative,hexes[],uses,roles{},dominantRole,suggestedFamily}] — B2 pre-grouping (Δ≤4, role-tagged)
 const write = (rel, content) => { writeFileSync(join(outDir, rel), content, 'utf8'); return rel }
 
 function parseBabel() {
@@ -201,6 +302,7 @@ function parseBabel() {
   }
   const rawScan = {
     hexColors: scanHex(allSrc),
+    clusters: clusterHexes(allSrc), // B2 pre-grouping (babel usually has THEMES — this is a cross-check)
     fontSizes: uniq([...allSrc.matchAll(/fontSize:\s*(\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]))).sort((a, b) => a - b),
     cssVars: scanCssVars(allSrc),
   }
@@ -280,6 +382,7 @@ function parseDcLogic() {
   // tokens: no THEMES — scan inline styles + helmet CSS vars/@font-face
   const rawScan = {
     hexColors: scanHex(allSrc),
+    clusters: clusterHexes(allSrc), // B2 pre-grouping — the parent names these instead of clustering 40+ hexes by hand
     fontSizes: scanFontSizes(allSrc),
     clampFontSizes: (allSrc.match(/font-size:\s*clamp\(/g) || []).length, // responsive sizes NOT captured — read from source
     cssVars: scanCssVars(allSrc),
@@ -317,6 +420,7 @@ function parseVanilla() {
   const styleBlocks = [...templateStr.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n')
   const rawScan = {
     hexColors: scanHex(templateStr),
+    clusters: clusterHexes(templateStr), // B2 pre-grouping — the parent names these instead of clustering 40+ hexes by hand
     fontSizes: scanFontSizes(templateStr),
     clampFontSizes: (templateStr.match(/font-size:\s*clamp\(/g) || []).length,
     cssVars: scanCssVars(templateStr),
