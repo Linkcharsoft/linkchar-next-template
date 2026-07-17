@@ -127,17 +127,6 @@ next_agent: manual
 
 3. **Register it in the reuse table** — see [`design-import-shared.md` § C6](../../docs/design-import-shared.md#c6-registering-a-new-component-in-the-reuse-table) for the row format, placement rules, and the extend-vs-create edit. The table lives in **`.claude/CONVENTIONS.md`**, NOT in `CLAUDE.md` — do not go looking for the heading in `CLAUDE.md`, it isn't there.
 
-   If the table grows enough that the root/inputs interleaving becomes confusing, that's a separate CLAUDE.md hygiene fix — do NOT proactively re-sort the table here; just place your row by the rules above and move on.
-
-   Row format:
-
-   ```markdown
-   | `{ComponentName}` | `components/{ComponentName}/{ComponentName}.tsx` | One-sentence description: what it is + key props/variants (e.g. "Card with image, title, two CTAs; optional image via `next/image` static import"). |
-   ```
-
-   For components in subfolders, the path column reflects the subfolder (`components/inputs/PhoneInput/PhoneInput.tsx`, `components/modals/ConfirmModal/ConfirmModal.tsx`).
-
-   Keep the row description tight — one sentence explaining what it is + main props/variants. This keeps the catalog in sync so future invocations of this agent (or the user) can see what's already available without globbing the folder.
 
    **When EXTENDING an existing component** (added new variants to its row), use the `Edit` tool with `old_string` set to the **complete current row including both `|` delimiters** (e.g. `` | `CustomButton` | `components/CustomButton/CustomButton.tsx` | Button with variants (primary, white, transparent, ...). | ``). Replace it with the same row but updated description. This forces an exact-string match and prevents accidentally breaking the markdown table by editing partial cells. NEVER use `replace_all` for this — table cells often share substrings across rows.
 
