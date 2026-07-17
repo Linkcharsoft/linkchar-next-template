@@ -56,7 +56,7 @@ If any required field (name, type, slug, source JSX, screen component, target, l
 
 ## Pre-flight (read BEFORE implementing — filesystem wins over the parent's hints)
 1. `tailwind.config.js` — the authoritative token list. Use ONLY these. Missing value → `TOKENS_MISSING` STOP (below).
-2. `CLAUDE.md` — BEM, `m` not `motion`, `classNames` not `clsx`, no hex.
+2. `.claude/CONVENTIONS.md` (read at pre-flight above) — BEM, `m` not `motion`, `classNames` not `clsx`, no hex. NOT `CLAUDE.md`: it describes what the project IS; the rules live in CONVENTIONS.
 3. `src/components/` (Glob) — confirm which reusable components exist. Reuse them; don't assume the parent's list is complete.
 4. **The source JSX file** — read the whole file: the screen component, its helpers, and the shared mock data (`EVENT`, `GUESTS`, `GIFTS`, …) and `ctx`/prop usage it relies on.
 

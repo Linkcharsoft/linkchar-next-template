@@ -119,7 +119,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    - `tailwind.config.js` — existing colors (`surface-*`), typography scale, breakpoints
    - `design-tokens-map.md` (project root, may not exist yet) — Figma-variable → Tailwind-token mapping from prior imports. ALWAYS read this first: if a Figma variable from the current node is already mapped, do NOT propose it as a new token; reuse the mapped one.
    - `src/styles/index.sass` — fonts loaded
-   - `src/components/` — list every folder; cross-reference with the "Existing Reusable Components" table in `CLAUDE.md`
+   - `src/components/` — list every folder; cross-reference with the [Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md`
    - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`
    - `src/proxy.ts` — current `AUTH_PATHS`, `PUBLIC_PATHS`
    - `src/assets/icons/index.ts` — existing icons

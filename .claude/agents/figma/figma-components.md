@@ -79,7 +79,7 @@ These files are the source of truth — the parent's prompt is a hint, but the f
 | **Modal types** (a new modal with its own `useModalStore` payload — see `/new-modal`) | `src/components/modals/{Name}/{Name}.tsx` |
 | **Everything else** (cards, tiles, badges, lists, navbars, footers, sidebars, callouts, etc.) | `src/components/{Name}/{Name}.tsx` |
 
-When updating CLAUDE.md's component table (Step 3 below), keep the row in the same logical section (root, inputs/, or modals/) as the file location.
+When updating the reuse table in `.claude/CONVENTIONS.md` (Step 3 below), keep the row in the same logical section (root, inputs/, or modals/) as the file location.
 
 ## Data-fetching is out of scope
 
@@ -125,10 +125,7 @@ next_agent: manual
    7. Typography ALWAYS via `text-{weight}-{size}` (no `text-xl`/`font-bold`).
    8. Colors via `surface-*`/`brand-*`/`gray-*` tokens — no hex.
 
-3. **Update CLAUDE.md's "Existing Reusable Components" table**. After creating a new component, locate the table in `CLAUDE.md` (look for the "## Existing Reusable Components" heading) and append a row. **Placement** (the table is partially grouped — root and `inputs/` rows are interleaved, then `modals/` rows are grouped at the end):
-   - **`modals/` component** → append immediately after the LAST `modals/` row in the table (preserves the modals block at the end).
-   - **`inputs/` component** → append after the LAST `inputs/` row currently in the table (groups it with the other inputs even if root rows follow it later).
-   - **Root component** → append after the LAST root-level row that precedes the `modals/` block (so the modals block stays at the end).
+3. **Register it in the reuse table** — see [`design-import-shared.md` § C6](../../docs/design-import-shared.md#c6-registering-a-new-component-in-the-reuse-table) for the row format, placement rules, and the extend-vs-create edit. The table lives in **`.claude/CONVENTIONS.md`**, NOT in `CLAUDE.md` — do not go looking for the heading in `CLAUDE.md`, it isn't there.
 
    If the table grows enough that the root/inputs interleaving becomes confusing, that's a separate CLAUDE.md hygiene fix — do NOT proactively re-sort the table here; just place your row by the rules above and move on.
 
@@ -156,7 +153,7 @@ The full A11y, image performance, and bundle architecture rules live in [CONVENT
 If a Figma node depicts something that CONVENTIONS.md does not cover (e.g. a brand-new motion pattern, an unusual A11y consideration), report it via `STOP-ADVISORY` in your output rather than guessing.
 
 ## Hard rules
-- Read the project's `CLAUDE.md` "Existing Reusable Components" table BEFORE creating anything new — if a similar component exists, extend it.
+- Read the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md` BEFORE creating anything new — if a similar component exists, extend it.
 - Every component MUST satisfy the rules in the "Accessibility & Lighthouse rules" section above — they are blocking, not aspirational.
 - **NEVER mount `<LoadingModal/>`, `<StateModal/>`, or `<ToastNotifications/>` inside a component.** The mounting strategy is split between three agents — keep them coordinated, don't unilaterally change scope here:
   - `LoadingModal` mounting is **`figma-layouts`'s responsibility** — each layout mounts one instance scoped to the content it should cover (full layout for `DashboardLayout`/`GeneralLayout`, panel-scoped for split-form layouts like `AuthLayout`).

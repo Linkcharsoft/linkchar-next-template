@@ -114,11 +114,7 @@ Common prototype primitives and their likely home (confirm against the on-disk l
 2. **Create new components** via `/new-component {Name}` (never scaffold manually). Then: `'use client'` only if it uses hooks/handlers; default export; no `memo()`; `classNames` from `primereact/utils` (never `clsx`); `m` from `framer-motion` (never `motion`); inputs via PrimeReact in `InputContainer`; typography via `text-{weight}-{size}`; colors via tokens.
    - Translate the prototype's hover interactions (`onMouseDown` scale, `onMouseEnter` shadow) into `m` `whileHover`/`whileTap` where it reads as an intentional micro-interaction; otherwise keep it as a CSS `transition` in the `.sass`.
 
-3. **Update CLAUDE.md's "Existing Reusable Components" table** — append a row (place root/inputs rows before the `modals/` block; keep `modals/` grouped at the end). Row format:
-   ```markdown
-   | `{ComponentName}` | `components/{path}/{ComponentName}.tsx` | One-sentence: what it is + key props/variants. |
-   ```
-   When EXTENDING, use `Edit` with `old_string` = the complete current row (both `|` delimiters) → updated description. NEVER `replace_all` (rows share substrings).
+3. **Register it in the reuse table** — see [`design-import-shared.md` § C6](../../docs/design-import-shared.md#c6-registering-a-new-component-in-the-reuse-table) for the row format, placement rules, and the extend-vs-create edit. The table lives in **`.claude/CONVENTIONS.md`**, NOT in `CLAUDE.md`.
 
 ## Component-agent reminders
 - Input/error components wrap the visible message in `role='alert'` (preserve `InputError`'s pattern).
