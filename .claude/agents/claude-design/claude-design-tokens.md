@@ -28,18 +28,23 @@ The token source depends on `inventory.tokenSource` (the parent tells you which)
 `unpack.mjs` also wrote `fonts.json` → the font families referenced (all are Google Fonts — map by name via `next/font/google`, do NOT re-embed the woff2 in the manifest). Preload `brandFonts.body`; do not guess body/display from order — the labels are authoritative.
 
 ## Expected input from the parent
-- The brand preset (from `tokens.json` → `themes[brand]`) with each color's hex and each typography size, as a structured list.
-- The loose `rawScan` hex/size values the parent decided to promote to tokens.
+
+**Every color entry carries the token `name` the parent decided, and its `decision` (REUSE | CREATE | BLOCK).** The parent (Opus, with the whole design in view) owns naming and namespacing; you apply policy to ITS names. You do not invent names — two runs of the same design must produce the same token names, and that only holds if the names come from one place.
+
+- **Colors**, as a structured list. Where the entries come from branches on `inventory.tokenSource`:
+  - `themes-object` (babel) — the brand preset (`tokens.json` → `themes[brand]`), plus any loose `rawScan` values the parent promoted.
+  - `inline+helmet` / `inline+css` (dclogic / vanilla) — **there is NO brand preset**; `tokens.json.themes` and `.brand` are `null`. Entries come from the parent's reviewed-and-named `rawScan.clusters` (see [`design-import-shared.md` § B2](../../docs/design-import-shared.md#b2-color--cluster-the-raw-scan-map-to-tokens-never-raw-hex)). **An absent preset is EXPECTED here, not a missing input** — do NOT emit `INVALID_INPUT` over it.
+- **Typography sizes**: off-scale **integers** only (the parent rounds any fractional source size before delegating — see § B1).
 - Font families (name + weights used + usage: body/display/accent).
 - Optional `confirmOverride: true` — only present if the user explicitly approved overriding an existing token in a previous run.
 
-**Example input:**
+**Example input** (`themes-object` / babel):
 
 ```
 Colors (from THEMES[givxo] + rawScan):
-- {source: 'THEMES.givxo.accent', hex: '#7c5ce6', role: 'brand primary'}
-- {source: 'THEMES.givxo.ink', hex: '#2c2a47', role: 'text/ink'}
-- {source: 'rawScan', hex: '#c2607a', role: 'danger/no'}    # not a surface-* match — needs new namespace
+- {source: 'THEMES.givxo.accent', hex: '#7c5ce6', role: 'brand primary', name: 'brand-primary', decision: CREATE}
+- {source: 'THEMES.givxo.ink', hex: '#2c2a47', role: 'text/ink', name: 'brand-ink', decision: CREATE}
+- {source: 'rawScan', hex: '#c2607a', role: 'danger/no', name: 'accent-danger', decision: CREATE}
 
 Typography sizes: [30, 15, 11]   # off-scale INTEGERS (already rounded by the parent)
 
@@ -52,8 +57,25 @@ Breakpoints: (none new)   # the design has no @media of its own — Step 5.2 wil
 **Example input** (`inline+helmet` / dclogic — no THEMES; named clusters instead):
 
 ```
+Colors (no THEMES — parent-named rawScan.clusters):
+- {source: 'rawScan.clusters[0]', hex: '#21b0d4', hexes: ['#21b0d4'], role: 'brand primary', name: 'brand-primary', decision: CREATE}
+- {source: 'rawScan.clusters[2]', hex: '#e7eef4', hexes: ['#e7eef4'], role: 'border/line', name: 'border-muted', decision: CREATE}
+- {source: 'rawScan.clusters[5]', hex: '#f4f9fc', hexes: ['#f4f9fc','#f7fbfe'], role: 'background tint', name: 'brand-tint', decision: CREATE}
 
-If the parent passes prose instead of a structured list, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: parent passed prose instead of a structured token list / resolution: re-invoke with the structured form (see "Example input")`. You cannot reliably extract token shapes from natural language.
+Typography sizes: [11, 13, 15, 17, 19, 21, 27, 30, 34, 50, 58]
+
+Breakpoints (the design's own @media — desktop-first, so MAX form):
+- {source: 'helmet @media (max-width: 980px)', max: '980px', name: 'hg-lg', decision: CREATE}
+- {source: 'helmet @media (max-width: 860px)', max: '860px', name: 'hg-md', decision: CREATE}
+- {source: 'helmet @media (max-width: 560px)', max: '560px', name: 'hg-sm', decision: CREATE}
+```
+
+`hexes[]` is the cluster's full member list — the parent already collapsed them to one token, so map EVERY member to `name`. Only `hex` (the representative) reaches `tailwind.config.js`.
+
+Emit `STOP-BLOCKING / category: INVALID_INPUT` when:
+- the parent passes **prose** instead of a structured list (`reason: parent passed prose instead of a structured token list / resolution: re-invoke with the structured form (see "Example input")`). You cannot reliably extract token shapes from natural language.
+- a color entry has **no `name`** (`reason: color entry {hex} has no token name / resolution: the parent owns naming — re-invoke with a name per entry`). Do NOT name it yourself to keep the run moving; that is the exact silent drift this field exists to prevent.
+- a typography size is **fractional** (`reason: fractional size {n} — the parent rounds before delegating (§ B1)`). See step 4.
 
 ## Token policy (HARD RULES — never violate)
 
@@ -96,7 +118,9 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
    | b | Would override/extend `surface-*` | reject — force a new namespace | `STOP-BLOCKING / REJECTED_SURFACE` |
    | c | Override (same key, diff hex, non-surface) without `confirmOverride` | block — emit conflict STOP | `STOP-BLOCKING / OVERRIDE_BLOCKED` |
    | d | Heuristic match (max channel diff ≤ 4) AND semantically compatible | reuse existing; append row | `REUSED` |
-   | e | Otherwise | create new token under a descriptive non-surface name; append row | `CREATED` |
+   | e | Otherwise | create new token **under the parent-supplied `name`**; append row | `CREATED` |
+
+   In row **e** the name is the parent's, never yours — it decided naming with the whole design in view, and re-deciding it here is what makes two runs of the same design disagree. If the parent's `decision` and your policy outcome differ (it said CREATE, row `d` finds a reusable match), **report the discrepancy and follow the policy** — the policy protects the palette, but the parent must see that its plan changed.
 
 4. **Edit `tailwind.config.js`** — apply CREATE and (rare, confirmed) OVERRIDE only:
    - New colors under a non-surface namespace (`brand-*`, `accent-*`, `border-*`). **Match the namespace's existing shape** (flat hyphenated vs nested object) — read it before inserting; when creating a namespace from scratch, prefer the nested object form.

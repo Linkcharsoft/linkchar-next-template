@@ -215,7 +215,16 @@ Authoritative list = **every registry key** in `inventory.screens`. `nav-graph.t
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-tokens' })` — **Haiku**.
 
-Pass: the brand preset object from `tokens.json` (colors + typography), the loose hex/size list from `rawScan`, and the **brand fonts** (`inventory.brandFonts`, not the full `fontFamilies` superset). The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
+**What you pass branches on `inventory.tokenSource`** — the agent's "brand preset" input only exists for babel:
+
+- **`themes-object` (babel)** — the brand preset object from `tokens.json` (`themes[brand]`: colors + typography), plus the loose hex/size list from `rawScan`.
+- **`inline+helmet` / `inline+css` (dclogic / vanilla)** — `tokens.json.themes` and `.brand` are **`null`**; there IS no preset, and the agent knows an absent one is expected here. Pass instead the **named clusters** you reviewed in Step 0.5 (from `rawScan.clusters`), each with its `hexes[]` member list so every member maps to the one token.
+
+Either way, **pass your NAMES, not raw hexes.** You (Opus, with the whole design in view) decide the namespaces and the family names. The agent's input shape **requires** a `name` and a `decision` (REUSE | CREATE | BLOCK) per entry and will `INVALID_INPUT` on an entry without one — deliberately, because an unnamed list means **Haiku re-decides your naming** and two runs of the same design end up with different token names. Hand it explicit `hex → token-name` rows.
+
+Also pass: the pre-rounded off-scale **integer** typography sizes (see Step 0.5 — fractions are rounded by YOU, before this step), and the **brand fonts** (`inventory.brandFonts`, not the full `fontFamilies` superset).
+
+The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
 
 ---
 
@@ -354,7 +363,8 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 |------|------|-----------|-------|--------------------|
 | 0 | Unpack | `unpack.mjs` | — | **Export URL** + scratch outDir |
 | 0.5 | Inventory & gap analysis | (parent) | Opus | The unpacked artifacts |
-| 1 | Tokens | `claude-design-tokens` | Haiku | Brand preset + rawScan hex/sizes + fonts |
+| 0.55 | Gate the spec against the source | `general-purpose` | Sonnet | The source tree + your gap-analysis report |
+| 1 | Tokens | `claude-design-tokens` | Haiku | Named tokens (`hex → name` + REUSE/CREATE/BLOCK) + off-scale integer sizes + fonts |
 | 2 | Assets | `claude-design-assets` | Haiku | `assets/img/*` + `inventory.images` + `Icon` glyph list |
 | 3 | Components | `claude-design-components` | Opus | Extend/create list, each with **source JSX file** + token names |
 | 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target |
