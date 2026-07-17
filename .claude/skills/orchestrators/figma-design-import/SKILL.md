@@ -29,23 +29,25 @@ If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the us
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
-| Step | Sub-agent | Model | Duration | Tool calls | Tokens≈ | Notes |
-|------|-----------|-------|----------|------------|---------|-------|
-| 1 | figma-tokens | Haiku | 12s | ≈5 | ≈8k | 6 colors + 4 sizes added |
-| 2 | figma-assets | Haiku | 45s | ≈21 | ≈14k | 14 images, 5 icons |
-| 3 | figma-components | Opus | 3m | ≈23 | ≈85k | 6 new + 1 extended |
+| Step | Sub-agent | Model | Duration | Tool calls | Tokens | Notes |
+|------|-----------|-------|----------|------------|--------|-------|
+| 1 | figma-tokens | Haiku | 12s | 5 | 8k | 6 colors + 4 sizes added |
+| 2 | figma-assets | Haiku | 45s | 21 | 14k | 14 images, 5 icons |
+| 3 | figma-components | Opus | 3m | 23 | 85k | 6 new + 1 extended |
 | ... | ... | ... | ... | ... | ... | ... |
 ```
 
-**Estimating `Tokens≈`** — use the tool-call count as a proxy. Per-tool-call averages from past runs (calibrate as you go):
-- Haiku agent: ≈1.5k tokens / tool call (mostly small Reads, Edits, Bash).
-- Sonnet agent: ≈3k tokens / tool call (longer Reads, denser reasoning).
-- Opus agent: ≈4k tokens / tool call (large MCP responses, multi-file edits, screenshots).
-- Add a flat +30k for any sub-agent that calls `get_design_context` on a node (the MCP response itself is heavy).
+**`Tokens`, `Tool calls` and `Duration` are REPORTED BY THE HARNESS — never estimate them.** The result of every `Agent(...)` call ends with a `<usage>` block carrying the exact figures:
 
-The estimate is a SIGNAL, not an invoice — keep two significant figures (`≈85k`, not `85,124`). The point is to see if Step 5.2 per-screen invocations are creeping into the hundreds-of-thousands range so the user can pause before the next one.
+```
+<usage>subagent_tokens: 70655   tool_uses: 22   duration_ms: 392235</usage>
+```
 
-**Where each column comes from** (every sub-agent ends its `Output to parent` with a standardized 3-line footer):
+Read `subagent_tokens` → `Tokens`, `tool_uses` → `Tool calls`, `duration_ms` → `Duration`. These are measured, not modelled — do NOT derive them from `tool_calls × model_factor`, and do NOT take `tool_calls` from the agent's footer. (A per-tool-call heuristic was used here historically; it ran 2–3× low against measured runs and is gone. If a `<usage>` block is ever absent, say `Tokens: n/a` rather than inventing a number.)
+
+Round to two significant figures in the ledger (`85k`, not `85,124`). The point is to see whether Step 5.2 per-screen invocations are creeping into the hundreds-of-thousands range so the user can pause before the next one.
+
+**Where the other columns come from** (every sub-agent ends its `Output to parent` with a standardized 3-line footer):
 
 ```
 ---
@@ -55,20 +57,19 @@ Notes: {one-line count summary}
 ```
 
 - `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline.
-- `Duration` ← **measured by the orchestrator** from wall-clock time between the `Agent(...)` call start and return. Don't ask the sub-agent to self-report — it can't measure it accurately and the harness already exposes it.
-- `Tool calls` ← `Workload: tool_calls≈...` from the footer. The sub-agent counts its own calls; the orchestrator can't see them otherwise. If you need per-tool breakdown (`Read×8, Write×12, Bash×3`), derive it from the visible tool calls in the agent's run log — that detail is not part of the footer.
-- `Tokens≈` ← **computed by the orchestrator** from `tool_calls × model_factor` + flat surcharges (see formula above). Sub-agents do NOT self-report tokens. The `model_factor` comes from the frontmatter-derived `Model` value above, so a drifted footer can't poison the estimate.
+- `Duration`, `Tool calls`, `Tokens` ← the `<usage>` block of the `Agent(...)` result (see above). Exact, harness-measured. The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
 - `Notes` ← `Notes:` line from the footer, used verbatim.
+- `Validation` ← `Validation:` line from the footer.
 
 Append the `Validation:` line of the footer to the checkpoint message after each step so the user sees lint/type-check status without scrolling through the agent's full report.
 
-**Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens≈` sum and the per-model breakdown:
+**Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens` sum and the per-model breakdown:
 
 ```
-Cumulative tokens≈ 420k
-  haiku: ≈30k
-  sonnet: ≈15k
-  opus: ≈375k    ← Step 5.2 per-screen is the dominant share
+Cumulative tokens 420k
+  haiku: 30k
+  sonnet: 15k
+  opus: 375k    ← Step 5.2 per-screen is the dominant share
 ```
 
 This makes the trajectory inspectable: if the per-screen Opus delta starts rising sharply across consecutive screens (Step 5.2), the user can pause and decide whether to simplify the remaining screens before continuing.

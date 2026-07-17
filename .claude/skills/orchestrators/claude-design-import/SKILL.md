@@ -39,12 +39,18 @@ The "Standalone HTML" export is **not** flat HTML — it's a self-contained Reac
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
-| Step | Sub-agent | Model | Duration | Tool calls | Tokens≈ | Notes |
-|------|-----------|-------|----------|------------|---------|-------|
-| 1 | claude-design-tokens | Haiku | 10s | ≈5 | ≈8k | 7 colors + 3 sizes added |
+| Step | Sub-agent | Model | Duration | Tool calls | Tokens | Notes |
+|------|-----------|-------|----------|------------|--------|-------|
+| 1 | claude-design-tokens | Haiku | 10s | 5 | 8k | 7 colors + 3 sizes added |
 ```
 
-**Estimating `Tokens≈`** — use tool-call count as a proxy (calibrate as you go): Haiku ≈1.5k/call, Sonnet ≈3k/call, Opus ≈4k/call. There is **no MCP surcharge** here (unlike Figma) — the design context is local files, so per-screen cost is dominated by Reads of the extracted JSX, not heavy MCP responses.
+**`Tokens`, `Tool calls` and `Duration` are REPORTED BY THE HARNESS — never estimate them.** The result of every `Agent(...)` call ends with a `<usage>` block carrying the exact figures:
+
+```
+<usage>subagent_tokens: 70655   tool_uses: 22   duration_ms: 392235</usage>
+```
+
+Read `subagent_tokens` → `Tokens`, `tool_uses` → `Tool calls`, `duration_ms` → `Duration`. Measured, not modelled — do NOT derive them from `tool_calls × model_factor`. (A per-tool-call heuristic lived here historically; measured runs put it 2–3× low, so it's gone. If a `<usage>` block is ever missing, report `Tokens: n/a` rather than inventing a number.) Round to two significant figures (`85k`, not `85,124`).
 
 Each sub-agent ends its `Output to parent` with the standardized footer:
 
@@ -55,12 +61,11 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary}
 ```
 
-- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/claude-design/{name}.md` (source of truth; the footer string can drift).
-- `Duration` ← measured by you from wall-clock between the `Agent(...)` call and its return.
-- `Tool calls` / `Notes` ← from the footer.
-- `Tokens≈` ← computed by you from `tool_calls × model_factor`.
+- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/claude-design/{name}.md` (source of truth; the footer string can drift). The one exception is Step 0.55's `general-purpose`, a builtin with no file under `.claude/agents/` — record the model you actually passed it.
+- `Duration` / `Tool calls` / `Tokens` ← the `<usage>` block of the `Agent(...)` result (above). The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
+- `Notes` / `Validation` ← from the footer.
 
-**Show the ledger at every checkpoint** (end of 0.5, end of 5.1, between each 5.2 screen, end of 6) with a cumulative sum + per-model breakdown, so the trajectory is inspectable and the user can pause before the Opus-heavy Step 5.2 creeps up.
+**Show the ledger at every checkpoint from 5.1 onward** (end of 5.1, between each 5.2 screen, end of 6) with a cumulative sum + per-model breakdown, so the trajectory is inspectable and the user can pause before the Opus-heavy Step 5.2 creeps up. (Not at the end of 0.5 — nothing has been delegated yet, so the ledger is empty.)
 
 ---
 
