@@ -17,6 +17,8 @@ Before scaffolding, `Read` `.claude/CONVENTIONS.md`. Sections that govern this a
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
+**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — the shared **import-translation rules** (color clustering, typography sizing, radius, brand gradients, mock-data, forms) and the **agent protocol** (delegation contract, STOP emission, workload footer + report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
+
 ## Expected input from the parent
 
 **Only the screens the parent's nav mapping resolved to ROUTES.** The route list already depends on `inventory.navModel`, so you just scaffold what the parent passes — but sanity-check the count matches the model:

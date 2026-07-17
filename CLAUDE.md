@@ -69,7 +69,20 @@ After adding or renaming an agent, **restart and verify it appears** before rely
 
 These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
 
-**When you change or improve one flow — the orchestrator `SKILL.md` OR any of its sub-agents — apply the equivalent change to its counterpart in the same commit**, so the two do not drift. Counterpart map:
+**The shared substance lives in ONE place, so it can't drift — there is no manual "mirror it to the twin in the same commit" step.** Two single sources of truth, both `Read` at pre-flight by every step agent of both flows:
+
+- **Code conventions** — what valid *output* looks like (tokens, typography, color/no-hex, a11y, `container-custom`, SASS) → [`.claude/CONVENTIONS.md`](./.claude/CONVENTIONS.md).
+- **Import-translation rules** — how to translate a design into that code (color clustering, typography snapping, radius, brand gradients, mock-data, forms) — **plus the agent protocol** (delegation contract, STOP emission, workload footer, report shape) → [`.claude/docs/design-import-shared.md`](./.claude/docs/design-import-shared.md).
+
+Edit either file **once** and both flows inherit automatically; `design-validation` is likewise one shared agent. **Each agent's own `.md` holds ONLY its source-ingestion mechanics** — which diverge *by design* and are never synced to the twin.
+
+**Decision test when you change something:**
+
+- Shared **convention / translation rule / protocol** (would apply to both flows)? → edit the shared file (`CONVENTIONS.md` or `design-import-shared.md`) **once**; touch neither agent. Both inherit.
+- **Source-ingestion mechanics** of one format? → edit only that agent's `.md`; the twin is unaffected. These diverge by design: how the design context is read (Figma `get_design_context` / screenshots / asset URLs vs `unpack.mjs`'s source tree, `tokens.json`, `nav-graph.json`, local `assets/img/`), the "spec gate" (a Figma `nodeId` vs a source-file path/region), asset acquisition (download vs decode-from-manifest), navigation (Figma frames → screens vs the prototype's stack-router → hybrid route/step/modal mapping), and responsive strategy (Figma desktop+mobile frames vs target detection).
+- A **new format-specific rule** (e.g. dclogic's empty-`components.json` handling, or a Figma-variable quirk) lives in that flow's agent only — it has no counterpart to sync.
+
+The old rigid 1:1 map is now just a **navigation aid** (find your twin to compare), NOT a "move them together" mandate:
 
 | figma-design-import | claude-design-import |
 | ------------------- | -------------------- |
@@ -80,11 +93,7 @@ These two orchestrators are deliberately parallel: the **same** bottom-up pipeli
 | `agents/figma/figma-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
 | `agents/figma/figma-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
 | `agents/figma/figma-screen.md` | `agents/claude-design/claude-design-screen.md` |
-| `agents/shared/design-validation.md` | *(same file — already shared; a validation change benefits both automatically)* |
-
-**Sync the SHARED concerns**: styling / token / accessibility / performance rules, the STOP protocol, the workload-ledger footer, `container-custom` handling, the mock-data (`MOCK_*` + `// TODO: openapi-import`) convention, the output/report format, and any bug fix or quality improvement to a step's logic.
-
-**Do NOT force-sync the source-ingestion mechanics**, which diverge *by design*: how the design context is read (Figma `get_design_context` / screenshots / asset URLs vs `unpack.mjs`'s `jsx/`, `tokens.json`, `nav-graph.json`, local `assets/img/`), the "spec gate" (a Figma `nodeId` vs a source-JSX file path), asset acquisition (download vs decode-from-manifest), navigation (Figma frames → screens vs the prototype's stack-router → hybrid route/step/modal mapping), and responsive strategy (Figma desktop+mobile frames vs target detection). Improving one of these does not require touching the other.
+| `agents/shared/design-validation.md` + `docs/design-import-shared.md` | *(same files — already shared; a change benefits both automatically)* |
 
 > **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
 

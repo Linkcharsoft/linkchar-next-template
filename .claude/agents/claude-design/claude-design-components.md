@@ -21,6 +21,8 @@ Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that gov
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
+**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — the shared **import-translation rules** (color clustering, typography sizing, radius, brand gradients, mock-data, forms) and the **agent protocol** (delegation contract, STOP emission, workload footer + report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
+
 ## The source-of-truth gate: real JSX, never prose
 
 A Claude Design primitive is written as a React function with inline `style={{}}` objects and, usually, an explicit `variants`/`variant` map (e.g. `Btn` with `variants = { primary, accent, outline, ghost, soft }`, `Card`, `Field`, `Tag`, `TopBar`). `unpack.mjs` extracted every one of these to a file in the unpacked `jsx/` tree, and `components.json` lists each function with its file. **That JSX source is the spec** — it shows exact per-side padding, radii (via `var(--radius)`), border widths, hover/focus handlers, and every variant. This is the Claude Design equivalent of Figma's nodeId gate.

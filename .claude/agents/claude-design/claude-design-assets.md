@@ -15,6 +15,8 @@ Before generating any code, `Read` `.claude/CONVENTIONS.md`. The sections that g
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
+**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — the shared **import-translation rules** (color clustering, typography sizing, radius, brand gradients, mock-data, forms) and the **agent protocol** (delegation contract, STOP emission, workload footer + report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
+
 ## Cross-platform shell (read first)
 
 Detect the platform from the `Platform` field in your environment (`win32` → PowerShell, `darwin`/`linux` → POSIX) and pick the matching form per step.
