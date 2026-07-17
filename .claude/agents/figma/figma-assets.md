@@ -1,6 +1,6 @@
 ---
 name: figma-assets
-description: Step 2 of figma-design-import — downloads asset files and integrates them into src/assets/. Small/glyph SVGs become React components in src/assets/icons/; large/decorative SVGs stay as loose files in src/assets/images/. Raster (PNG/JPEG) is converted to WebP via ffmpeg, placed under src/assets/images/{screenSlug}/ when per-screen or flat when shared. Mechanical curl + ffmpeg + boilerplate.
+description: Step 2 of figma-design-import — downloads asset files and integrates them into src/assets/. Small/glyph SVGs become React components in src/assets/icons/; large/decorative SVGs stay as loose files in src/assets/images/. Raster (PNG/JPEG) is converted to WebP via `sharp` (a project dependency, no ffmpeg), placed under src/assets/images/{screenSlug}/ when per-screen or flat when shared. Mechanical curl + sharp + boilerplate.
 model: haiku
 ---
 
@@ -33,7 +33,7 @@ Common substitutions:
 | Delete | `rm /tmp/{name}.bin` | `Remove-Item "$env:TEMP\{name}.bin"` |
 | Copy | `cp src dst` | `Copy-Item src dst` |
 
-`ffmpeg` / `ffprobe` / `curl` work identically on all three platforms when installed; only paths and shell built-ins differ. If `ffmpeg` is missing on the target machine, STOP and ask the parent to surface the install instructions — do not silently skip raster conversion.
+`curl` works identically on all three platforms; only paths and shell built-ins differ. **Raster→WebP conversion + inspection use `sharp` (a direct dependency of this template), NOT ffmpeg** — no external binary, prebuilt for every OS/arch, so there is no ffmpeg prerequisite and **no reason to STOP for a missing binary**. `sharp` is a Node library: run a short Node script for the conversion (skeleton under "Choose compression") **from the project root** so `import 'sharp'` resolves from the project's `node_modules`. The `file`/magic-number detection below is still used to route SVG vs raster (sharp only converts raster).
 
 ## Expected input from the parent
 A list of assets to download, each with:
@@ -145,9 +145,17 @@ Steps:
    - **Content hash**: after downloading the binary to the temp file, compute its SHA1 (POSIX: `sha1sum`; PowerShell: `(Get-FileHash ... -Algorithm SHA1).Hash`).
    - Glob `src/assets/images/**/*.hash.txt` and read each sibling file — each contains a JSON line `{"url": "{urlHash}", "sha1": "{contentHash}"}`. Match by **content hash** first (most reliable); fall back to URL hash if no content match.
    - If any match → SKIP (reuse the existing `.webp`, regardless of which screen folder it lives in — cross-screen reuse is fine). Report `REUSED: {existing-path}.webp (matched by {urlHash|contentHash})`.
-2. **Inspect** with `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,pix_fmt {tmpPath}` (POSIX path `/tmp/{name}.bin` or PowerShell path `$env:TEMP\{name}.bin`).
-3. **Choose compression**:
-   - **Lossless** when the source has an alpha channel (`pix_fmt` contains `rgba` or `bgra`) AND dimensions ≤ 512×512 — these are typically logos / UI graphics where crisp edges matter:
+2. **Inspect** with `sharp(tmpPath).metadata()` → `{ format, width, height, hasAlpha }` (replaces `ffprobe`; temp path `/tmp/{name}.bin` or `$env:TEMP\{name}.bin`).
+3. **Choose compression** (encode with `sharp`):
+   - **Lossless** when the source has an alpha channel (`hasAlpha === true`) AND dimensions ≤ 512×512 — typically logos / UI graphics where crisp edges matter: `sharp(tmpPath).webp({ lossless: true }).toFile(targetPath)`.
+   - **Lossy** otherwise — photos and large images where imperceptible quality loss is fine: `sharp(tmpPath).webp({ quality: 85 }).toFile(targetPath)`.
+   `{targetPath}` is `src/assets/images/{screenSlug}/{name}.webp` when the parent passed `screenSlug`, otherwise `src/assets/images/{name}.webp`. Run these via a short Node `.mjs` (e.g. `./_assets_convert.mjs`) executed from the project root so `import 'sharp'` resolves, then delete it:
+
+     ```js
+     import sharp from 'sharp'
+     const m = await sharp(tmpPath).metadata()
+     const lossless = m.hasAlpha && m.width <= 512 && m.height <= 512
+     await sharp(tmpPath).webp(lossless ? { lossless: true } : { quality: 85 }).toFile(targetPath)
      ```
      ffmpeg -i {tmpPath} -c:v libwebp -lossless 1 -y {targetPath}
      ```
@@ -167,7 +175,7 @@ If this run wrote any `.tsx` / `.ts` file (e.g. a new SVG-icon component + updat
 If the run only wrote `.webp` / `.svg` / `.hash.txt` (pure raster + static SVG, no code changes), skip both — they have no effect and waste seconds. Report `Validation: lint=skipped, type-check=skipped` in the footer with a note like `Notes: no .tsx/.ts written, skipped lint/type-check`.
 
 ## Hard rules
-- NEVER skip the `file` detection step — formats lie based on URL extension or parent hints.
+- NEVER skip the `file` detection step (routes SVG vs raster) — formats lie based on URL extension or parent hints. Raster conversion uses `sharp`, not ffmpeg: NEVER STOP for a missing ffmpeg binary.
 - NEVER install icon libraries (`lucide-react`, `react-icons`, etc.). Only icon sets already installed in the project, or assets passed by the parent.
 - NEVER inline large SVGs as React components via `atob` + `dangerouslySetInnerHTML` — split into "icon component" vs "loose static file" by size + role, per the SVG routing rules.
 - Folder structure depends on asset type and scope:

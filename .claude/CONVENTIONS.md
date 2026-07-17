@@ -281,7 +281,7 @@ ESLint-enforced rules:
 
 - **SVG icons** → React component `.tsx` in `src/assets/icons/`. Props: `SVGProps<SVGSVGElement>`, default export — React Compiler handles memoization automatically. Set `aria-hidden='true'` and `focusable='false'` by default on the root `<svg>` (consumers can override when the icon is genuinely informative). Register the export in `src/assets/icons/index.ts`. Example: `src/assets/icons/GmailIcon.tsx`.
 - **Large/decorative SVGs** (≥ 15KB, > 30 path nodes, contains `<animate>`) → loose `.svg` file at `src/assets/images/{kebab-case-name}.svg`. Imported as a static asset and rendered with `<Image>`.
-- **PNG/JPEG** → convert to WebP and store in `src/assets/images/`: `ffmpeg -i input.png -q:v 85 output.webp`. Render with `next/image`.
+- **PNG/JPEG** → convert to WebP and store in `src/assets/images/`. The design-import assets pipeline converts via `sharp` — `sharp(src).webp({ quality: 85 }).toFile(out)` (lossless for ≤512px alpha logos) — a project dependency, no external binary. Render with `next/image`.
 - **Per-screen images** live under `src/assets/images/{screenSlug}/{name}.webp` (kebab-case slug); shared/global assets stay flat at `src/assets/images/{name}.webp`.
 - **Download from Figma MCP**: `curl -s "http://localhost:3845/assets/{hash}.{ext}" -o /tmp/{name}.{ext}` (POSIX) or `Invoke-WebRequest -Uri "..." -OutFile "$env:TEMP\{name}.{ext}"` (PowerShell).
 - **NEVER** install new icon libraries (`lucide-react`, `react-icons`, `heroicons`, `@fortawesome`, etc.). Use PrimeIcons or assets returned by the Figma MCP.
@@ -305,7 +305,7 @@ LCP, CLS, "Properly size images".
 - **Avoid CLS**: every image container must reserve space — for fixed-size containers set BOTH `height` AND `min-height` (or `aspect-ratio`). Skeleton placeholders must mirror final dimensions exactly.
 - **Decorative images use `alt=''`**. Content images need a meaningful `alt`. Never leave `alt=''` on an image that conveys information — Lighthouse flags missing/empty alt as an a11y failure.
 - **Mobile/desktop dual `<Image>` pattern**: when using `<Image className='hidden md:block'>` + `<Image className='md:hidden'>`, BOTH variants download by default. Scope each with `sizes`: desktop `sizes='(min-width: 768px) Xvw, 0vw'`, mobile `sizes='(min-width: 768px) 0vw, 100vw'`. The `0vw` tells Next to skip download at that breakpoint.
-- **Raster assets (PNG/JPEG)**: convert to WebP at import time with `ffmpeg -i input.png -q:v 85 output.webp`. Render with `next/image` so AVIF/WebP variants are served when supported.
+- **Raster assets (PNG/JPEG)**: convert to WebP at import time via `sharp` — `sharp(input).webp({ quality: 85 })` (a project dependency, no external binary; ffmpeg not required). Render with `next/image` so AVIF/WebP variants are served when supported.
 
 ### Font Loading
 
@@ -412,7 +412,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 ### Asset Handling
 
 - **Figma MCP localhost sources**: When the MCP returns a `http://localhost:3845/assets/...` URL for an image or SVG, USE IT DIRECTLY. NEVER replace it with placeholders, stock URLs, or `Image` library imports.
-- **Downloaded assets**: see [Asset Pipeline](#asset-pipeline) for the full rules (SVG → icon component, raster → WebP via ffmpeg, etc.).
+- **Downloaded assets**: see [Asset Pipeline](#asset-pipeline) for the full rules (SVG → icon component, raster → WebP via `sharp`, etc.).
 
 ### Component & Reuse Rules
 

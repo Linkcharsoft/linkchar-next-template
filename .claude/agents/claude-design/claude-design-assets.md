@@ -1,6 +1,6 @@
 ---
 name: claude-design-assets
-description: Step 2 of claude-design-import — integrates the assets unpack.mjs already decoded from the prototype's manifest. Raster images (already on disk under the unpacked assets/img/) are converted to WebP via ffmpeg into src/assets/. The prototype's `Icon` component (one component with a `name` prop) is split into individual React icon components in src/assets/icons/. Mechanical ffmpeg + boilerplate — no downloads.
+description: Step 2 of claude-design-import — integrates the assets unpack.mjs already decoded from the prototype's manifest. Raster images (already on disk under the unpacked assets/img/) are converted to WebP via `sharp` (a project dependency, no ffmpeg) into src/assets/. For babel prototypes the `Icon` switch component is split into individual React icon components in src/assets/icons/; for dclogic (empty components.json) inline `<svg>` stays in the screen and only repeated glyphs are extracted. Mechanical sharp + boilerplate — no downloads.
 model: haiku
 ---
 
@@ -23,12 +23,11 @@ Detect the platform from the `Platform` field in your environment (`win32` → P
 
 | Concept | POSIX (Bash tool) | PowerShell tool |
 | ------- | ----------------- | --------------- |
-| Detect format | `file {path}` | first-bytes magic-number check (see below) |
 | Content hash | `sha1sum {path}` | `(Get-FileHash {path} -Algorithm SHA1).Hash` |
 | Make folder | `mkdir -p {dir}` | `New-Item -ItemType Directory -Force {dir}` |
 | Copy | `cp src dst` | `Copy-Item src dst` |
 
-`ffmpeg` / `ffprobe` work identically when installed. If `ffmpeg` is missing, STOP and ask the parent to surface install instructions — do not silently skip raster conversion.
+**WebP conversion + image inspection use `sharp`, NOT ffmpeg.** `sharp` is a direct dependency of this template (`package.json`), ships prebuilt binaries for every OS/arch, and needs no external tool — so there is **no "install ffmpeg" prerequisite and no reason to STOP for a missing binary**. It replaces `ffprobe` (real format + dimensions + alpha via `sharp(path).metadata()`) and `ffmpeg` (encode via `sharp(path).webp(...)`). Because it's a Node library, run a short Node script (skeleton under "Raster images") — **execute it from the project root** so `import 'sharp'` resolves from the project's `node_modules` (a script run from a scratch dir outside the project fails to resolve `sharp`). If resolution ever fails, that's the cause — move the script into the repo tree and re-run; do NOT STOP or fall back to ffmpeg.
 
 ## Expected input from the parent
 - The path to the unpacked working tree (so you can read `inventory.json`, `assets/img/*`, and `jsx/*`).
@@ -46,18 +45,18 @@ The prototype's asset aliases (from `ext_resources`) can be generic (`unsplashIn
 
 ## Raster images (already decoded → convert to WebP)
 
-The images are already valid files under `{unpacked}/assets/img/`. Still **confirm the format** with `file {path}` (POSIX) or a magic-number check (PowerShell: `89504e47`→PNG, `ffd8ff`→JPEG, `52494646`+`57454250`→WebP) before converting — the mime in `inventory.images` is a hint, not gospel.
+The images are already valid files under `{unpacked}/assets/img/`. `sharp(path).metadata()` reports the TRUE `format` (`png`/`jpeg`/`webp`), `width`, `height`, `channels`, and `hasAlpha` in one call — so it doubles as the format check (the `mime` in `inventory.images` is only a hint). No separate `file`/magic-number step.
 
 Save path depends on `screenSlug`:
 - **`screenSlug` present** → `src/assets/images/{screenSlug}/{name}.webp`.
 - **`screenSlug` omitted** → `src/assets/images/{name}.webp` (flat — logos, shared brand graphics only).
 
-Steps per image:
-1. **Dedup by content hash** — compute SHA1 of the source file. Glob `src/assets/images/**/*.hash.txt`, read each `{"url":..., "sha1":...}`. If a `sha1` matches → SKIP, reuse the existing `.webp` (cross-screen reuse is fine). Report `REUSED: {path} (matched by contentHash)`.
-2. **Inspect** with `ffprobe -v error -select_streams v:0 -show_entries stream=width,height,pix_fmt {path}`.
-3. **Convert**:
-   - Lossless when the source has alpha (`pix_fmt` contains `rgba`/`bgra`) AND ≤ 512×512 (logos/UI): `ffmpeg -i {src} -c:v libwebp -lossless 1 -y {target}`.
-   - Lossy otherwise (`-q:v 85`): `ffmpeg -i {src} -q:v 85 -y {target}`.
+Rule per image (do them all in ONE batch `sharp` script):
+1. **Dedup by content hash** — SHA1 the source file. Glob `src/assets/images/**/*.hash.txt`, read each `{"url":..., "sha1":...}`. If a `sha1` matches **AND the `.webp` it points at still exists on disk** → SKIP, reuse it (cross-screen reuse is fine). Report `REUSED: {path} (matched by contentHash)`. **The existence check is not optional**: a hash whose `.webp` was deleted must re-convert, not skip — matching on the hash alone would ship an import referencing a file that isn't there.
+2. **Inspect** via `sharp(src).metadata()` → `{ format, width, height, hasAlpha }`.
+3. **Convert with sharp**:
+   - **Lossless** when the source has alpha (`hasAlpha === true`) AND ≤ 512×512 (logos/UI): `sharp(src).webp({ lossless: true }).toFile(target)`.
+   - **Lossy** otherwise: `sharp(src).webp({ quality: 85 }).toFile(target)`.
 4. Create the target folder if missing.
 5. Write a sibling `{name}.hash.txt` containing `{"url": "{alias-or-uuid}", "sha1": "{contentHash}"}` so future runs dedup.
 6. Do NOT keep the raw source in the project — only the `.webp` + `.hash.txt`.
@@ -84,7 +83,7 @@ If a glyph is actually a large decorative/illustration SVG (≥ 15KB or > 30 pat
 If this run wrote any `.tsx`/`.ts` (icon components + `index.ts`), run `pnpm run lint-check --fix` then `pnpm run type-check`. If it only wrote `.webp`/`.svg`/`.hash.txt`, skip both and report `Validation: lint=skipped, type-check=skipped`.
 
 ## Hard rules
-- NEVER skip the format check — magic numbers, not the mime hint or file extension.
+- NEVER trust the `mime` hint or file extension for the format — use `sharp(path).metadata().format` (the real bytes). NEVER STOP for a missing `ffmpeg`: this pipeline uses `sharp` (a project dependency), not ffmpeg.
 - NEVER install icon libraries (`lucide-react`, `react-icons`, etc.).
 - NEVER inline large SVGs via `atob` + `dangerouslySetInnerHTML`.
 - Folder structure: SVG icon components → flat `src/assets/icons/`; raster → `{screenSlug}/` when per-screen, flat only for shared; loose SVGs → same rule as raster.

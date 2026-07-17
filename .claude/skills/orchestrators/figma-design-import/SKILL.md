@@ -196,7 +196,7 @@ You receive: confirmation of changes + type-check result.
 
 > **Delegate to**: `Agent({ subagent_type: 'figma-assets' })` — runs in **Haiku**.
 
-Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and `screenSlug` when the asset belongs to a single screen (omit for shared assets like logos). The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `ffmpeg`, registers exports in `src/assets/icons/index.ts`. Per-screen raster images land at `src/assets/images/{screenSlug}/{name}.webp`; shared raster assets land flat at `src/assets/images/{name}.webp`.
+Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and `screenSlug` when the asset belongs to a single screen (omit for shared assets like logos). The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `sharp` (no ffmpeg), registers exports in `src/assets/icons/index.ts`. Per-screen raster images land at `src/assets/images/{screenSlug}/{name}.webp`; shared raster assets land flat at `src/assets/images/{name}.webp`.
 
 **You (the orchestrator) pre-filter assets covered by PrimeIcons (`pi pi-{name}`) before delegating** — the `figma-assets` agent does not re-check this. When the Figma node maps to an icon that exists in PrimeIcons, do NOT include it in the asset list passed to the agent; instead, note `→ use <i className='pi pi-{name}'/>` in the gap analysis so the screen agent (Step 5.2) knows.
 
