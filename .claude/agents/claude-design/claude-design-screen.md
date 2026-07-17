@@ -39,7 +39,7 @@ Target: {mobile-app | web}                        # drives responsive synthesis
 Radius translation: {the single canonical `rounded-*` / token from Step 0.5, OR the literal `N/A — tokenSource=inline+helmet, use exact rounded-[Npx] per element (§ B3)`}   # see "Radius" below — `N/A` is VALID input, not a missing one
 Bespoke widths: [{section → max-width}, ...]      # sections whose source width is NOT the design's default frame width; nest each inside its container-custom section so it keeps its cap. Empty list = every section takes the default.
 Detected language: {en | es}
-Images: {unpacked}/assets/img/                    # local files; dedup by hash, convert to WebP under src/assets/images/{slug}/
+Images: [{sourceUuid → `@/assets/images/…webp`}, ...]   # ALREADY converted by Step 2 (claude-design-assets) — import these static paths. Do NOT re-convert: it's Step 2's job, and the `.hash.txt` dedup only makes a re-run idempotent, not free. Convert yourself ONLY if a source image reaches you that Step 2 never received (say so in the report).
 Existing components to reuse: [{Component} (variants) → path, ...]
 Tokens available: [list from Step 1]
 Store spec: {store → {state fields, actions}}     # from Step 0.5; CONSUME this shape, never redefine it (only when the screen touches shared state)
@@ -174,10 +174,9 @@ details:
 
 5. **Mount `modal` screens locally.** For each `{modalKey → Component}` in "Local modals", mount it inside THIS screen (screen-local `useState`, or the project's `/new-modal` pattern if it's a reusable modal type). Report each: `SCREEN-LOCAL MODAL: {Name} — mounted at src/screens/{Name}Page/{Name}Page.tsx:NNN`. Do NOT register these in the global `ModalsProvider`.
 
-6. **Images** — the assets are local files under `{unpacked}/assets/img/`. For each image the source references (via `window.__resources.{alias}` or an `assets/img/*` path):
-   - **Dedup by content hash**: Glob `src/assets/images/**/*.hash.txt`, match by `sha1`. If found → reuse via static import, report `REUSED: {path}`.
-   - Else convert to WebP: `ffmpeg -i {unpacked}/assets/img/{file} -q:v 85 src/assets/images/{slug}/{name}.webp` (lossless for ≤512px alpha logos), write the `.hash.txt` sibling. **Validate `slug` is non-empty kebab-case** (`^[a-z][a-z0-9-]*$`) before building the path; if not, `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual`. Do NOT fall back to a flat path.
+6. **Images — already converted; you only import them.** Step 2 (`claude-design-assets`) owns conversion: the parent's `Images:` field hands you a `{sourceUuid → '@/assets/images/…webp'}` map. **Do NOT convert, do NOT run `sharp`, do NOT read or write `.hash.txt`** — the sources here are local files, so a second conversion pass buys nothing and just duplicates Step 2's work under a name it didn't choose.
    - Render via `next/image` static import. Every `<Image fill>` needs `sizes`; the LCP image needs BOTH `priority` AND `fetchPriority='high'`; in a `.map`, gate `priority={index < N}`; dual mobile/desktop `<Image>` scope `sizes` with `0vw` at the hidden breakpoint.
+   - If the source references an image the parent's map does NOT cover, that's a Step 2 gap: emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the missing asset. Do not silently convert it yourself.
 
 7. **Forms — auto-wire to Formik + Yup.** The prototype's `Field`/`draft` inputs become a real Formik form. Error copy MUST match `detectedLanguage` (`Required`/`Requerido`, `Invalid email`/`Email inválido`, `` `Min ${N} characters` ``/`` `Mínimo ${N} caracteres` ``). Wrap each input in `InputContainer`. `validateOnChange: false`. Leave `onSubmit` as a clearly-marked `// TODO (openapi-import): replace with the real API call` — do NOT import `src/api/*` or invent an endpoint. On form-level errors, move focus to the first invalid field OR render `<div role='alert' aria-live='assertive'>`.
 

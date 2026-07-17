@@ -133,11 +133,11 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    - If parent provided URLs → use them via `next/image` static imports.
    - If parent said "descargá de Figma" → for each `https://www.figma.com/api/mcp/asset/{hash}` URL in the design context:
      1. **Dedup check first — match by hash, NOT by slug.** Slugs are derived from human-readable Figma node names, which collide trivially (`hero-1.webp` from two different hero photos with both named `Hero` in their respective frames). The reliable signal is the content hash, with the URL hash as a fallback.
-        - Glob `src/assets/images/**/*.hash.txt` (these sibling files are written by `figma-assets` and by past `figma-screen` runs).
+        - Glob `src/assets/images/**/*.hash.txt` (written by `figma-assets` at Step 2 of THIS import, and by earlier `figma-screen` invocations in this same run — Step 6 deletes them at the end, so they never carry over from a previous import).
         - For each `.hash.txt`, read its JSON line `{"url": "{urlHash}", "sha1": "{contentHash}"}`. Match the current asset by **content hash** (after downloading) first; fall back to **URL hash** only when the file you're considering has the same URL hash AND no content hash on record.
         - The slug name is just for the final file name; it does NOT participate in the dedup check.
      2. **If found by hash** → reuse the existing `.webp` via static import. No re-download, no re-conversion. Report `REUSED: {path}.webp (matched by {contentHash|urlHash})`.
-     3. **If not found** → follow the cross-platform shell pattern from `figma-assets.md` (`curl` / `Invoke-WebRequest` to a temp file, then `ffmpeg -i {tmpPath} -q:v 85 src/assets/images/{screenSlug}/{slug}.webp`, then write the `.hash.txt` sibling with `{"url": "{urlHash}", "sha1": "{contentHash}"}`).
+     3. **If not found** → follow the cross-platform shell pattern from `figma-assets.md` (`curl` / `Invoke-WebRequest` to a temp file, then convert with `sharp` — **NOT ffmpeg** — `sharp(tmpPath).webp({ quality: 85 }).toFile('src/assets/images/{screenSlug}/{slug}.webp')`, lossless for ≤512px alpha logos, run from a Node `.mjs` at the project root; then write the `.hash.txt` sibling with `{"url": "{urlHash}", "sha1": "{contentHash}"}`).
 
        **Defense-in-depth — validate `screenSlug` BEFORE any path construction**. Even though Step's input check (`Expected input from the parent`) already requires `screenSlug`, an empty or malformed value here produces `src/assets/images//{slug}.webp` (double slash). POSIX tolerates that path; Windows and some bundlers/CDNs trip on the empty segment. Assert:
 

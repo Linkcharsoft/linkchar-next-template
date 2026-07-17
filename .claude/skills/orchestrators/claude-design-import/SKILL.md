@@ -313,7 +313,7 @@ Local modals: [{modalScreenKey → component}, ...]     # implement as screen-lo
 Target: {mobile-app|web}                              # drives responsive synthesis
 Breakpoints: [{design @media → token}, ...]   # the design's OWN media queries, ALREADY ADDED AS TOKENS by Step 1 — e.g. `max-width:860px → hg-md:`. Use the TOKEN, never a raw `max-[860px]:` and never the project scale: re-labelling 860 onto md (768) shifts every rule and breaks a whole viewport band (a 800px tablet renders the >860 layout). Empty list = the design has no media queries; only THEN synthesize with the project scale (see Target).
 Detected language: {en|es}
-Images: {unpacked}/assets/img/  (dedup by hash, convert to WebP under src/assets/images/{slug}/)
+Images: [{sourceUuid → `@/assets/images/…webp`}, ...]   # ALREADY converted by Step 2 — import these, do NOT re-convert. Only convert (sharp, dedup by `.hash.txt`) if a source image reaches you that Step 2 never received.
 Existing components to reuse: [{Component} → path, ...]   # from Step 3
 Tokens available: [list from Step 1]
 Container rule: every top-level <section> anchored with `container-custom` (16px built-in gutter — no px-* on the same element); keep per-section py-* from the design. Ignore the prototype's fixed 430px frame width.

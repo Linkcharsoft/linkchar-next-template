@@ -298,7 +298,7 @@ Container rule: every top-level <section> MUST be anchored with `container-custo
 Adjustment notes (only on re-runs): {text from user}
 ```
 
-The default image strategy is `descargá de Figma` since the user didn't provide URLs. The `figma-screen` agent will curl + ffmpeg each asset into `src/assets/images/{screen-slug}/`.
+The default image strategy is `descargá de Figma` since the user didn't provide URLs. The `figma-screen` agent will curl + `sharp` each asset into `src/assets/images/{screen-slug}/`.
 
 **Per-screen checkpoint message (post after each subagent returns).** Keep it tight so the user can decide quickly:
 

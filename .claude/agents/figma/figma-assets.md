@@ -165,8 +165,10 @@ Steps:
      ```
    `{targetPath}` is `src/assets/images/{screenSlug}/{name}.webp` when the parent passed `screenSlug`, otherwise `src/assets/images/{name}.webp`.
 4. Create the target folder if missing (POSIX `mkdir -p {dir}`, PowerShell `New-Item -ItemType Directory -Force {dir}`).
-5. Write a sibling `.hash.txt` (e.g. `src/assets/images/{screenSlug}/{name}.hash.txt`) containing the JSON line `{"url": "{urlHash}", "sha1": "{contentHash}"}` so future invocations can dedup by either signal.
+5. Write a sibling `.hash.txt` (e.g. `src/assets/images/{screenSlug}/{name}.hash.txt`) containing the JSON line `{"url": "{urlHash}", "sha1": "{contentHash}"}` so later steps of THIS import can dedup by either signal.
 6. Do NOT keep the original raw file in the project — only the `.webp` + `.hash.txt`.
+
+> **The `.hash.txt` files are import-scoped scratch, not a deliverable.** They exist so this step dedups across screen folders, and so `figma-screen` can skip a re-download at Step 5.2. **Step 6 deletes them** once the import ends — they are not committed and will not survive to the next import. Never treat their absence as "this asset was never converted": the `.webp` is the source of truth.
 
 ## Final step
 
