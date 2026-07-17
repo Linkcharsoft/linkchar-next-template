@@ -207,7 +207,31 @@ Authoritative list = **every registry key** in `inventory.screens`. `nav-graph.t
 
 **Language heuristic**: same as the project standard — Spanish-leaning if strings contain `ñ`, accents, or words like `iniciar/comenzar/nuevo/usuario/comprar/requerido`. ≥50% Spanish → `es`, else `en`; default `en` on tie.
 
-4. **Stop and confirm with the user.** They must approve the plan AND the screen classification (route/step/modal/skip) before any code is written. This is the most important checkpoint — Step 5.2 uses these decisions automatically, so a wrong classification here is caught cheaply now.
+4. **Gate your own spec against the source (Step 0.55) — do NOT skip this.**
+
+> **Delegate to**: `Agent({ subagent_type: 'general-purpose' })` — **Sonnet or cheaper**. One call, before the checkpoint.
+
+Everything downstream has a source-of-truth gate except **you**. The `file:lines` / `nodeId` rule stops an agent from building a component out of your prose — but your *global* decisions (breakpoints, which glyph is canonical, which width is "the frame", which colour absorbs which) reach the render with nothing checking them. That is not hypothetical: on the first real dclogic run, **four spec errors shipped**, all of them mine, none caught by lint/type-check/build or by `design-validation` — they all compile.
+
+So before the checkpoint, hand a cheap agent the **source** and your **spec**, and ask it to *re-derive independently and report every mismatch* — not to agree with you:
+
+```
+Source: {unpacked}/source/*   # dclogic: the CSS you need is source/{screen}.helmet.css (@media/@font-face/vars); the .markup.html has it stripped. babel: source/jsx/*.jsx + template.html.
+My spec: {the gap-analysis report you just wrote}
+
+Re-derive these FROM THE SOURCE, without reference to my spec, then diff:
+1. BREAKPOINTS — every @media in the design. Exact px. (I must use its values, not the project scale.)
+2. WIDTHS — the max-width of every section. Flag any that differs from the design's default frame width.
+3. ICONS — tabulate every inline <svg>: stroke-width, style, use count. Is there a coherent set? For any
+   glyph used 2+ times, are ALL its instances byte-identical, or does one carry an extra sub-path?
+4. TYPOGRAPHY — every font-size. Which are fractional? Which land off the project scale after rounding?
+5. COLORS — spot-check my hex→token mapping: any mapped to a token >Δ4 away, or into a different hue family?
+Report ONLY mismatches, with source line numbers. If my spec is right on a point, say "match" and move on.
+```
+
+Anything it flags, **verify against the source yourself** before changing the spec — it can be wrong too (on the first run an auditor mis-measured an icon set and would have had me "fix" correct code). Then fold the confirmed mismatches in and re-show the report.
+
+5. **Stop and confirm with the user.** They must approve the plan AND the screen classification (route/step/modal/skip) before any code is written. This is the most important checkpoint — Step 5.2 uses these decisions automatically, so a wrong classification here is caught cheaply now.
 
 ---
 
