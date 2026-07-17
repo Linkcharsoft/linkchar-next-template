@@ -43,6 +43,28 @@ This file describes **what** this project is: the tech stack, structure, and hig
 
 Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma / Claude Design / OpenAPI orchestrators, `init-project/` at the root). Subfolders are for organization only — Claude Code discovers skills recursively and the slash command is still the skill's own directory name (e.g. `/new-component`), independent of the parent folder. Do not duplicate their logic in chat — invoke them.
 
+### When a sub-agent silently doesn't load
+
+Sub-agents live in `.claude/agents/**` (scanned recursively). **A project agent can silently fail to load**: no error, no warning — it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. This cost two full debugging rounds; 4 of this repo's 17 agents were stuck for weeks, which meant **`/openapi-import` was dead** (missing 3 of its 4 agents) without anyone noticing.
+
+**The remedy that works: make a real content change to the file, then restart Claude Code.**
+
+That is the only thing that reliably revives a stuck agent. Established by controlled experiment:
+
+| What was done to the file | Result |
+| --- | --- |
+| content edited | ✅ loads |
+| `touch` only (mtime changes, bytes identical) | ❌ still missing |
+| nothing (control, across two restarts) | ❌ still missing |
+
+So it behaves like a cache that **remembers a failed parse and is keyed on content, not mtime** — restarting alone does not clear it. The trigger for the initial failure is unknown and looks non-deterministic (upstream: [#14018](https://github.com/anthropics/claude-code/issues/14018)); the stuck files were valid and byte-identical in frontmatter structure to the ones that loaded.
+
+**Do NOT waste time on these — all were tested and ruled out as causes:** a colon-space in `description:` (an agent carrying two of them loads fine; re-adding one to a working agent did not break it), description length, `model:` value, mtime, BOM/CRLF, invisible unicode, an agent cap, `permissions.deny`, managed-settings, `~/.claude/agents`.
+
+**Still worth doing on hygiene grounds — `.claude/agents/` is for agent files ONLY.** A `.md` there without valid `name:`/`description:` frontmatter is not an agent; shared docs that agents merely `Read` belong in **`.claude/docs/`** (that's why `design-import-shared.md` lives there). This was once believed to poison the scan of its own directory — that turned out to be confounded with a content change and is **not** established. Keep the separation because it's correct, not as a fix.
+
+After adding or renaming an agent, **restart and verify it appears** before relying on it.
+
 ### Keep `figma-design-import` and `claude-design-import` in sync
 
 These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
