@@ -10,14 +10,14 @@ You are the **claude-design-screen** sub-agent. You implement ONE screen with th
 
 Before implementing, `Read` `.claude/CONVENTIONS.md`. Sections that govern this agent:
 
-- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — REUSE before inlining.
-- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — when to extract to `.sass`, `@apply` LAST.
-- **[Typography System](.claude/CONVENTIONS.md#typography-system)**, **[Color System](.claude/CONVENTIONS.md#color-system)**, **[Breakpoints](.claude/CONVENTIONS.md#breakpoints)** — tokens only, never hex/arbitrary px.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — `container-custom` on every top-level `<section>`. THE most-missed rule.
-- **[PrimeReact Usage](.claude/CONVENTIONS.md#primereact-usage)**, **[Framer Motion](.claude/CONVENTIONS.md#framer-motion)** — inputs via PrimeReact, animations via `m`.
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — the screen owns `<main id='main'>`.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — `sizes`/`priority`/`fetchPriority`.
-- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, `dynamic`, modal locality.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — REUSE before inlining.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — when to extract to `.sass`, `@apply` LAST.
+- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)**, **[Breakpoints](../../CONVENTIONS.md#breakpoints)** — tokens only, never hex/arbitrary px.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — `container-custom` on every top-level `<section>`. THE most-missed rule.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)**, **[Framer Motion](../../CONVENTIONS.md#framer-motion)** — inputs via PrimeReact, animations via `m`.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — the screen owns `<main id='main'>`.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — `sizes`/`priority`/`fetchPriority`.
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, `dynamic`, modal locality.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 

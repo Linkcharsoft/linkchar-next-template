@@ -10,11 +10,11 @@ You are the **claude-design-layouts** sub-agent. Your job is to make sure the ri
 
 Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — layouts compose these, never inline them.
-- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)**.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — when `container-custom` applies to chrome and when it does NOT.
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — exactly one `<main>` per page; layouts do NOT render `<main>`.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)**, **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — layouts are Server Components.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — layouts compose these, never inline them.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)**.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — when `container-custom` applies to chrome and when it does NOT.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — exactly one `<main>` per page; layouts do NOT render `<main>`.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)**, **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — layouts are Server Components.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 

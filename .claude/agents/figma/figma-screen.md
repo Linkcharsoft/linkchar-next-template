@@ -10,16 +10,16 @@ You are the **figma-screen** sub-agent. You implement ONE screen with the highes
 
 Before implementing anything, `Read` `.claude/CONVENTIONS.md`. This file is the source of truth for every styling, accessibility, performance, and component-reuse rule. The sections that govern this agent:
 
-- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — REUSE before creating. The screen consumes components; it does NOT inline bespoke versions.
-- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — when to extract to `.sass`, the `@apply` LAST rule.
-- **[Typography System](.claude/CONVENTIONS.md#typography-system)**, **[Color System](.claude/CONVENTIONS.md#color-system)**, **[Breakpoints](.claude/CONVENTIONS.md#breakpoints)** — only project tokens, never hex/arbitrary px.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — `container-custom` is MANDATORY on every top-level `<section>`. This is THE most-missed rule in Figma-driven work.
-- **[PrimeReact Usage](.claude/CONVENTIONS.md#primereact-usage)**, **[Framer Motion](.claude/CONVENTIONS.md#framer-motion)** — inputs via PrimeReact, animations via `m`.
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — every interactive element. The screen owns `<main id='main'>`.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — `sizes` / `priority` / `fetchPriority` rules.
-- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — handled by the page wrapper (out of scope for this agent unless rendering inside an MDX/embedded scenario).
-- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, `dynamic` imports, modal locality.
-- **[Figma MCP Integration](.claude/CONVENTIONS.md#figma-mcp-integration)** — translation rules from Figma React+Tailwind → this project.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — REUSE before creating. The screen consumes components; it does NOT inline bespoke versions.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — when to extract to `.sass`, the `@apply` LAST rule.
+- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)**, **[Breakpoints](../../CONVENTIONS.md#breakpoints)** — only project tokens, never hex/arbitrary px.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — `container-custom` is MANDATORY on every top-level `<section>`. This is THE most-missed rule in Figma-driven work.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)**, **[Framer Motion](../../CONVENTIONS.md#framer-motion)** — inputs via PrimeReact, animations via `m`.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — every interactive element. The screen owns `<main id='main'>`.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — `sizes` / `priority` / `fetchPriority` rules.
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — handled by the page wrapper (out of scope for this agent unless rendering inside an MDX/embedded scenario).
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, `dynamic` imports, modal locality.
+- **[Figma MCP Integration](../../CONVENTIONS.md#figma-mcp-integration)** — translation rules from Figma React+Tailwind → this project.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -92,7 +92,7 @@ The prop from the wrapper carries the initial SSR-time values; `useSearchParams(
 
 After fetching the design context (Steps 1–3) and BEFORE writing any JSX, scan every value Figma uses (colors, typography sizes, font weights, spacing, breakpoints, radii) and cross-check against `tailwind.config.js`.
 
-If you find ANY value that has no corresponding token, STOP. Do not invent arbitrary Tailwind values like `text-[72px]`, `bg-[#ff0000]`, `rounded-[7px]`, `gap-[18px]`. Instead, return early via the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
+If you find ANY value that has no corresponding token, STOP. Do not invent arbitrary Tailwind values like `text-[72px]`, `bg-[#ff0000]`, `rounded-[7px]`, `gap-[18px]`. Instead, return early via the [STOP Protocol](../../CONVENTIONS.md#stop-protocol):
 
 ```
 STOP-BLOCKING
@@ -156,7 +156,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
        Do NOT fall back to a flat path (`src/assets/images/{slug}.webp`) — flat is reserved for genuinely-shared assets (logos, brand graphics), and silently downgrading per-screen → flat scatters per-screen images into the shared bucket.
    - **Logos and shared assets**: if the content hash matches one of the already-existing logos in `src/assets/images/` (root-level, not under any `{screenSlug}/`), reuse those instead of saving a new copy in the per-screen folder.
 
-   **Image rendering — full rules in [CONVENTIONS.md > Image Performance](.claude/CONVENTIONS.md#image-performance). Critical reminders most often missed on Figma-driven work** (CONVENTIONS.md wins on any conflict below):
+   **Image rendering — full rules in [CONVENTIONS.md > Image Performance](../../CONVENTIONS.md#image-performance). Critical reminders most often missed on Figma-driven work** (CONVENTIONS.md wins on any conflict below):
 
    - Every `<Image fill>` MUST declare `sizes` (otherwise Next.js serves the largest variant).
    - LCP image needs BOTH `priority` AND `fetchPriority='high'` — both, not one.
@@ -204,7 +204,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 
      NEVER use `max-w-[1440px]`, `max-w-7xl`, or arbitrary per-section paddings to define the section's content width — that breaks cross-section alignment, which is the #1 visual gap reported on Figma-driven screens. A narrower inner column (centered text ≤ 800px) is fine, but it MUST be nested inside `container-custom`.
    - Tailwind first for all values (colors, typography, spacing). Extract to the colocated `.sass` (BEM) any element that uses **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or accumulates **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
-   - **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
+   - **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
    - Typography ALWAYS `text-{weight}-{size}`. NEVER `text-xl`/`font-bold`/raw px.
    - Colors via tokens (`surface-*`, `brand-*`, `gray-*`) — NO hex.
    - Reuse components from `src/components/` (parent will tell you which); do NOT create one-off variants inside the screen.
@@ -320,7 +320,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 
 ## Screen-agent A11y reminders
 
-The full A11y / image / bundle rules live in [CONVENTIONS.md](.claude/CONVENTIONS.md). The reminders below are screen-specific patterns most often missed in Figma-driven work:
+The full A11y / image / bundle rules live in [CONVENTIONS.md](../../CONVENTIONS.md). The reminders below are screen-specific patterns most often missed in Figma-driven work:
 
 - **Form submission error handling** — when a server or schema validation error fires on submit, focus MUST move to the first invalid field (`.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Per-field errors via `InputError` already use `role='alert'` so this rule only covers form-level errors (server failures, summary banners). Two patterns:
 

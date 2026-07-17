@@ -28,16 +28,16 @@ Derive:
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
-Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../../CONVENTIONS.md). The sections that govern this skill:
 
-- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screens use PascalCase + `Page` suffix; types use `Type` suffix.
-- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
-- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — uses `CustomButton`, `SearchInput`, `Filters`.
-- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — Tailwind vs SASS, the `@apply` LAST rule.
-- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)** — the tokens to use.
-- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)** — `pt` passthrough, `classNames` from `primereact/utils`.
-- **[Accessibility](../../CONVENTIONS.md#accessibility)** — generic A11y. The DataTable-specific A11y rules (Paginator aria-labels, sortable preservation, etc.) live in Step 4 below.
-- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — minimal metadata for the dashboard page wrapper.
+- **[Naming Conventions](../../../CONVENTIONS.md#naming-conventions)** — Screens use PascalCase + `Page` suffix; types use `Type` suffix.
+- **[Component Patterns](../../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
+- **[Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components)** — uses `CustomButton`, `SearchInput`, `Filters`.
+- **[Styling Rules — TAILWIND-FIRST](../../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../../CONVENTIONS.md#inside-sass-files)** — Tailwind vs SASS, the `@apply` LAST rule.
+- **[Typography System](../../../CONVENTIONS.md#typography-system)**, **[Color System](../../../CONVENTIONS.md#color-system)** — the tokens to use.
+- **[PrimeReact Usage](../../../CONVENTIONS.md#primereact-usage)** — `pt` passthrough, `classNames` from `primereact/utils`.
+- **[Accessibility](../../../CONVENTIONS.md#accessibility)** — generic A11y. The DataTable-specific A11y rules (Paginator aria-labels, sortable preservation, etc.) live in Step 4 below.
+- **[SEO & Metadata](../../../CONVENTIONS.md#seo--metadata)** — minimal metadata for the dashboard page wrapper.
 
 If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -313,11 +313,11 @@ export default {ScreenName}
 - If the user provided filters, fill `FILTERS` and `defaultParams` accordingly. Use `ExamplePage` as the reference for every filter shape.
 - `'use client'` is mandatory (screens use hooks).
 
-The generic styling/import/A11y rules (alphabetized imports, `m` not `motion`, `classNames` not `clsx`, `@/constants/env` not `process.env`, etc.) come from [CONVENTIONS.md](../../CONVENTIONS.md) and apply automatically.
+The generic styling/import/A11y rules (alphabetized imports, `m` not `motion`, `classNames` not `clsx`, `@/constants/env` not `process.env`, etc.) come from [CONVENTIONS.md](../../../CONVENTIONS.md) and apply automatically.
 
 ### DataTable-specific A11y rules
 
-The generic A11y rules live in [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility). The rules below are specific to PrimeReact's DataTable + Paginator and are NOT in CONVENTIONS.md — they apply ONLY to this skill.
+The generic A11y rules live in [CONVENTIONS.md > Accessibility](../../../CONVENTIONS.md#accessibility). The rules below are specific to PrimeReact's DataTable + Paginator and are NOT in CONVENTIONS.md — they apply ONLY to this skill.
 
 - **`aria-label` on the DataTable**: tables need an accessible name so SR users hear what they contain. Pass it via `pt`:
 
@@ -503,7 +503,7 @@ Common failure modes to watch for:
 
 ## Hard rules — skill-specific
 
-These are enforcement rules specific to this skill. The generic project-wide rules (no `motion`, no `clsx`, no `process.env`, `@apply` LAST, single quotes, etc.) live in [CONVENTIONS.md](../../CONVENTIONS.md) and apply on top.
+These are enforcement rules specific to this skill. The generic project-wide rules (no `motion`, no `clsx`, no `process.env`, `@apply` LAST, single quotes, etc.) live in [CONVENTIONS.md](../../../CONVENTIONS.md) and apply on top.
 
 - The screen root is `<main id='main' className='{ScreenName}'>`. The screen owns it; layouts do NOT render `<main>` themselves.
 - NEVER include `/api` prefix in `customFetch` paths.

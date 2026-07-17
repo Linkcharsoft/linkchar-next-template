@@ -20,17 +20,17 @@ Examples:
 
 ## Step 0 — Read CONVENTIONS.md (mandatory)
 
-Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../../CONVENTIONS.md). The sections that govern this skill:
 
-- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screens use PascalCase + `Page` suffix.
-- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
-- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — when to use Tailwind vs SASS, plain CSS vs `@apply`, the `@apply` LAST rule.
-- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)**, **[Breakpoints](../../CONVENTIONS.md#breakpoints)** — the tokens to use.
-- **[Global Container](../../CONVENTIONS.md#global-container)** — `container-custom` is MANDATORY on every top-level `<section>`.
-- **[Accessibility](../../CONVENTIONS.md#accessibility)** — every interactive element MUST meet these rules. The screen owns `<main id='main'>`.
-- **[Image Performance](../../CONVENTIONS.md#image-performance)** — when the screen renders `<Image>`.
-- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — for the metadata exports in `page.tsx`.
-- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, modal scope, `dynamic` imports.
+- **[Naming Conventions](../../../CONVENTIONS.md#naming-conventions)** — Screens use PascalCase + `Page` suffix.
+- **[Component Patterns](../../../CONVENTIONS.md#component-patterns)** — `'use client'`, default exports, no `memo()`.
+- **[Styling Rules — TAILWIND-FIRST](../../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../../CONVENTIONS.md#inside-sass-files)** — when to use Tailwind vs SASS, plain CSS vs `@apply`, the `@apply` LAST rule.
+- **[Typography System](../../../CONVENTIONS.md#typography-system)**, **[Color System](../../../CONVENTIONS.md#color-system)**, **[Breakpoints](../../../CONVENTIONS.md#breakpoints)** — the tokens to use.
+- **[Global Container](../../../CONVENTIONS.md#global-container)** — `container-custom` is MANDATORY on every top-level `<section>`.
+- **[Accessibility](../../../CONVENTIONS.md#accessibility)** — every interactive element MUST meet these rules. The screen owns `<main id='main'>`.
+- **[Image Performance](../../../CONVENTIONS.md#image-performance)** — when the screen renders `<Image>`.
+- **[SEO & Metadata](../../../CONVENTIONS.md#seo--metadata)** — for the metadata exports in `page.tsx`.
+- **[Bundle & Performance Architecture](../../../CONVENTIONS.md#bundle--performance-architecture)** — `'use client'` placement, modal scope, `dynamic` imports.
 
 If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -192,7 +192,7 @@ The `<main>` className is `AuthLayout` (not `ScreenName`) because auth screens s
 
 Create an empty `src/screens/ScreenName/ScreenName.sass` (protected and public) or `src/screens/auth/ScreenName/ScreenName.sass` (auth).
 
-Apply the [Styling Rules from CONVENTIONS.md](../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/spacing, `@apply` LAST in each block scope for design tokens. Reference skeleton:
+Apply the [Styling Rules from CONVENTIONS.md](../../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/spacing, `@apply` LAST in each block scope for design tokens. Reference skeleton:
 
 ```sass
 .ScreenName
@@ -213,7 +213,7 @@ Auth screens generally inherit their styles from `src/layouts/AuthLayout/` — t
 
 The page is a **thin wrapper only** — no logic, no UI. It owns the page-level metadata and the parameters returned by Next.js (segmentName, searchParams, etc.).
 
-Pick the variant by page type. See [CONVENTIONS.md > SEO & Metadata](../../CONVENTIONS.md#seo--metadata) for the full metadata rules.
+Pick the variant by page type. See [CONVENTIONS.md > SEO & Metadata](../../../CONVENTIONS.md#seo--metadata) for the full metadata rules.
 
 ### Public page — static metadata (`src/app/{route}/page.tsx`)
 
@@ -384,7 +384,7 @@ export default Page
 ### Skill-specific page-wrapper rules
 
 - `metadata` (or `generateMetadata`) MUST always include `title` and `alternates.canonical`.
-- Public pages MUST include `description`, `openGraph`, and `twitter` (see [CONVENTIONS.md > SEO & Metadata](../../CONVENTIONS.md#seo--metadata)).
+- Public pages MUST include `description`, `openGraph`, and `twitter` (see [CONVENTIONS.md > SEO & Metadata](../../../CONVENTIONS.md#seo--metadata)).
 - Dynamic routes use `generateMetadata` with not-found handling.
 - Listings with filter/pagination params return `robots: { index: false, follow: true }` when those params are present.
 - Protected/auth pages can skip `openGraph`/`twitter` (they are disallowed by `robots.ts`).
@@ -408,7 +408,7 @@ Before closing, verify:
 - [ ] `proxy.ts` updated only if needed
 - [ ] Heading hierarchy starts at `<h1>` (visually-hidden `sr-only` if no visible h1)
 - [ ] Every top-level `<section>` is anchored with `container-custom` and has explicit vertical padding (`py-*`/`pt-*`/`pb-*`)
-- [ ] A11y rules from [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility) satisfied (`autoComplete` on inputs, `aria-label` on icon-only buttons, `rel='noopener noreferrer'` on external links)
+- [ ] A11y rules from [CONVENTIONS.md > Accessibility](../../../CONVENTIONS.md#accessibility) satisfied (`autoComplete` on inputs, `aria-label` on icon-only buttons, `rel='noopener noreferrer'` on external links)
 
 Then post a short summary:
 1. Files created (markdown links).

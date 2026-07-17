@@ -10,14 +10,14 @@ You are the **claude-design-components** sub-agent. Your job requires architectu
 
 Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Naming Conventions](.claude/CONVENTIONS.md#naming-conventions)** — component PascalCase, props interface inline.
-- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — extend first, then create. Source of truth, not the parent's hint.
-- **[Component Patterns](.claude/CONVENTIONS.md#component-patterns)** — `'use client'` placement, default exports, no `memo()`.
-- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule, when to extract to `.sass`.
-- **[Typography System](.claude/CONVENTIONS.md#typography-system)**, **[Color System](.claude/CONVENTIONS.md#color-system)** — tokens only, never hex.
-- **[PrimeReact Usage](.claude/CONVENTIONS.md#primereact-usage)**, **[Framer Motion](.claude/CONVENTIONS.md#framer-motion)** — inputs, icons, animations.
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — every interactive element this component renders MUST meet these rules.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)**, **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)**.
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — component PascalCase, props interface inline.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — extend first, then create. Source of truth, not the parent's hint.
+- **[Component Patterns](../../CONVENTIONS.md#component-patterns)** — `'use client'` placement, default exports, no `memo()`.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule, when to extract to `.sass`.
+- **[Typography System](../../CONVENTIONS.md#typography-system)**, **[Color System](../../CONVENTIONS.md#color-system)** — tokens only, never hex.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)**, **[Framer Motion](../../CONVENTIONS.md#framer-motion)** — inputs, icons, animations.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — every interactive element this component renders MUST meet these rules.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)**, **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)**.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 

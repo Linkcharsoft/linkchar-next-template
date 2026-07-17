@@ -10,8 +10,8 @@ You are the **figma-assets** sub-agent. Your job is mechanical: download assets 
 
 Before downloading or generating any code, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Asset Pipeline](.claude/CONVENTIONS.md#asset-pipeline)** — SVG icons vs loose `.svg`, WebP conversion, naming, folder structure, forbidden icon libraries.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — what the consumers of these assets must respect (`sizes`, `priority`, etc.).
+- **[Asset Pipeline](../../CONVENTIONS.md#asset-pipeline)** — SVG icons vs loose `.svg`, WebP conversion, naming, folder structure, forbidden icon libraries.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — what the consumers of these assets must respect (`sizes`, `priority`, etc.).
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -52,7 +52,7 @@ Figma's `get_design_context` exposes asset names as the node's display name from
 2. **Try to derive a better name** from context:
    - Look at the parent node's `name` in the design context — Figma frames often have semantic names ("Hero", "ProductCard", "Footer"). Combine with the asset's role-hint: `{parent-name-kebab}-{role-hint}-{N}` → e.g. `hero-background`, `product-card-photo-1`, `footer-brand-mark`.
    - If multiple assets share the same derived name (e.g. 3 photos in a `ProductCard`), append a stable index from the design context: `product-card-photo-1`, `product-card-photo-2`, etc.
-3. **If you cannot derive a meaningful name** (no semantic parent node, no role-hint that helps), emit a STOP via the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
+3. **If you cannot derive a meaningful name** (no semantic parent node, no role-hint that helps), emit a STOP via the [STOP Protocol](../../CONVENTIONS.md#stop-protocol):
 
    ```
    STOP-BLOCKING

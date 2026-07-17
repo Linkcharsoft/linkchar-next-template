@@ -10,10 +10,10 @@ You are the **claude-design-scaffold** sub-agent. Your job is mechanical: scaffo
 
 Before scaffolding, `Read` `.claude/CONVENTIONS.md`. Sections that govern this agent:
 
-- **[Naming Conventions](.claude/CONVENTIONS.md#naming-conventions)** — Screen PascalCase + `Page` suffix; store `useXxxStore`.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — `container-custom` applies in Template A, not in Template B (auth).
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — each screen owns `<main id='main'>`.
-- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — `/new-screen` generates the right metadata shape per type.
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screen PascalCase + `Page` suffix; store `useXxxStore`.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — `container-custom` applies in Template A, not in Template B (auth).
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — each screen owns `<main id='main'>`.
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — `/new-screen` generates the right metadata shape per type.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 

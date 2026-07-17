@@ -15,10 +15,10 @@ Do not proceed past Step 0 without a successful unpack — a partial/failed extr
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
-Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). As the orchestrator you need it for two purposes:
+Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../../CONVENTIONS.md). As the orchestrator you need it for two purposes:
 
-1. **Gap analysis (Step 0.5)** — the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. [Color System](../../CONVENTIONS.md#color-system), [Typography System](../../CONVENTIONS.md#typography-system) and [Breakpoints](../../CONVENTIONS.md#breakpoints) define what already ships vs what's new.
-2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` / `STOP-ADVISORY` per the [STOP Protocol](../../CONVENTIONS.md#stop-protocol). You parse and route them (see "Handling agent STOPs").
+1. **Gap analysis (Step 0.5)** — the [Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. [Color System](../../../CONVENTIONS.md#color-system), [Typography System](../../../CONVENTIONS.md#typography-system) and [Breakpoints](../../../CONVENTIONS.md#breakpoints) define what already ships vs what's new.
+2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` / `STOP-ADVISORY` per the [STOP Protocol](../../../CONVENTIONS.md#stop-protocol). You parse and route them (see "Handling agent STOPs").
 
 If `CONVENTIONS.md` is missing, STOP the whole flow — every sub-agent depends on it.
 
@@ -289,7 +289,7 @@ Final automated code sweep only (visual review is the developer's job via the 5.
 
 ## Handling agent STOPs
 
-Every sub-agent may emit a STOP per the [STOP Protocol](../../CONVENTIONS.md#stop-protocol). Parse and route them:
+Every sub-agent may emit a STOP per the [STOP Protocol](../../../CONVENTIONS.md#stop-protocol). Parse and route them:
 
 - **`STOP-BLOCKING`** — the agent could not complete; resolve before re-invoking. Route by `next_agent`:
 

@@ -10,8 +10,8 @@ You are the **claude-design-assets** sub-agent. Your job is mechanical: take the
 
 Before generating any code, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Asset Pipeline](.claude/CONVENTIONS.md#asset-pipeline)** — SVG icons vs loose `.svg`, WebP conversion, naming, folder structure, forbidden icon libraries.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — what consumers of these assets must respect.
+- **[Asset Pipeline](../../CONVENTIONS.md#asset-pipeline)** — SVG icons vs loose `.svg`, WebP conversion, naming, folder structure, forbidden icon libraries.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — what consumers of these assets must respect.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 

@@ -10,12 +10,12 @@ You are the **figma-layouts** sub-agent. Your job is to make sure the right layo
 
 Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Existing Reusable Components](.claude/CONVENTIONS.md#existing-reusable-components)** — layouts compose these, never inline them.
-- **[Styling Rules — TAILWIND-FIRST](.claude/CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — when `container-custom` applies to layout chrome and when it does NOT (auth split, dashboard panes).
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — exactly one `<main>` per page; layouts do NOT render `<main>`.
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — the LCP/navbar logo trade-off.
-- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — layouts must be Server Components.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — layouts compose these, never inline them.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — when `container-custom` applies to layout chrome and when it does NOT (auth split, dashboard panes).
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — exactly one `<main>` per page; layouts do NOT render `<main>`.
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — the LCP/navbar logo trade-off.
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — layouts must be Server Components.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -75,7 +75,7 @@ If the Figma design suggests a layout needs a feature that would require its own
 
 ## Layout-agent reminders
 
-Layouts render the chrome that wraps every screen — navbar, footer, sidebar, persistent CTAs. Errors here propagate to every page in the app. The full A11y / image rules live in [CONVENTIONS.md](.claude/CONVENTIONS.md); the reminders below are the most layout-specific.
+Layouts render the chrome that wraps every screen — navbar, footer, sidebar, persistent CTAs. Errors here propagate to every page in the app. The full A11y / image rules live in [CONVENTIONS.md](../../CONVENTIONS.md); the reminders below are the most layout-specific.
 
 - **Exactly one `<main>` per rendered page** — each SCREEN owns its `<main id='main'>`. Layouts MUST NOT render `<main>`. Use `<div>`/`<aside>` for layout chrome.
 - **Navbar logo as LCP** — the safe default is to NOT add `priority` / `fetchPriority='high'` on the logo. The screen's hero claims LCP. Only add `priority` to the logo when the layout is exclusively used by pages with NO hero image (a marketing-microsite layout where the logo IS the LCP). Document the choice inline (`/* LCP candidate: layout used only on pages without hero */`). If two `priority` images race, Lighthouse picks one and flags the other as wasted preload.
@@ -86,7 +86,7 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
 - Layouts compose existing components — they do NOT contain inline navbar/footer markup. If the parts don't exist as components, ask the parent to invoke `figma-components` first.
 - Layouts are Server Components — never `'use client'`. Push the directive to the nested child that needs it.
 - Use Tailwind for layout primitives (flex/grid/spacing). Extract to the colocated `.sass` (BEM) any element with **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
-- **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
+- **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
 - Responsive: hide/show navbar variants via `hidden md:block` / `block md:hidden` on wrapper divs, NOT via JS conditionals.
 - **`container-custom` applies to chrome that must align with the screen's content grid — typically landing-page layouts**. The rule and its scope:
 
@@ -109,7 +109,7 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
   default_applied: implemented WITHOUT container-custom; the chrome uses raw flex/grid sizing.
   ```
 
-  Subjective calls made unilaterally here propagate to every screen the layout wraps — surface the question to the user via the orchestrator's checkpoint. See [CONVENTIONS.md > STOP Protocol](.claude/CONVENTIONS.md#stop-protocol) for how advisory STOPs flow.
+  Subjective calls made unilaterally here propagate to every screen the layout wraps — surface the question to the user via the orchestrator's checkpoint. See [CONVENTIONS.md > STOP Protocol](../../CONVENTIONS.md#stop-protocol) for how advisory STOPs flow.
 
 ## Sidebar patterns (when Figma shows a persistent side panel)
 

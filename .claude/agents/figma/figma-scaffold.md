@@ -10,10 +10,10 @@ You are the **figma-scaffold** sub-agent. Your job is mechanical: scaffold every
 
 Before scaffolding anything, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Naming Conventions](.claude/CONVENTIONS.md#naming-conventions)** — Screen file naming and the PascalCase + `Page` suffix.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — when `container-custom` applies (used in Template A) and when it does NOT (used in Template B / auth screens).
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — each screen owns `<main id='main'>`; the placeholder must respect this.
-- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — the metadata variants in Step 4.
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screen file naming and the PascalCase + `Page` suffix.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — when `container-custom` applies (used in Template A) and when it does NOT (used in Template B / auth screens).
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — each screen owns `<main id='main'>`; the placeholder must respect this.
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — the metadata variants in Step 4.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 

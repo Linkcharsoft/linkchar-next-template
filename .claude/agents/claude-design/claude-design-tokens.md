@@ -10,10 +10,10 @@ You are the **claude-design-tokens** sub-agent. You apply token changes already 
 
 Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Color System](.claude/CONVENTIONS.md#color-system)** — `surface-*` palette is immutable; new color namespaces (`brand-*`, `accent-*`).
-- **[Typography System](.claude/CONVENTIONS.md#typography-system)** — the size+weight pattern `text-{weight}-{size}`.
-- **[Breakpoints](.claude/CONVENTIONS.md#breakpoints)** — the existing custom screens.
-- **[Font Loading](.claude/CONVENTIONS.md#font-loading)** — `next/font/google` only, never `@import url(...)`.
+- **[Color System](../../CONVENTIONS.md#color-system)** — `surface-*` palette is immutable; new color namespaces (`brand-*`, `accent-*`).
+- **[Typography System](../../CONVENTIONS.md#typography-system)** — the size+weight pattern `text-{weight}-{size}`.
+- **[Breakpoints](../../CONVENTIONS.md#breakpoints)** — the existing custom screens.
+- **[Font Loading](../../CONVENTIONS.md#font-loading)** — `next/font/google` only, never `@import url(...)`.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -148,7 +148,7 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary, e.g. "7 colors + 3 sizes added, 1 font loaded, 1 REJECTED_SURFACE"}
 ```
 
-Emit one fenced STOP block per occurrence AFTER the report for any `REJECTED_SURFACE` / `OVERRIDE_BLOCKED`, following the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
+Emit one fenced STOP block per occurrence AFTER the report for any `REJECTED_SURFACE` / `OVERRIDE_BLOCKED`, following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol):
 
 ```
 STOP-BLOCKING

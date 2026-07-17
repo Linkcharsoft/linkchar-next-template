@@ -17,16 +17,16 @@ If unspecified, run the full sweep on everything generated in the current import
 
 This agent validates the codebase AGAINST the rules in `.claude/CONVENTIONS.md`. Before running, `Read` that file so your grep patterns and judgement match the project's definitions. Key sections:
 
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — A11y checks (Steps 9–16).
-- **[Image Performance](.claude/CONVENTIONS.md#image-performance)** — image-perf checks (Steps 17–22).
-- **[Font Loading](.claude/CONVENTIONS.md#font-loading)** — font checks (Steps 23–25).
-- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — SEO checks (Steps 3–8).
-- **[Bundle & Performance Architecture](.claude/CONVENTIONS.md#bundle--performance-architecture)** — bundle checks (Steps 26–29).
-- **[Color System](.claude/CONVENTIONS.md#color-system)** — raw-hex check (Step 30).
-- **[Inside `.sass` files](.claude/CONVENTIONS.md#inside-sass-files)** — `@apply` LAST check (Step 31).
-- **[Typography System](.claude/CONVENTIONS.md#typography-system)** — typography compliance (Step 32).
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — Steps 36 + 37 (`container-custom` + vertical padding).
-- **[Component Rules](.claude/CONVENTIONS.md#component-rules)** and **[Styling Checklist](.claude/CONVENTIONS.md#styling-checklist)** — full enforcement lists.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — A11y checks (Steps 9–16).
+- **[Image Performance](../../CONVENTIONS.md#image-performance)** — image-perf checks (Steps 17–22).
+- **[Font Loading](../../CONVENTIONS.md#font-loading)** — font checks (Steps 23–25).
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — SEO checks (Steps 3–8).
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — bundle checks (Steps 26–29).
+- **[Color System](../../CONVENTIONS.md#color-system)** — raw-hex check (Step 30).
+- **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — `@apply` LAST check (Step 31).
+- **[Typography System](../../CONVENTIONS.md#typography-system)** — typography compliance (Step 32).
+- **[Global Container](../../CONVENTIONS.md#global-container)** — Steps 36 + 37 (`container-custom` + vertical padding).
+- **[Component Rules](../../CONVENTIONS.md#component-rules)** and **[Styling Checklist](../../CONVENTIONS.md#styling-checklist)** — full enforcement lists.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`. Without it your audit cannot anchor to project-defined rules and may produce false positives / negatives.
 

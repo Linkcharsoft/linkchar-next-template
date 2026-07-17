@@ -15,10 +15,10 @@ Do not proceed past Step 0 with a partial design — the inventory will be wrong
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
-Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). As the orchestrator, you need it for two distinct purposes:
+Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../../CONVENTIONS.md). As the orchestrator, you need it for two distinct purposes:
 
-1. **Token / asset / component / layout / screen gap analysis (Step 0)** — the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. The [Color System](../../CONVENTIONS.md#color-system), [Typography System](../../CONVENTIONS.md#typography-system), and [Breakpoints](../../CONVENTIONS.md#breakpoints) define what is already in the template vs what's new.
-2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` or `STOP-ADVISORY` blocks following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol). You parse them and route as described in the "Handling agent STOPs" section below.
+1. **Token / asset / component / layout / screen gap analysis (Step 0)** — the [Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. The [Color System](../../../CONVENTIONS.md#color-system), [Typography System](../../../CONVENTIONS.md#typography-system), and [Breakpoints](../../../CONVENTIONS.md#breakpoints) define what is already in the template vs what's new.
+2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` or `STOP-ADVISORY` blocks following the [STOP Protocol](../../../CONVENTIONS.md#stop-protocol). You parse them and route as described in the "Handling agent STOPs" section below.
 
 If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the user — every sub-agent depends on it, so proceeding would compound errors.
 
@@ -364,7 +364,7 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 
 ## Handling agent STOPs
 
-Every sub-agent in this flow may emit a STOP at the end of its report following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol) defined in CONVENTIONS.md. As the orchestrator, you MUST parse and handle each STOP. The two severities:
+Every sub-agent in this flow may emit a STOP at the end of its report following the [STOP Protocol](../../../CONVENTIONS.md#stop-protocol) defined in CONVENTIONS.md. As the orchestrator, you MUST parse and handle each STOP. The two severities:
 
 - **`STOP-BLOCKING`** — the sub-agent could NOT complete. You must resolve before re-invoking the same agent. Resolution path depends on the `next_agent` field.
 - **`STOP-ADVISORY`** — the sub-agent completed with a documented default (`default_applied:` field describes what). You continue the flow but MUST surface the advisory in the next per-screen checkpoint so the user can decide to re-delegate post-batch.

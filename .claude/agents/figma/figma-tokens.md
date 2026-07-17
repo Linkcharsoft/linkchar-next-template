@@ -10,10 +10,10 @@ You are the **figma-tokens** sub-agent. Your job is to apply token changes alrea
 
 Before touching any file, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Color System](.claude/CONVENTIONS.md#color-system)** — `surface-*` palette is immutable; new color namespaces (`brand-*`, `accent-*`).
-- **[Typography System](.claude/CONVENTIONS.md#typography-system)** — the size+weight pattern `text-{weight}-{size}`.
-- **[Breakpoints](.claude/CONVENTIONS.md#breakpoints)** — the existing 7 custom screens.
-- **[Font Loading](.claude/CONVENTIONS.md#font-loading)** — `next/font/google` only, never `@import url(...)`.
+- **[Color System](../../CONVENTIONS.md#color-system)** — `surface-*` palette is immutable; new color namespaces (`brand-*`, `accent-*`).
+- **[Typography System](../../CONVENTIONS.md#typography-system)** — the size+weight pattern `text-{weight}-{size}`.
+- **[Breakpoints](../../CONVENTIONS.md#breakpoints)** — the existing 7 custom screens.
+- **[Font Loading](../../CONVENTIONS.md#font-loading)** — `next/font/google` only, never `@import url(...)`.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -100,7 +100,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
    | d | Heuristic match against an existing non-surface token (max channel diff ≤ 4) AND semantically compatible | reuse existing token; append mapping row | `REUSED` |
    | e | Otherwise | create new token under a descriptive non-surface name; append mapping row | `CREATED` |
 
-   `MAPPED`, `REUSED`, `CREATED` are normal action labels reported in the structured output. `REJECTED_SURFACE` and `OVERRIDE_BLOCKED` are emitted via the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol) — they halt the import flow until resolved.
+   `MAPPED`, `REUSED`, `CREATED` are normal action labels reported in the structured output. `REJECTED_SURFACE` and `OVERRIDE_BLOCKED` are emitted via the [STOP Protocol](../../CONVENTIONS.md#stop-protocol) — they halt the import flow until resolved.
 
 4. **Edit `tailwind.config.js`** — apply only CREATE and (rare, confirmed) OVERRIDE actions:
    - Place new color entries inside `theme.extend.colors` under a non-surface namespace (e.g. `brand-*`, `accent-*`, `border-*`).
@@ -183,7 +183,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
 
 ## Output to parent
 
-A structured report. If any `STOP-BLOCKING / OVERRIDE_BLOCKED` or `STOP-BLOCKING / REJECTED_SURFACE` entries appear (see [CONVENTIONS.md > STOP Protocol](.claude/CONVENTIONS.md#stop-protocol)), the parent MUST stop the import flow and surface them to the user before continuing.
+A structured report. If any `STOP-BLOCKING / OVERRIDE_BLOCKED` or `STOP-BLOCKING / REJECTED_SURFACE` entries appear (see [CONVENTIONS.md > STOP Protocol](../../CONVENTIONS.md#stop-protocol)), the parent MUST stop the import flow and surface them to the user before continuing.
 
 <!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its ledger (the footer string is just for the human reader), so a drift here doesn't poison cost telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
 
@@ -214,7 +214,7 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary, e.g. "6 colors + 4 sizes added, 1 font swapped, 1 REJECTED_SURFACE, 1 OVERRIDE_BLOCKED"}
 ```
 
-If any token triggered `REJECTED_SURFACE` or `OVERRIDE_BLOCKED` rules, emit one fenced STOP block per occurrence AFTER the report above, following the [STOP Protocol](.claude/CONVENTIONS.md#stop-protocol):
+If any token triggered `REJECTED_SURFACE` or `OVERRIDE_BLOCKED` rules, emit one fenced STOP block per occurrence AFTER the report above, following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol):
 
 ```
 STOP-BLOCKING
