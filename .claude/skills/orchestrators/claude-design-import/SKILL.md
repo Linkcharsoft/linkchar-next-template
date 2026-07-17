@@ -287,7 +287,7 @@ Pass: current `src/layouts/` state, the chrome findings, the host/guest roles, t
 
 Before delegating, read `src/app/layout.tsx` and extract the current `<html lang>` (pass as `currentHtmlLang`). Pass: for each **route** screen — `screenName`, `screenType` (auth|public|protected), `route`, `routeGroup`, `role`; the Zustand `stores` to create; batch-level `detectedLanguage` + `currentHtmlLang`. The agent runs `/new-screen` per route (placeholder in the right language), `/new-store` per store, updates `src/proxy.ts`, switches `<html lang>`/`openGraph.locale` if needed. **Only `route` screens are scaffolded — `step`/`modal` are not routes.**
 
-After this step, **commit the scaffold as a checkpoint**.
+After this step, **commit the scaffold as a checkpoint** — *unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own). Their instruction wins; skip the commit and say so rather than committing anyway or silently dropping the step.
 
 ### 5.2 — Per-screen implementation (sequential auto with per-screen checkpoint)
 

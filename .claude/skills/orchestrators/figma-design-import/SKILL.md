@@ -257,7 +257,7 @@ Pass to the agent the full screen list from the gap analysis. **Before delegatin
 
 All screens — both those with Figma sources and those that are TBD — get the same placeholder for consistency (`"Coming soon"` when language is `en`, `"Próximamente"` when language is `es`). Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each (which generates `metadata.alternates.canonical` from the start), sets the placeholder content in the right language, switches `<html lang>` and `openGraph.locale` in `src/app/layout.tsx` if they don't match the detected language, and verifies routes are reachable.
 
-After this step, **commit the scaffold as a checkpoint** before moving on.
+After this step, **commit the scaffold as a checkpoint** before moving on — *unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own). Their instruction wins; skip the commit and say so rather than committing anyway or silently dropping the step.
 
 You receive: list of created routes + lint/type-check status.
 
