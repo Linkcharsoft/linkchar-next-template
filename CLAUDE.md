@@ -258,15 +258,13 @@ The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/se
 
 ## Testing
 
-- **Framework:** Vitest + @testing-library/react
-- Write **unit tests only** (NOT E2E, NOT integration).
-- Focus on: utility functions, store logic, hook behavior, component rendering.
-- Test files live in `__tests__/` folders colocated with the source:
-  - `src/utils/__tests__/validateEmail.test.ts`
-  - `src/stores/__tests__/modalStore.test.ts`
-  - `src/hooks/__tests__/usePressKey.test.ts`
-  - `src/components/Label/__tests__/Label.test.tsx`
-- Naming: `{Name}.test.ts` for logic, `{Name}.test.tsx` for components.
-- Commands: `pnpm test` (watch mode), `pnpm test-unit` (single run).
-- Mock `.sass` imports and framer-motion when needed.
-- Use `vi.fn()` and `vi.mock()` for mocking.
+> ⚠️ **This section is pending review — treat it as a description of the tooling, not as guidance.** It previously documented a Vitest + `@testing-library/react` unit-testing setup, in detail, that **does not exist in this project**: no `vitest`, no `@testing-library/*`, no `vitest.config.*`, no `__tests__/` folders, and neither `pnpm test` nor `pnpm test-unit` is a real script. It also said "unit tests only (NOT E2E)" while the only thing installed is an E2E runner. All of it was fiction. Cut back to what's verifiable until the testing strategy is decided.
+
+**What's actually installed: Cypress (E2E).**
+
+- `cypress` + helpers (`cypress-dotenv`, `cypress-file-upload`, `cypress-mailslurp`), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
+- Config: `cypress.config.ts` at the repo root.
+- Commands: `pnpm run test-open` (interactive) · `pnpm run test-run` (headless).
+- **No specs exist yet** — there is no `cypress/` directory. The runner is configured but unused.
+
+**Until this is decided, do NOT scaffold tests unprompted**, and do not follow the removed Vitest conventions — writing `src/**/__tests__/*.test.ts` against a framework that isn't installed produces code that cannot run.
