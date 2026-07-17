@@ -35,6 +35,8 @@ Screen component: {FunctionName | page-slug | App}   # babel: which function in 
 Absorbed steps: [{stepKey → ComponentName}, ...]  # wizard sub-steps to implement as an internal stepper
 Local modals: [{modalKey → ComponentName}, ...]   # overlays to mount as screen-local modals / via /new-modal
 Target: {mobile-app | web}                        # drives responsive synthesis
+Radius translation: {the single canonical `rounded-*` / token from Step 0.5, OR the literal `N/A — tokenSource=inline+helmet, use exact rounded-[Npx] per element (§ B3)`}   # see "Radius" below — `N/A` is VALID input, not a missing one
+Bespoke widths: [{section → max-width}, ...]      # sections whose source width is NOT the design's default frame width; nest each inside its container-custom section so it keeps its cap. Empty list = every section takes the default.
 Detected language: {en | es}
 Images: {unpacked}/assets/img/                    # local files; dedup by hash, convert to WebP under src/assets/images/{slug}/
 Existing components to reuse: [{Component} (variants) → path, ...]
@@ -66,7 +68,7 @@ If any required field (name, type, slug, source JSX, screen component, target, l
 
 **Babel (`.jsx`):** the prototype screen is a React function styled with inline `style={{}}` objects + CSS vars. The App spreads its context object as individual props (`<Screen {...ctx} />`), so the screen **destructures them and calls them BARE** — e.g. `function Gifts({ go, back, gifts, cart, draft, setDraft }) { … go('giftDetail') … }`, NOT `ctx.go`. Map it:
 
-- **Inline `style={{}}` → Tailwind + tokens + BEM `.sass`.** `var(--accent)` → the brand/accent token; `var(--ink)` → the ink/text token; hardcoded hex → the matching token (via the token gate). Numeric/`px` font sizes → `text-{weight}-{size}` (SNAP to the scale — see the gate). NEVER keep inline hex/px or emit `text-[Npx]`/`bg-[#...]`. **Radii** (`var(--radius)`, `calc(var(--radius)…)`) → use the SINGLE radius translation the parent decided in Step 0.5 (the `Radius translation` prompt field) — the SAME value on every radius; never pick your own per-component (that reintroduces radius drift).
+- **Inline `style={{}}` → Tailwind + tokens + BEM `.sass`.** `var(--accent)` → the brand/accent token; `var(--ink)` → the ink/text token; hardcoded hex → the matching token (via the token gate). Numeric/`px` font sizes → `text-{weight}-{size}`; an off-scale size becomes a **token** via the gate (do NOT snap — see § B1). NEVER keep inline hex/px or emit `text-[Npx]`/`bg-[#...]`. **Radii** → branch on `tokenSource`, see [§ B3](../../docs/design-import-shared.md#b3-radius--token-driven-figma-vs-plain-css-literals-claude-design) (the single rule below).
 - **`go(target)` / `back()` navigation** (bare, destructured — not `ctx.go`) → real navigation: `next/link` / `useRouter().push` to the target route, or (for an absorbed `step`) advance the internal stepper, or (for a `modal`) open the local modal. NEVER reproduce the prototype's `window.HOST/GUEST` stack router.
 - **`gifts` / `cart` / `contribs` (destructured shared state)** → the Zustand store created in 5.1, consumed with atomic selectors, **using the shape the parent derived in Step 0.5**. Do NOT redefine the store's fields/actions here — if the screen needs something the store spec lacks, emit `STOP-ADVISORY` rather than adding a divergent shape. Local-only UI state → `useState`.
 - **Mock/demo data** — split by ownership: if it's SHARED state the App seeds (`INITIAL_CONTRIBS`, `GIFTS` used across screens), it lives SEEDED IN THE STORE (per the Step 0.5 store spec) → read it from the store, do NOT re-declare it here (re-declaring leaves you reading the empty store or duplicating the seed). Only PER-SCREEN demo data (a static list only THIS screen shows) becomes an inline `const MOCK_{KIND}` at the top of the file, marked `// TODO: replace with API call once openapi-import has run for {endpoint}`. Never split mock into a sibling `.ts`; never add `customFetch`/SWR/`src/api/*` — the data layer is `openapi-import`'s job.
@@ -76,7 +78,7 @@ If any required field (name, type, slug, source JSX, screen component, target, l
 
 The source is a `.markup.html` + sibling `.logic.js` pair (from `inventory.screens[].file`), NOT JSX. Translate to the SAME target React screen; only the syntax you READ differs. The inline-style → Tailwind+tokens+`container-custom` translation (and the radius/font-size rules) are IDENTICAL to babel.
 
-- **`.markup.html`** — inline-styled HTML. Same `style="…"` hex/px → Tailwind+tokens translation; radius via the parent's single `Radius translation`; font-sizes SNAP to scale. DCLogic tags to translate:
+- **`.markup.html`** — inline-styled HTML. Same `style="…"` hex/px → Tailwind+tokens translation; off-scale font-sizes → a **token** (do NOT snap; a fractional size rounds to the nearest integer first — see § B1); radii are per-element `rounded-[Npx]` (no single `--radius` in dclogic — see § B3). DCLogic tags to translate:
   - `{{ path }}` hole → the value/handler named `path` from the logic's `renderVals()` (dotted lookup, no expressions) → wire to real state/handler.
   - `<sc-if value="{{ cond }}">…</sc-if>` → `{cond && (…)}`.
   - `<sc-for list="{{ items }}" as="item">…</sc-for>` → `{items.map(item => …)}` (semantic `<ul>/<li>`; apply the horizontal-scroll a11y rules when it's a carousel).
@@ -98,7 +100,14 @@ Everything below (token gate, container-custom, a11y, images, forms, animations,
 
 ## Token validation gate (between reading the source and writing JSX)
 
-Scan the source's **colors** (hex or `var(--x)`), **font weights**, and **breakpoints** against `tailwind.config.js`. If a COLOR / WEIGHT / BREAKPOINT has no token, STOP — do not invent arbitrary Tailwind values (font sizes and radii are handled by the snapping/plain-CSS rules below, NOT by this STOP):
+Scan the source's **colors** (hex or `var(--x)`), **font sizes**, **font weights**, and **breakpoints** against `tailwind.config.js`. If a COLOR / FONT SIZE / WEIGHT / BREAKPOINT has no token, STOP — do not invent arbitrary values. An off-scale **font size** is a real token (see § B1 — add it, do NOT snap; a fractional size rounds to the nearest integer first). Only **radii** are exempt from this STOP (plain CSS / arbitrary `rounded-[Npx]`, below):
+
+> **Breakpoints — two distinct sources, do not mix them up.**
+>
+> - **The design's own `@media`** arrive already tokenized: the parent's `Breakpoints:` field maps each to a token (`max-width:860px → hg-md:`). **Use the token.** A raw `max-[860px]:` is a magic number, and re-labelling `860` onto `md` (768) is the § B1 snapping error applied to layout — it shifts every rule and breaks a viewport band. If the source has an `@media` the parent's map does not cover, that IS a `TOKENS_MISSING` STOP.
+> - **Synthesized responsive** — when the design has NO media queries (an empty `Breakpoints:` list, e.g. a 430px mobile-only frame with `Target: web`), there is nothing to reproduce and you invent the desktop treatment. **There** you use the project scale (`md:`/`lg:`), mobile-first. That is not a breakpoint from the design, so no token is needed.
+>
+> `md:` means "≥768, project scale"; `hg-md:` means "≤860, this design". Design exports are usually desktop-first (`max-width`) and the project scale is mobile-first (`min-width`) — they are not interchangeable.
 
 ```
 STOP-BLOCKING
@@ -109,13 +118,16 @@ next_agent: claude-design-tokens
 details:
   colors:
     - {hex} (prototype: {--var / THEMES key}) → suggest '{token-name}'
-  typography_sizes:   # ONLY intentional display sizes with no near scale neighbor (e.g. 72); ordinary/fractional sizes are snapped, not tokenized
+  typography_sizes:   # EVERY off-scale size (per § B1 — add token, don't snap); a fractional size → round to nearest integer first, then list that integer if off-scale
     - {px} (used in {where})
 ```
 
-**Font sizes — SNAP, don't STOP.** The project scale is a fixed set of integer sizes (`text-{weight}-{10|12|14|…}`). When a source `fontSize` isn't in the scale, **round to the nearest scale step, and on an exact tie (e.g. 26 between 24 and 28) round UP to the larger step** — deterministic, so isolated per-screen runs agree (13.5 → 14, 11 → 12, 26 → 28). Pair it with the weight; do NOT emit `text-[Npx]` and do NOT STOP. (If Step 0.5 decided to add certain midpoint sizes as tokens instead of snapping, those will be in `Tokens available` — use them.) Only emit `TOKENS_MISSING` for a clearly-intentional large display size far from any step (e.g. 72).
+**Font sizes — add a token, don't snap.** Per [`design-import-shared.md` § B1](../../docs/design-import-shared.md) (already Read at pre-flight): an off-scale source `fontSize` is a real size → emit `TOKENS_MISSING` so `claude-design-tokens` adds it as a `text-{weight}-{size}` token; do NOT round to a nearby scale step. **Physical exception:** a **fractional** size (`13.5`) can't be a token (the plugin needs an integer class suffix), so round it to the nearest integer first (ties up: `16.5 → 17`), then token-it only if that integer is off-scale. Never emit `text-[Npx]`.
 
-**Radii are NOT tokens** — `var(--radius)` maps to the nearest Tailwind `rounded-*`, or to a plain `.sass` `border-radius: Npx` (CONVENTIONS treats border-radius as plain CSS). Never emit `TOKENS_MISSING` for a radius.
+**Radii are NOT tokens, and never a `TOKENS_MISSING` STOP** (CONVENTIONS treats border-radius as plain CSS). Which rule applies **branches on `inventory.tokenSource`** — [§ B3](../../docs/design-import-shared.md#b3-radius--token-driven-figma-vs-plain-css-literals-claude-design) is the source of truth:
+
+- **`themes-object` (babel)** — one `var(--radius)` drives the design → use the SINGLE canonical value from the parent's `Radius translation` field, the same on every radius. Never pick your own per-component (that reintroduces the drift the field exists to prevent).
+- **`inline+helmet` / `inline+css` (dclogic / vanilla)** — there IS no `--radius`; the source's radii are deliberate per-element literals (cards 20–24px, buttons 12–13px, pills 999px) → reproduce each exactly with `rounded-[Npx]`. The `Radius translation` field will read `N/A`; **that is valid input, not a missing one** — do NOT STOP on it, and do NOT collapse the design's radii onto one invented value.
 
 **Exception** — layout-only arbitrary values (not design tokens) are fine as-is: `aspect-[4/3]`, `grid-cols-[1fr_2fr]`, a fixed carousel-card `w-[292px]`, `top-[64px]`, `translate-x-[-12px]`, and radii like `rounded-[18px]`. NOT covered: colors (`bg-[#...]`), font weights, and breakpoints — those carry token meaning and go through the gate above.
 
@@ -162,7 +174,7 @@ details:
 7. **Forms — auto-wire to Formik + Yup.** The prototype's `Field`/`draft` inputs become a real Formik form. Error copy MUST match `detectedLanguage` (`Required`/`Requerido`, `Invalid email`/`Email inválido`, `` `Min ${N} characters` ``/`` `Mínimo ${N} caracteres` ``). Wrap each input in `InputContainer`. `validateOnChange: false`. Leave `onSubmit` as a clearly-marked `// TODO (openapi-import): replace with the real API call` — do NOT import `src/api/*` or invent an endpoint. On form-level errors, move focus to the first invalid field OR render `<div role='alert' aria-live='assertive'>`.
 
 8. **Responsive synthesis per `target`:**
-   - **`web`** → full desktop + mobile. The prototype is ~430px mobile-only, so you synthesize the desktop layout: multi-column where it reads naturally (e.g. a two-pane list+detail), `container-custom` max-width, `md:`/`lg:` breakpoints. Mobile-first Tailwind, expand upward.
+   - **`web`** → full desktop + mobile. **Only when the design has NO media queries of its own** (empty `Breakpoints:`) — typically a ~430px mobile-only frame — do you synthesize the desktop layout: multi-column where it reads naturally (e.g. a two-pane list+detail), `container-custom` max-width, `md:`/`lg:` breakpoints. Mobile-first Tailwind, expand upward. **If the design DOES ship media queries, it already specifies its own responsive behaviour — reproduce it with the parent's breakpoint tokens and synthesize nothing.**
    - **`mobile-app`** → mobile-first fidelity to the 430px source, with a **conservative** desktop treatment: center the content column at a sensible max-width (the app-shell look), don't invent a rich desktop layout the design never specified. Note this in your report so the user can request a richer desktop pass if wanted.
    - Horizontal scroll card rows (mobile): use `<ul role='list' aria-label='…'>` + `snap-x snap-mandatory`, `md:grid` above.
 

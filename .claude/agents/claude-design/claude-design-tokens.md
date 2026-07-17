@@ -41,12 +41,16 @@ Colors (from THEMES[givxo] + rawScan):
 - {source: 'THEMES.givxo.ink', hex: '#2c2a47', role: 'text/ink'}
 - {source: 'rawScan', hex: '#c2607a', role: 'danger/no'}    # not a surface-* match — needs new namespace
 
-Typography sizes: [30, 15, 11]   # fontSize values used that aren't in the project scale
+Typography sizes: [30, 15, 11]   # off-scale INTEGERS (already rounded by the parent)
 
 Fonts:
 - {family: 'Plus Jakarta Sans', weights: ['400','500','600','700','800'], usage: 'body+display'}
 
-Breakpoints: (none new)
+Breakpoints: (none new)   # the design has no @media of its own — Step 5.2 will synthesize with the project scale
+```
+
+**Example input** (`inline+helmet` / dclogic — no THEMES; named clusters instead):
+
 ```
 
 If the parent passes prose instead of a structured list, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: parent passed prose instead of a structured token list / resolution: re-invoke with the structured form (see "Example input")`. You cannot reliably extract token shapes from natural language.
@@ -96,8 +100,19 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
 
 4. **Edit `tailwind.config.js`** — apply CREATE and (rare, confirmed) OVERRIDE only:
    - New colors under a non-surface namespace (`brand-*`, `accent-*`, `border-*`). **Match the namespace's existing shape** (flat hyphenated vs nested object) — read it before inserting; when creating a namespace from scratch, prefer the nested object form.
-   - New typography sizes go in BOTH the `fontSize` map AND the typography plugin's `sizes` array (keep them in sync). **Only create a token for an intentional DISPLAY size clearly outside the scale (e.g. 72).** Do NOT create tokens for ordinary or fractional sizes (13, 13.5, 11) — the screen/components agents SNAP those to the nearest existing scale step, so a `text-*-13.5` token must never exist. **Radii are not per-value tokens** (CONVENTIONS treats `border-radius` as plain CSS). The ONE exception: if the parent asks for a SINGLE canonical `borderRadius` token for the prototype's one `var(--radius)` (e.g. `rounded-card`), add that one entry to `theme.extend.borderRadius` — it exists to keep the app's single radius consistent across components. Never create per-value radius tokens.
-   - New breakpoints in `theme.extend.screens` if specified.
+   - New typography sizes go in BOTH the `fontSize` map AND the typography plugin's `sizes` array (keep them in sync). **Create a token for EVERY off-scale INTEGER size the parent lists** (13, 17, 21, 27, 72, …) — the flows add real tokens for off-scale sizes, they do NOT snap (see `design-import-shared.md` § B1). **Never create a FRACTIONAL token** — `text-*-13.5` is an invalid class (the plugin builds `.${namePrefix}-${size}`, and a dot splits the selector); the screen/components agents already round any fractional source size to the nearest integer BEFORE it reaches you, so you only ever receive integers. **Radii are not per-value tokens** (CONVENTIONS treats `border-radius` as plain CSS). The ONE exception: if the parent asks for a SINGLE canonical `borderRadius` token for the prototype's one `var(--radius)` (e.g. `rounded-card`), add that one entry to `theme.extend.borderRadius` — it exists to keep the app's single radius consistent across components. Never create per-value radius tokens.
+   - **New breakpoints** in `theme.extend.screens`, under the parent's names. **Respect the direction the parent gives you** — a Claude Design export is usually **desktop-first** (`@media (max-width: 860px)`), while the project's scale (`2xs`…`2xl`) is **mobile-first** (`min-width`). The two are NOT interchangeable, so a max-width breakpoint MUST use Tailwind's explicit object form, never a bare string:
+
+     ```js
+     screens: {
+       '2xs': '375px', xs: '480px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1420px',
+       'hg-lg': { max: '980px' },   // ← design breakpoints: explicit max form
+       'hg-md': { max: '860px' },
+       'hg-sm': { max: '560px' },
+     }
+     ```
+
+     `'hg-md': '860px'` would silently mean *≥860* — the exact inverse of the design, and it type-checks and builds. **Never overwrite or re-point an existing project breakpoint** (`sm`…`2xl`) to a design value: that is an override, and rule 3 applies (`OVERRIDE_BLOCKED`). Design breakpoints are ADDED alongside, in their own namespace.
 
 5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`** (auto-hosts, preloads, adds `font-display: swap`):
    - **Remove** any `@import url('https://fonts.googleapis.com/...')` from `src/styles/index.sass` (legacy).
