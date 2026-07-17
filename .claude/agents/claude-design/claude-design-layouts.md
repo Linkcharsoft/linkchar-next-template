@@ -28,7 +28,13 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 - **`navModel`** (from `inventory`): `screen-registry` (babel) | `multi-page` (dclogic web) | `single-page-sections`/`single-page`.
 - Names of any new layout to create.
 
-If any of those are missing, ask.
+If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**.
+
+**EXCEPTIONS — an input that is EMPTY or `N/A` for the format is VALID input, not a missing one.** That STOP routes to `manual` and would deadlock the flow over nothing, so do NOT emit it for any of these; proceed and say so in your report:
+
+- **`roles`** (host/guest) is a `screen-registry` construct — dclogic exports have no registries (`unpack.mjs` emits none), so its absence there is expected.
+- **`navModel = single-page-sections` / `single-page` with no chrome to hoist.** The chrome belongs to the one screen and is wired to its own `page`/`menuOpen` state; hoisting it would force UI state into a store (out of scope). **A confirmed no-op is a valid outcome — report it as one** (per [§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)); do not manufacture a layout to look productive, and do not STOP.
+- **An empty "names of new layouts to create" list** — it means the existing layouts already cover the design.
 
 ## navModel = `multi-page` (dclogic web — e.g. StreetBuild): extract the shared chrome to ONE layout
 

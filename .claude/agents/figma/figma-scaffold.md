@@ -31,7 +31,7 @@ Plus two batch-level fields:
 - `detectedLanguage` (`en` | `es`) — **the parent decides this in Step 0 of `figma-design-import` SKILL.md using the Spanish-leaning heuristic documented there** (this agent does NOT re-detect language — the heuristic has a single source of truth in the orchestrator). Drives the placeholder text and whether to switch `<html lang>`. Defaults to `en` if the parent omits it.
 - `currentHtmlLang` (the actual value of `<html lang>` in `src/app/layout.tsx` as the parent read it in Step 0).
 
-If the screen list is missing, ask. If `detectedLanguage` is missing, default to `en` and log it in the output report.
+If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**. (`detectedLanguage` is the one documented default: if missing, use `en` and log it.)
 
 ## Steps
 

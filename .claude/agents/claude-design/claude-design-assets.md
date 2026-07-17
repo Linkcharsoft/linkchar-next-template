@@ -34,7 +34,7 @@ Detect the platform from the `Platform` field in your environment (`win32` → P
 - **Images**: from `inventory.images` — each `{ file (path under unpacked/assets/img), uuid, alias, mime }`, plus a `screenSlug` when the parent decided the image belongs to a single screen (omit for shared assets like logos).
 - **Icons** (may be EMPTY): for **babel**, the path to the prototype's `Icon` component JSX file (e.g. `{unpacked}/jsx/02_icon.jsx`) + the list of glyph names to split (from the `Icon` component's `name → svg` map). For **dclogic with an empty `components.json`**, there is no `Icon` component — the parent passes an icon list for any glyph **used 2+ times (it repeats)**; single-use glyphs stay inline (parent omits them; see "Icons" below). The parent pre-filters the list **by role, per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) — NOT by "a PrimeIcon with that name exists"**: when the design ships a coherent icon set, every member keeps its source glyph and the list you receive contains **zero** PrimeIcon-covered names. That is the correct outcome, not an oversight — build every glyph the parent passes you, even one whose name matches a `pi pi-*`.
 
-If the input is missing, ask.
+If a required input is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**: you run in isolated context and only the orchestrator reads your output. Never guess a default.
 
 ## Naming sanitization (do this FIRST)
 

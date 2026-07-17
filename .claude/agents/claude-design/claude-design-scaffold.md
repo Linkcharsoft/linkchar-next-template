@@ -38,7 +38,7 @@ Plus batch-level:
 - `detectedLanguage` (`en` | `es`) — the **parent** decided this in Step 0.5; drives placeholder text and whether to switch `<html lang>`. Default `en` if omitted (log it).
 - `currentHtmlLang` — the actual `<html lang>` value the parent read in Step 0.5.
 
-If the screen list is missing, ask.
+If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**. An EMPTY `stores` list is valid input, not a missing one.
 
 ## Steps
 

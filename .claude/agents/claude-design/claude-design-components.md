@@ -35,7 +35,9 @@ A Claude Design primitive is written as a React function with inline `style={{}}
 - `detectedLanguage` (`en` | `es`) — drives default `aria-label`s / placeholder copy / any visible text. Default `en` if omitted (note it).
 - Optional `reuseAsIs` list — refuse these: `Component {Name} is in reuseAsIs — no work to do. Drop it from the input.`
 
-If any list is missing, OR any component lacks a **source JSX file** reference, emit:
+**An EMPTY list is a valid input, not a missing one.** If the parent says "extend: none, create: none", that is a legitimate outcome — a design whose primitives are all single-use (the 2+ threshold below never fires) genuinely has no component work. Report a **confirmed no-op** with your reasoning (per [`design-import-shared.md` § C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)) and do NOT emit `INVALID_INPUT` — that STOP routes to `manual` and would deadlock the flow over nothing. Equally, do NOT invent components to justify the step.
+
+Only if a list is **absent entirely** (the parent forgot the field, as opposed to sending it empty), OR any component lacks its **source reference**, emit:
 
 ```
 STOP-BLOCKING

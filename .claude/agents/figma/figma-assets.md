@@ -42,7 +42,7 @@ A list of assets to download, each with:
 - Target file name (e.g. `SellIcon`, `brand-logo`, `product-1`)
 - `screenSlug` (OPTIONAL) — when the asset belongs to a single screen, the parent passes the screen's kebab-case slug (e.g. `home-page`, `products-page`). This routes the raster output into `src/assets/images/{screenSlug}/`. OMIT when the asset is genuinely shared across multiple screens (logos, repeated brand graphics) — those stay flat at `src/assets/images/`.
 
-If the list is missing, ask.
+If a required input is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**: you run in isolated context and only the orchestrator reads your output. Never guess a default.
 
 ## Pre-flight: name sanitization (do this BEFORE format detection)
 

@@ -26,7 +26,7 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 - The Figma layout findings from Step 0: which screens share a header/footer pattern, what's different from existing.
 - Names of any new layout to create (e.g. `LandingLayout`).
 
-If any of those are missing, ask.
+If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**.
 
 ## Pre-flight (read these BEFORE creating or adjusting layouts)
 

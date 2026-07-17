@@ -236,7 +236,9 @@ Pass to the agent:
 
 The agent compares, adjusts, or creates layouts in `src/layouts/{Name}/`, wires them up in `src/app/{(group-name)}/layout.tsx` route groups, and ensures they compose existing components (Navbar, Footer) rather than duplicating JSX.
 
-You receive: layouts adjusted/created + route groups wired + lint/type-check status.
+**A confirmed no-op is a valid outcome — still delegate.** See [§ C5b](../../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate). If the design shares no chrome across screens, do NOT skip Step 4 and do NOT run it yourself — delegate, pass your reading, and ask the agent to verify or refute it. Equally, tell it not to invent layout work to justify the step. A cheap Sonnet pass returning "no-op, here's the evidence" is the point: the parent's reading is the one thing with no other gate.
+
+You receive: layouts adjusted/created (or a reasoned no-op) + route groups wired + lint/type-check status.
 
 ---
 

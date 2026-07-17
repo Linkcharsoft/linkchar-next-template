@@ -250,6 +250,8 @@ Pass: the extend list + create list, **each with its source JSX file** in the un
 
 Pass: current `src/layouts/` state, the chrome findings, the host/guest roles, the `target`, AND the `navModel`. The agent creates/adjusts layouts, wires route groups, and translates or drops mobile chrome per target. **For `navModel = multi-page`** (dclogic web) pass the list of `.dc` pages + the path to any one page's `.markup.html` — the shared header/nav/footer must become ONE layout wrapping all pages (nav from the page list), NOT re-inlined per page. It composes existing components, never duplicates JSX.
 
+**A confirmed no-op is a valid outcome — still delegate.** See [§ C5b](../../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate) for the rule and both failure modes. Here it fires for `navModel = single-page-sections` / `single-page`: the chrome belongs to the one screen (wired to its `page`/`menuOpen` state, so hoisting it would force UI state into a store — out of scope). Note in the delegation that **roles/registries do not exist for dclogic** (`unpack.mjs` emits no registries) so the agent doesn't stall on a required input it can never receive.
+
 ---
 
 ## Step 5 — Screens + routing
