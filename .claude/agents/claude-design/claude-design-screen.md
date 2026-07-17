@@ -29,10 +29,11 @@ Screen name: {Name}Page
 Screen type: {auth | public | protected}
 Screen slug: {kebab-case}
 Source: {unpacked}/{inventory.screens[].file}   # babel: a .jsx (may hold several screens); dclogic: a .markup.html + sibling .logic.js
-Format: {babel | dclogic}                         # from inventory.format — picks the JSX path vs the DCLogic markup+logic path
-navModel: {screen-registry | single-page-sections | multi-page}   # from inventory — drives section-vs-route handling
+Format: {babel | dclogic | vanilla}               # from inventory.format — picks the JSX path vs the markup+logic path (vanilla reads like dclogic markup, no .logic.js)
+navModel: {screen-registry | single-page-sections | multi-page | single-page}   # from inventory — drives section-vs-route handling
 Screen component: {FunctionName | page-slug | App}   # babel: which function in the file; dclogic multi-page: page slug; dclogic single-page: App
-Absorbed steps: [{stepKey → ComponentName}, ...]  # wizard sub-steps to implement as an internal stepper
+Sections: [{key → source region or sc-if guard}, ...]   # single-page-sections / single-page ONLY, and REQUIRED there
+Absorbed steps: [{stepKey → ComponentName}, ...]  # screen-registry ONLY — wizard sub-steps to implement as an internal stepper. NOT the same thing as Sections.
 Local modals: [{modalKey → ComponentName}, ...]   # overlays to mount as screen-local modals / via /new-modal
 Target: {mobile-app | web}                        # drives responsive synthesis
 Radius translation: {the single canonical `rounded-*` / token from Step 0.5, OR the literal `N/A — tokenSource=inline+helmet, use exact rounded-[Npx] per element (§ B3)`}   # see "Radius" below — `N/A` is VALID input, not a missing one
@@ -45,7 +46,14 @@ Store spec: {store → {state fields, actions}}     # from Step 0.5; CONSUME thi
 Adjustment notes (only on re-runs): {text}
 ```
 
-If any required field (name, type, slug, source JSX, screen component, target, language) is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing required field "{field}" / next_agent: manual`. Defaults are forbidden — the parent must pass them.
+If any required field (name, type, slug, source, **format**, **navModel**, screen component, target, language) is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing required field "{field}" / next_agent: manual`. Defaults are forbidden — the parent must pass them. Never infer `Format` from the file extension: a `.markup.html` is emitted by both `dclogic` and `vanilla`, and they read differently.
+
+Two fields are **conditionally** required, and their absence is only an error in the format that needs them:
+
+- **`Sections`** — REQUIRED when `navModel` is `single-page-sections` or `single-page`. There, `inventory.screens[]` lists SECTIONS of this one screen (switched by internal state, e.g. `state.page`), not routes — no other field carries that, so a missing `Sections` means you cannot know what you are building. STOP. For `screen-registry` / `multi-page`, `Sections` is absent by design — do NOT STOP on it.
+- **`Absorbed steps`** — meaningful only for `screen-registry`. An empty list is normal.
+
+An **EMPTY `Bespoke widths` list is valid input, not a missing one** (it means every section takes the design's default frame width) — do NOT emit `INVALID_INPUT` over it. Same for `Radius translation: N/A` (see "Radius" below).
 
 ## File path and `<main>` className by screen type
 

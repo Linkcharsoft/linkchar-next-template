@@ -271,12 +271,15 @@ Because the design context is local files, cost is far lower than Figma's per-sc
 **Standard prompt for each invocation:**
 
 ```
-Screen name: {Name}Page
+Screen name: {Name}Page          # for a REUSED route, this MUST be the existing screen's name (5.1 reports `REUSED ROUTE: /… ({Name}Page)`) — inventing a new name here writes a screen folder no route renders
 Screen type: {auth|public|protected}
 Screen slug: {kebab-case}
 Source: {unpacked}/{inventory.screens[].file}  (babel: source/jsx/NN_*.jsx — may hold several screens; dclogic: source/{screen}.markup.html + sibling .logic.js)
+Format: {babel|dclogic|vanilla}      # from inventory.format — picks the JSX path vs the markup+logic path (REQUIRED; do NOT let the agent infer it from the file extension)
+navModel: {screen-registry|single-page-sections|multi-page|single-page}   # from inventory.navModel — drives section-vs-route handling (REQUIRED)
 Screen component: {FunctionName}     # from inventory.screens[].component — WHICH function in that file IS this screen (REQUIRED; the agent STOPs without it)
-Absorbed steps: [{stepScreenKey → component}, ...]   # wizard sub-steps to implement as internal stepper
+Sections: [{key → source region or sc-if guard}, ...]   # single-page-sections ONLY, and REQUIRED there: the inventory.screens[] entries are SECTIONS of this one screen, switched by internal state (e.g. inicio/servicios/trabaja via `state.page`). This is the defining feature of the format — no other field carries it. Omit for other navModels.
+Absorbed steps: [{stepScreenKey → component}, ...]   # screen-registry ONLY — wizard sub-steps to implement as internal stepper. NOT the same thing as Sections.
 Store spec: {store → {seeded initial state, fields, action bodies}}   # from Step 0.5 — consume it, never redefine it; shared data comes from the (seeded) store, NOT MOCK_*
 Radius translation: {the single canonical `rounded-*` / token from Step 0.5, OR the literal `N/A — tokenSource=inline+helmet, use exact rounded-[Npx] per element (§ B3)`}
 Local modals: [{modalScreenKey → component}, ...]     # implement as screen-local modals / /new-modal
@@ -287,6 +290,7 @@ Images: {unpacked}/assets/img/  (dedup by hash, convert to WebP under src/assets
 Existing components to reuse: [{Component} → path, ...]   # from Step 3
 Tokens available: [list from Step 1]
 Container rule: every top-level <section> anchored with `container-custom` (16px built-in gutter — no px-* on the same element); keep per-section py-* from the design. Ignore the prototype's fixed 430px frame width.
+Bespoke widths: [{section → max-width}, ...]   # sections whose source width is NOT the design's default frame width. `container-custom` replaces the DEFAULT width only; a section the design deliberately narrowed keeps its cap (nest it inside the container-custom section). List them or they silently render full-width.
 Adjustment notes (only on re-runs): {text}
 ```
 
