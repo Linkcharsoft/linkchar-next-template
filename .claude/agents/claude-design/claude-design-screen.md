@@ -127,7 +127,10 @@ details:
    - Match covers it → IMPORT and use; do NOT inline a one-off.
    - Match missing the variant, used 2+ times → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: claude-design-components`.
    - Match missing the variant, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into {Component} variant {variant}`.
-   - No match, reused 2+ times or a clearly-named primitive → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: claude-design-components`.
+   - No match, used 2+ times → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: claude-design-components`.
+   - No match, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into a component if it repeats`.
+
+   **The usage count is the ONLY criterion** — 1× advisory, 2+× blocking, per [CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol). Do NOT add side conditions ("…or a clearly-named primitive"): that contradicts the source-of-truth table and leaves the single-use no-match case — the most common one on a flat landing — with no branch.
 
    ```
    STOP-{BLOCKING|ADVISORY}

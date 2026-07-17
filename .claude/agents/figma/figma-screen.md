@@ -183,7 +183,11 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
         usage_count: {N}
       ```
 
-   4. If no match exists AND the visual is reused 2+ times in the screen OR is a clearly named primitive (a "card", a "tab", etc.), emit `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-components` so the parent can create it via `figma-components` instead of you inlining bespoke JSX.
+   4. If no match exists, branch on the usage count:
+      - No match, used 2+ times → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-components`, so the parent creates it via `figma-components` instead of you inlining bespoke JSX.
+      - No match, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into a component if it repeats`.
+
+   **The usage count is the ONLY criterion** — 1× advisory, 2+× blocking, per [CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol). Do NOT add side conditions ("…or is a clearly named primitive"): that contradicts the source-of-truth table (it makes the same 1× case ADVISORY there and BLOCKING here) and leaves the single-use no-match case — the most common one — with no branch.
 
    Inlining bespoke versions of what should be reusable components is the most common silent regression in this flow. The reuse audit costs ~2-3 extra Grep calls per screen and prevents it.
 

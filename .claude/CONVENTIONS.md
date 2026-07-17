@@ -494,6 +494,8 @@ details:
 | `COMPONENT_GAP` | ADVISORY when the primitive is used **1×** in the screen, BLOCKING when used **2+×** | Existing component does not cover a design variant/state | `{flow}-components` |
 | `CONTAINER_CUSTOM_DECISION` | ADVISORY | Hybrid layout: ambiguous whether `container-custom` should anchor the chrome | `user_decision` (default = no `container-custom`) |
 
+**`COMPONENT_GAP` — the count is the ONLY criterion.** 1× → ADVISORY (inline it with a `// TODO: refactor into <Name> variant`); 2+× → BLOCKING (a primitive that repeats must be a component, or the screen duplicates it N times). Do not add side conditions like "…or a clearly-named primitive" — that made the same 1× case ADVISORY here and BLOCKING in an agent file, and left "no match, used once, not clearly named" — the most common case on a flat landing — with no branch at all.
+
 ### Defaults applied by ADVISORY STOPs
 
 When `COMPONENT_GAP` fires as advisory (variant used once), the screen agent inlines a bespoke version with a `// TODO: refactor into <ComponentName> variant` comment. The orchestrator surfaces the advisory; the user can decide to delegate to `figma-components` post-batch or accept the inline.
