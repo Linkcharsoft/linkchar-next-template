@@ -157,13 +157,6 @@ Steps:
      const lossless = m.hasAlpha && m.width <= 512 && m.height <= 512
      await sharp(tmpPath).webp(lossless ? { lossless: true } : { quality: 85 }).toFile(targetPath)
      ```
-     ffmpeg -i {tmpPath} -c:v libwebp -lossless 1 -y {targetPath}
-     ```
-   - **Lossy** (`-q:v 85`) otherwise — photos and large images where imperceptible quality loss is fine:
-     ```
-     ffmpeg -i {tmpPath} -q:v 85 -y {targetPath}
-     ```
-   `{targetPath}` is `src/assets/images/{screenSlug}/{name}.webp` when the parent passed `screenSlug`, otherwise `src/assets/images/{name}.webp`.
 4. Create the target folder if missing (POSIX `mkdir -p {dir}`, PowerShell `New-Item -ItemType Directory -Force {dir}`).
 5. Write a sibling `.hash.txt` (e.g. `src/assets/images/{screenSlug}/{name}.hash.txt`) containing the JSON line `{"url": "{urlHash}", "sha1": "{contentHash}"}` so later steps of THIS import can dedup by either signal.
 6. Do NOT keep the original raw file in the project — only the `.webp` + `.hash.txt`.
