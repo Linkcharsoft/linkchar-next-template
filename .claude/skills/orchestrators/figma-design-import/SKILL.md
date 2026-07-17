@@ -355,11 +355,46 @@ Pass any provided fields to `figma-screen`; fall back to the registry for the re
 
 ## Step 6 — Code validation
 
-> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — runs in **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping. This is the **shared** validation agent (also used by `claude-design-import`).
+> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `claude-design-import`); it carries ~42 checks.
+>
+> **Fallback — ONLY if `design-validation` is not an available `subagent_type`.** A project agent can silently fail to load ([#14018](https://github.com/anthropics/claude-code/issues/14018)) — see [CLAUDE.md > When a sub-agent silently doesn't load](../../../../CLAUDE.md). Then run the sweep inline (below) rather than hard-failing or skipping validation, and **say in the report that validation ran inline (fallback) and is a reduced check set** — the inline sweep is a strict subset of the agent's, so a clean inline run proves less.
 
-Visual validation is the developer's job — they review the dev server side-by-side with Figma and request adjustments via the per-screen checkpoint in Step 5.2. This step is a final automated code sweep only.
+**Scope — pass it to the agent, or apply it inline.** Validate ONLY the files this import created/modified, or you'll report pre-existing template violations as import defects (`Waves.tsx`, `Filters.sass`, `mixins.sass` legitimately carry hex; `sentry-example-page/` is a documented throwaway). **Build the file list as you go** — every step agent's report names the files it touched; accumulate them in the workload ledger and hand that list over. Do not reconstruct it from `git status` (the worktree may hold unrelated work) and do not default to `src/`.
 
-Pass to the agent: scope (which screens/components to verify), or empty for full sweep. The agent runs `pnpm run lint-check --fix`, `pnpm run type-check`, plus structural checks: SEO metadata on every page, heading hierarchy, a11y on clickable non-buttons, raw hex compliance, typography compliance.
+**The inline sweep** (fallback only):
+
+1. `pnpm run lint-check --fix` → expect **0 errors**. Warnings are OK if they're the mandated `// TODO: openapi-import` markers (`sonarjs/todo-tag`); flag anything else.
+2. `pnpm run type-check` → expect clean.
+3. `pnpm run build` → catches what lint/tsc can't (SASS compile, `theme()` resolution, static generation). If it fails on a missing `.env.local`, that's the pre-`/init-project` state, NOT your bug — say so and move on.
+4. Convention greps over the scope list only (`$F` = the accumulated paths):
+
+```bash
+# raw hex — icon components are the documented exception (their fill/stroke IS the brand),
+# as are rgba() alpha overlays and a `// FLAG raw-hex gradient` marked per B4.
+grep -rn "#[0-9a-fA-F]\{3,8\}" $F | grep -v "rgba\|assets/icons/\|FLAG raw-hex"
+# loose typography (banned — must be text-{weight}-{size})
+grep -rnE "\b(text-(xs|sm|base|lg|[0-9]?xl)|font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b" $F
+# px-* on the same element as container-custom (banned — 16px gutter is built in)
+grep -rn "container-custom" $F | grep -E "px-[0-9]"
+# banned imports
+grep -rn "from 'clsx'\|import { motion }\|from '@/api\|useSWR\|customFetch" $F
+```
+
+> Do NOT grep for `theme(` — [§ B4](../../../docs/design-import-shared.md#b4-brand-gradients--the-one-hex-exception-besides-icons) tells agents to *prefer* `bg-[linear-gradient(…,theme(colors.x),…)]`, so its presence in a `.sass` is the recommended output, not a defect. Step 3's `pnpm build` already fails on a genuinely unresolvable `theme()`.
+
+5. Structural checks that greps get wrong — **verify these by reading, not by regex**: exactly one `<h1>` and one `<main>` per rendered page (a multi-line JSX `<a>` will make a naive `target='_blank'`-without-`rel` grep produce false positives — check the 2 lines after each hit before reporting it); SEO metadata completeness on every public page (`title`/`description`/`alternates.canonical`/`openGraph`/`twitter`); heading hierarchy; a11y on clickable non-buttons; `aria-label` on icon-only buttons.
+
+Report findings in a categorized `path:line` shape. **Don't auto-fix** — surface and offer to delegate to the relevant agent.
+
+**Then clean up the import's scratch state.** The `.hash.txt` siblings are import-scoped: Step 2 writes them so it can dedup across screen folders, and Step 5.2 reads them to skip a re-download from the Figma MCP. Once validation has run, nothing else consumes them — they are not source, and they are ~100 bytes of noise per image. Delete them as the last action of the flow:
+
+```bash
+find src/assets/images -name '*.hash.txt' -delete
+```
+
+Say how many you removed. The `.webp` files are the deliverable and stay. A future import re-downloads and re-converts from Figma — the cost is one MCP round-trip per asset, paid once.
+
+**This is an automated CODE sweep — it is blind to fidelity.** Neither path can see a breakpoint mapped to the wrong width, a glyph swapped for a near-identical one, or a section rendered 300px too wide: all of those compile, type-check and pass every grep. Visual review against Figma is the developer's job via the per-screen checkpoint in Step 5.2, and a clean Step 6 is **not** evidence the design was reproduced.
 
 You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-tokens` for hex, `figma-components` for a11y, etc).
 

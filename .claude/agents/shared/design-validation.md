@@ -83,7 +83,12 @@ JSX tags in this codebase routinely span multiple lines. A single-line regex mis
 29. **Modals registered globally but used in one screen**: read `src/providers/ModalsProvider.tsx`, list mounted modals; for each, grep `openModal('<key>'` usages. Opened from only ONE screen → flag (should be screen-local).
 
 ### 7. Token compliance
-30. **Raw hex colors**: grep `src/screens/`, `src/components/`, `src/layouts/` for `#[0-9a-fA-F]{6}\b` / `#[0-9a-fA-F]{3}\b`. Exclude `src/assets/icons/`, `src/assets/images/`, AND hex inside inline `<svg>…</svg>` regions (SVG `fill`/`stroke` is brand identity, like icon components — not a styling token; relevant for dclogic screens that keep inline SVGs). Report each remaining match.
+30. **Raw hex colors**: grep `src/screens/`, `src/components/`, `src/layouts/` for `#[0-9a-fA-F]{6}\b` / `#[0-9a-fA-F]{3}\b`. Exclude:
+    - `src/assets/icons/`, `src/assets/images/`, AND hex inside inline `<svg>…</svg>` regions (SVG `fill`/`stroke` is brand identity, like icon components — not a styling token; relevant for dclogic screens that keep inline SVGs).
+    - `rgba(...)` alpha overlays.
+    - any line marked `// FLAG raw-hex gradient` — a brand gradient with hardcoded stops is the **one allowed hex exception** and the marker exists precisely so you can see it is deliberate, per [`design-import-shared.md` § B4](../../docs/design-import-shared.md#b4-brand-gradients--the-one-hex-exception-besides-icons). Reporting it would flag the output another rule MANDATES.
+
+    Report each remaining match.
 
 ### 8. SASS `@apply` placement
 31. **`@apply` not last in its block**: `rg -nU --multiline --multiline-dotall '@apply[^\n]+\n[ \t]+[a-z][a-z-]*:' src --type-add 'sass:*.sass' --type sass`. Verify by reading (a following `&__X`/`&:hover` is fine). Fix = reorder plain CSS before `@apply`.
