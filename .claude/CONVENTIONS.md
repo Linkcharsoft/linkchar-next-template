@@ -458,7 +458,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 
 ## STOP Protocol
 
-Sub-agents (especially the figma-* family) emit STOPs when they cannot proceed without input from the orchestrator. STOPs come in two severities:
+Sub-agents of BOTH design-import flows (`figma-*` and `claude-design-*`, plus the shared `design-validation`) emit STOPs when they cannot proceed without input from the orchestrator. STOPs come in two severities:
 
 - **`STOP-BLOCKING`** — the agent CANNOT continue. The orchestrator MUST resolve the issue (typically by delegating to another sub-agent, asking the user, or fixing the input) before the original agent is re-invoked.
 - **`STOP-ADVISORY`** — the agent CAN continue with a documented default, but flagged the situation as worth surfacing. The orchestrator MUST display every advisory to the user at the next checkpoint, even if the batch keeps running.
@@ -481,15 +481,17 @@ details:
 
 ### Categories
 
+**`next_agent` is written as `{flow}-*` — substitute YOUR flow's family.** These categories are shared by both import flows, so `{flow}-tokens` means `figma-tokens` in a `figma-design-import` run and `claude-design-tokens` in a `claude-design-import` run. A STOP that names the wrong family is unroutable by the orchestrator — always emit the one matching the flow that invoked you.
+
 | Category | Severity | When | Next agent |
 | -------- | -------- | ---- | ---------- |
-| `TOKENS_MISSING` | BLOCKING | A Figma value has no Tailwind token (color, typography size, weight, family) | `figma-tokens` |
-| `OVERRIDE_BLOCKED` | BLOCKING | Token override on a non-surface token without `confirmOverride: true` | `user_decision` (then `figma-tokens` with confirmation) |
-| `REJECTED_SURFACE` | BLOCKING | Token proposal would extend/override the immutable `surface-*` namespace | `figma-tokens` (re-invoke with a non-surface namespace) |
-| `INVALID_INPUT` | BLOCKING | A required input is missing or malformed (e.g. empty `screenSlug`, missing `figmaNodeId`) | `manual` (orchestrator re-invokes with valid input) |
-| `NAMING_NEEDED` | BLOCKING | Asset name is a generic Figma default (`img-image-21`, `frame-1234`, `vector copy 2`) and no semantic context is available | `user_decision` |
-| `DATA_SCOPE_LEAK` | BLOCKING | A `figma-components` node intrinsically requires data loading (API, SWR) | `manual` (move the node to a screen via `figma-screen`) |
-| `COMPONENT_GAP` | ADVISORY when the variant is used 1× in the screen, otherwise BLOCKING | Existing component does not cover a Figma variant/state | `figma-components` |
+| `TOKENS_MISSING` | BLOCKING | A design value has no Tailwind token (color, typography size, weight, family) | `{flow}-tokens` |
+| `OVERRIDE_BLOCKED` | BLOCKING | Token override on a non-surface token without `confirmOverride: true` | `user_decision` (then `{flow}-tokens` with confirmation) |
+| `REJECTED_SURFACE` | BLOCKING | Token proposal would extend/override the immutable `surface-*` namespace | `{flow}-tokens` (re-invoke with a non-surface namespace) |
+| `INVALID_INPUT` | BLOCKING | A required input is missing or malformed (e.g. empty `screenSlug`, a missing source gate — `figmaNodeId` / `file:lines` region) | `manual` (orchestrator re-invokes with valid input) |
+| `NAMING_NEEDED` | BLOCKING | Asset name is a generic default (`img-image-21`, `frame-1234`, `px13137724`, `unsplashInvite`) and no semantic context is available | `user_decision` |
+| `DATA_SCOPE_LEAK` | BLOCKING | A `{flow}-components` node/primitive intrinsically requires data loading (API, SWR) | `manual` (move it to a screen via `{flow}-screen`) |
+| `COMPONENT_GAP` | ADVISORY when the primitive is used **1×** in the screen, BLOCKING when used **2+×** | Existing component does not cover a design variant/state | `{flow}-components` |
 | `CONTAINER_CUSTOM_DECISION` | ADVISORY | Hybrid layout: ambiguous whether `container-custom` should anchor the chrome | `user_decision` (default = no `container-custom`) |
 
 ### Defaults applied by ADVISORY STOPs
@@ -500,7 +502,7 @@ When `CONTAINER_CUSTOM_DECISION` fires as advisory, the layout agent renders the
 
 ### Orchestrator handler
 
-The `figma-design-import` skill includes a "Handling agent STOPs" section that describes the exact decision tree: for each `STOP-BLOCKING`, the orchestrator must delegate or ask the user; for each `STOP-ADVISORY`, the orchestrator continues the flow but always shows the advisory in the next per-screen checkpoint.
+Both the `figma-design-import` and `claude-design-import` skills include a "Handling agent STOPs" section describing the exact decision tree: for each `STOP-BLOCKING`, the orchestrator must delegate or ask the user; for each `STOP-ADVISORY`, the orchestrator continues the flow but always shows the advisory in the next per-screen checkpoint. Each routes `{flow}-*` to its own agent family.
 
 ---
 
