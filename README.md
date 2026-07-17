@@ -19,15 +19,14 @@ Production-ready Next.js starter template by **Linkchar**, pre-configured with a
 | Analytics | Microsoft Clarity |
 | Testing | Cypress 15 (E2E) |
 | Linting | ESLint 9 (flat config) + Husky git hooks |
-| Package Manager | pnpm (>=10.33.0) |
-| Node | ^22.22.0 |
+| Package Manager | pnpm |
+| Node | see `package.json` → `engines` |
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js ^22.22.0
-- pnpm >=10.33.0
+- Node.js and pnpm — the required versions are in `package.json` → `engines`, and pnpm enforces them on install. Check with `node -p "require('./package.json').engines"`.
 
 ### Installation
 

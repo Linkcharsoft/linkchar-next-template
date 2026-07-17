@@ -15,8 +15,10 @@ This file describes **what** this project is: the tech stack, structure, and hig
 - **Forms:** Formik + Yup
 - **Animations:** Framer Motion (use `m` + `LazyMotion`, NEVER `motion`)
 - **Data Fetching:** SWR + custom `customFetch` wrapper (`src/api/customFetch.ts`)
-- **Package Manager:** pnpm (>=10.30.0)
-- **Node Version:** ^22.22.0
+- **Package Manager:** pnpm
+- **Runtime / toolchain versions:** see **`package.json` → `engines`** (node, pnpm). Read it when the exact constraint matters — e.g. before relying on a runtime API whose availability depends on the node major.
+
+> **Why no version numbers here.** `engines` is machine-enforced and is the single source of truth; a copy in a doc is unenforced and drifts silently. It did — this file and `README.md` each carried their own stale node/pnpm constraints, and had even drifted apart from *each other*. The framework versions above are deliberately **majors only**: those are architectural context an agent needs up front (`Next.js 16 App Router` changes how you write a page; `Tailwind 3` vs 4 changes the config shape), they change rarely, and they stayed accurate while the precise constraints rotted. **Rule: a major is context and may live here; anything more precise is a constraint and belongs only in `package.json`.**
 
 ## Automation Skills
 
