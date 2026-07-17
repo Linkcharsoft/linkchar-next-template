@@ -202,11 +202,11 @@ Authoritative list = **every registry key** in `inventory.screens`. `nav-graph.t
 **`single-page-sections` (dclogic landing — e.g. Hologramas) / `single-page` (vanilla): ONE screen, one route.** The whole export is a single screen (usually `/`, `public`); the `inventory.screens` entries are **SECTIONS of that one screen** (navigated by internal state — `go(section)` / `state.page`), NOT separate routes/steps/modals. Scaffold ONE route; Step 5.2 implements the section switching internally (like a stepper). Do not create a route per section.
 
 ## Detected language
-- Sample visible strings from screen JSX (`characters`/JSX text). Decision `en`|`es` + reasoning.
+- Sample the VISIBLE strings of the source (babel: JSX text nodes; dclogic: the text between tags in `{screen}.markup.html`, plus `<option>` labels and `placeholder=` — NOT `{{holes}}`, class names, or `data-*`). Decision `en`|`es` + reasoning.
 - Current `<html lang>` in `src/app/layout.tsx`: {value}. Flag if it must switch.
 ```
 
-**Language heuristic**: same as the project standard — Spanish-leaning if strings contain `ñ`, accents, or words like `iniciar/comenzar/nuevo/usuario/comprar/requerido`. ≥50% Spanish → `es`, else `en`; default `en` on tie.
+**Language heuristic**: same as the project standard — a string is Spanish-leaning if it contains `ñ`, an accented vowel, or a word like `iniciar/comenzar/nuevo/usuario/comprar/requerido`. **Count STRINGS, not words or characters**: ≥50% of the sampled visible strings Spanish-leaning → `es`, else `en`; `en` on a tie. Sample at least ~20 strings spread across the design (a nav alone is not a sample).
 
 4. **Gate your own spec against the source (Step 0.55) — do NOT skip this.**
 
