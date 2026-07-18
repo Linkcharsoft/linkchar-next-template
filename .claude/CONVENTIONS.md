@@ -187,6 +187,43 @@ Other rules:
 - SASS mixins are auto-injected globally via `next.config.ts` `sassOptions.additionalData`.
 - **Layer order in `src/styles/index.sass`** is `@layer tailwind-base, primereact, tailwind-utilities` — ensures Tailwind utilities override PrimeReact. **NEVER modify this line.**
 
+### A colocated `.sass` BEATS every Tailwind utility — plan for it
+
+**A component's colocated `.sass` is unlayered; Tailwind's utilities live inside `@layer tailwind-utilities`. Unlayered CSS wins over layered CSS at equal specificity, so a plain-CSS declaration in a `.sass` file silently defeats any utility a caller passes in `className`.**
+
+This is a property of the CSS cascade, not a bug to fix at the call site, and it is invisible to `lint`, `type-check` and `design-validation` — all three pass a file whose styles never apply. Verify in the built CSS (`.next/**/*.css`) if you doubt it: the component's chunk carries no `@layer` at all, while `index.sass`'s chunk emits `@layer tailwind-utilities { … }`.
+
+Two consequences, both mandatory:
+
+1. **A property a caller may need to override must go through `@apply`, not plain CSS.** `@apply`'d utilities land in the same implicit layer as the rest of the `.sass`, so normal specificity decides and the caller can win.
+2. **A property with a responsive or pseudo-state variant must declare its base and its variants together via `@apply`.** Writing `display: flex` as plain CSS and `@apply md:hidden` for the variant does NOT work — the plain-CSS base outranks the layered variant at every viewport, and the element simply never hides.
+
+```sass
+// ❌ Broken — the caller's `rounded-[13px]` and the `md:hidden` are both silently discarded
+.Card
+  border-radius: 5px
+  display: flex
+  @apply md:hidden
+
+// ✅ Works — both are overridable / actually apply
+.Card
+  gap: 1rem                    // no caller overrides this, no variants → plain CSS is fine
+  @apply rounded-[5px] flex md:hidden
+```
+
+**To override another component's geometry from a consumer**, don't fight it with utilities — use a chained selector in the consumer's own `.sass`. It is deterministic and independent of import order:
+
+```sass
+// src/screens/HomePage/HomePage.sass
+.HomePage__HeroCta.CustomButton     // 0,2,0 beats CustomButton's own 0,1,0 base
+  border-radius: 13px
+  padding: 15px 26px
+```
+
+`!important` utilities (`!rounded-[13px]`) also work but are noisier and harder to trace — prefer the chained selector.
+
+**This is a documented constraint, not a STOP.** An agent that hits it applies the pattern above and mentions it in its report; it does NOT emit a STOP. There is deliberately no [STOP Protocol](#stop-protocol) category for it — the first agent to meet it had nothing that fit and filed it as `COMPONENT_GAP` (which means "a primitive is used N×", something else entirely), so it reached the next agent by luck. Now that the rule is written down, every agent knows it up front and the handoff is a normal report line.
+
 ---
 
 ## Typography System
@@ -232,7 +269,7 @@ So: `md:` = "≥768, project scale"; `hg-md:` = "≤860, this design". Both are 
 
 Use `container-custom` class for centered content with responsive max-widths AND a built-in responsive lateral gutter:
 
-- **Max-width tiers**: Default: 1600px | <=1920px: 1440px | <=1640px: 1200px | <=1440px: 1000px
+- **Max-width tiers** — **the source of truth is [`src/styles/general.sass`](../src/styles/general.sass)**, and it is the ONLY place the numbers live. Read it when an exact value matters; do not copy the tiers into any doc, prompt or agent file. (This paragraph used to carry its own copy of the values — two of the four had silently drifted from the stylesheet, and a design import reasoned about section widths against tiers that did not exist. Same rule, same reason, as `engines` in [`CLAUDE.md`](../CLAUDE.md): a copy nobody enforces rots.)
 - **Lateral padding (built-in)**: 16px on every viewport. This guarantees a safe edge gutter and prevents content from touching the screen edges on mobile.
 
 Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. `px-4`) on the same element that already has `container-custom` — it's redundant. If a specific section truly needs a different inner padding than the global gutter, nest a child `<div>` and apply `px-*` there instead of duplicating it on the container.
@@ -321,6 +358,8 @@ LCP, CLS, "Properly size images".
 - **NEVER** use `@import url('https://fonts.googleapis.com/...')` in CSS/SASS. It is render-blocking and triggers FOIT.
 - **ALL fonts** must be loaded via `next/font/google` or `next/font/local`, with `display: 'swap'` and a CSS variable (`variable: '--font-X'`). Apply the variable to `<html>` via `className`.
 - **Tailwind and CSS must reference the variable**, not the literal font name: `font-family: var(--font-merriweather-sans)` (NOT `'Merriweather Sans'`); Tailwind: `fontFamily: { sans: ['var(--font-merriweather-sans)', 'sans-serif'] }`.
+- **A body + display font pair gets a `sans` slot and a `display` slot — the pairing is by ROLE, never by sans-vs-serif.** The body font goes in `fontFamily.sans` (and drives `body`'s `font-family` in `general.sass`); a distinct display/heading font gets its own `fontFamily.display` key, **whatever its classification** — `display` is very often another sans (Plus Jakarta Sans over Mulish is a typical design-import pairing). Only add a `serif` key when a family genuinely IS serif. Naming the second slot `serif` because "it's the other one" produces `font-serif` classes on a sans font.
+- **Nothing applies the display font implicitly — headings must carry `font-display`.** `general.sass` styles only `body`, so there is no global `h1..h4 { font-family }` rule and a heading with no class silently renders in the body font. Every `<h1>`–`<h4>` (and any wordmark) using the display family must carry `font-display` explicitly. If a design's source CSS has a global heading rule, that rule's job moves to this class — do not port it into `general.sass`.
 - **Variable fonts**: omit `weight` to ship one `.woff2` covering the full weight range. Non-variable fonts: specify ONLY the weights actually used — every weight in the array is an extra file.
 - **Icon fonts whose default `@font-face` uses `font-display: block`** MUST be re-hosted via `next/font/local` and forced via `[icon-selector] { font-family: var(--font-X) !important }`. Otherwise icons cause FOIT. The template ships this done for PrimeIcons — see `src/app/layout.tsx` (`localFont({ src: '../../node_modules/primeicons/fonts/primeicons.woff2', display: 'swap', variable: '--font-primeicons' })`) and `src/styles/index.sass` (`.pi { font-family: var(--font-primeicons) !important }`). Referencing the file directly from `node_modules` keeps the font version locked to `package.json` — no manual copy in `src/assets/`, no drift on upgrades.
 
@@ -350,6 +389,13 @@ Lighthouse "Accessibility".
 - **Decorative icons inside text or interactive content** (the `<i className='pi pi-X'>` next to a button label, the icon paired with a heading, etc.) MUST set `aria-hidden='true'`. Without it, screen readers announce PrimeIcons glyph codes as garbage characters next to the visible label.
 - **External links** (`target='_blank'`) MUST include `rel='noopener noreferrer'`. Prevents tab-napping (security) and avoids a Lighthouse Best Practices flag.
 - **Form inputs need `autoComplete`** (JSX prop — React lowercases it to the `autocomplete` HTML attribute): email → `'email'`, login password → `'current-password'`, signup/reset password → `'new-password'`, full name → `'name'`, phone → `'tel'`, postal code → `'postal-code'`, etc. Missing `autoComplete` is both a Lighthouse a11y failure and a password-manager UX regression.
+- **Required fields: convey it in the label's accessible name — NOT with `required` or `aria-required`.** A visual `*` alone is not an accessible name, but the two obvious fixes both break on this stack: native `required` fires the browser's own validation before Formik's `onSubmit`, pre-empting the Yup flow and showing native bubbles in the browser's locale (not `detectedLanguage`); and `aria-required` cannot be placed correctly on a PrimeReact `Dropdown` — it emits none itself, and its `pt` sections do not isolate the focusable element (`input` covers both the real `<input>` and a `<span tabindex="-1">`), so the attribute lands on a `generic`-role span and fails `aria-allowed-attr`. Trading one a11y violation for another is not a fix. Use the one mechanism valid on every control type:
+
+  ```tsx
+  <span>Nombre <span aria-hidden='true' className='text-hg-red'>*</span><span className='sr-only'>(obligatorio)</span></span>
+  ```
+
+  The accessible name reads "Nombre (obligatorio)". Keep `(opcional)` markers **announced** (they are information, not decoration) — only the `*` glyph is `aria-hidden`.
 - **Form/input error display components** (`InputError`-likes, `FormError`, `FieldError`, alert banners on inputs) MUST wrap the visible message in an element with `role='alert'`. The existing `src/components/inputs/InputError/InputError.tsx` already does this on its `<m.div role='alert'>` root — preserve the pattern when extending.
 - **Form submission errors**: when a server or schema validation error fires on submit, focus MUST move to the first invalid field (call `.focus()` in the Formik `onSubmit` failure path) OR render an error summary wrapped in `<div role='alert' aria-live='assertive'>...</div>`. Without this, screen-reader users don't know the form failed.
 - **Loading states**: never render the screen blank while data is fetching — use a `{Name}PageSkeleton` (generated by `/new-skeleton`) or `<Loader/>` for sub-sections. Wrap the loading container with `aria-busy={isLoading}` so SR users hear that data is on the way.
