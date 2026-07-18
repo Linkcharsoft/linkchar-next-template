@@ -294,8 +294,11 @@ The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/se
 **What's actually installed: Cypress (E2E).**
 
 - `cypress` + helpers (`cypress-dotenv`, `cypress-file-upload`, `cypress-mailslurp`), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
-- Config: `cypress.config.ts` at the repo root.
+- Config: `cypress.config.ts` at the repo root — `specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}'`, `baseUrl: http://localhost:3000` (so the app must be running).
 - Commands: `pnpm run test-open` (interactive) · `pnpm run test-run` (headless).
-- **No specs exist yet** — there is no `cypress/` directory. The runner is configured but unused.
+- **Specs DO exist** — 8 of them, under **`src/cypress/e2e/`** (not a root `cypress/`): the auth flow (`Login`, `SignUp`, `EmailValidation`, `PasswordRecovery`, `ChangePassword`, `Flow`, `DeleteTestUser`) plus `NavigationProtection.cy.ts`. Alongside them: `src/cypress/support/` (`commands.ts`, `e2e.ts`), `src/cypress/utils/` (shared helpers), and its own `tsconfig.json`.
+  > This bullet previously read *"No specs exist yet — there is no `cypress/` directory. The runner is configured but unused."* That was false on both counts, in a section whose whole purpose was to purge fiction. The directory is `src/cypress/`, and looking for a root `cypress/` is what hid it.
 
-**Until this is decided, do NOT scaffold tests unprompted**, and do not follow the removed Vitest conventions — writing `src/**/__tests__/*.test.ts` against a framework that isn't installed produces code that cannot run.
+**`src/cypress/utils/` encodes live DOM contracts — components must not break them.** `checkInputError.ts` selects `.parents('.InputContainer').find('.InputError')`, `checkPasswordErrors.ts` likewise leans on `PasswordValidator`'s markup. Changing or extending those components means keeping the root class and the error element's descendant relationship intact, or the auth specs go red.
+
+**Do NOT scaffold NEW test infrastructure unprompted** (the testing strategy beyond the auth flow is still undecided), and do not follow the removed Vitest conventions — writing `src/**/__tests__/*.test.ts` against a framework that isn't installed produces code that cannot run.
