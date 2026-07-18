@@ -41,7 +41,15 @@ This file describes **what** this project is: the tech stack, structure, and hig
 
 > **`/init-project` is enforced on fresh clones.** Until it runs (sentinel: `package.json` `name` is still `linkchar-next-template`), two guards block work: the Husky **`pre-commit`** hook refuses commits, and a Claude **PreToolUse** hook (`.claude/hooks/require-init.mjs`) refuses `Edit`/`Write`. Running `/init-project` renames the app and disarms both. Maintainers working on the **template itself** bypass with `LINKCHAR_TEMPLATE_DEV` — set it once in `.claude/settings.local.json` (`"env"` key, gitignored) and both guards read it (the shell env also works and takes precedence).
 
-Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma / Claude Design / OpenAPI orchestrators, `init-project/` at the root). Subfolders are for organization only — Claude Code discovers skills recursively and the slash command is still the skill's own directory name (e.g. `/new-component`), independent of the parent folder. Do not duplicate their logic in chat — invoke them.
+Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma / Claude Design / OpenAPI orchestrators, `init-project/` at the root). Do not duplicate their logic in chat — read the matching `SKILL.md` and follow it.
+
+> ⚠️ **Skill discovery is NOT recursive — the slash commands for the nested skills do not resolve.** Claude Code loads only `.claude/skills/{name}/SKILL.md` at ONE level. So `/init-project` (at the root) works, and the other **11 skills — every `/new-*` and all three orchestrators — never load**; typing `/new-component` or `/claude-design-import` returns `Unknown command`.
+>
+> **Agents, in the same `.claude/` tree, DO recurse** (`.claude/agents/figma/*.md`, `.claude/agents/claude-design/*.md` are all available). That asymmetry is the trap: it makes it natural to assume skills behave the same. They do not.
+>
+> **This paragraph used to assert the opposite** ("Subfolders are for organization only — Claude Code discovers skills recursively"). That was an unverified assumption written when commit `4d30140` (2026-07-08) moved the skills into subfolders; nobody tested it. It went unnoticed for ten days because **the workflows kept working**: when the intent is recognized, the `SKILL.md` gets read from disk and followed by hand, producing the same output as a loaded skill. Verified 2026-07-18 across 7 project transcripts — the `Skill` tool was invoked **zero** times, while `Bash`/`Read`/`Edit`/`Agent` appear hundreds of times each. The failure is silent in exactly the way [a stuck sub-agent](#when-a-sub-agent-silently-doesnt-load) is.
+>
+> **So, to run one of these: describe the task, or point at its `SKILL.md` path** — do not rely on the slash command. **To make the commands work**, flatten `.claude/skills/` to one level (11 directories), which also means rewriting the ~102 `../../../CONVENTIONS.md` links inside them to `../../` and updating the references in `CLAUDE.md`, `figma-scaffold.md`, `openapi-spec-validate.md`. Not done yet — it is ergonomics, not capability.
 
 ### When a sub-agent silently doesn't load
 
