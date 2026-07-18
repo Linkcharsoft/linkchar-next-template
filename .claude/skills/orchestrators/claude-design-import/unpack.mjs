@@ -8,28 +8,44 @@
 //
 // The envelope is shared; the CONTENT comes in three flavors this script normalizes into ONE
 // intermediate representation (IR) so the downstream pipeline stays format-agnostic:
-//   - babel   : a React SPA (`<script type="text/babel">`, `function` components, window.HOST/GUEST, THEMES). (GIVXO)
+//   - babel   : a React SPA (`<script type="text/babel">`, `function` components). A screen registry drives
+//               routing, but its SHAPE is not mandated — flat `{key: Comp}` (GIVXO) and nested
+//               `{key: {c: Comp, role}}` (Homfix/TocToc) both occur; THEMES/window.HOST/GUEST/HOST_TABS
+//               appear in SOME exports (GIVXO) and not others (TocToc has none). Read the registry, don't
+//               assume the shape. This flavor is NOT dead: Claude Design's system prompt now mandates DC for
+//               NEW UI, but existing .jsx projects still edit and export as babel.
 //   - dclogic : Claude Design's NATIVE format — `<x-dc>` markup + `class Component extends DCLogic` + `<helmet>`.
 //               Single-page (template=string, routing via `state.page`) OR multi-page (template={pages,entry}).
 //   - vanilla : plain HTML/CSS/JS, no component framework (best-effort — no reference sample).
 //   - Next.js is NOT a standalone-HTML export (it's a code/zip export) → out of scope here.
 //
-// Usage:  node unpack.mjs <url-or-path> <outDir>
+// SCOPE: this reads a "Standalone HTML" export, which bundles ONE design. A design that links to sibling
+// .dc pages will be PARTIAL — the siblings aren't in the bundle (see the partial-export guard below). The
+// "Project archive" .zip DOES contain every .dc.html, but ingesting a raw project tree is not wired in yet.
+//
+// Usage:  node unpack.mjs <url-or-path> <outDir> [--allow-partial]
 
-import { writeFileSync, mkdirSync, rmSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync, statSync, readdirSync } from 'node:fs'
+import { join, dirname, basename, resolve } from 'node:path'
 import zlib from 'node:zlib'
 
 const EXPECTED_SHAPE = { blocks: ['manifest', 'ext_resources', 'template'] }
 const die = (msg) => { console.error(`\n[unpack] ERROR: ${msg}\n`); process.exit(1) }
 
-const [, , input, outDir] = process.argv
-if (!input || !outDir) die('usage: node unpack.mjs <url-or-path> <outDir>')
+const argv = process.argv.slice(2)
+const allowPartial = argv.includes('--allow-partial')
+const [input, outDir] = argv.filter((a) => !a.startsWith('--'))
+if (!input || !outDir) die('usage: node unpack.mjs <url-or-path> <outDir> [--allow-partial]')
 
 // ─────────────────────────────────────────────────────────── helpers
 const MIME_EXT = {
   'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
   'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg', 'image/avif': 'avif',
+}
+// ext → mime, for archive images copied from disk (no manifest mime to read).
+const EXT_MIME = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+  webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif',
 }
 function decodeEntry(entry) {
   let buf = Buffer.from(entry.data, 'base64')
@@ -60,6 +76,27 @@ function extractBalanced(src, openIdx) {
     else if (c === close) { depth--; if (depth === 0) return src.slice(openIdx, i + 1) }
   }
   return null
+}
+// Split an object literal's body into TOP-LEVEL [key, valueText] pairs; nesting- and string-aware.
+// Needed because a registry entry's value is not always a bare component: the flat `{ home: Home }`
+// shape and the nested `{ home: { c: Home, role:'x' } }` shape are both real (see mergeRegistry).
+function topLevelEntries(objText) {
+  const body = (objText || '').trim().slice(1, -1)
+  const out = []
+  let depth = 0, quote = null, buf = '', key = null
+  const flush = () => { if (key !== null && buf.trim()) out.push([key, buf]); key = null; buf = '' }
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i]
+    if (quote) { buf += c; if (c === '\\') { buf += body[++i] ?? '' } else if (c === quote) quote = null; continue }
+    if (c === '"' || c === "'" || c === '`') { quote = c; buf += c; continue }
+    if ('{(['.includes(c)) depth++
+    else if ('})]'.includes(c)) depth--
+    if (depth === 0 && c === ':' && key === null) { key = buf.trim().replace(/^['"]|['"]$/g, ''); buf = ''; continue }
+    if (depth === 0 && c === ',') { flush(); continue }
+    buf += c
+  }
+  flush()
+  return out
 }
 const evalLiteral = (text) => { try { return Function(`"use strict";return (${text});`)() } catch { return null } }
 const slugify = (s) => (s || '').replace(/\.dc$/i, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'x'
@@ -189,9 +226,136 @@ function computeTargetSignals(str, navModel) {
   return { iosChrome, phoneFrameMaxWidth: phone, wideWidth: wide, maxWidthsSeen: maxWidths.sort((a, b) => a - b), guess }
 }
 
-// ─────────────────────────────────────────────────────────── 1. get the export HTML
-let html
-if (/^https?:\/\//i.test(input)) {
+// ─────────────────────────────────────────────────────────── archive ingestion (Project archive .zip, unzipped)
+// A "Project archive" is the user's WHOLE Claude Design project folder, NOT a single design: it holds several
+// designs, version-copies (`- export`, `deploy/`, `v2`), bundled variants (`(standalone)`/`(offline)`/`-print`,
+// each carrying its own __bundler envelope), older iterations, and `uploads/` briefs. The handoff README names
+// the ONE primary design; everything else is context or noise. So archive ingestion = resolve the dependency
+// CLOSURE from the README's entry and ignore the rest. Unlike the standalone path, this reads RAW source files
+// (no envelope, no base64/gzip) — it reuses the same per-format parsers by SYNTHESIZING the `template` they expect.
+const IMG_REF = /\.(png|jpe?g|webp|gif|svg|avif)(?:[?#]|$)/i
+const readText = (p) => readFileSync(p, 'utf8')
+
+// The handoff README's entry line: **Read `<slug>/project/<rel>` in full.** — the path is relative to the zip root.
+function findReadmeEntry(dir) {
+  const shallow = [join(dir, 'README.md'), ...readdirSync(dir, { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => join(dir, d.name, 'README.md'))]
+  for (const readmePath of shallow) {
+    if (!existsSync(readmePath)) continue
+    const m = readText(readmePath).match(/\*\*Read\s+`([^`]+)`\s+in full/i)
+    return { readmePath, entryRel: m ? m[1] : null }
+  }
+  return null
+}
+
+// Every LOCAL image referenced by the closure source (src/href/url()/ext-resource-dependency), resolved to a real
+// file. Mirrors the standalone bundler, which inlines only referenced images — unreferenced files (other designs,
+// variants) are correctly skipped.
+function collectArchiveImages(srcList, baseDir) {
+  const refs = new Set()
+  for (const src of srcList) {
+    for (const m of src.matchAll(/(?:src|href)\s*=\s*"([^"]+)"/gi)) if (IMG_REF.test(m[1])) refs.add(m[1])
+    for (const m of src.matchAll(/url\(\s*['"]?([^'")]+?)['"]?\s*\)/gi)) if (IMG_REF.test(m[1])) refs.add(m[1])
+    for (const m of src.matchAll(/ext-resource-dependency"\s+content="([^"]+)"/gi)) if (IMG_REF.test(m[1])) refs.add(m[1])
+  }
+  const out = []
+  for (const ref of refs) {
+    if (/^(https?:|data:)/i.test(ref)) continue
+    const p = resolve(baseDir, ref.replace(/[?#].*$/, ''))
+    if (existsSync(p) && statSync(p).isFile()) out.push({ srcPath: p, ref })
+  }
+  return out
+}
+
+// Resolve the README entry → classify its format → build the `template` the parsers expect + the real-image list.
+// Returns { template, format, navModel, images, entryRel } or dies with guidance.
+function ingestArchive(dir) {
+  const found = findReadmeEntry(dir)
+  if (!found) die(`archive has no README.md — not a recognized Claude Design "Project archive". Point at the unzipped handoff (Export → .zip → "Project archive"/"Send to coding agent"), whose README names the primary design.`)
+  if (!found.entryRel) die(`archive README (${found.readmePath}) has no "**Read \`…\` in full**" line — cannot identify the primary design. Entry-detection-without-README is not wired yet.`)
+
+  // entryRel is relative to the zip root = the parent of the slug dir that holds the README.
+  const base = dirname(dirname(found.readmePath))
+  let entryFull = resolve(base, found.entryRel)
+  if (!existsSync(entryFull)) die(`archive README names entry "${found.entryRel}" but it is not on disk at ${entryFull}. Unzip may be incomplete, or the README path is unexpected.`)
+
+  const entryDir = dirname(entryFull)
+  // The README can name a BUNDLED variant (`(offline)`, `(standalone-src)`) — a self-contained __bundler export,
+  // not raw source. (GIVXO's handoff points at "GIVXO App (offline) v3.html".) Reading it as raw source misreads
+  // the escaped envelope; hand it to the standalone path instead, which decodes the envelope properly.
+  const rawEntry = readText(entryFull)
+  if (/<script type="__bundler\/(?:manifest|template)"/.test(rawEntry)) {
+    return { bundledStandalone: rawEntry, entryRel: found.entryRel }
+  }
+  // Read a doc AND inline its local <link> stylesheets — in a Project archive the CSS lives in sibling files
+  // (styles.css), not inlined as in a Standalone, so without this the parsers miss colors/sizes/fonts entirely.
+  const readDoc = (file) => inlineLocalCss(readText(file), dirname(file))
+  const entrySrc = readDoc(entryFull)
+  // Detect babel by the entry EXTENSION too (`.jsx`), not only the `text/babel` marker: a README can point
+  // straight at a `.jsx`, whose content carries no `type="text/babel"` string and would otherwise fall through
+  // to a wrong `vanilla` classification and produce garbage.
+  const format = /\.jsx$/i.test(entryFull) || /type="text\/babel"/.test(entrySrc) ? 'babel'
+    : /<x-dc\b|data-dc-script|extends\s+DCLogic/.test(entrySrc) ? 'dclogic'
+      : 'vanilla'
+
+  if (format === 'dclogic') {
+    // BFS the sibling-.dc.html closure from the entry. Relative same-dir links only, so `deploy/` copies and
+    // bundled variants (not linked from the root entry) are excluded for free.
+    const bySlug = {}
+    const entrySlug = slugify(basename(entryFull).replace(/\.html$/i, ''))
+    const queue = [[entrySlug, entryFull, entrySrc]]
+    const seen = new Set()
+    while (queue.length) {
+      const [slug, file, src] = queue.shift()
+      if (seen.has(slug)) continue
+      seen.add(slug); bySlug[slug] = src
+      for (const m of src.matchAll(/href="([^"]+\.dc\.html)"/gi)) {
+        if (/^[a-z]+:\/\//i.test(m[1])) continue
+        const childFile = resolve(dirname(file), m[1].replace(/[?#].*$/, ''))
+        if (!existsSync(childFile)) continue
+        const childSlug = slugify(basename(childFile).replace(/\.html$/i, ''))
+        if (!seen.has(childSlug)) queue.push([childSlug, childFile, readDoc(childFile)])
+      }
+    }
+    const slugs = Object.keys(bySlug)
+    const template = slugs.length > 1 ? { pages: bySlug, entry: entrySlug } : bySlug[entrySlug]
+    const navModel = slugs.length > 1 ? 'multi-page' : 'single-page-sections'
+    return { template, format, navModel, images: collectArchiveImages(Object.values(bySlug), entryDir), entryRel: found.entryRel }
+  }
+
+  if (format === 'vanilla') {
+    return { template: entrySrc, format, navModel: 'single-page', images: collectArchiveImages([entrySrc], entryDir), entryRel: found.entryRel }
+  }
+
+  // babel — a clean, intentional STOP (not a crash). The archive path exists to fix ONE thing the standalone
+  // botches: multi-PAGE dclogic truncated to a single page. A babel design is a single-SPA with an internal
+  // screen registry, so its Standalone HTML export already bundles the WHOLE app (every screen + jsx) with no
+  // truncation — the archive would add nothing but risk. So route babel through the standalone, deliberately.
+  die(`ARCHIVE ENTRY IS BABEL (React/JSX) — this flow does not import a babel design from a Project archive, by design.\n` +
+    `  Primary design: "${found.entryRel}"\n\n` +
+    `  Why: the archive path fixes multi-PAGE dclogic (which the standalone truncates). A babel design is one SPA\n` +
+    `  with an internal screen registry — its Standalone HTML export already captures the entire app, untruncated.\n\n` +
+    `  Do this instead: in Claude Design, open that design and Export → Standalone HTML, then run this script on\n` +
+    `  the .html file. (babel is the pre-June-2026 generation format; new designs are dclogic and DO use archives.)`)
+}
+
+// ─────────────────────────────────────────────────────────── 1. dispatch: Project archive (dir) vs Standalone HTML (file/URL)
+const isArchive = !/^https?:\/\//i.test(input) && existsSync(input) && statSync(input).isDirectory()
+
+let manifest = {}, extParsed = null, template, format, navModel
+let archiveImages = null, archiveEntryRel = null, archiveBundled = false
+let html = null   // set when we take the envelope path: a real Standalone, OR an archive entry that is bundled
+if (isArchive) {
+  console.log(`[unpack] reading Project archive ${input}`)
+  const a = ingestArchive(input)
+  archiveEntryRel = a.entryRel
+  if (a.bundledStandalone) {
+    html = a.bundledStandalone; archiveBundled = true
+    console.log(`[unpack] archive entry is a bundled standalone (__bundler) → envelope path`)
+  } else {
+    template = a.template; format = a.format; navModel = a.navModel; archiveImages = a.images
+  }
+} else if (/^https?:\/\//i.test(input)) {
   console.log(`[unpack] downloading ${input}`)
   const res = await fetch(input)
   if (!res.ok) die(`download failed: HTTP ${res.status}`)
@@ -201,26 +365,28 @@ if (/^https?:\/\//i.test(input)) {
   try { html = readFileSync(input, 'utf8') } catch (e) { die(`cannot read file: ${e.message}`) }
 }
 
-// ─────────────────────────────────────────────────────────── 2. parse the envelope (shared)
-const rawManifest = extractBundlerBlock(html, 'manifest')
-const rawExt = extractBundlerBlock(html, 'ext_resources')
-const rawTemplate = extractBundlerBlock(html, 'template')
-if (!rawManifest || !rawTemplate) {
-  die(`unexpected export shape — missing __bundler blocks (expected ${EXPECTED_SHAPE.blocks.join(', ')}). ` +
-      `Not a recognized Claude Design standalone-HTML export.`)
+// Envelope path — the private __bundler envelope of a Standalone HTML (file/URL) or an archive's bundled entry.
+if (html !== null) {
+  const rawManifest = extractBundlerBlock(html, 'manifest')
+  const rawExt = extractBundlerBlock(html, 'ext_resources')
+  const rawTemplate = extractBundlerBlock(html, 'template')
+  if (!rawManifest || !rawTemplate) {
+    die(`unexpected export shape — missing __bundler blocks (expected ${EXPECTED_SHAPE.blocks.join(', ')}). ` +
+        `Not a recognized Claude Design standalone-HTML export. If this is a "Project archive" .zip, unzip it and pass the FOLDER.`)
+  }
+  try { manifest = JSON.parse(rawManifest) } catch (e) { die(`manifest is not valid JSON: ${e.message}`) }
+  if (rawExt) { try { extParsed = JSON.parse(rawExt) } catch { extParsed = null } }
+  try { template = JSON.parse(rawTemplate) } catch (e) { die(`template block is not valid JSON: ${e.message}`) }
 }
-let manifest, extParsed = null, template
-try { manifest = JSON.parse(rawManifest) } catch (e) { die(`manifest is not valid JSON: ${e.message}`) }
-if (rawExt) { try { extParsed = JSON.parse(rawExt) } catch { extParsed = null } }
-try { template = JSON.parse(rawTemplate) } catch (e) { die(`template block is not valid JSON: ${e.message}`) }
 
 // ext_resources may be an ARRAY of aliases (babel/dclogic-single) or an OBJECT page-map (dclogic-multi).
-// Guard both — a raw `for..of` over an object throws (this was the StreetBuild crash).
+// Guard both — a raw `for..of` over an object throws (this was the StreetBuild crash). (Archive: no aliases.)
 const extAliases = Array.isArray(extParsed) ? extParsed : []
 const aliasByUuid = {}
 for (const r of extAliases) if (r && r.uuid && r.id) aliasByUuid[r.uuid] = r.id
 
 // ─────────────────────────────────────────────────────────── 3. detect format
+// isMultiPage/templateStr are derived from `template` for BOTH sources (archive synthesizes the same shape).
 const isMultiPage = template && typeof template === 'object' && template.pages && template.entry
 const templateStr = typeof template === 'string' ? template : JSON.stringify(template)
 function detectFormat() {
@@ -235,22 +401,36 @@ function detectFormat() {
   if (/type="text\/babel"/.test(template)) return { format: 'babel', navModel: 'screen-registry' }
   return { format: 'vanilla', navModel: 'single-page' }
 }
-const { format, navModel } = detectFormat()
+if (!format) ({ format, navModel } = detectFormat())  // archive sets these directly; standalone detects from the envelope
 
 // ─────────────────────────────────────────────────────────── 4. reset output tree + shared assets
 rmSync(outDir, { recursive: true, force: true })
 mkdirSync(join(outDir, 'source'), { recursive: true })
 mkdirSync(join(outDir, 'assets', 'img'), { recursive: true })
 
-// images (shared across formats)
+// images — from the base64 manifest (standalone) OR copied from real files (archive).
 const images = []
-for (const [uuid, entry] of Object.entries(manifest)) {
-  if (!entry.mime || !entry.mime.startsWith('image/')) continue
-  const ext = MIME_EXT[entry.mime] || 'bin'
-  const base = aliasByUuid[uuid] ? slugify(aliasByUuid[uuid]) : uuid.slice(0, 8)
-  const rel = `assets/img/${base}.${ext}`
-  try { writeFileSync(join(outDir, rel), decodeEntry(entry)); images.push({ file: rel, uuid, mime: entry.mime, alias: aliasByUuid[uuid] || null }) }
-  catch (e) { console.warn(`[unpack] warn: image ${uuid}: ${e.message}`) }
+if (archiveImages) {
+  // Archive: copy referenced files. There is NO uuid — identity is the original relative ref (`srcRef`), which
+  // the screen agent uses to map a source `<img src>` to its converted asset (the standalone's uuid analogue).
+  const used = {}
+  for (const { srcPath, ref } of archiveImages) {
+    const ext = (basename(srcPath).match(/\.([a-z0-9]+)$/i) || [, 'bin'])[1].toLowerCase()
+    let base = slugify(basename(ref).replace(/\.[^.]+$/, '')) || 'img'
+    if (used[base]) base = `${base}-${used[base]++}`; else used[base] = 1   // distinct files, same basename (os/x.png vs oslogos/x.png)
+    const rel = `assets/img/${base}.${ext}`
+    try { writeFileSync(join(outDir, rel), readFileSync(srcPath)); images.push({ file: rel, uuid: null, mime: EXT_MIME[ext] || 'application/octet-stream', alias: ref, srcRef: ref }) }
+    catch (e) { console.warn(`[unpack] warn: image ${ref}: ${e.message}`) }
+  }
+} else {
+  for (const [uuid, entry] of Object.entries(manifest)) {
+    if (!entry.mime || !entry.mime.startsWith('image/')) continue
+    const ext = MIME_EXT[entry.mime] || 'bin'
+    const base = aliasByUuid[uuid] ? slugify(aliasByUuid[uuid]) : uuid.slice(0, 8)
+    const rel = `assets/img/${base}.${ext}`
+    try { writeFileSync(join(outDir, rel), decodeEntry(entry)); images.push({ file: rel, uuid, mime: entry.mime, alias: aliasByUuid[uuid] || null }) }
+    catch (e) { console.warn(`[unpack] warn: image ${uuid}: ${e.message}`) }
+  }
 }
 
 // @font-face families across the whole export (helmet + template). Shared helper.
@@ -262,6 +442,56 @@ function scanFontFaces(str) {
     if (family) faces.push({ family, weight: (b.match(/font-weight:\s*([^;]+);/) || [])[1]?.trim() || null })
   }
   return faces
+}
+// Google-Fonts <link> families. A Standalone export INLINES Google Fonts as @font-face (scanFontFaces finds
+// them); a raw .dc.html/.html in a Project archive keeps the `<link href="fonts.googleapis.com/css2?family=…">`
+// instead, so without this the archive path derives ZERO brand fonts. `family=` params carry the weights (`wght@…`),
+// which pickBrandFonts needs to tell body from display.
+function scanGoogleFontLinks(str) {
+  const out = []
+  for (const link of str.matchAll(/fonts\.googleapis\.com\/css2\?([^"'\s>]+)/gi)) {
+    for (const fam of link[1].replace(/&amp;/g, '&').matchAll(/family=([^&:]+)(?::[^&]*?wght@([0-9;.]+))?/gi)) {
+      const family = decodeURIComponent(fam[1].replace(/\+/g, ' ')).trim()
+      if (family) out.push({ family, weight: fam[2] ? fam[2].replace(/;/g, ' ') : null })
+    }
+  }
+  return out
+}
+// Primary (first, non-generic) family of every `font-family:` declaration — the last-resort source when a font
+// is loaded by a mechanism this script can't inline (Typekit/Adobe `use.typekit`, self-hosted CSS): the @font-face
+// lives in a remote sheet, but the family NAME is right there in the usage. No weights, so body/display can't be
+// told apart — best-effort, flagged in notes. NOTE: such a family is likely NOT on Google Fonts.
+const GENERIC_FAMILY = new Set(['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui',
+  'ui-sans-serif', 'ui-serif', 'ui-monospace', 'inherit', 'initial', 'unset', 'revert', '-apple-system', 'blinkmacsystemfont'])
+function scanFontFamilyUsage(str) {
+  const out = []
+  for (const m of str.matchAll(/font-family:\s*([^;}{]+)/gi)) {
+    const first = m[1].split(',')[0].trim().replace(/^['"]|['"]$/g, '')
+    if (first && !/^var\(/i.test(first) && !GENERIC_FAMILY.has(first.toLowerCase())) out.push(first)
+  }
+  return uniq(out)
+}
+// Brand faces from the source, most reliable first: @font-face → Google-Fonts <link> → (only if still none)
+// font-family usage. The Standalone path always has inlined @font-face, so it never reaches the later tiers and
+// stays byte-identical; the archive (raw source) is what needs the <link> and usage fallbacks.
+function gatherFaces(str) {
+  const faces = scanFontFaces(str)
+  const seen = new Set(faces.map((f) => f.family))
+  for (const lf of scanGoogleFontLinks(str)) if (!seen.has(lf.family)) { faces.push(lf); seen.add(lf.family) }
+  if (!faces.length) for (const fam of scanFontFamilyUsage(str)) faces.push({ family: fam, weight: null, fromUsage: true })
+  return faces
+}
+// Inline a Project archive's LOCAL <link rel="stylesheet" href="styles.css"> as a <style> block, so the parsers
+// (which scan one doc string for tokens/fonts) see the CSS the way they would in a Standalone (all-inlined) export.
+// Remote sheets (Google/Typekit) are left as links — they can't be inlined and are handled by the font scanners.
+function inlineLocalCss(html, baseDir) {
+  return html.replace(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi, (tag) => {
+    const href = (tag.match(/href=["']([^"']+)["']/i) || [])[1]
+    if (!href || /^(https?:|\/\/|data:)/i.test(href)) return tag
+    const p = resolve(baseDir, href.replace(/[?#].*$/, ''))
+    if (!existsSync(p)) return tag
+    try { return `<style data-inlined-from="${href}">\n${readText(p)}\n</style>` } catch { return tag }
+  })
 }
 
 // ─────────────────────────────────────────────────────────── 5. per-format parsers → normalized IR
@@ -309,17 +539,32 @@ function parseBabel() {
 
   // registries → screens (window.X = {} + Object.assign, with const fallback)
   const registries = {}
-  const merge = (name, objText) => { const map = registries[name] || (registries[name] = {}); for (const m of objText.matchAll(/([a-zA-Z0-9_]+)\s*:\s*([A-Z][A-Za-z0-9_]*)\b/g)) map[m[1]] = m[2] }
+  const nestedRegistries = new Set()
+  // A registry maps a screen key → its component. TWO shapes are real, and babel mandates neither:
+  //   flat   — `{ home: HomeScreen, ... }`                     (GIVXO)
+  //   nested — `{ home: { c: HomeScreen, role:'cliente' }, ... }`  (Homfix/TocToc)
+  // Scanning the whole object body for `key: Component` matches the INNER pairs of the nested shape, so
+  // every screen collapses onto one bogus key (measured on Homfix: 16 screens → 1 entry named "c").
+  // Split the top level first, THEN read each value.
+  const mergeRegistry = (name, objText) => {
+    const map = registries[name] || (registries[name] = {})
+    for (const [key, val] of topLevelEntries(objText)) {
+      const bare = val.match(/^\s*([A-Z][A-Za-z0-9_]*)\s*$/)
+      if (bare) { map[key] = bare[1]; continue }
+      const inner = val.match(/[a-zA-Z0-9_]+\s*:\s*([A-Z][A-Za-z0-9_]*)\b/)
+      if (inner) { map[key] = inner[1]; nestedRegistries.add(name) }
+    }
+  }
   const dropEmpty = () => { for (const k of Object.keys(registries)) if (!Object.keys(registries[k]).length) delete registries[k] }
-  for (const m of allSrc.matchAll(/window\.([A-Z][A-Z0-9_]*)\s*=\s*\{/g)) { const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index)); if (t) merge(m[1], t) }
-  for (const m of allSrc.matchAll(/Object\.assign\(\s*window\.([A-Z][A-Z0-9_]*)\s*,\s*\{/g)) { const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index + m[0].length - 1)); if (t) merge(m[1], t) }
+  for (const m of allSrc.matchAll(/window\.([A-Z][A-Z0-9_]*)\s*=\s*\{/g)) { const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index)); if (t) mergeRegistry(m[1], t) }
+  for (const m of allSrc.matchAll(/Object\.assign\(\s*window\.([A-Z][A-Z0-9_]*)\s*,\s*\{/g)) { const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index + m[0].length - 1)); if (t) mergeRegistry(m[1], t) }
   dropEmpty()
   let usedRegistryFallback = false
   if (!Object.keys(registries).length) {
     usedRegistryFallback = true
     const routingName = /^(GUEST|HOST|ROUTES?|SCREENS?|PAGES?|VIEWS?|NAV|STACK|ROUTER)/
-    for (const m of allSrc.matchAll(/(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=\s*\{/g)) { if (!routingName.test(m[1])) continue; const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index)); if (t) merge(m[1], t) }
-    for (const m of allSrc.matchAll(/Object\.assign\(\s*([A-Z][A-Z0-9_]*)\s*,\s*\{/g)) { if (!routingName.test(m[1])) continue; const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index + m[0].length - 1)); if (t) merge(m[1], t) }
+    for (const m of allSrc.matchAll(/(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=\s*\{/g)) { if (!routingName.test(m[1])) continue; const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index)); if (t) mergeRegistry(m[1], t) }
+    for (const m of allSrc.matchAll(/Object\.assign\(\s*([A-Z][A-Z0-9_]*)\s*,\s*\{/g)) { if (!routingName.test(m[1])) continue; const t = extractBalanced(allSrc, allSrc.indexOf('{', m.index + m[0].length - 1)); if (t) mergeRegistry(m[1], t) }
     dropEmpty()
   }
   const arrLit = (name) => { const i = allSrc.search(new RegExp(`(?:window\\.|(?:export\\s+)?const\\s+)${name}\\s*=\\s*\\[`)); if (i < 0) return null; const t = extractBalanced(allSrc, allSrc.indexOf('[', i)); return t ? evalLiteral(t) : null }
@@ -341,7 +586,7 @@ function parseBabel() {
     sourceFiles: jsxFiles, screens, components, tokens: { themes, brand, rawScan }, brandFonts,
     fonts: scanFontFaces(template), tokenSource: themes ? 'themes-object' : 'inline+helmet',
     targetSignals: computeTargetSignals(`${allSrc}\n${template}`, navModel),
-    extra: { registries, tabs: arrLit('HOST_TABS'), usedRegistryFallback, jsxFiles },
+    extra: { registries, tabs: arrLit('HOST_TABS'), usedRegistryFallback, nestedRegistries: [...nestedRegistries], jsxFiles },
   }
 }
 
@@ -369,7 +614,11 @@ function parseDcDoc(docStr, slug) {
   const pageVals = uniq([...docStr.matchAll(/(?:page:\s*|page\s*===\s*|go\(\s*)['"]([a-zA-Z0-9_-]+)['"]/g)].map((m) => m[1]))
   // dc-import child components
   const imports = uniq([...docStr.matchAll(/<dc-import\s+name="([^"]+)"/g)].map((m) => m[1]))
-  return { slug, markupFile, logicFile, helmetFile, helmet, logic, docStr, pageVals, imports, bytes: markup.length + logic.length }
+  // Cross-DC navigation is a plain RELATIVE link: `<a href="Equipo.dc.html">`. Collected so the caller can
+  // check every target actually made it into the bundle (see danglingPages). Skip absolute URLs
+  // (`https://…/Foo.dc.html`) — those point at a deployed page, not a sibling expected inside this bundle.
+  const dcHrefs = uniq([...docStr.matchAll(/href="([^"]*\.dc\.html)"/gi)].map((m) => m[1]).filter((h) => !/^[a-z]+:\/\//i.test(h)))
+  return { slug, markupFile, logicFile, helmetFile, helmet, logic, docStr, pageVals, imports, dcHrefs, bytes: markup.length + logic.length }
 }
 
 function parseDcLogic() {
@@ -391,11 +640,18 @@ function parseDcLogic() {
     clampFontSizes: (allSrc.match(/font-size:\s*clamp\(/g) || []).length, // responsive sizes NOT captured — read from source
     cssVars: scanCssVars(allSrc),
   }
-  const faces = scanFontFaces(helmetAll)
+  const faces = gatherFaces(helmetAll)   // @font-face (standalone) + Google-Fonts <link> (archive raw .dc.html)
   const brandFonts = pickBrandFonts(faces)
 
   const importsAll = uniq(docs.flatMap((d) => d.imports))
   const components = importsAll.map((name) => ({ name, file: null, kind: 'primitive-or-helper' })) // dc-import children
+
+  // A Standalone HTML bundles ONE design, so a cross-DC `href` can point at a page that is NOT in the bundle.
+  // Measured on Tercer Milenium: the landing links to 4 siblings, the 26MB standalone carries none of them
+  // (34 manifest entries, zero HTML), and the flow happily reported `screens=1` — a 5-page site silently
+  // imported as 1. Collect the misses here; the caller decides (a bare WARNING would be read past).
+  const knownSlugs = new Set(docs.map((d) => d.slug))
+  const danglingPages = uniq(docs.flatMap((d) => d.dcHrefs)).filter((h) => !knownSlugs.has(slugify(h.replace(/\.html$/i, ''))))
 
   let screens
   if (isMultiPage) {
@@ -412,7 +668,7 @@ function parseDcLogic() {
     screens, components, tokens: { themes: null, brand: null, rawScan }, brandFonts,
     fonts: faces, tokenSource: 'inline+helmet',
     targetSignals: computeTargetSignals(allSrc, navModel),
-    extra: { dcDocs: docs.map((d) => ({ slug: d.slug, sections: d.pageVals, imports: d.imports })), entry: isMultiPage ? slugify(template.entry) : null },
+    extra: { dcDocs: docs.map((d) => ({ slug: d.slug, sections: d.pageVals, imports: d.imports })), entry: isMultiPage ? slugify(template.entry) : null, danglingPages },
   }
 }
 
@@ -421,7 +677,10 @@ function parseVanilla() {
   const bodyMatch = templateStr.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
   const body = bodyMatch ? bodyMatch[1] : templateStr
   const markupFile = write('source/index.markup.html', body)
-  const styleBlocks = [...templateStr.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n')
+  const styleBlocks = [...templateStr.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n\n')
+  // The <style> blocks live in <head> (for an archive, inlined from the linked styles.css) — the body markup
+  // above excludes them, so write them out or the screen agent reconstructs the design with NO CSS.
+  if (styleBlocks.trim()) write('source/index.styles.css', styleBlocks)
   const rawScan = {
     hexColors: scanHex(templateStr),
     clusters: clusterHexes(templateStr), // B2 pre-grouping — the parent names these instead of clustering 40+ hexes by hand
@@ -429,7 +688,7 @@ function parseVanilla() {
     clampFontSizes: (templateStr.match(/font-size:\s*clamp\(/g) || []).length,
     cssVars: scanCssVars(templateStr),
   }
-  const faces = scanFontFaces(templateStr)
+  const faces = gatherFaces(templateStr)   // @font-face (standalone) + Google-Fonts <link> (archive raw .html)
   const brandFonts = pickBrandFonts(faces)
   return {
     sourceFiles: [{ markup: markupFile, bytes: body.length }],
@@ -444,6 +703,30 @@ function parseVanilla() {
 if (typeof template !== 'string' && !isMultiPage) die('template is an object but not a {pages,entry} page-map — unrecognized shape; aborting instead of guessing.')
 const ir = format === 'babel' ? parseBabel() : format === 'dclogic' ? parseDcLogic() : parseVanilla()
 
+// ── Partial-export guard ──────────────────────────────────────────────────────
+// "Standalone HTML" exports ONE design, not the project. When that design links to sibling .dc pages,
+// they are simply absent from the bundle — nothing downstream can notice, because a 1-page extraction of
+// a 5-page site is indistinguishable from a genuine 1-page site. This is the ONE failure mode that is
+// both silent and total, so it aborts by default rather than adding a note nobody reads.
+if (ir.extra.danglingPages && ir.extra.danglingPages.length && !allowPartial) {
+  const list = ir.extra.danglingPages.map((p) => `  - ${p}`).join('\n')
+  if (isArchive) {
+    // In an archive every page IS on disk, so a dangling link means the design references a page the project
+    // genuinely doesn't contain — a broken link in the source, not a truncated export.
+    die(`BROKEN LINKS — the primary design links to ${ir.extra.danglingPages.length} .dc page(s) that are not present anywhere in the archive:\n${list}\n` +
+      `  These are dead links in the design itself (a deleted/renamed page). Re-run with --allow-partial to import\n` +
+      `  the design as-is (those links stay dead ends), or fix the source in Claude Design and re-export.`)
+  }
+  die(`PARTIAL EXPORT — the design links to ${ir.extra.danglingPages.length} sibling page(s) that are NOT in this bundle:\n${list}\n` +
+    `  A "Standalone HTML" export carries ONE design, not the whole project, so those pages were never\n` +
+    `  bundled. Importing this would silently produce a site with them missing.\n\n` +
+    `  Options:\n` +
+    `    - Export the whole project as a "Project archive" .zip, unzip it, and pass the FOLDER — it contains\n` +
+    `      every .dc.html, so multi-page designs import complete (this is the recommended path).\n` +
+    `    - Or export each linked page as its OWN Standalone HTML and import them one at a time.\n` +
+    `    - Or re-run with --allow-partial to import only the design in this bundle (its links stay dead ends).`)
+}
+
 // ─────────────────────────────────────────────────────────── 6. write structured artifacts (normalized IR)
 const writeJson = (name, obj) => writeFileSync(join(outDir, name), JSON.stringify(obj, null, 2), 'utf8')
 const fontFamilies = uniq(ir.fonts.map((f) => f.family))
@@ -454,8 +737,11 @@ writeJson('components.json', ir.components)
 
 const screenComponents = uniq(ir.screens.map((s) => s.component))
 const dupComponents = format === 'babel' && ir.screens.length !== screenComponents.length
+const usageFonts = ir.fonts.filter((f) => f.fromUsage).map((f) => f.family)
 const notes = [
   `format=${format}, navModel=${navModel}, tokenSource=${ir.tokenSource}`,
+  isArchive && !archiveBundled ? `source=Project archive — the ONE design named by the handoff README (${archiveEntryRel}). Its dependency closure (linked pages/CSS/images) was resolved from disk; version-copies, bundled variants and other designs in the archive were correctly ignored.` : null,
+  isArchive && archiveBundled ? `source=Project archive — the README named a PRE-BUNDLED variant (${archiveEntryRel}); it carries its own __bundler envelope, so it was decoded via the standalone path (no on-disk closure). If this is a multi-page design, a bundled variant may hold only ONE page — prefer the raw .dc.html entry if the import looks short.` : null,
   format === 'vanilla' ? 'WARNING: vanilla flavor — DEFENSIVE/best-effort extraction (no reference sample). Inspect source/index.markup.html manually.' : null,
   format === 'dclogic' && navModel === 'single-page-sections' ? `navModel=single-page-sections — this is ONE screen with sections (${ir.screens.map((s) => s.key).join(', ')}), not separate routes. Orchestrator: implement as a single screen (section switching), NOT route/step/modal per key.` : null,
   format === 'dclogic' && navModel === 'multi-page' ? `navModel=multi-page — ${ir.screens.length} web pages → ${ir.screens.length} routes (entry: ${ir.extra.entry}).` : null,
@@ -464,12 +750,21 @@ const notes = [
   `target guess=${ir.targetSignals.guess} — parent confirms mobile-app|web at the Step 0.5 checkpoint (drives responsive).`,
   dupComponents ? `NOTE: ${ir.screens.length} registry keys → ${screenComponents.length} unique components (some routes share a component).` : null,
   ir.extra.usedRegistryFallback ? 'NOTE: no window.* registries — used the const-registry NAME heuristic; double-check screens[] for spurious entries.' : null,
+  ir.extra.nestedRegistries && ir.extra.nestedRegistries.length
+    ? `NOTE: registry ${ir.extra.nestedRegistries.join(', ')} uses the NESTED shape ({key: {c: Component, ...}}) — each screen's component was read from its inner entry, and screens[].role is the registry NAME, not the per-entry role. If the entries carry their own role (e.g. role:'cliente'), read it from source at Step 0.5.`
+    : null,
+  ir.extra.danglingPages && ir.extra.danglingPages.length
+    ? `WARNING: PARTIAL EXPORT accepted via --allow-partial — ${ir.extra.danglingPages.length} linked page(s) are absent from this bundle (${ir.extra.danglingPages.join(', ')}). screens[] covers ONLY the bundled design; those links are dead ends. Tell the user before implementing.`
+    : null,
   !ir.screens.length ? 'WARNING: no screens/sections derived — inspect source/ manually (unrecognized structure).' : null,
   !ir.brandFonts ? 'WARNING: could not derive brandFonts — inspect source/helmet for the fonts used.' : null,
+  usageFonts.length ? `NOTE: brand font(s) ${usageFonts.join(', ')} came from font-family USAGE (no @font-face / Google <link> in the source) — likely loaded via Typekit/Adobe or self-hosted, so probably NOT on Google Fonts. Confirm the loader at Step 0.5 before the tokens agent tries next/font/google; weights are unknown (body≈display).` : null,
+  ir.brandFonts && ir.brandFonts.families.length > 4 ? `NOTE: ${ir.brandFonts.families.length} font families detected (${ir.brandFonts.families.join(', ')}) — unusually many. The design may load a big set but USE only a few. Review at Step 0.5 and load only what's actually rendered; loading all via next/font/google is an LCP/bundle regression.` : null,
 ].filter(Boolean)
 
 const inventory = {
-  source: input, format, navModel, tokenSource: ir.tokenSource, targetSignals: ir.targetSignals,
+  source: input, sourceMode: isArchive ? 'archive' : 'standalone', archiveEntry: archiveEntryRel,
+  format, navModel, tokenSource: ir.tokenSource, targetSignals: ir.targetSignals,
   counts: {
     manifestEntries: Object.keys(manifest).length, images: images.length,
     fonts: fontFamilies.length, brandFonts: ir.brandFonts ? ir.brandFonts.families.length : 0,
@@ -479,7 +774,9 @@ const inventory = {
   components: ir.components,
   brandFonts: ir.brandFonts,      // fonts actually used — LOAD THESE
   fontFamilies,                   // superset of @font-face families
-  images: images.map((i) => ({ file: i.file, uuid: i.uuid, alias: i.alias, mime: i.mime })),
+  // `uuid` is the standalone identity; `srcRef` (original relative path) is the archive identity — the screen
+  // agent maps a source `<img src>` to its converted asset by whichever the export provided.
+  images: images.map((i) => ({ file: i.file, uuid: i.uuid, srcRef: i.srcRef || null, alias: i.alias, mime: i.mime })),
   registries: ir.extra.registries ? Object.fromEntries(Object.entries(ir.extra.registries).map(([k, v]) => [k, Object.keys(v)])) : undefined,
   tabs: ir.extra.tabs,
   entry: ir.extra.entry,
