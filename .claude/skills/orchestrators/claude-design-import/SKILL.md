@@ -1,17 +1,20 @@
 ---
 name: claude-design-import
-description: Orchestrates the bottom-up import of a full Claude Design prototype (a Standalone HTML export) into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation. A local deterministic extractor (unpack.mjs) replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
+description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation. Ingests either a Project archive (.zip, unzipped — RECOMMENDED, imports multi-page designs complete) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
 ---
 
 Import a Claude Design prototype end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
 
-**REQUIRED**: a **URL to a Claude Design "Standalone HTML" export** (e.g. an S3/hosted `.html`). The whole prototype lives in that one self-contained file — every step depends on seeing the entire design at once, and `unpack.mjs` extracts it locally.
+**REQUIRED — one of two source shapes** (`unpack.mjs` accepts either; it auto-detects which):
 
-If the argument is missing OR is not a URL to an `.html` export, STOP and ask the user:
+1. **A Project archive** — Export → **Download as .zip → "Project archive"** (a.k.a. the "Send to coding agent" bundle). **This is the RECOMMENDED source.** It is the whole project folder: every raw `.dc.html`/`.jsx`, `support.js`, real asset files, the `uploads/` briefs, and a **README that names the primary design**. Crucially, a **multi-page** design imports COMPLETE from an archive — the Standalone HTML export of the same design carries only ONE page and silently drops the rest (see [§ Step 0 partial-export](#step-0--unpack)). **You unzip it to a scratch dir and pass the FOLDER** (unpack.mjs takes a directory, not the `.zip`).
+2. **A URL (or path) to a "Standalone HTML" export** — the single self-contained `.html`. Fine for a single-page design; **lossy for multi-page** (it truncates). Use it when there's no archive.
 
-> Necesito la **URL al export "Standalone HTML"** del prototipo de Claude Design (ej. el link de S3 que te da el botón Export → Standalone HTML). Pegámela y arranco. No sirven el PDF/PPTX ni el handoff a Claude Code — esos no son fuente de código para este flujo.
+If the argument is missing OR is neither a Project-archive folder nor an `.html` export/URL, STOP and ask the user:
 
-Do not proceed past Step 0 without a successful unpack — a partial/failed extraction makes every downstream step wrong.
+> Necesito **una** de estas dos: (a) el **Project archive** — Export → Download as .zip → "Project archive" (o "Send to coding agent") — que trae TODO el proyecto y es lo recomendado (los diseños multi-página se importan completos); descomprimilo y pasame la carpeta. O (b) la **URL al "Standalone HTML"** (sirve para una sola página; en multi-página se queda corta). No sirven el PDF/PPTX.
+
+**If given a `.zip`, unzip it to a scratch dir first** (outside `src/`), then run `unpack.mjs` on the resulting folder. Do not proceed past Step 0 without a successful unpack — a partial/failed extraction makes every downstream step wrong.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -28,7 +31,7 @@ Also read `design-tokens-map.md` (project root, shared with `figma-design-import
 
 ## What a Claude Design export actually is (read once)
 
-The "Standalone HTML" export is **not** flat HTML — it's a self-contained React SPA in a private `__bundler` format: a `manifest` (base64 assets + fonts + gzip'd JS/JSX source keyed by UUID), an `ext_resources` alias map, and a `template` (the real inner HTML as a JSON string). Components are written as React with **inline `style={{}}` objects + CSS custom properties** (a `THEMES` token object drives them), a **custom stack router** (`window.HOST`/`window.GUEST` registries keyed by screen name, `HOST_TABS` for the bottom tab bar), and **prop-drilled state** with inline mock data. Most prototypes are **mobile-app shaped** (≈430px phone frame, iOS chrome).
+The "Standalone HTML" export is **not** flat HTML — it's a self-contained page in a private `__bundler` format: a `manifest` (base64 assets + fonts + gzip'd source keyed by UUID), an `ext_resources` alias map, and a `template` (the real inner HTML as a JSON string). A **babel** export is a React SPA whose components use **inline `style={{}}` objects + CSS custom properties**, a screen registry for routing, and **prop-drilled state** with inline mock data — but the specifics vary by export: a `THEMES` token object, `window.HOST`/`GUEST` registries and `HOST_TABS` drive GIVXO, yet TocToc/Homfix have none of those (CSS vars in a stylesheet, one nested `SCREENS` registry, a 393px frame). Treat that GIVXO shape as ONE instance, not the contract. Most prototypes are **mobile-app shaped** (≈390–430px phone frame, iOS chrome). (A **dclogic** export is the native `.dc.html` format instead — see Format handling.)
 
 `unpack.mjs` turns all of that into a clean working tree you read from disk — no per-node token cost, unlike Figma's MCP.
 
@@ -100,23 +103,47 @@ Implementing a prototype top-down (screen-first) leads to hardcoded hex/px (toke
 Run the extractor. Pick a scratch output directory **outside** the repo `src/` tree (the session scratchpad, or a temp dir) — never write the raw dump into the project.
 
 ```bash
-node .claude/skills/orchestrators/claude-design-import/unpack.mjs "<EXPORT_URL>" "<SCRATCH_DIR>/unpacked"
+# Project archive (RECOMMENDED): unzip first, then pass the FOLDER.
+unzip "<archive>.zip" -d "<SCRATCH_DIR>/archive"          # or Expand-Archive on Windows
+node .claude/skills/orchestrators/claude-design-import/unpack.mjs "<SCRATCH_DIR>/archive" "<SCRATCH_DIR>/unpacked"
+
+# OR a Standalone HTML export (URL or local .html):
+node .claude/skills/orchestrators/claude-design-import/unpack.mjs "<EXPORT_URL_OR_HTML>" "<SCRATCH_DIR>/unpacked"
 ```
+
+> **`unpack.mjs` auto-detects the source** (a **directory** → Project archive; a `.html`/URL → Standalone) and writes the SAME IR either way, so every downstream step is source-agnostic. `inventory.sourceMode` records which (`archive` | `standalone`) and `inventory.archiveEntry` names the design the archive's README selected.
+>
+> **How the archive path works (read once):** a Project archive is the user's WHOLE project — several designs, version-copies (`- export`, `deploy/`, `v2`), bundled variants (`(offline)`/`(standalone-src)`/`-print`), older iterations, and `uploads/`. The extractor reads the **handoff README's `**Read \`…\` in full**` line to pick the ONE primary design**, then resolves its dependency **closure** from disk (linked `.dc.html` pages, `<link>` stylesheets, images) — so version-copies and other designs are ignored automatically. Per-format:
+> - **dclogic** → follows the sibling-`.dc.html` href closure. **Multi-page imports COMPLETE** (e.g. a 5-page site → 5 routes), which is the whole reason to prefer the archive.
+> - **vanilla** (plain `.html`+`.css`) → inlines the linked `styles.css` and writes it to `source/`; single-page. (A vanilla site split across sibling `.html` pages is currently captured as its README-named entry only — see Known limitations.)
+> - **babel** (`.jsx` / `text/babel`) → **STOPs by design** with guidance to import that design via its Standalone HTML export instead (a babel SPA is fully captured by the standalone; the archive adds nothing). NOT an error to debug.
+> - **bundled entry** — if the README names an `(offline)`/`(standalone-src)` variant that already carries a `__bundler` envelope, the extractor decodes it via the standalone path automatically (a note flags it; a bundled variant may hold only one page of a multi-page design, so prefer the raw `.dc.html` entry if the import looks short).
 
 It writes: `source/*` (component source — babel: `source/jsx/*.jsx`; dclogic: `source/{screen}.markup.html` + `source/{screen}.logic.js` + `source/{screen}.helmet.css`; vanilla: `source/index.markup.html`), `assets/img/*` (decoded images), `fonts.json`, `tokens.json` (incl. `rawScan.clusters` — the B2 colour pre-grouping), `nav-graph.json`, `components.json`, and `inventory.json`.
 
 > **The dclogic CSS lives in `source/{screen}.helmet.css`, and ONLY there.** The `<helmet>` carries the design's real stylesheet — its `@media` breakpoints, `@font-face`, CSS vars — and `{screen}.markup.html` has it stripped out (0 `@media`), so never look for a breakpoint in the markup. `template.html` is a convenience copy of the whole export, written for **babel and single-page dclogic only** — it does NOT exist for multi-page dclogic or vanilla, so read `source/*.helmet.css` rather than relying on it. (`inventory.screens[].file` points at the right source file for each screen — always use that, never a hardcoded path.)
 
-**Read `inventory.json` first** — your map for Step 0.5: `format` (babel|dclogic|vanilla), `navModel` (screen-registry|single-page-sections|multi-page|single-page), `tokenSource` (themes-object|inline+helmet|inline+css), `targetSignals` (with a mobile-app|web `guess`), counts, `screens` (the authoritative list — each `key`/`component`/`role`/`file`; babel = one per registry KEY, dclogic multi-page = one per page, dclogic single-page = one per section), `components`, `brandFonts` (`{body, display, families}` — load `families`, preload `body`), `fontFamilies` (superset), `images` with `uuid`, `brand`, `tokenNamespaces`, `registries`/`tabs` (babel only), and `notes` (**READ THESE** — they carry per-format orchestration guidance the parser inferred).
+**Read `inventory.json` first** — your map for Step 0.5: `format` (babel|dclogic|vanilla), `navModel` (screen-registry|single-page-sections|multi-page|single-page), `tokenSource` (themes-object|inline+helmet|inline+css), `targetSignals` (with a mobile-app|web `guess`), counts, `screens` (the authoritative list — each `key`/`component`/`role`/`file`; babel = one per registry KEY, dclogic multi-page = one per page, dclogic single-page = one per section), `components`, `brandFonts` (`{body, display, families}` — load `families`, preload `body`), `fontFamilies` (superset), `images` with `uuid`, `brand`, `tokenNamespaces`, `registries`/`tabs` (babel only — and possibly empty even then; see Format handling), and `notes` (**READ THESE** — they carry per-format orchestration guidance the parser inferred, including the nested-registry and partial-export flags).
 
 **Format handling (read `inventory.format`).** `unpack.mjs` normalizes 3 flavors into the SAME IR:
-- `babel` — React SPA (GIVXO). **Fully supported end-to-end.**
+- `babel` — React SPA. **Fully supported end-to-end.** **The registry shape is NOT mandated** — a screen registry maps `key → component`, but it comes flat (`{home: HomeScreen}` — GIVXO) or nested (`{home: {c: HomeScreen, role:'cliente'}}` — Homfix/TocToc); `unpack.mjs` reads both. **`THEMES` and `window.HOST`/`GUEST`/`HOST_TABS` are present in SOME babel exports (GIVXO) and absent in others (TocToc has none).** So `tokenSource` may be `themes-object` OR `inline+helmet` for babel, and `registries`/`tabs` may be empty — treat their presence as per-export, never assumed. When a registry is nested, `inventory.notes` flags it and `screens[].role` holds the registry NAME (read the per-entry role, e.g. `cliente`/`prestador`, from source at Step 0.5).
 - `dclogic` — Claude Design's native `.dc.html` (`<x-dc>` markup + `class Component extends DCLogic` + `<helmet>`); `navModel` = `single-page-sections` or `multi-page`; `tokenSource` = `inline+helmet`; no `THEMES` (tokens from inline styles + `<helmet>`).
 - `vanilla` — plain HTML/CSS/JS (best-effort; no reference sample — treat with care).
 
+> **`babel` is not a legacy/dead format.** Claude Design's current system prompt mandates the DC (`.dc.html`) format for *new* UI, but existing `.jsx` projects are still edited and exported as babel today — a fresh export can be either flavor. Do not assume a babel export is old or malformed.
+
 > **Implementation status.** `babel` (React) and `dclogic` **single-page-sections** (declarative — `state`/`renderVals()`/`{{holes}}`/`sc-if`, e.g. Hologramas) are wired **end-to-end**. `dclogic` **multi-page**: the shared-chrome **layout**, static structure, tokens and `style-hover` ARE wired — **but imperative interactivity is NOT yet translated.** A `.logic.js` built on `componentDidMount` + `querySelector`/`addEventListener`/`IntersectionObserver`/`setInterval` over refs + `data-*` (dropdowns, scroll-reveals, carousels/marquee — e.g. StreetBuild) will render **static**. **Before running a multi-page export, read its `.logic.js`: if it's imperative (no `state`/`renderVals`), WARN the user** that dropdowns/reveals/carousels will come out as TODOs until the imperative-DCLogic path lands. `vanilla` is **best-effort**. If extraction is thin (empty `screens`, missing `brandFonts` — see `inventory.notes` WARNINGs), surface it first.
 
-If `unpack.mjs` exits non-zero, STOP and report — unrecognized/unsupported export or a format change.
+> **Partial-export abort (a specific non-zero exit — do NOT treat as a bug).** A Standalone HTML export carries ONE design; when that design links to sibling `.dc` pages (`<a href="Equipo.dc.html">`), those pages are **not in the bundle**, and a naïve import would silently produce a site with them missing (measured: a 5-page Tercer Milenium landing extracted as `screens=1`, no warning). The script now detects the dangling links and **aborts with the exact missing-page list**. This is not an unsupported-format failure — the remedy is one of:
+> - **BEST — use the Project archive** (Export → .zip → "Project archive"), unzip it, pass the folder: it contains every `.dc.html`, so the multi-page design imports complete. This is the real fix and the reason the archive path exists.
+> - Or re-export each linked page as its own Standalone HTML and import them one at a time, OR
+> - re-run `unpack.mjs` with **`--allow-partial`** to import only the bundled design (its cross-page links stay dead ends — a `notes` WARNING records this and you MUST relay it to the user).
+>
+> Surface this to the user and let them choose — do NOT auto-pass `--allow-partial`. (An **archive** never hits this abort for truncation — every page is on disk; there, a dangling link means a genuinely broken link in the design, and the abort message says so.)
+
+> **Known limitations (archive path).** A **vanilla** site split across multiple sibling `.html` pages is captured as its README-named entry ONLY — the extractor does not yet follow a plain-`.html` page closure the way it does for `.dc.html` (validated on Anodal, whose README named a single combined `Anodal-completo.html`, so it didn't matter there — but a vanilla project whose README names `index.html` would import just the home page). If you hit a multi-page vanilla design, import each page's `.html` separately, or flag it. Not yet built because no sample exercised it; the `.dc.html` closure is the tested path.
+
+If `unpack.mjs` exits non-zero for any OTHER reason, STOP and report — unrecognized/unsupported export or a format change.
 
 ---
 
@@ -184,7 +211,7 @@ Pass this spec to Step 5.1 (scaffold transcribes each store — seed + fields + 
 **Store vs `MOCK_` rule of thumb**: the prototype's App holds it (shared across screens) → **store, seeded** with the demo data. Only one screen holds it (a static list that screen shows) → `MOCK_*` inline in that screen. Either way the data layer is deferred to `openapi-import` via the TODO — the difference is only WHERE the seed lives.
 
 ## Layouts (branches on `navModel`)
-- `screen-registry` (babel): chrome detected (TopBar / BottomTabBar / iOS status bar); roles host/guest → route groups; existing match vs to-create.
+- `screen-registry` (babel): chrome detected (TopBar / BottomTabBar / iOS status bar); roles → route groups; existing match vs to-create. **Roles are not always `host`/`guest`** — that pair is GIVXO's shape (two `window.*` registries). A single nested registry instead tags each entry with its own role (Homfix/TocToc: `cuenta`/`cliente`/`prestador`), and there `inventory.screens[].role` is the registry NAME, so read the real per-screen role from source (see the nested-registry note in Implementation status). Map whatever roles exist to route groups; do not force a host/guest split that isn't there.
 - **`multi-page` (dclogic web): shared chrome → ONE layout.** The header/nav/footer repeats in EVERY `.dc` page's markup — it must be extracted to a single layout wrapping all N routes in a route-group, with the nav populated from the page list (entry → `/`). Do NOT let each page re-inline the chrome (8× duplication). Flag this for Step 4.
 - `single-page-sections` / `single-page` (dclogic landing / vanilla): the sticky header/nav is part of the ONE screen (section switching), NOT a separate layout — no layout work unless a genuine shared shell exists.
 
@@ -257,7 +284,12 @@ The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-toke
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-assets' })` — **Haiku**.
 
-Pass: the path to `assets/img/*` + `inventory.images` (file, uuid, alias, mime, and `screenSlug` when per-screen), and — for babel, or a repeated dclogic glyph — the icon glyph list to split into React icon components (for a flat dclogic whose glyphs are all single-use, omit it: inline `<svg>` stays in the screen). The agent converts raster → WebP via `sharp` (no ffmpeg), builds any icon components (`GmailIcon.tsx` pattern), registers `src/assets/icons/index.ts`, writes `.hash.txt` siblings. You pre-filter icons per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) before delegating (role-based, not name-based — brand marks and coherent sets keep their source glyph).
+Pass: the path to `assets/img/*` + `inventory.images` (each entry carries `file`, `uuid`, `alias`, `mime`), and — for babel, or a repeated dclogic glyph — the icon glyph list to split into React icon components (for a flat dclogic whose glyphs are all single-use, omit it: inline `<svg>` stays in the screen). The agent converts raster → WebP via `sharp` (no ffmpeg), builds any icon components (`GmailIcon.tsx` pattern), registers `src/assets/icons/index.ts`, writes `.hash.txt` siblings. You pre-filter icons per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) before delegating (role-based, not name-based — brand marks and coherent sets keep their source glyph).
+
+**Two inputs the agent needs that `inventory.images` does NOT contain — YOU supply both, or the step deadlocks:**
+
+- **`screenSlug`** is **not** a field `unpack.mjs` emits. It is *your* decision (per-screen → `src/assets/images/{screenSlug}/`; shared brand asset → flat). Pass it per image.
+- **A semantic `name` per image.** `alias` is `null` for every image on a dclogic export (it comes from babel's `ext_resources` map, which dclogic has no equivalent of), so the agent's naming-sanitization rules cannot fire and **every image falls through to `STOP-BLOCKING / NAMING_NEEDED`** — 28 of them on a landing like Hologramas. The semantic context exists, but only YOU are positioned to read it: the markup's `alt=` attributes (`alt="SanCor Salud"` → `obra-sancor-salud`, `alt="Atención y acompañamiento…"` → `hero-atencion`). Derive the `uuid → name` map at Step 0.5 and hand it over — the same "the parent names, the agent applies" split already used for colors, breakpoints and icons.
 
 ---
 
@@ -286,6 +318,11 @@ Pass: current `src/layouts/` state, the chrome findings, the host/guest roles, t
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-scaffold' })` — **Haiku**.
 
 Before delegating, read `src/app/layout.tsx` and extract the current `<html lang>` (pass as `currentHtmlLang`). Pass: for each **route** screen — `screenName`, `screenType` (auth|public|protected), `route`, `routeGroup`, `role`; the Zustand `stores` to create; batch-level `detectedLanguage` + `currentHtmlLang`. The agent runs `/new-screen` per route (placeholder in the right language), `/new-store` per store, updates `src/proxy.ts`, switches `<html lang>`/`openGraph.locale` if needed. **Only `route` screens are scaffolded — `step`/`modal` are not routes.**
+
+**Expect a near-total no-op on a `single-page` / `single-page-sections` import, and do NOT mistake that for "skip the step".** The design maps to `/`, which the template already serves via `HomePage` — so `/new-screen` is skipped (it would collide), `/` is already in `PUBLIC_PATHS`, and there may be zero stores. Two duties survive, and they are the whole point of the step here:
+
+1. **The language switch** (`<html lang>` + `openGraph.locale`) — often the only file this step writes.
+2. **The reused route's metadata upgrade.** The agent is REQUIRED to bring the existing `page.tsx` up to the full per-type metadata shape `/new-screen` would have generated (a template placeholder typically ships only `title`), and to report `REUSED ROUTE: /{path} ({Name}Page) — metadata upgraded`. **Do not instruct it to leave that file alone** — that contradicts its contract and re-opens the lost-metadata gap the rule exists to close. If you want Step 5.2 to own the final SEO copy, say so as a follow-up, not as a prohibition here.
 
 After this step, **commit the scaffold as a checkpoint** — *unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own). Their instruction wins; skip the commit and say so rather than committing anyway or silently dropping the step.
 
@@ -376,7 +413,7 @@ grep -rn "hp-blob\|data-r=\|sc-if\|__bundler\|window.HOST\|window.GUEST" $F
 
 Report findings in a categorized `path:line` shape. **Don't auto-fix** — surface and offer to delegate to the relevant agent.
 
-**Then clean up the import's scratch state.** The `.hash.txt` siblings are import-scoped: Step 2 writes them so it can dedup across screen folders, and Step 5.2 may read them. Once validation has run, nothing else consumes them — they are not source, and they are ~100 bytes of noise per image. Delete them as the last action of the flow:
+**Then clean up the import's scratch state.** The `.hash.txt` siblings are import-scoped: Step 2 writes them so a **re-invocation of Step 2** (after a STOP, or a follow-up batch) can dedup against what it already converted, rather than re-encoding every image. **Step 5.2 never reads them** — `claude-design-screen` is explicitly told not to convert images or touch `.hash.txt`, since Step 2 owns conversion. Once validation has run, nothing consumes them — they are not source, and they are ~100 bytes of noise per image. Delete them as the last action of the flow:
 
 ```bash
 find src/assets/images -name '*.hash.txt' -delete
@@ -431,7 +468,7 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 
 | Step | What | Sub-agent | Model | Input from parent |
 |------|------|-----------|-------|--------------------|
-| 0 | Unpack | `unpack.mjs` | — | **Export URL** + scratch outDir |
+| 0 | Unpack | `unpack.mjs` | — | **Project-archive folder** (unzip first; recommended) OR **Standalone HTML URL/path** + scratch outDir |
 | 0.5 | Inventory & gap analysis | (parent) | Opus | The unpacked artifacts |
 | 0.55 | Gate the spec against the source | `general-purpose` | Sonnet | The source tree + your gap-analysis report |
 | 1 | Tokens | `claude-design-tokens` | Haiku | Named tokens (`hex → name` + REUSE/CREATE/BLOCK) + off-scale integer sizes + fonts |
