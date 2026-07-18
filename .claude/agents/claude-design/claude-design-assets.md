@@ -31,17 +31,24 @@ Detect the platform from the `Platform` field in your environment (`win32` → P
 
 ## Expected input from the parent
 - The path to the unpacked working tree (so you can read `inventory.json`, `assets/img/*`, and `jsx/*`).
-- **Images**: from `inventory.images` — each `{ file (path under unpacked/assets/img), uuid, alias, mime }`, plus a `screenSlug` when the parent decided the image belongs to a single screen (omit for shared assets like logos).
+- **Images**: from `inventory.images` — each `{ file (path under unpacked/assets/img), uuid, srcRef, alias, mime }`, plus a `screenSlug` when the parent decided the image belongs to a single screen (omit for shared assets like logos). **`uuid` vs `srcRef` depends on `inventory.sourceMode`**: a **standalone** export identifies each image by an opaque `uuid` (and the markup references it as `<img src="{uuid}">`); a **Project archive** has NO uuid (`uuid: null`) and instead carries `srcRef` — the image's ORIGINAL relative path (`assets/oslogos/sancor.png`), which is exactly how the markup references it (`<img src="assets/oslogos/sancor.png">`). Use whichever the export provided as the image's identity for dedup/lookup.
 - **Icons** (may be EMPTY): for **babel**, the path to the prototype's `Icon` component JSX file (e.g. `{unpacked}/jsx/02_icon.jsx`) + the list of glyph names to split (from the `Icon` component's `name → svg` map). For **dclogic with an empty `components.json`**, there is no `Icon` component — the parent passes an icon list for any glyph **used 2+ times (it repeats)**; single-use glyphs stay inline (parent omits them; see "Icons" below). The parent pre-filters the list **by role, per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) — NOT by "a PrimeIcon with that name exists"**: when the design ships a coherent icon set, every member keeps its source glyph and the list you receive contains **zero** PrimeIcon-covered names. That is the correct outcome, not an oversight — build every glyph the parent passes you, even one whose name matches a `pi pi-*`.
 
 If a required input is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**: you run in isolated context and only the orchestrator reads your output. Never guess a default.
 
 ## Naming sanitization (do this FIRST)
 
-The prototype's asset aliases (from `ext_resources`) can be generic (`unsplashInvite`, `px13137724`). Prefer a semantic name derived from usage:
+**If the parent handed you an explicit `uuid → name` map, USE IT VERBATIM and skip this section** — naming is the parent's call (it has the whole design in view), exactly as with token names. Do NOT re-derive or "improve" a name it gave you, and do NOT emit `NAMING_NEEDED` for an image it named.
+
+Otherwise, the prototype's asset aliases (from `ext_resources`) can be generic (`unsplashInvite`, `px13137724`). Prefer a semantic name derived from usage:
+
 1. If the alias is a stock-photo id or opaque hash (`^px\d+$`, `^img\d+$`, `unsplash\w*`), derive a better name from where it's used in the JSX (grep the screen files for the alias / `window.__resources.{alias}`) → e.g. `invite-cover`, `gift-hero`.
-2. If multiple assets share a derived name, append a stable index.
-3. If you cannot derive anything meaningful, emit `STOP-BLOCKING / category: NAMING_NEEDED / next_agent: user_decision`. Do NOT invent `asset-1.webp`.
+2. **`alias` is `null` (every dclogic / vanilla export — `ext_resources` is a babel construct).** Rule 1 cannot fire: there is no alias to pattern-match and nothing to grep for, and there is no JSX tree either. Do NOT fall straight through to rule 3 — that turns a normal landing into 28 `NAMING_NEEDED` STOPs and deadlocks the flow.
+   - **Project archive (`sourceMode: archive`, image has a `srcRef`)**: the `srcRef` is a REAL path, so its basename is already a decent name — `assets/oslogos/sancor.png` → `sancor`, `hero-abuela-nieta.jpg` → `hero-abuela-nieta`. Use it, but still prefer a sibling `alt=` when the basename is opaque (`pasted-1781….png`, `img_02.png`): the markup references the image by that same `srcRef`, so find the `<img src="{srcRef}" alt="…">`.
+   - **Standalone (`uuid`, no `srcRef`)**: the markup references the image as `<img src="{uuid}" alt="…">`, so **derive the name from the sibling `alt=` on the `<img>` whose `src` is that uuid** (`source/{screen}.markup.html`): `alt="SanCor Salud"` → `obra-sancor-salud`, `alt="Atención y acompañamiento…"` → `hero-atencion`.
+   Kebab-case it, strip accents, and keep it short. (The parent normally does this for you at Step 0.5 — see the map rule above; this is the fallback when it didn't.)
+3. If multiple assets share a derived name, append a stable index.
+4. If you cannot derive anything meaningful — **and only after rule 2's `alt=` lookup also came up empty** (a genuinely `alt`-less `<img>`) — emit `STOP-BLOCKING / category: NAMING_NEEDED / next_agent: user_decision`. Do NOT invent `asset-1.webp`.
 
 ## Raster images (already decoded → convert to WebP)
 
@@ -58,7 +65,7 @@ Rule per image (do them all in ONE batch `sharp` script):
    - **Lossless** when the source has alpha (`hasAlpha === true`) AND ≤ 512×512 (logos/UI): `sharp(src).webp({ lossless: true }).toFile(target)`.
    - **Lossy** otherwise: `sharp(src).webp({ quality: 85 }).toFile(target)`.
 4. Create the target folder if missing.
-5. Write a sibling `{name}.hash.txt` containing `{"url": "{alias-or-uuid}", "sha1": "{contentHash}"}` so future runs dedup.
+5. Write a sibling `{name}.hash.txt` containing `{"url": "{srcRef-or-alias-or-uuid}", "sha1": "{contentHash}"}` so future runs dedup (the `url` is just a provenance label — use whichever identity the export provided).
 6. Do NOT keep the raw source in the project — only the `.webp` + `.hash.txt`.
 
 **Batch script skeleton** — write it to a `.mjs` file **inside the repo** (e.g. `./_assets_convert.mjs`), run `node ./_assets_convert.mjs` from the project root, then delete it. Fill `IMAGES` from the parent's list + `screenSlug`:
@@ -69,7 +76,8 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, mkdirSync, globSync } from 'node:fs'
 import { dirname } from 'node:path'
 
-// IMAGES: [{ src: '<unpacked>/assets/img/xxx.png', out: 'src/assets/images/<slug?>/<name>.webp', uuid: '...' }]
+// IMAGES: [{ src: '<unpacked>/assets/img/xxx.png', out: 'src/assets/images/<slug?>/<name>.webp', ref: '...' }]
+// `ref` = provenance label for the hash sibling: srcRef (archive) OR uuid (standalone), whichever the export gave.
 const IMAGES = []
 
 // Build the sha1 -> existing .webp index ONCE, from every hash sibling already on disk.
@@ -84,7 +92,7 @@ for (const hf of globSync('src/assets/images/**/*.hash.txt')) {
   try { index.set(JSON.parse(readFileSync(hf, 'utf8')).sha1, posix(hf).replace(/\.hash\.txt$/, '.webp')) } catch {}
 }
 
-for (const { src, out, uuid } of IMAGES) {
+for (const { src, out, ref } of IMAGES) {
   const buf = readFileSync(src)
   const sha1 = createHash('sha1').update(buf).digest('hex')
   const hit = index.get(sha1)
@@ -93,7 +101,7 @@ for (const { src, out, uuid } of IMAGES) {
   const lossless = m.hasAlpha && m.width <= 512 && m.height <= 512
   mkdirSync(dirname(out), { recursive: true })
   await sharp(buf).webp(lossless ? { lossless: true } : { quality: 85 }).toFile(out)
-  writeFileSync(out.replace(/\.webp$/, '.hash.txt'), JSON.stringify({ url: uuid, sha1 }))
+  writeFileSync(out.replace(/\.webp$/, '.hash.txt'), JSON.stringify({ url: ref ?? null, sha1 }))
   index.set(sha1, out) // so a later IMAGES entry with the same source reuses this one
   console.log(`${lossless ? 'LOSSLESS' : 'lossy'}  ${out}`)
 }
