@@ -12,6 +12,12 @@
 > - **Format-specific mechanics** (Figma MCP vs `unpack.mjs`, the `nodeId` gate vs a source-file path,
 >   asset download vs manifest-decode, etc.) stay in each agent's own `.md` and are **not** synced to
 >   the sibling flow.
+> - **Orchestrator-only protocol is deliberately NOT here.** Section C covers the protocol *you* (a step
+>   agent) follow — the footer you emit, the STOP shape, the delegation contract. What the ORCHESTRATOR
+>   does with your footer (the workload/cost ledger, verifying your reported counts against the
+>   filesystem) lives duplicated in the two `SKILL.md` files instead, because you would otherwise load it
+>   at every pre-flight and never act on it. See [`CLAUDE.md` § Keep the two flows in sync](../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync).
+>   If you find yourself about to add orchestrator instruction here, that is the rule you're crossing.
 >
 > Litmus test for "does a rule belong here (B) or in CONVENTIONS (A)?": *would a developer writing code
 > from scratch use this rule?* If yes → CONVENTIONS. If it only applies when **translating a design** →

@@ -90,6 +90,10 @@ Edit either file **once** and both flows inherit automatically; `design-validati
 - **Source-ingestion mechanics** of one format? → edit only that agent's `.md`; the twin is unaffected. These diverge by design: how the design context is read (Figma `get_design_context` / screenshots / asset URLs vs `unpack.mjs`'s source tree, `tokens.json`, `nav-graph.json`, local `assets/img/`), the "spec gate" (a Figma `nodeId` vs a source-file path/region), asset acquisition (download vs decode-from-manifest), navigation (Figma frames → screens vs the prototype's stack-router → hybrid route/step/modal mapping), and responsive strategy (Figma desktop+mobile frames vs target detection).
 - A **new format-specific rule** (e.g. dclogic's empty-`components.json` handling, or a Figma-variable quirk) lives in that flow's agent only — it has no counterpart to sync.
 
+**The one documented exception: `## Workload tracking` is duplicated in both `SKILL.md` files ON PURPOSE.** By the test above it is protocol and belongs in `design-import-shared.md` — but that file is `Read` at pre-flight by **every step agent of both flows**, and the workload ledger is instruction only the *orchestrator* ever acts on. Moving it there would load it into ~7 sub-agent contexts per import to serve a single reader. So it stays duplicated, and both copies carry a banner saying so.
+
+> This exception is **not** a precedent for "duplicating is fine when it's convenient" — it is narrowly about *audience*: orchestrator-only content in a file whose readers are the step agents. Anything a step agent acts on still goes in the shared file, once. And the cost is real, not theoretical: within days of being written the two copies had already diverged (one was missing a verification command the other had). **If you edit one, edit the other in the same commit.**
+
 The old rigid 1:1 map is now just a **navigation aid** (find your twin to compare), NOT a "move them together" mandate:
 
 | figma-design-import | claude-design-import |
