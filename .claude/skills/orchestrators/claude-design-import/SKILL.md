@@ -39,6 +39,10 @@ The "Standalone HTML" export is **not** flat HTML — it's a self-contained page
 
 ## Workload tracking (cost telemetry across the flow)
 
+> ⚠️ **DELIBERATELY DUPLICATED — the twin at `figma-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already has** (the twin was missing the Step 6 check below).
+>
+> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`claude-design-*` vs `figma-*`), the frontmatter path (`.claude/agents/claude-design/` vs `.claude/agents/figma/`), the token-namespace grep, and each flow's own step numbering.
+
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
@@ -66,7 +70,47 @@ Notes: {one-line count summary}
 
 - `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/claude-design/{name}.md` (source of truth; the footer string can drift). The one exception is Step 0.55's `general-purpose`, a builtin with no file under `.claude/agents/` — record the model you actually passed it.
 - `Duration` / `Tool calls` / `Tokens` ← the `<usage>` block of the `Agent(...)` result (above). The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
-- `Notes` / `Validation` ← from the footer.
+- `Notes` / `Validation` ← from the footer, but see the verification rule immediately below — the `Notes` line is a self-reported summary, not a measurement.
+
+### Verify the deliverable counts against the filesystem — do NOT trust the report
+
+The rule above ("`Tokens`/`Tool calls`/`Duration` come from the harness, never from the agent") exists because an agent's self-report is a reconstruction, not a measurement. **That applies to the DELIVERABLE counts too, and those are the ones that reach the user.** A sub-agent runs in isolated context, makes dozens of tool calls, and then summarizes from memory at the end; the summary is the least reliable part of an otherwise-correct run.
+
+This is measured, not hypothetical — on one Hologramas run **all three** of the main step agents misstated their own output:
+
+| Agent | Claimed | Actual |
+| --- | --- | --- |
+| `claude-design-tokens` | "39 colors created" | 31 |
+| `claude-design-assets` | "17 PNGs reused **from prior run**" | there was no prior run |
+| `design-validation` | "27 tokens · 23 webp · 23 `.hash.txt` deleted" | 31 · 24 · 24 |
+
+`design-validation` also attributed a type change to `CustomButton` that was actually made to `InputContainer` — so the error is not only in the arithmetic, it can be in *which file was touched*. In every case the underlying work was correct; only the reporting was wrong.
+
+**So: after any step that produces files, spend one command confirming the count before you write it into the ledger or repeat it to the user.** The check is seconds long and the asymmetry is the whole point — an invented number that reaches the final report is one the user has no way left to catch.
+
+Substitute `{ns}` with the namespace you actually used (`hg-`, …) — pasted verbatim it matches nothing and reports 0.
+
+```bash
+# POSIX
+# Step 1 — tokens actually in the config (the trailing screens/ entries are NOT colors; count the hex rows)
+grep -cE "'\{ns\}-[a-z]+-[0-9]+': '#" tailwind.config.js
+# Step 2 — converted assets + extracted icons
+find src/assets/images -name '*.webp' | wc -l ; ls src/assets/icons/*.tsx | wc -l
+# Step 3 / 5.1 / 5.2 — the files the agent said it wrote really exist
+ls src/components/{Name}/ src/screens/{Name}Page/
+# Step 6 — the scratch cleanup really happened (this one is silently skipped most often)
+find src/assets/images -name '*.hash.txt' | wc -l    # expect 0
+```
+
+```powershell
+# Windows — this project's primary shell (`wc`, `find -name` and `grep -c` do not exist in PowerShell)
+(Select-String -Path tailwind.config.js -Pattern "'\{ns\}-[a-z]+-[0-9]+': '#").Count
+(Get-ChildItem src/assets/images -Recurse -Filter *.webp).Count ; (Get-ChildItem src/assets/icons/*.tsx).Count
+Get-ChildItem src/components/{Name}/, src/screens/{Name}Page/
+(Get-ChildItem src/assets/images -Recurse -Filter *.hash.txt).Count    # expect 0
+```
+
+If a count disagrees with the report, **the filesystem wins**: use the real number and say so in the checkpoint. A mismatch is worth one line to the user, not a re-delegation — the work is usually fine.
 
 **Show the ledger at every checkpoint from 5.1 onward** (end of 5.1, between each 5.2 screen, end of 6) with a cumulative sum + per-model breakdown, so the trajectory is inspectable and the user can pause before the Opus-heavy Step 5.2 creeps up. (Not at the end of 0.5 — nothing has been delegated yet, so the ledger is empty.)
 
@@ -123,7 +167,7 @@ It writes: `source/*` (component source — babel: `source/jsx/*.jsx`; dclogic: 
 
 > **The dclogic CSS lives in `source/{screen}.helmet.css`, and ONLY there.** The `<helmet>` carries the design's real stylesheet — its `@media` breakpoints, `@font-face`, CSS vars — and `{screen}.markup.html` has it stripped out (0 `@media`), so never look for a breakpoint in the markup. `template.html` is a convenience copy of the whole export, written for **babel and single-page dclogic only** — it does NOT exist for multi-page dclogic or vanilla, so read `source/*.helmet.css` rather than relying on it. (`inventory.screens[].file` points at the right source file for each screen — always use that, never a hardcoded path.)
 
-**Read `inventory.json` first** — your map for Step 0.5: `format` (babel|dclogic|vanilla), `navModel` (screen-registry|single-page-sections|multi-page|single-page), `tokenSource` (themes-object|inline+helmet|inline+css), `targetSignals` (with a mobile-app|web `guess`), counts, `screens` (the authoritative list — each `key`/`component`/`role`/`file`; babel = one per registry KEY, dclogic multi-page = one per page, dclogic single-page = one per section), `components`, `brandFonts` (`{body, display, families}` — load `families`, preload `body`), `fontFamilies` (superset), `images` with `uuid`, `brand`, `tokenNamespaces`, `registries`/`tabs` (babel only — and possibly empty even then; see Format handling), and `notes` (**READ THESE** — they carry per-format orchestration guidance the parser inferred, including the nested-registry and partial-export flags).
+**Read `inventory.json` first** — your map for Step 0.5: `format` (babel|dclogic|vanilla), `navModel` (screen-registry|single-page-sections|multi-page|single-page), `tokenSource` (themes-object|inline+helmet|inline+css), `targetSignals` (with a mobile-app|web `guess`), counts, `screens` (the authoritative list — each `key`/`component`/`role`/`file`; babel = one per registry KEY, dclogic multi-page = one per page, dclogic single-page = one per section), `components`, `brandFonts` (`{body, display, families}` — load `families`, preload `body`), `fontFamilies` (superset), `images` with `uuid`, **`remoteImages`** (photos referenced by URL and NOT shipped in the export — absent from `images[]`; raises a WARNING note; needs a user decision at the checkpoint, see Step 0.5 > Assets), `brand`, `tokenNamespaces`, `registries`/`tabs` (babel only — and possibly empty even then; see Format handling), and `notes` (**READ THESE** — they carry per-format orchestration guidance the parser inferred, including the nested-registry and partial-export flags).
 
 **Format handling (read `inventory.format`).** `unpack.mjs` normalizes 3 flavors into the SAME IR:
 - `babel` — React SPA. **Fully supported end-to-end.** **The registry shape is NOT mandated** — a screen registry maps `key → component`, but it comes flat (`{home: HomeScreen}` — GIVXO) or nested (`{home: {c: HomeScreen, role:'cliente'}}` — Homfix/TocToc); `unpack.mjs` reads both. **`THEMES` and `window.HOST`/`GUEST`/`HOST_TABS` are present in SOME babel exports (GIVXO) and absent in others (TocToc has none).** So `tokenSource` may be `themes-object` OR `inline+helmet` for babel, and `registries`/`tabs` may be empty — treat their presence as per-export, never assumed. When a registry is nested, `inventory.notes` flags it and `screens[].role` holds the registry NAME (read the per-entry role, e.g. `cliente`/`prestador`, from source at Step 0.5).
@@ -164,9 +208,9 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 
 ## Tokens
 - Source (read `inventory.tokenSource`): `themes-object` (babel) → the brand preset `{brand}` in `tokens.json` (THEMES[brand]) is the canonical palette/typography. `inline+helmet`/`inline+css` (dclogic/vanilla) → **no THEMES**; palette/sizes come from `tokens.json.rawScan` (inline `hexColors` + `fontSizes`) + `<helmet>` CSS vars, fonts from `brandFonts` (helmet `@font-face`). Also check `rawScan.clampFontSizes` — responsive display sizes not captured; read them from source if a big heading size is missing.
-- **Colors — start from `rawScan.clusters`, do NOT cluster 40+ hexes by hand.** `unpack.mjs` pre-groups them per [`design-import-shared.md` § B2](../../../docs/design-import-shared.md#b2-color--cluster-the-raw-scan-map-to-tokens-never-raw-hex): each entry is `{ representative, hexes[], uses, roles, dominantRole, suggestedFamily }` — grouped by **single-link** clustering at per-channel Δ ≤ 4, tagged with the CSS role each hex appears in (`text`/`background`/`border`/`icon`/`gradient`/`shadow`) and its usage count, sorted by `uses`. Your job is to **review and NAME** them (`suggestedFamily` is a hint, not a decision — verify it, especially on saturated tints), fold the long tail into the nearest family per B2.4, and hand the tokens agent the named result.
+- **Colors — start from `rawScan.clusters`, do NOT cluster 40+ hexes by hand.** `unpack.mjs` pre-groups them per [`design-import-shared.md` § B2](../../../docs/design-import-shared.md#b2-color--cluster-the-raw-scan-map-to-tokens-never-raw-hex): each entry is `{ representative, hexes[], uses, roles, dominantRole, suggestedFamily }` — grouped by **single-link** clustering at per-channel Δ ≤ 4, tagged with the CSS role each hex appears in (`text`/`background`/`border`/`icon`/`gradient`/`shadow`) and its usage count, sorted by `uses`. Your job is to **review and NAME** them (`suggestedFamily` is a hint, not a decision — verify it, especially on saturated tints), fold the long tail into the nearest family per § B2 rule 4, and hand the tokens agent the named result.
 
-  **Single-link means Δ ≤ 4 holds between ADJACENT members, NOT across a cluster's extremes** — chained clusters really do come out wider than 4, so verify rather than trust the bound: on the Hologramas export, 2 of 33 clusters exceeded it (`["#eaf3fa","#e9f6fb","#eaf6fb","#eef7fb","#eef8fc"]` → Δ5; `["#e1ecf4","#e2f0f8","#e4f3fb"]` → Δ7). Split any cluster whose ends read as different colours. Note the clusters are a **hint about the raw scan**, not a token count: 33 clusters is not 33 tokens — B2.4's long-tail fold is what turns them into a palette.
+  **Single-link means Δ ≤ 4 holds between ADJACENT members, NOT across a cluster's extremes** — chained clusters really do come out wider than 4, so verify rather than trust the bound: on the Hologramas export, 2 of 33 clusters exceeded it (`["#eaf3fa","#e9f6fb","#eaf6fb","#eef7fb","#eef8fc"]` → Δ5; `["#e1ecf4","#e2f0f8","#e4f3fb"]` → Δ7). Split any cluster whose ends read as different colours. Note the clusters are a **hint about the raw scan**, not a token count: 33 clusters is not 33 tokens — § B2 rule 4's long-tail fold is what turns them into a palette.
 - Already mapped (design-tokens-map.md): [`figmaVar/themeKey` → `tailwindToken`]
 - Add: [new colors (hex), typography sizes, breakpoints the tokens agent should REUSE/CREATE/BLOCK]
 - Typography sizing: **every off-scale source size becomes a real token** (both flows add tokens, they do NOT snap — see [§ B1](../../../docs/design-import-shared.md#b1-typography--off-scale-sizes-become-real-tokens-both-flows-never-rounded)).
@@ -187,6 +231,16 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 
 ## Assets
 - Images (from inventory.images): [file, alias, uuid] → convert to WebP; per-screen vs shared.
+- Remote images: {count} found → **DECISION NEEDED: (a) download+convert · (b) keep remote · (c) placeholders** — list each `url` with its `alt`, `uses` and proposed name. Write `none` if `inventory.remoteImages` is empty. This line must carry an ANSWER before Step 1 starts; it is the one Assets item the user has to choose, not merely approve.
+- **Remote images (`inventory.remoteImages`) — check this list EVERY time; an empty one is a finding, not a formality.** A design may reference photos by URL (stock/CDN) instead of shipping them, and those are in NEITHER ingestion path's output: not in the standalone's manifest, not on disk for the archive closure. So they are absent from `images[]`, and an import that reads only `images[]` ships the design **with those photos missing** — including, typically, the LCP one. Nothing downstream catches it: a missing image compiles, type-checks and passes every convention grep. (Measured on Hologramas: `images[]` had the 17 local insurer logos while the hero, the about photo and all 5 service-card photos were remote.) Each entry is `{ url, alt, uses, from, renditions? }` — `alt` is your naming context (`alias` is null on dclogic), and `renditions` means the same photo is referenced at several CDN sizes (`?w=600` / `?w=700`): that is ONE asset, and `url` is the largest variant `unpack.mjs` could **read**. It reads `w`/`width`/`h`/`height` params and `/800x600/` path segments; a CDN that encodes size some other way leaves every rendition scoring 0 and the first-seen URL wins. So when an entry has `renditions`, glance at the list — if `url` is visibly not the biggest, say which one Step 2 should fetch.
+
+**This needs a USER DECISION at the checkpoint** — do not pick for them: (a) download + convert to WebP in Step 2, (b) keep them remote, or (c) sized placeholders + a TODO. **Each option has an owner and none of them is "it happens automatically":**
+
+| Choice | Who does what |
+| --- | --- |
+| (a) download + convert | Step 2 — pass `remoteImages` as an explicit second list (see Step 2). |
+| (b) keep remote | **YOU**, before Step 5.2: add each host to `images.remotePatterns` in `next.config.ts` (there is a commented template at the `images:` key). Then pass the URLs to Step 5.2 via `Remote images:`. Without the config edit **every one of these images fails at runtime** — `next/image` rejects an unconfigured host, and neither lint, type-check, `pnpm build` nor `design-validation` checks for it. |
+| (c) placeholders | Pass the list to Step 5.2 via `Remote images:` with the intended box sizes, so the screen agent renders sized placeholders + `// TODO:` instead of silently omitting the element. |
 - Icons: babel → the `Icon` component's named glyphs; flat dclogic (empty `components.json`) → the inline `<svg>` glyphs, counted by repetition.
 - **Pre-filter per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph)** — NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (tabulate every inline `<svg>`'s `stroke-width`/style): if it does, **every member keeps its source glyph and the import yields zero PrimeIcons** — that is the correct outcome, not an oversight. Only when there is no set do generic glyphs become `pi pi-{name}`. Brand marks always keep their source path — and use the **majority** path across instances, not the longest (a nav instance may carry an extra sub-path the other N don't; extracting that outlier silently re-draws every call site). Of the kept glyphs, pass the ones reused **2+ times** to the assets agent for extraction; single-use ones stay inline. Decide this here; do NOT ask the user.
 
@@ -253,13 +307,23 @@ Re-derive these FROM THE SOURCE, without reference to my spec, then diff:
 3. ICONS — tabulate every inline <svg>: stroke-width, style, use count. Is there a coherent set? For any
    glyph used 2+ times, are ALL its instances byte-identical, or does one carry an extra sub-path?
 4. TYPOGRAPHY — every font-size. Which are fractional? Which land off the project scale after rounding?
-5. COLORS — spot-check my hex→token mapping: any mapped to a token >Δ4 away, or into a different hue family?
+5. COLORS — spot-check my hex→token mapping. Flag (a) any hex mapped into a DIFFERENT HUE FAMILY, and (b) any
+   hex in the raw scan my map does not cover at all. Note the two collapse rules are different and only ONE is
+   bounded at Δ4: § B2 rule 3 collapses near-duplicates at per-channel Δ ≤ 4, while § B2 rule 4's long-tail fold
+   deliberately maps a leftover hex to the NEAREST token in its family at whatever distance that is. So a fold
+   wider than Δ4 is not by itself an error — report the distance and let me judge; a wrong-hue fold always is.
+6. REPEATED PRIMITIVES — independently count how many times each candidate component appears, and give the
+   `file:startLine-endLine` of the first instance. Flag any primitive repeated 2+ times that my spec MISSES.
+   (This one is load-bearing: a no-match primitive used 2+× triggers a BLOCKING `COMPONENT_GAP` in the middle
+   of Step 5.2, and re-running an Opus screen agent is the most expensive mistake in the flow.)
 Report ONLY mismatches, with source line numbers. If my spec is right on a point, say "match" and move on.
 ```
 
 Anything it flags, **verify against the source yourself** before changing the spec — it can be wrong too (on the first run an auditor mis-measured an icon set and would have had me "fix" correct code). Then fold the confirmed mismatches in and re-show the report.
 
 5. **Stop and confirm with the user.** They must approve the plan AND the screen classification (route/step/modal/skip) before any code is written. This is the most important checkpoint — Step 5.2 uses these decisions automatically, so a wrong classification here is caught cheaply now.
+
+   **If `inventory.remoteImages` is non-empty, this checkpoint has a second, explicit ASK** — the (a)/(b)/(c) choice from the Assets section. Approval of "the plan" is not a choice among three options: put the question to the user directly and get an answer. Do not default to one and do not proceed to Step 1 without it — Steps 2 and 5.2 both branch on it, and picking silently means the user never learns their design's photos weren't in the export.
 
 ---
 
@@ -285,6 +349,8 @@ The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-toke
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-assets' })` — **Haiku**.
 
 Pass: the path to `assets/img/*` + `inventory.images` (each entry carries `file`, `uuid`, `alias`, `mime`), and — for babel, or a repeated dclogic glyph — the icon glyph list to split into React icon components (for a flat dclogic whose glyphs are all single-use, omit it: inline `<svg>` stays in the screen). The agent converts raster → WebP via `sharp` (no ffmpeg), builds any icon components (`GmailIcon.tsx` pattern), registers `src/assets/icons/index.ts`, writes `.hash.txt` siblings. You pre-filter icons per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) before delegating (role-based, not name-based — brand marks and coherent sets keep their source glyph).
+
+**Remote images (`inventory.remoteImages`)** — if the user chose "download + convert" at the checkpoint, pass them as an explicit SECOND list with the same `url → name` shape, and say they must be fetched BEFORE conversion (PowerShell `Invoke-WebRequest -Uri "…" -OutFile "…"` on Windows, `curl -s -o` on POSIX). Tell the agent to report a failed download rather than substituting another image — a silent stock swap is worse than a gap. Where an entry carries `renditions`, say so explicitly: fetch `url` ONCE and reuse the single converted file for every call site (and if you spotted at Step 0.5 that `url` is not the biggest rendition, name the one to fetch instead). If the user chose (b) keep-remote or (c) placeholders, this step converts nothing — carry the list to Step 5.2's `Remote images:` field, and for (b) make the `next.config.ts` `remotePatterns` edit yourself first.
 
 **Two inputs the agent needs that `inventory.images` does NOT contain — YOU supply both, or the step deadlocks:**
 
@@ -350,7 +416,8 @@ Local modals: [{modalScreenKey → component}, ...]     # implement as screen-lo
 Target: {mobile-app|web}                              # drives responsive synthesis
 Breakpoints: [{design @media → token}, ...]   # the design's OWN media queries, ALREADY ADDED AS TOKENS by Step 1 — e.g. `max-width:860px → hg-md:`. Use the TOKEN, never a raw `max-[860px]:` and never the project scale: re-labelling 860 onto md (768) shifts every rule and breaks a whole viewport band (a 800px tablet renders the >860 layout). Empty list = the design has no media queries; only THEN synthesize with the project scale (see Target).
 Detected language: {en|es}
-Images: [{sourceUuid → `@/assets/images/…webp`}, ...]   # ALREADY converted by Step 2 — import these, do NOT re-convert. Only convert (sharp, dedup by `.hash.txt`) if a source image reaches you that Step 2 never received.
+Images: [{sourceUuid-or-srcRef → `@/assets/images/…webp`}, ...]   # ALREADY converted by Step 2 — import these, do NOT re-convert. Only convert (sharp, dedup by `.hash.txt`) if a source image reaches you that Step 2 never received. Key by whichever identity the export gave: `uuid` on a standalone, `srcRef` on an archive (`uuid` is null there) — and for a downloaded remote image, its ORIGINAL URL, since it has neither.
+Remote images: {mode: downloaded|keep-remote|placeholder} + [{sourceUrl → target}, ...]   # from the Step 0.5 checkpoint decision. `downloaded` → the entries are already in `Images:` above, keyed by URL, nothing else to do. `keep-remote` → render `next/image` against the ORIGINAL URL (I have already added the host to `next.config.ts` remotePatterns). `placeholder` → render a correctly-SIZED placeholder box + `// TODO: remote image {url}` — never omit the element, and never substitute another image. Omit this field only when `inventory.remoteImages` was empty.
 Existing components to reuse: [{Component} → path, ...]   # from Step 3
 Tokens available: [list from Step 1]
 Container rule: every top-level <section> anchored with `container-custom` (16px built-in gutter — no px-* on the same element); keep per-section py-* from the design. Ignore the prototype's fixed 430px frame width.
@@ -472,7 +539,7 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 0.5 | Inventory & gap analysis | (parent) | Opus | The unpacked artifacts |
 | 0.55 | Gate the spec against the source | `general-purpose` | Sonnet | The source tree + your gap-analysis report |
 | 1 | Tokens | `claude-design-tokens` | Haiku | Named tokens (`hex → name` + REUSE/CREATE/BLOCK) + off-scale integer sizes + fonts |
-| 2 | Assets | `claude-design-assets` | Haiku | `assets/img/*` + `inventory.images` + `Icon` glyph list |
+| 2 | Assets | `claude-design-assets` | Haiku | `assets/img/*` + `inventory.images` (+ `remoteImages` if the user chose to download them) + per-image `name`/`screenSlug` + `Icon` glyph list |
 | 3 | Components | `claude-design-components` | Opus | Extend/create list, each with **source JSX file** + token names |
 | 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target |
 | 5.1 | Scaffold routes + stores | `claude-design-scaffold` | Haiku | `route` screens (name, type, route, group, role, **component**) + store specs (full shape) + language |
