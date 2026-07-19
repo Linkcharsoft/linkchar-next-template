@@ -337,6 +337,17 @@ function imgTags(src) {
   }
   return out
 }
+// Largest candidate of a `srcset` attribute value. Size comes from the DESCRIPTOR (`… 800w` / `… 2x`) first —
+// candidates usually differ by PATH (`s-400.jpg`), which `pixelSizeOf` cannot read — then from the URL.
+// Ties keep the EARLIEST candidate (strictly-greater replaces), because declaration order is meaningful:
+// a `<picture>` lists its preferred format first, so an unmeasurable `<source>`/`<img>` pair must resolve to
+// the `<source>`. A plain `.sort().pop()` would silently pick the last one — the JPEG fallback.
+const largest = (cands) => cands.reduce((best, c) => (best && best.size >= c.size ? best : c), null)
+function bestSrcsetCandidate(setValue) {
+  return largest((setValue || '').split(',').map((c) => c.trim().split(/\s+/))
+    .filter(([u]) => u && /^https?:/i.test(u))
+    .map(([u, d]) => ({ u, size: Number((String(d || '').match(/^(\d+(?:\.\d+)?)[wx]$/i) || [])[1]) || pixelSizeOf(u) })))
+}
 function collectRemoteImages(srcList) {
   const byUrl = new Map()
   const add = (url, from, alt) => {
@@ -349,9 +360,35 @@ function collectRemoteImages(srcList) {
     if (!e.alt && alt) e.alt = alt   // the naming context the parent needs; `alias` is null on a dclogic export
   }
   const URL_IN = /url\(\s*['"]?(https?:\/\/[^'")]+?)['"]?\s*\)/gi
-  for (const src of srcList) {
-    if (typeof src !== 'string') continue
-    // <img> tags: the tag itself proves it's an image, so accept ANY http(s) src.
+  const blank = (s) => ' '.repeat(s.length)   // same-length mask keeps every other offset intact
+  for (const raw of srcList) {
+    if (typeof raw !== 'string') continue
+
+    // 1) MASK HTML COMMENTS FIRST. A commented-out `<img>` is dead markup — collecting it would put a photo
+    //    that the design does not render in front of the user as a decision, and (under "download+convert")
+    //    have Step 2 fetch it. Masking rather than deleting keeps every subsequent index/offset unchanged.
+    let src = raw.replace(/<!--[\s\S]*?-->/g, blank)
+
+    // 2) `<picture>` is ONE image expressed as several candidates (`<source>` formats + an `<img>` fallback).
+    //    Handle it as a UNIT and mask it out, or the pass below re-adds the fallback and one photo is
+    //    reported — and downloaded — twice, under two different paths that `renditionKey` cannot merge
+    //    (`pic.webp` vs `pic.jpg` share no path). Prefer the largest candidate across the whole element.
+    src = src.replace(/<picture\b[\s\S]*?<\/picture>/gi, (block) => {
+      const alt = (block.match(/\balt\s*=\s*["']([^"']*)["']/i) || [])[1]
+      const cands = []
+      for (const m of block.matchAll(/\bsrcset\s*=\s*["']([^"']+)["']/gi)) {
+        const b = bestSrcsetCandidate(m[1]); if (b) cands.push(b)
+      }
+      for (const tag of imgTags(block)) {
+        const u = (tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i) || [])[1]
+        if (u && /^https?:/i.test(u)) cands.push({ u, size: pixelSizeOf(u) })
+      }
+      const best = largest(cands)
+      if (best) add(best.u, 'picture', alt)
+      return blank(block)
+    })
+
+    // 3) Plain <img> tags: the tag itself proves it's an image, so accept ANY http(s) src.
     for (const tag of imgTags(src)) {
       const url = (tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i) || [])[1]
       if (url && /^https?:/i.test(url)) add(url, 'img', (tag.match(/\balt\s*=\s*["']([^"']*)["']/i) || [])[1])
@@ -360,13 +397,7 @@ function collectRemoteImages(srcList) {
       // over-count `renditionKey` exists to prevent, which it cannot catch here since the variants usually
       // differ by PATH, `s-400.jpg` vs `s-800.jpg`, not by query).
       if (!url) {
-        // Size comes from the srcset DESCRIPTOR (`… 800w` / `… 2x`) first — the candidates usually differ by
-        // path (`s-400.jpg`), which `pixelSizeOf` cannot read; fall back to the URL when there's no descriptor.
-        const cands = ((tag.match(/\bsrcset\s*=\s*["']([^"']+)["']/i) || [])[1] || '')
-          .split(',').map((c) => c.trim().split(/\s+/))
-          .filter(([u]) => u && /^https?:/i.test(u))
-          .map(([u, d]) => ({ u, size: Number((String(d || '').match(/^(\d+(?:\.\d+)?)[wx]$/i) || [])[1]) || pixelSizeOf(u) }))
-        const best = cands.sort((a, b) => a.size - b.size).pop()
+        const best = bestSrcsetCandidate((tag.match(/\bsrcset\s*=\s*["']([^"']+)["']/i) || [])[1])
         if (best) add(best.u, 'img', (tag.match(/\balt\s*=\s*["']([^"']*)["']/i) || [])[1])
       }
     }
@@ -920,6 +951,9 @@ const inventory = {
   // Referenced by URL, NOT shipped in the export — deliberately a SEPARATE list, not `images[]` entries with a
   // null `file`, so an agent looping over images[] can never hit a path that isn't on disk. Each: { url, alt,
   // uses, from }. `alt` is the naming context (dclogic has no `alias`). Requires a Step 0.5 decision — see notes.
+  // `from` is `img` | `picture` | `css`, and records where the URL was FIRST seen, not everywhere it appears:
+  // the same photo used as an <img> and as a CSS background reports the first one only. Treat it as a hint for
+  // naming/among-which-markup, never as "this image is only used in one place" — `uses` is the count that matters.
   remoteImages,
   registries: ir.extra.registries ? Object.fromEntries(Object.entries(ir.extra.registries).map(([k, v]) => [k, Object.keys(v)])) : undefined,
   tabs: ir.extra.tabs,
