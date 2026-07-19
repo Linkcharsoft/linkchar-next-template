@@ -111,7 +111,7 @@ const scanFontSizes = (s) => uniq([...s.matchAll(/font-size:\s*(\d+(?:\.\d+)?)\s
 // A `tokenSource=inline+helmet` rawScan dumps 40+ hexes; the parent must reduce that to a
 // token palette by hand — slow and irreproducible. So pre-group it here: tag each hex with
 // the CSS role(s) it appears in + a usage count, then single-link cluster by per-channel
-// Δ ≤ 4 (B2.3: at that distance it's the same colour to the eye — role NAMES a cluster, it
+// Δ ≤ 4 (B2 rule 3: at that distance it's the same colour to the eye — role NAMES a cluster, it
 // never splits one). Output is a HINT: the parent reviews and names, it does not recompute.
 const HEX = '#[0-9a-fA-F]{6}\\b|#[0-9a-fA-F]{3}\\b'
 const expandHex = (h) => (h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h)
@@ -260,11 +260,131 @@ function collectArchiveImages(srcList, baseDir) {
   }
   const out = []
   for (const ref of refs) {
+    // Remote/data refs have no file to copy. They are NOT dropped on the floor — `collectRemoteImages` picks the
+    // remote ones up separately and the IR surfaces them; see the WARNING it raises.
     if (/^(https?:|data:)/i.test(ref)) continue
     const p = resolve(baseDir, ref.replace(/[?#].*$/, ''))
     if (existsSync(p) && statSync(p).isFile()) out.push({ srcPath: p, ref })
   }
   return out
+}
+
+// Images the design references by URL instead of shipping (stock photos, a CDN). They are in NEITHER ingestion
+// path's output: not in the standalone's base64 manifest, not on disk for the archive closure. So `images[]` — the
+// list every downstream step reads — silently omits them, and an import that trusts it ships the design with those
+// photos missing. Nothing downstream catches that: it compiles, type-checks and passes every convention grep.
+// (Measured on Hologramas: 17 local logos in images[], while the hero, the about photo and all 5 service-card
+// photos were remote — 7 images, including the LCP one.) Surface them so Step 0.5 must make a decision.
+// ONE entry per distinct IMAGE, not per distinct URL: a CDN serves the same photo at several sizes via a query
+// param (`?w=600` in a preview card, `?w=700` in a detail card — the same file), so the query is a rendition
+// and must not split the asset. Keying on the full URL would hand the parent 12 "images" for 7 photos and have
+// Step 2 download and convert each twice.
+//
+// But the identity is NOT the bare path either: `?fit=crop&w=400&h=400` (a square avatar) and `?w=1600` (a wide
+// hero) are the same SOURCE photo rendered at different aspect ratios — merging them gives every call site one
+// file at the wrong crop, plus whichever `alt` happened to land first. So the key is path + the params that
+// change the IMAGE (crop/format/filters) + the aspect ratio when both dimensions are pinned; only the pure
+// SIZE params are stripped as renditions.
+const SIZE_PARAMS = new Set(['w', 'width', 'h', 'height', 'dpr', 'q', 'quality'])
+function renditionKey(url) {
+  const [path, qs] = url.split('?')
+  if (!qs) return path
+  const params = [...new URLSearchParams(qs)]
+  const others = params.filter(([k]) => !SIZE_PARAMS.has(k.toLowerCase()))
+    .map(([k, v]) => `${k.toLowerCase()}=${v}`).sort()
+  const num = (n) => { const p = params.find(([k]) => k.toLowerCase() === n); return p ? Number(p[1]) : 0 }
+  const w = num('w') || num('width'), h = num('h') || num('height')
+  // Both dimensions pinned ⇒ the aspect ratio is part of the intent (a crop), not a size step.
+  const ar = w && h ? `ar=${(w / h).toFixed(2)}` : ''
+  return [path, ...others, ar].filter(Boolean).join('|')
+}
+// Largest rendition wins as the fetch URL (best source quality). Read EVERY size signal a CDN might use, not
+// just `w=`: `h=`-only sizing is common, and some CDNs put the dimensions in the path (`/800x600/`). Falls back
+// to 0 when nothing is readable — then first-seen wins and `renditions` still shows the parent what it missed.
+function pixelSizeOf(u) {
+  const q = (re) => Number((u.match(re) || [])[1]) || 0
+  const seg = u.match(/\/(\d{2,5})x(\d{2,5})(?:[/?.]|$)/)
+  return Math.max(
+    q(/[?&](?:w|width)=(\d+)/i), q(/[?&](?:h|height)=(\d+)/i),
+    seg ? Math.max(Number(seg[1]), Number(seg[2])) : 0,
+  )
+}
+// CSS properties whose url() is ALWAYS an image. Needed because many CDN URLs carry no file extension at all
+// (unsplash `photo-1234?w=1600`), so an extension test drops exactly the remote hero background that is
+// typically the LCP element. Outside these properties an extension IS still required — a url() in `src:`
+// (@font-face) or `cursor:` is not an image.
+const IMAGE_PROPS = /^(?:background|background-image|mask|mask-image|-webkit-mask-image|border-image|border-image-source|list-style-image|content|shape-outside|offset-path)$/i
+// Slice out each `<img …>` tag, ending at the first `>` that is NOT inside a quoted attribute value — so
+// `alt="ancho > 100"` can't truncate the tag and silently drop the image. Deliberately a hand-rolled scan and
+// NOT a regex: the natural quote-aware pattern (`<img\b(?:"[^"]*"|'[^']*'|[^>"'])*>`) is a nested
+// alternation-with-star, which backtracks catastrophically on an unterminated tag — measured at 86 SECONDS on a
+// 200KB run, versus ~1ms for this scan. Linear, single pass, no backtracking.
+function imgTags(src) {
+  const out = []
+  const re = /<img\b/gi
+  let m
+  while ((m = re.exec(src))) {
+    let quote = null, end = -1
+    for (let i = m.index + 4; i < src.length; i++) {
+      const c = src[i]
+      if (quote) { if (c === quote) quote = null; continue }
+      if (c === '"' || c === "'") { quote = c; continue }
+      if (c === '>') { end = i; break }
+    }
+    if (end < 0) break            // unterminated tag — nothing parseable after it
+    out.push(src.slice(m.index, end + 1))
+    re.lastIndex = end + 1
+  }
+  return out
+}
+function collectRemoteImages(srcList) {
+  const byUrl = new Map()
+  const add = (url, from, alt) => {
+    const key = renditionKey(url)
+    if (!byUrl.has(key)) byUrl.set(key, { url, alt: alt || null, uses: 0, from, renditions: new Set() })
+    const e = byUrl.get(key)
+    e.uses++
+    e.renditions.add(url)
+    if (pixelSizeOf(url) > pixelSizeOf(e.url)) e.url = url   // prefer the biggest variant as the source to fetch
+    if (!e.alt && alt) e.alt = alt   // the naming context the parent needs; `alias` is null on a dclogic export
+  }
+  const URL_IN = /url\(\s*['"]?(https?:\/\/[^'")]+?)['"]?\s*\)/gi
+  for (const src of srcList) {
+    if (typeof src !== 'string') continue
+    // <img> tags: the tag itself proves it's an image, so accept ANY http(s) src.
+    for (const tag of imgTags(src)) {
+      const url = (tag.match(/\bsrc\s*=\s*["']([^"']+)["']/i) || [])[1]
+      if (url && /^https?:/i.test(url)) add(url, 'img', (tag.match(/\balt\s*=\s*["']([^"']*)["']/i) || [])[1])
+      // `srcset` without a `src` is a real pattern. Its candidates are renditions of ONE image by definition,
+      // so contribute only the LARGEST — adding them all would report N assets for one photo (the exact
+      // over-count `renditionKey` exists to prevent, which it cannot catch here since the variants usually
+      // differ by PATH, `s-400.jpg` vs `s-800.jpg`, not by query).
+      if (!url) {
+        // Size comes from the srcset DESCRIPTOR (`… 800w` / `… 2x`) first — the candidates usually differ by
+        // path (`s-400.jpg`), which `pixelSizeOf` cannot read; fall back to the URL when there's no descriptor.
+        const cands = ((tag.match(/\bsrcset\s*=\s*["']([^"']+)["']/i) || [])[1] || '')
+          .split(',').map((c) => c.trim().split(/\s+/))
+          .filter(([u]) => u && /^https?:/i.test(u))
+          .map(([u, d]) => ({ u, size: Number((String(d || '').match(/^(\d+(?:\.\d+)?)[wx]$/i) || [])[1]) || pixelSizeOf(u) }))
+        const best = cands.sort((a, b) => a.size - b.size).pop()
+        if (best) add(best.u, 'img', (tag.match(/\balt\s*=\s*["']([^"']*)["']/i) || [])[1])
+      }
+    }
+    // CSS url(…): an image extension is required in general (a url() may point at a font or a cursor), EXCEPT
+    // inside an image-only property, where extensionless CDN URLs are the norm (see IMAGE_PROPS).
+    // The property is found by looking BACKWARDS from the `url(` through a bounded window. Do NOT "simplify"
+    // this into a forward `prop\s*:\s*([^;{}]*)` declaration scan: `[a-zA-Z][\w-]*` followed by `\s*:` is
+    // quadratic on any long run without a colon (a minified bundle inside the template) — measured at 86
+    // SECONDS on 200KB. The bounded look-back is linear.
+    for (const m of src.matchAll(URL_IN)) {
+      const before = src.slice(Math.max(0, m.index - 120), m.index)
+      const prop = (before.match(/(-{0,2}[a-zA-Z][\w-]{0,40})\s*:\s*[^;{}]*$/) || [])[1]
+      if (IMG_REF.test(m[1]) || (prop && IMAGE_PROPS.test(prop))) add(m[1], 'css', null)
+    }
+  }
+  return [...byUrl.values()]
+    .sort((a, b) => b.uses - a.uses)
+    .map((e) => ({ ...e, renditions: e.renditions.size > 1 ? [...e.renditions] : undefined }))
 }
 
 // Resolve the README entry → classify its format → build the `template` the parsers expect + the real-image list.
@@ -703,6 +823,23 @@ function parseVanilla() {
 if (typeof template !== 'string' && !isMultiPage) die('template is an object but not a {pages,entry} page-map — unrecognized shape; aborting instead of guessing.')
 const ir = format === 'babel' ? parseBabel() : format === 'dclogic' ? parseDcLogic() : parseVanilla()
 
+// Remote images — scan the REAL source strings, not `templateStr` (JSON.stringify escapes the quotes, `src=\"…\"`,
+// which the attribute regexes would miss).
+//
+// This runs AFTER the parser, not before, because of babel: there `template` is only the page SHELL, and every
+// component — so every `<img>` — lives in the manifest as a `text/babel` script that `parseBabel` decodes to
+// `source/jsx/*.jsx`. Scanning `template` alone made `remoteImages` structurally 0 for EVERY babel design
+// (measured on GIVXO: 9 `<img>` in the jsx, 0 in template.html). dclogic/vanilla carry their markup in
+// `template` itself and are unaffected by the move.
+//
+// Note the JSX caveat: React writes `src={expr}` far more often than `src="…"`, and only the literal form is
+// collectable. A computed URL is not something Step 2 could download anyway, but it does mean a babel
+// `remoteImages` is a floor, not a census — say so rather than implying full coverage.
+const remoteImages = collectRemoteImages([
+  ...(isMultiPage ? Object.values(template.pages) : [template]),
+  ...(format === 'babel' ? ir.extra.jsxFiles.map((f) => readFileSync(join(outDir, f.file), 'utf8')) : []),
+])
+
 // ── Partial-export guard ──────────────────────────────────────────────────────
 // "Standalone HTML" exports ONE design, not the project. When that design links to sibling .dc pages,
 // they are simply absent from the bundle — nothing downstream can notice, because a 1-page extraction of
@@ -756,6 +893,9 @@ const notes = [
   ir.extra.danglingPages && ir.extra.danglingPages.length
     ? `WARNING: PARTIAL EXPORT accepted via --allow-partial — ${ir.extra.danglingPages.length} linked page(s) are absent from this bundle (${ir.extra.danglingPages.join(', ')}). screens[] covers ONLY the bundled design; those links are dead ends. Tell the user before implementing.`
     : null,
+  remoteImages.length
+    ? `WARNING: ${remoteImages.length} REMOTE image(s) are referenced by URL and are NOT part of this export — they are absent from images[] and from assets/img/ (${remoteImages.slice(0, 4).map((r) => r.url.replace(/^https?:\/\//, '').slice(0, 52)).join(', ')}${remoteImages.length > 4 ? ', …' : ''}). Read remoteImages[] — each carries its alt= for naming and a use count. Step 0.5 MUST decide WITH THE USER: (a) download + convert to WebP in Step 2, (b) keep them remote (needs images.remotePatterns in next.config.ts), or (c) placeholders. Skipping this ships the design with those photos missing, and NOTHING downstream catches it — missing images compile, type-check and pass every convention grep.`
+    : null,
   !ir.screens.length ? 'WARNING: no screens/sections derived — inspect source/ manually (unrecognized structure).' : null,
   !ir.brandFonts ? 'WARNING: could not derive brandFonts — inspect source/helmet for the fonts used.' : null,
   usageFonts.length ? `NOTE: brand font(s) ${usageFonts.join(', ')} came from font-family USAGE (no @font-face / Google <link> in the source) — likely loaded via Typekit/Adobe or self-hosted, so probably NOT on Google Fonts. Confirm the loader at Step 0.5 before the tokens agent tries next/font/google; weights are unknown (body≈display).` : null,
@@ -766,7 +906,7 @@ const inventory = {
   source: input, sourceMode: isArchive ? 'archive' : 'standalone', archiveEntry: archiveEntryRel,
   format, navModel, tokenSource: ir.tokenSource, targetSignals: ir.targetSignals,
   counts: {
-    manifestEntries: Object.keys(manifest).length, images: images.length,
+    manifestEntries: Object.keys(manifest).length, images: images.length, remoteImages: remoteImages.length,
     fonts: fontFamilies.length, brandFonts: ir.brandFonts ? ir.brandFonts.families.length : 0,
     screens: ir.screens.length, components: ir.components.length,
   },
@@ -777,6 +917,10 @@ const inventory = {
   // `uuid` is the standalone identity; `srcRef` (original relative path) is the archive identity — the screen
   // agent maps a source `<img src>` to its converted asset by whichever the export provided.
   images: images.map((i) => ({ file: i.file, uuid: i.uuid, srcRef: i.srcRef || null, alias: i.alias, mime: i.mime })),
+  // Referenced by URL, NOT shipped in the export — deliberately a SEPARATE list, not `images[]` entries with a
+  // null `file`, so an agent looping over images[] can never hit a path that isn't on disk. Each: { url, alt,
+  // uses, from }. `alt` is the naming context (dclogic has no `alias`). Requires a Step 0.5 decision — see notes.
+  remoteImages,
   registries: ir.extra.registries ? Object.fromEntries(Object.entries(ir.extra.registries).map(([k, v]) => [k, Object.keys(v)])) : undefined,
   tabs: ir.extra.tabs,
   entry: ir.extra.entry,
@@ -788,7 +932,7 @@ writeJson('inventory.json', inventory)
 
 // ─────────────────────────────────────────────────────────── done
 console.log(`[unpack] format=${format} navModel=${navModel} tokenSource=${ir.tokenSource}`)
-console.log(`[unpack] screens=${ir.screens.length} components=${ir.components.length} images=${images.length} fonts=${fontFamilies.length} (brand: ${ir.brandFonts ? ir.brandFonts.families.join('+') : 'none'})`)
+console.log(`[unpack] screens=${ir.screens.length} components=${ir.components.length} images=${images.length}${remoteImages.length ? `(+${remoteImages.length} remote)` : ''} fonts=${fontFamilies.length} (brand: ${ir.brandFonts ? ir.brandFonts.families.join('+') : 'none'})`)
 if (inventory.registries) console.log(`[unpack] registries: ${Object.entries(inventory.registries).map(([k, v]) => `${k}(${v.length})`).join(', ')}${ir.extra.tabs ? ` tabs(${ir.extra.tabs.length})` : ''}`)
 for (const n of notes.filter((n) => n.startsWith('WARNING'))) console.warn(`[unpack] ${n}`)
 console.log(`[unpack] wrote working tree to ${outDir}`)
