@@ -26,6 +26,10 @@ If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the us
 
 ## Workload tracking (cost telemetry across the flow)
 
+> ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already had** (this copy was missing the Step 6 `.hash.txt` check the twin had).
+>
+> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma/` vs `.claude/agents/claude-design/`), the token-namespace grep, and each flow's own step numbering.
+
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
@@ -56,12 +60,52 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary}
 ```
 
-- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline.
+- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline. **One exception:** Step 0.55's `general-purpose` is a builtin with no file under `.claude/agents/` — record the model you actually passed it.
 - `Duration`, `Tool calls`, `Tokens` ← the `<usage>` block of the `Agent(...)` result (see above). Exact, harness-measured. The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
-- `Notes` ← `Notes:` line from the footer, used verbatim.
+- `Notes` ← `Notes:` line from the footer — but **do not repeat its counts to the user unverified**; see the rule immediately below. It is a self-reported summary, not a measurement.
 - `Validation` ← `Validation:` line from the footer.
 
 Append the `Validation:` line of the footer to the checkpoint message after each step so the user sees lint/type-check status without scrolling through the agent's full report.
+
+### Verify the deliverable counts against the filesystem — do NOT trust the report
+
+The rule above (`Tokens`/`Tool calls`/`Duration` come from the harness, never from the agent) exists because a sub-agent's self-report is a reconstruction, not a measurement: it runs in isolated context, makes dozens of tool calls, then summarizes from memory at the end. **That applies to the DELIVERABLE counts too — and those are the ones that reach the user.**
+
+Measured, not hypothetical. On a `claude-design-import` run, all three main step agents misstated their own output — including **`design-validation`, which is the SAME shared agent file this flow delegates to at Step 6**:
+
+| Agent | Claimed | Actual |
+| --- | --- | --- |
+| `{flow}-tokens` | "39 colors created" | 31 |
+| `{flow}-assets` | "17 PNGs reused **from prior run**" | there was no prior run |
+| `design-validation` (shared) | "27 tokens · 23 webp · 23 `.hash.txt` deleted" | 31 · 24 · 24 |
+
+`design-validation` also attributed a type change to the wrong component — so the error is not only arithmetic, it can be in *which file was touched*. In every case the underlying work was correct; only the reporting was wrong. The failure mode is a property of the sub-agent architecture, not of the design source, so it is not specific to either flow.
+
+**After any step that produces files, spend one command confirming the count before writing it into the ledger or repeating it to the user:**
+
+```bash
+# POSIX
+# Step 1 — tokens actually in the config (count the hex rows; `screens:` entries are not colors)
+grep -cE "'[a-z]+-[a-z]+-[0-9]+': '#" tailwind.config.js
+# Step 2 — downloaded/converted assets + generated icon components
+find src/assets/images -name '*.webp' | wc -l ; ls src/assets/icons/*.tsx | wc -l
+# Steps 3 / 5.1 / 5.2 — the files the agent said it wrote really exist
+ls src/components/{Name}/ src/screens/{Name}Page/
+# Step 6 — the scratch cleanup really happened (this one is silently skipped most often)
+find src/assets/images -name '*.hash.txt' | wc -l    # expect 0
+```
+
+```powershell
+# Windows — this project's primary shell (`wc`, `find -name` and `grep -c` do not exist in PowerShell)
+(Select-String -Path tailwind.config.js -Pattern "'[a-z]+-[a-z]+-[0-9]+': '#").Count
+(Get-ChildItem src/assets/images -Recurse -Filter *.webp).Count ; (Get-ChildItem src/assets/icons/*.tsx).Count
+Get-ChildItem src/components/{Name}/, src/screens/{Name}Page/
+(Get-ChildItem src/assets/images -Recurse -Filter *.hash.txt).Count    # expect 0
+```
+
+The Step 1 pattern assumes a two-word token namespace (`brand-blue-500`). A single-word one (`hg-500`) needs `'[a-z]+-[0-9]+': '#` instead — check which shape you actually created.
+
+If a count disagrees with the report, **the filesystem wins**: use the real number and say so in the checkpoint. A mismatch is worth one line to the user, not a re-delegation — the work is usually fine.
 
 **Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens` sum and the per-model breakdown:
 
@@ -85,6 +129,7 @@ You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 
 | Step | Sub-agent | Model | Why this model |
 |------|-----------|-------|----------------|
 | 0 | (you, the parent) | Opus | Holistic judgment + checkpoint with user |
+| 0.55 | `general-purpose` | Sonnet | Re-derives the spec from Figma to catch the parent's own errors — the only step that gates YOUR decisions. Builtin agent, no file under `.claude/agents/`; record the model you actually passed it |
 | 1 | `figma-tokens` | Haiku | Mechanical config edits |
 | 2 | `figma-assets` | Haiku | Bash + boilerplate from templates |
 | 3 | `figma-components` | Opus | Component API design, extend-vs-create judgment |
@@ -177,7 +222,83 @@ Read the Figma source AND the relevant codebase before touching any file.
 
    If a desktop has no obvious mobile pair (or vice versa), mark it as `(no mobile variant found)` — don't guess. The user will confirm or correct in Step 0's checkpoint.
 
-4. **Stop and confirm with the user** before continuing. The user must approve the plan AND the screen registry before any code is written. This is the most important checkpoint in the flow.
+4. **Gate your own spec against the Figma source (Step 0.55) — do NOT skip this.**
+
+   > **Delegate to**: `Agent({ subagent_type: 'general-purpose' })` — **Sonnet or cheaper**. One call, before the checkpoint.
+
+   Everything downstream has a source-of-truth gate except **you**. `figma-components` refuses a prose-only spec and re-fetches each component's `nodeId` itself — but that gate only proves the agent built *the node you named*. It cannot tell you that you named the **wrong** node, missed a primitive that repeats, or paired the wrong mobile frame. Those global decisions reach the render with nothing checking them, and they are invisible to lint, type-check, `pnpm build` and `design-validation` — they all compile. (On the first `claude-design-import` run of this same gate, **four spec errors were caught, all the orchestrator's own**, including a spec that named a non-representative instance of a repeated glyph — extracting it would have silently re-drawn every call site.)
+
+   **⚠️ Bound the MCP cost — this is the one way this step differs sharply from its `claude-design-import` twin.** That flow's auditor reads local files for free; here every `get_design_context` runs **~80–120K tokens** (see Step 5.2). An auditor told to "re-derive the whole design" would cost as much as implementing a screen. So scope it explicitly:
+
+   - Give the auditor `get_metadata` on the top-level file/page FIRST — cheap, and enough for frame pairing, frame widths and instance counts.
+   - **Then `get_variable_defs` on the root node** — also cheap, and it is what makes the COLORS and TYPOGRAPHY questions answerable at all (see the budget table below).
+   - Allow `get_design_context` **only** on the specific nodeIds your spec already names (the component list), and `get_screenshot` only where a visual check is the sole way to settle a question.
+   - Tell it the budget: a handful of node pulls, not a tree walk. If it needs more to answer a question, it should say so and leave that question unanswered rather than blow the budget.
+   - **If the Figma MCP is unavailable** (desktop app closed / Dev Mode off), it must report that and skip — never guess from the screenshot alone, and never block the flow.
+
+   **Know what the cheap tools can and cannot answer, or this gate silently does nothing.** `get_metadata` returns *only* node IDs, layer types, names, positions and sizes — no fills, no text sizes, no stroke weights. So a budget of "metadata + the nodeIds the spec names" genuinely funds some questions and genuinely starves others; the prompt below is ordered accordingly, and the auditor is told to answer in order and stop when the budget runs out:
+
+   | Question | Funded by | Coverage |
+   | --- | --- | --- |
+   | 1 FRAME PAIRING | `get_metadata` | **Full** — names + widths are exactly what it returns |
+   | 2 REPEATED PRIMITIVES | `get_metadata` (counts) + spec nodeIds (representativeness) | **Full** |
+   | 3 COLORS / 4 TYPOGRAPHY | `get_variable_defs` | **Defined tokens only** — a hard-coded value that bypasses variables is invisible; say so rather than implying full coverage |
+   | 5 ICONS / 6 IMAGE FILLS | `get_design_context` on spec nodeIds only | **Partial by design** — covers what the spec already names, which is the half that catches a WRONG citation. It cannot find a primitive or fill the spec never mentioned, in a frame it never pulls |
+
+   That last row is the honest limit of this gate: it is strong against *mis-citation* and weak against *omission* in un-pulled frames. Accept that rather than lifting the budget — an auditor that walks the tree costs as much as implementing a screen. If you specifically suspect a missing asset, pull that ONE frame yourself and say so in the checkpoint.
+
+   ```
+   Figma file: {fileKey}   Root node: {nodeId}
+   My spec: {the gap-analysis report you just wrote}
+
+   Re-derive these FROM FIGMA, without reference to my spec, then diff. Report ONLY mismatches, each
+   with its nodeId. If my spec is right on a point, say "match" and move on.
+
+   BUDGET — this is a cheap audit, not a re-derivation. Work the questions IN ORDER and stop when you
+   run out; a short honest answer beats a complete expensive one:
+     - get_metadata on the root FIRST (ids/types/names/positions/sizes only — no fills, no text sizes).
+     - then get_variable_defs on the root (defined colour + type tokens).
+     - get_design_context ONLY on the nodeIds my spec already names. Never walk the tree: each pull is
+       ~80–120K tokens and a tree walk costs as much as implementing a screen.
+     - get_screenshot only where a visual check is the ONLY way to settle a question.
+   If a question needs data those calls don't give you, WRITE "unanswered — needs {tool} on {node}" and
+   move on. Do not spend the budget to complete it, and do not infer the answer from a screenshot.
+
+   1. FRAME PAIRING — list every top-level frame with its name and width. Which are desktop (~1440) vs
+      mobile (~390)? Does my desktop↔mobile pairing match yours? Flag any frame I assigned to the wrong
+      screen, any pair I invented, and any frame I left out of the registry entirely.
+   2. REPEATED PRIMITIVES — for each component in my spec, count how many instances exist across the
+      frames. Flag any primitive repeated 2+ times that my spec MISSES. Then check the nodeId I cited is
+      REPRESENTATIVE: do all instances share the same structure/variant, or does the one I named differ
+      from the majority? (Both halves are load-bearing: a missed 2+× primitive triggers a BLOCKING
+      COMPONENT_GAP mid-Step-5.2, and a non-representative nodeId silently mis-builds every call site.)
+   3. COLORS (from get_variable_defs) — spot-check my variable→token mapping. Flag (a) any mapped into a
+      DIFFERENT HUE FAMILY and (b) any defined colour variable my map does not cover. Note only ONE
+      collapse rule is bounded at Δ4: § B2 rule 3 collapses near-duplicates at per-channel Δ ≤ 4, while
+      § B2 rule 4's long-tail fold maps a leftover to the NEAREST token in its family at whatever
+      distance that is — so a fold wider than Δ4 is not by itself an error; report the distance and let
+      me judge. A wrong-hue fold always is. State explicitly that this covers DEFINED VARIABLES only —
+      a hard-coded fill that bypasses variables is outside what you checked.
+   4. TYPOGRAPHY (from get_variable_defs) — every defined text size. Which land off the project scale
+      (10/12/14/16/18/20/24/28/32/36/40/44/48/56/64)? Those must become tokens, never a snap to a nearby
+      step. Same caveat: defined variables only.
+   5. ICONS (spec nodeIds only) — for the icon nodes my spec names: stroke weight, fill-vs-stroke, style.
+      Is there a coherent set? For any glyph used 2+ times, are all instances identical, or does one
+      carry an extra sub-path?
+   6. IMAGE FILLS / ASSETS (spec nodeIds only) — for the nodes my spec names, list every image fill and
+      exported asset, and flag any my asset list omits. (A fill reads as a plain coloured area in a
+      screenshot, so it is easy to miss — and a missing image compiles, type-checks and passes every
+      convention grep.) Then state plainly which frames you did NOT pull, so I know where this audit is
+      blind rather than assuming silence means clean.
+   ```
+
+   **Do NOT ask about breakpoints.** Unlike a CSS-based Claude Design export, a Figma file has no `@media` — it carries desktop and mobile *frames*, and Step 5.2 synthesizes responsive from the project scale. Asking an auditor for "the design's breakpoints" invites it to invent values, and [CONVENTIONS > Breakpoints](../../../CONVENTIONS.md#breakpoints) forbids re-pointing `2xs`…`2xl` onto a design's numbers. Frame pairing (question 1) is this flow's real equivalent.
+
+   Anything it flags, **verify against Figma yourself** before changing the spec — the auditor can be wrong too. Then fold the confirmed mismatches in and re-show the report.
+
+   > **Known limitation.** If the auditor reports a section whose content is deliberately narrower than its frame, this flow has nowhere to carry it: the Step 5.2 prompt has no `Bespoke widths` field (its twin does), and the `Container rule` tells the screen agent to ignore Figma's frame widths outright. Record it in the checkpoint as a manual note for the developer rather than dropping it.
+
+5. **Stop and confirm with the user** before continuing. The user must approve the plan AND the screen registry before any code is written. This is the most important checkpoint in the flow.
 
    **Why the registry matters**: Step 5.2 (per-screen implementation) uses these resolved nodeIds automatically — the user won't have to dig through Figma for each pantalla. If the user spots a wrong pairing here, they correct it before we burn tokens implementing the wrong frame.
 
@@ -456,6 +577,8 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 
 - ❌ Accept a partial design (single-screen URL) at the start — the skill needs the FULL file for the inventory pass
 - ❌ Skip Step 0 and "just start with the screens"
+- ❌ Skip Step 0.55 because the gap analysis "looks right" — it is the ONLY check on the orchestrator's own decisions, and every error it catches is one that compiles, type-checks and passes `design-validation`
+- ❌ Let the Step 0.55 auditor walk the whole Figma tree — bound it to `get_metadata` + the nodeIds your spec names, or one gate costs as much as implementing a screen
 - ❌ Run any step yourself when there's a sub-agent for it — you waste Opus tokens on Haiku-grade work
 - ❌ Forget to pass relevant context (gap analysis, decisions made) when delegating — sub-agents start fresh and won't know what you've decided
 - ❌ Wait for user input BEFORE implementing each screen in Step 5.2 — the Step 0 registry already has every nodeId; auto-delegate, then ask AFTER each one completes (per-screen checkpoint, not pre-screen prompt)
@@ -484,6 +607,7 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 | Step | What | Sub-agent | Model | Input from parent |
 |------|------|-----------|-------|--------------------|
 | 0 | Inventory & gap analysis | (parent) | Opus | **FULL design file URL** |
+| 0.55 | Gate the spec against the source | `general-purpose` | Sonnet | fileKey + root nodeId + your gap-analysis report (**bound the MCP pulls** — `get_metadata` first, `get_design_context` only on the nodeIds the spec names) |
 | 1 | Tokens | `figma-tokens` | Haiku | List of colors/sizes/fonts to add |
 | 2 | Assets | `figma-assets` | Haiku | List of assets with type + URL + target name |
 | 3 | Components | `figma-components` | Opus | fileKey + extend list (with `figmaNodeId` each) + create list (with `figmaNodeId` each) + token names |
