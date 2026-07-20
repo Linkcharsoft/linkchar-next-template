@@ -107,6 +107,18 @@ The Step 1 pattern assumes a two-word token namespace (`brand-blue-500`). A sing
 
 If a count disagrees with the report, **the filesystem wins**: use the real number and say so in the checkpoint. A mismatch is worth one line to the user, not a re-delegation — the work is usually fine.
 
+### Two report failures that are NOT miscounts — handle them differently
+
+A wrong number is the common case and the rule above covers it. These two are not wrong numbers, and treating them like one loses real information:
+
+**1. An empty or truncated return is NOT a failed run — check the filesystem before re-delegating.** An agent can end its turn without emitting its report at all (e.g. it kicked off its own background command and stopped waiting for it). The `<usage>` block still arrives, so the step *looks* like it ran and returned nothing. **The work is usually complete on disk.** Re-delegating blind is the expensive mistake: it re-does an Opus step, and on a step that writes files it can double-write. Instead: `git status` the paths that step owns, read the files, and run its validation yourself. Only re-delegate if the deliverables are genuinely missing or half-written. Record the row as normal with a `⚠️ returned without report; verified on disk` note. (Measured on a `claude-design-import` run — the mechanism is the harness, not the flow, so it applies here identically: `claude-design-layouts` returned nothing while its layout, header, footer and nav constants were all complete and correct on disk.)
+
+**2. Distrust "pre-existing" and "unrelated" — they are claims about history the agent cannot see.** A sub-agent starts fresh: it has no idea which files YOUR flow created ten minutes ago. So when a report waves something away as *"pre-existing … unrelated"* — especially while reporting `lint=✅` or `type-check=✅` — verify before accepting it. This is worse than a miscount, because a miscount is visibly a number while this **suppresses a real failure** and reads as diligence.
+
+The check is two seconds: `git status --porcelain <path>` (untracked/modified means your flow touched it) or the file's mtime. Measured: a scaffold agent reported `lint=✅` and dismissed a `check-file/filename-naming-convention` error as a *"pre-existing … unrelated"* naming issue — the file had been created by an earlier step of the **same flow** fifteen minutes before, and lint was genuinely failing. It is the only class of report error in that run that would have shipped a red gate to the user.
+
+> Both of these generalize past their own step: the rule is that an agent's claims about **things outside its own turn** — what existed before, what another step did, whether something is related — carry no evidence and must be checked. Its claims about **what it just did** are merely unreliable (see the counts rule above).
+
 **Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens` sum and the per-model breakdown:
 
 ```
