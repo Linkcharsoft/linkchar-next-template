@@ -187,7 +187,7 @@ details:
 
 9. **Animations** — translate the prototype's intentional micro-interactions (`onMouseDown` scale, hover shadow, `animation: 'slideUp/fadeUp'`) into `m` components (`whileHover`/`whileTap`/`initial`+`whileInView`). Use `m.div`/`m.button` (never `motion`). Do NOT add a per-screen `<MotionConfig>` or `useReducedMotion()` — the app boundary handles reduced-motion. Don't animate gratuitously — only what the source deliberately did.
 
-10. **Validate**: `pnpm run lint-check --fix` then `pnpm run type-check`. Both must pass clean.
+10. **Validate**: `pnpm run lint-check --fix` → `pnpm run type-check` → **`pnpm run build`**. All three must pass clean. The build is the ONLY gate that catches a broken server/client boundary ([§ C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build)) and the only one that proves the route still prerenders — report each route's `○ (Static)` / `ƒ (Dynamic)` status, not just "build passed".
 
 ## Screen-agent A11y reminders
 - Form-level errors → focus first invalid field (short forms) or `<div role='alert' aria-live='assertive'>` (long forms / server errors). Per-field errors via `InputError` already use `role='alert'`.
@@ -212,6 +212,6 @@ A short report: files created/modified (paths), screen-local modals mounted, abs
 ```
 ---
 Workload: model=opus, tool_calls≈{N}, files_touched={M}
-Validation: lint=✅/❌, type-check=✅/❌
+Validation: lint=✅/❌, type-check=✅/❌, build=✅/❌
 Notes: {one-line count summary, e.g. "HostHomePage implemented (web target, desktop synthesized), 3 images (1 reused), 4 components reused, 2 steps absorbed into stepper, 1 local modal, 1 STOP-ADVISORY COMPONENT_GAP"}
 ```

@@ -1,6 +1,6 @@
 ---
 name: figma-components
-description: Step 3 of figma-design-import — extends existing reusable components AND/OR creates new ones based on the Figma component inventory. Requires architectural judgment (extend vs create, prop API design, BEM naming). Validates each component with lint + type-check.
+description: Step 3 of figma-design-import — extends existing reusable components AND/OR creates new ones based on the Figma component inventory. Requires architectural judgment (extend vs create, prop API design, BEM naming). Validates each component with lint + type-check + build (build is the ONLY gate that catches a broken server/client boundary).
 model: opus
 ---
 
@@ -113,7 +113,7 @@ next_agent: manual
    3. Add new variants by extending the `variant` union, NOT by adding parallel props (so users have ONE prop deciding styling).
    4. Add BEM modifiers in the `.sass` — NEVER hex codes. Extract to `.sass` (BEM) any element with **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
    5. **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
-   6. Run `pnpm run lint-check --fix` + `pnpm run type-check`.
+   6. Run `pnpm run lint-check --fix` → `pnpm run type-check` → **`pnpm run build`**, in that order, all three reported in the footer. The build is NOT optional here: lint and type-check both pass on a component that has silently become client-only (see [`design-import-shared.md` § C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build)), and the failure then surfaces in the far more expensive screen step. Fix a build failure before returning.
 
 2. **Create new components** via the `/new-component {Name}` skill (do NOT scaffold manually). Then implement:
    1. `'use client'` only if the component uses hooks/event handlers.
@@ -159,6 +159,6 @@ A summary table: for each component (extended or created), the list of new varia
 ```
 ---
 Workload: model=opus, tool_calls≈{N}, files_touched={M}
-Validation: lint=✅/❌, type-check=✅/❌
+Validation: lint=✅/❌, type-check=✅/❌, build=✅/❌
 Notes: {one-line count summary, e.g. "2 components extended (CustomButton, SearchInput), 3 created (ProductCard, Navbar, Footer)"}
 ```

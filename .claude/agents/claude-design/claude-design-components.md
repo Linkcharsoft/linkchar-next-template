@@ -1,6 +1,6 @@
 ---
 name: claude-design-components
-description: Step 3 of claude-design-import — extends existing reusable components AND/OR creates new ones from the prototype's design primitives. The source of truth is the primitive's real JSX source in the unpacked tree (inline style objects + explicit variants), NOT prose. Requires architectural judgment (extend vs create, prop API, BEM naming). Validates each with lint + type-check.
+description: Step 3 of claude-design-import — extends existing reusable components AND/OR creates new ones from the prototype's design primitives. The source of truth is the primitive's real JSX source in the unpacked tree (inline style objects + explicit variants), NOT prose. Requires architectural judgment (extend vs create, prop API, BEM naming). Validates each with lint + type-check + build (build is the ONLY gate that catches a broken server/client boundary).
 model: opus
 ---
 
@@ -119,7 +119,7 @@ Common prototype primitives and their likely home (confirm against the on-disk l
    2. Grep every codebase usage (don't break callers).
    3. Add variants by extending the `variant` union, NOT parallel props.
    4. BEM modifiers in `.sass`, NEVER hex. Extract to `.sass` any element with **visual appearance classes** (colors/backgrounds/borders/shadows/`rounded-*`/`text-*`/`hover:`/`focus:`) or **6+ classes**. Pure layout combos may stay inline. `@apply` LAST in each block scope.
-   5. `pnpm run lint-check --fix` + `pnpm run type-check`.
+   5. `pnpm run lint-check --fix` → `pnpm run type-check` → **`pnpm run build`**, in that order, all three reported in the footer. The build is NOT optional here: lint and type-check both pass on a component that has silently become client-only (see [`design-import-shared.md` § C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build)), and the failure then surfaces in the far more expensive screen step. Fix a build failure before returning.
 
 2. **Create new components** via `/new-component {Name}` (never scaffold manually). Then: `'use client'` only if it uses hooks/handlers; default export; no `memo()`; `classNames` from `primereact/utils` (never `clsx`); `m` from `framer-motion` (never `motion`); inputs via PrimeReact in `InputContainer`; typography via `text-{weight}-{size}`; colors via tokens.
    - Translate the prototype's hover interactions (`onMouseDown` scale, `onMouseEnter` shadow) into `m` `whileHover`/`whileTap` where it reads as an intentional micro-interaction; otherwise keep it as a CSS `transition` in the `.sass`.
@@ -147,6 +147,6 @@ A summary table (each component: variants/props added, files touched). End with 
 ```
 ---
 Workload: model=opus, tool_calls≈{N}, files_touched={M}
-Validation: lint=✅/❌, type-check=✅/❌
+Validation: lint=✅/❌, type-check=✅/❌, build=✅/❌
 Notes: {one-line count summary, e.g. "2 extended (CustomButton, InputContainer), 3 created (Card, Tag, GiftRow)"}
 ```

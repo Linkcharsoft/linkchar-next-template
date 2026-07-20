@@ -267,7 +267,31 @@ Notes: {one-line count summary}
 
 The `model=` literal MUST match the agent's `model:` frontmatter (the orchestrator reads the frontmatter
 for the ledger; keep the footer literal in sync on any model change). `Validation:` reports `lint=skipped,
-type-check=skipped` for runs that wrote only `.webp`/`.svg`/`.hash.txt` (no code).
+type-check=skipped` for runs that wrote only `.webp`/`.svg`/`.hash.txt` (no code). Agents that must also run
+`build` (see C3b) append `, build=✅/❌` to the same line.
+
+## C3b. An agent that creates or changes a COMPONENT must run `pnpm run build`
+
+`lint` + `type-check` do not catch a broken **server/client boundary**. A component that imports a package
+carrying a module-level `'use client'` banner silently becomes a client component and drags every subtree that
+renders it out of SSR — and both cheap gates pass. Only `pnpm run build` fails, and only when some *page*
+actually renders it. So the defect ships from the components step and detonates in a later, far more expensive
+step.
+
+**This is not a hypothetical, and the package involved is one CONVENTIONS actively mandates.** `classNames`
+from `primereact/utils` ships that banner. On the Tercer Milenium run, four of six new presentational
+components left the components step with `lint=✅ type-check=✅` and were unusable from any server component;
+the other two were latent and would have broken three more routes. It surfaced in the first screen agent, ~44
+minutes of Opus later. See [CONVENTIONS > PrimeReact Usage](../CONVENTIONS.md#primereact-usage) for the
+documented carve-out (a purely presentational component composes classes natively and stays server-rendered).
+
+So: **`{flow}-components` and `{flow}-screen` run `lint` → `type-check` → `build`, in that order, and report
+all three.** A build failure is not "the orchestrator's problem later" — fix it before returning. The other
+step agents (tokens, assets, scaffold, layouts) keep the two-gate footer; they do not author components.
+
+`build` is also the ONLY gate that proves a route still prerenders. When the design is a static marketing site,
+say so explicitly in your report — `○ (Static)` vs `ƒ (Dynamic)` per route is the evidence, not the absence of
+errors.
 
 ## C4. Output-to-parent report shape
 

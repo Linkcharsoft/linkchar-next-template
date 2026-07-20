@@ -322,7 +322,11 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 10. **Validate**:
     - `pnpm run lint-check --fix`
     - `pnpm run type-check`
-    - Both must pass clean.
+    - `pnpm run build`
+    - All three must pass clean. The build is the ONLY gate that catches a broken server/client boundary
+      ([§ C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build))
+      and the only one that proves the route still prerenders — report each route's `○ (Static)` / `ƒ (Dynamic)`
+      status, not just "build passed".
 
 ## Screen-agent A11y reminders
 
@@ -390,6 +394,6 @@ End with the standardized footer:
 ```
 ---
 Workload: model=opus, tool_calls≈{N}, files_touched={M}
-Validation: lint=✅/❌, type-check=✅/❌
+Validation: lint=✅/❌, type-check=✅/❌, build=✅/❌
 Notes: {one-line count summary, e.g. "HomePage implemented (desktop + mobile), 6 images downloaded (2 reused via hash), 4 reusable components consumed, 1 STOP-ADVISORY COMPONENT_GAP reported"}
 ```
