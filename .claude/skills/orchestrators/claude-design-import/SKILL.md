@@ -328,8 +328,19 @@ Re-derive these FROM THE SOURCE, without reference to my spec, then diff:
    `file:startLine-endLine` of the first instance. Flag any primitive repeated 2+ times that my spec MISSES.
    (This one is load-bearing: a no-match primitive used 2+× triggers a BLOCKING `COMPONENT_GAP` in the middle
    of Step 5.2, and re-running an Opus screen agent is the most expensive mistake in the flow.)
+7. FONTS — every font-family in the source: which are declared (@font-face / <link>) vs used only in an inline
+   `style="font-family:…"`, and how each is loaded. Does my font list cover ALL of them? Which is the body face
+   and which the display face, per the `body {}` rule and per what the headings actually use?
+8. IMAGES — count the DISTINCT image paths referenced anywhere in the source, including the ones inside
+   `.logic.js` data arrays (`{ img: './x.jpg' }` rendered through `src="{{ item.img }}"`), not just literal
+   `src=` in markup. Compare that count to `inventory.counts.images`. List any referenced path that is not in
+   `inventory.images[]`, and any that does not exist on disk in the archive.
 Report ONLY mismatches, with source line numbers. If my spec is right on a point, say "match" and move on.
 ```
+
+**7 and 8 audit the EXTRACTOR, not just my spec — that is the point, and they stay even though `unpack.mjs` now handles both cases.** Every other question checks a judgment call of mine; these two check whether `inventory.json` itself is complete, because nothing else in the flow does. Both were silent failures measured on the Tercer Milenium run: `images: 7` when the design referenced 34 (the other 27 were data-driven), and `brandFonts: [acumin-pro]` when `fertigo-pro` set all 31 headings from inline styles. Neither raised a note; an import trusting the inventory ships with the photos missing and the headings in the wrong face, **and it compiles, type-checks, builds and passes `design-validation`**.
+
+`unpack.mjs` was fixed for both (it now scans bare image-path literals and treats the font-usage tier as additive, and flags `dataDriven: true` per image plus a NOTE). But both fixes are **heuristics over source text**: a path assembled at runtime (`'./img/' + item.slug + '.jpg'`) is still invisible, and a face injected by a script is still unattributable. So the gate stays — it costs two questions on an agent that is already reading the source.
 
 Anything it flags, **verify against the source yourself** before changing the spec — it can be wrong too (on the first run an auditor mis-measured an icon set and would have had me "fix" correct code). Then fold the confirmed mismatches in and re-show the report.
 
