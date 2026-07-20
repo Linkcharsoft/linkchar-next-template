@@ -294,6 +294,13 @@ Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. 
 - Use PrimeIcons for icons: `<i className="pi pi-{icon-name}" />`. **NO inline SVGs when a PrimeIcon exists.** (Writing code from scratch, this is absolute. The design-import flows carve a narrow, role-based exception — brand marks and coherent stroke-matched icon sets keep the source glyph; see [`design-import-shared.md` § B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph).)
 - Customize PrimeReact components via the `pt` (passthrough) prop.
 - Use `classNames` from `primereact/utils` for conditional classes — **NEVER `clsx`**.
+- **Exception — `classNames` forces a component client-side.** `primereact/utils` ships a module-level `'use client'` banner, so ANY component importing `classNames` becomes a client component, and a **server** component that renders it fails to prerender (`pnpm run build` catches this; **lint and type-check both pass**). For a purely presentational component with no hooks, no event handlers and no browser APIs — a card, tile, figure, badge — prefer native composition so it stays server-rendered:
+
+  ```tsx
+  className={['PhotoCard', DENSITY_CLASSES[density], className].filter(Boolean).join(' ')}
+  ```
+
+  This is NOT a licence to reach for `clsx` (still banned) or to hand-roll a shared `cx()` helper. Keep `classNames` wherever the component is already `'use client'` for its own reasons — the point is to avoid dragging a static tile out of SSR purely to compose two strings.
 
 ---
 
