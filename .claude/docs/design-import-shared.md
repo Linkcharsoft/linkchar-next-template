@@ -227,6 +227,24 @@ the agent needs (its source-of-truth gate — a Figma `nodeId` or an unpacked so
 tokens/decisions already made, and the target/language. An agent that is missing a required input emits
 `STOP-BLOCKING / INVALID_INPUT` rather than guessing.
 
+**When the parent's brief disagrees with the source or the filesystem, the source/filesystem WINS — implement
+that, and report the discrepancy in your `Output to parent`.** The orchestrator writes the brief from memory
+after reading dozens of files; its per-value details (a `clamp()` endpoint, a section's padding, the exact
+responsive step a sibling screen used, which alpha values need bracket form) are the least reliable part of an
+otherwise-correct plan. You are looking at the actual file — it is the gate, exactly as the `file:lines` /
+`nodeId` rule makes it the gate for component structure.
+
+This is measured, not hypothetical. On the Tercer Milenium run the parent's brief was wrong three times and the
+screen agents caught all three by preferring what they could see: a hero's vertical padding quoted from the
+wrong section, a `tm-lg:` step that did not match the sibling screen already on disk, and a blanket
+"bracket-form required" alpha warning that was over-broad (Tailwind's default opacity scale *does* include
+5/10/20/25/30/…, so only genuinely off-scale values like 6/12/15/55/78/85/92 need it) — that last one sent an
+agent hunting a non-existent bug in a shared component.
+
+Do NOT silently "fix" the brief either: a one-line note in the report is what lets the orchestrator correct the
+plan for the remaining screens instead of repeating the error N times. And do NOT escalate it as a STOP — a
+disagreement you can resolve by reading the source is not a blocker.
+
 ## C2. STOP protocol
 
 When an agent can't proceed (or completes with a documented default), it emits a STOP per
