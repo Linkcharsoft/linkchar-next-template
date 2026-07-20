@@ -208,12 +208,18 @@ function clusterHexes (src) {
 }
 // pick body/display from @font-face weights: lightest family → body text, heaviest → display/headings.
 // (first/last-by-appearance is a coin flip — StreetBuild's Gotham Ultra 400-900 vs Gill Sans 400 needs the weight.)
-function pickBrandFonts(faces) {
+function pickBrandFonts(faces, bodyFamily = null) {
   if (!faces.length) return null
   const byFam = {}
   for (const f of faces) { const nums = (String(f.weight || '400').match(/\d+/g) || ['400']).map(Number); byFam[f.family] = Math.max(byFam[f.family] || 0, Math.max(...nums)) }
   const fams = Object.keys(byFam)
   const sorted = [...fams].sort((a, b) => byFam[a] - byFam[b])
+  // An explicit `body { font-family: X }` rule names the body face outright — prefer it. This matters most for
+  // usage-derived families: they have no weight, so every one defaults to 400 and the sort below degenerates to
+  // insertion order, which would assign body/display essentially at random.
+  if (bodyFamily && fams.includes(bodyFamily)) {
+    return { body: bodyFamily, display: sorted.filter((f) => f !== bodyFamily).pop() || bodyFamily, families: fams }
+  }
   return { body: sorted[0], display: sorted[sorted.length - 1], families: fams }
 }
 // target detection (mobile-app vs web) — format-agnostic; drives the screen agent's responsive strategy.
@@ -253,10 +259,19 @@ function findReadmeEntry(dir) {
 // variants) are correctly skipped.
 function collectArchiveImages(srcList, baseDir) {
   const refs = new Set()
+  const attrRefs = new Set()
   for (const src of srcList) {
-    for (const m of src.matchAll(/(?:src|href)\s*=\s*"([^"]+)"/gi)) if (IMG_REF.test(m[1])) refs.add(m[1])
-    for (const m of src.matchAll(/url\(\s*['"]?([^'")]+?)['"]?\s*\)/gi)) if (IMG_REF.test(m[1])) refs.add(m[1])
-    for (const m of src.matchAll(/ext-resource-dependency"\s+content="([^"]+)"/gi)) if (IMG_REF.test(m[1])) refs.add(m[1])
+    for (const m of src.matchAll(/(?:src|href)\s*=\s*"([^"]+)"/gi)) if (IMG_REF.test(m[1])) { refs.add(m[1]); attrRefs.add(m[1]) }
+    for (const m of src.matchAll(/url\(\s*['"]?([^'")]+?)['"]?\s*\)/gi)) if (IMG_REF.test(m[1])) { refs.add(m[1]); attrRefs.add(m[1]) }
+    for (const m of src.matchAll(/ext-resource-dependency"\s+content="([^"]+)"/gi)) if (IMG_REF.test(m[1])) { refs.add(m[1]); attrRefs.add(m[1]) }
+    // DATA-DRIVEN refs. The attribute scans above see only what is literally in the markup — but the dclogic
+    // idiom is `<sc-for list="{{ fotos }}">` rendering `src="{{ item.img }}"`, with the REAL paths living as bare
+    // quoted string literals in the page's `.logic.js` data array (`{ img: './carrusel-01.jpg' }`). Those match
+    // none of the patterns above, so a design whose images are all data-driven extracted as ~0 images while
+    // `inventory.json` reported the count with no warning at all. Measured on Tercer Milenium: 7 of 34 found.
+    // A bare-literal scan is deliberately broad; false positives are harmless because the resolve+existsSync
+    // gate below drops anything that is not a real file on disk.
+    for (const m of src.matchAll(/['"]([^'"\s>]+\.(?:png|jpe?g|webp|gif|svg|avif))['"]/gi)) refs.add(m[1])
   }
   const out = []
   for (const ref of refs) {
@@ -264,7 +279,7 @@ function collectArchiveImages(srcList, baseDir) {
     // remote ones up separately and the IR surfaces them; see the WARNING it raises.
     if (/^(https?:|data:)/i.test(ref)) continue
     const p = resolve(baseDir, ref.replace(/[?#].*$/, ''))
-    if (existsSync(p) && statSync(p).isFile()) out.push({ srcPath: p, ref })
+    if (existsSync(p) && statSync(p).isFile()) out.push({ srcPath: p, ref, dataDriven: !attrRefs.has(ref) })
   }
   return out
 }
@@ -565,12 +580,12 @@ if (archiveImages) {
   // Archive: copy referenced files. There is NO uuid — identity is the original relative ref (`srcRef`), which
   // the screen agent uses to map a source `<img src>` to its converted asset (the standalone's uuid analogue).
   const used = {}
-  for (const { srcPath, ref } of archiveImages) {
+  for (const { srcPath, ref, dataDriven } of archiveImages) {
     const ext = (basename(srcPath).match(/\.([a-z0-9]+)$/i) || [, 'bin'])[1].toLowerCase()
     let base = slugify(basename(ref).replace(/\.[^.]+$/, '')) || 'img'
     if (used[base]) base = `${base}-${used[base]++}`; else used[base] = 1   // distinct files, same basename (os/x.png vs oslogos/x.png)
     const rel = `assets/img/${base}.${ext}`
-    try { writeFileSync(join(outDir, rel), readFileSync(srcPath)); images.push({ file: rel, uuid: null, mime: EXT_MIME[ext] || 'application/octet-stream', alias: ref, srcRef: ref }) }
+    try { writeFileSync(join(outDir, rel), readFileSync(srcPath)); images.push({ file: rel, uuid: null, mime: EXT_MIME[ext] || 'application/octet-stream', alias: ref, srcRef: ref, dataDriven: !!dataDriven }) }
     catch (e) { console.warn(`[unpack] warn: image ${ref}: ${e.message}`) }
   }
 } else {
@@ -622,14 +637,28 @@ function scanFontFamilyUsage(str) {
   }
   return uniq(out)
 }
-// Brand faces from the source, most reliable first: @font-face → Google-Fonts <link> → (only if still none)
-// font-family usage. The Standalone path always has inlined @font-face, so it never reaches the later tiers and
-// stays byte-identical; the archive (raw source) is what needs the <link> and usage fallbacks.
+// The family named by an explicit `body { font-family: … }` rule. A far stronger body/display signal than the
+// max-weight heuristic in `pickBrandFonts`, and the only one that works at all for usage-derived families (which
+// carry no weight — see below).
+function scanBodyFontFamily(str) {
+  const m = str.match(/(?:^|[};>\s])body\s*\{[^}]*?font-family:\s*([^;}]+)/i)
+  if (!m) return null
+  const first = m[1].split(',')[0].trim().replace(/^['"]|['"]$/g, '')
+  return first && !/^var\(/i.test(first) && !GENERIC_FAMILY.has(first.toLowerCase()) ? first : null
+}
+// Brand faces from the source, most reliable first: @font-face → Google-Fonts <link> → font-family usage.
+//
+// The usage tier is ADDITIVE, not a last-resort fallback. It used to run only `if (!faces.length)`, which meant a
+// design that declares one family properly and uses a SECOND one only in inline styles silently lost the second.
+// Measured on Tercer Milenium: `acumin-pro` was found (named in the helmet's `body` rule) while `fertigo-pro` —
+// the display serif on all 31 headings, set via inline `style="font-family:'fertigo-pro'…"` — was not, and
+// `inventory.brandFonts` reported a single family with no warning. Callers must therefore pass the FULL source
+// (markup included), not just the helmet/stylesheet.
 function gatherFaces(str) {
   const faces = scanFontFaces(str)
   const seen = new Set(faces.map((f) => f.family))
   for (const lf of scanGoogleFontLinks(str)) if (!seen.has(lf.family)) { faces.push(lf); seen.add(lf.family) }
-  if (!faces.length) for (const fam of scanFontFamilyUsage(str)) faces.push({ family: fam, weight: null, fromUsage: true })
+  for (const fam of scanFontFamilyUsage(str)) if (!seen.has(fam)) { faces.push({ family: fam, weight: null, fromUsage: true }); seen.add(fam) }
   return faces
 }
 // Inline a Project archive's LOCAL <link rel="stylesheet" href="styles.css"> as a <style> block, so the parsers
@@ -791,8 +820,11 @@ function parseDcLogic() {
     clampFontSizes: (allSrc.match(/font-size:\s*clamp\(/g) || []).length, // responsive sizes NOT captured — read from source
     cssVars: scanCssVars(allSrc),
   }
-  const faces = gatherFaces(helmetAll)   // @font-face (standalone) + Google-Fonts <link> (archive raw .dc.html)
-  const brandFonts = pickBrandFonts(faces)
+  // allSrc, NOT helmetAll: the @font-face/<link> tiers live in the helmet (a subset of allSrc), but the usage tier
+  // must see the MARKUP too — a dclogic design routinely sets its display face in inline `style="font-family:…"`
+  // and never declares it anywhere else.
+  const faces = gatherFaces(allSrc)
+  const brandFonts = pickBrandFonts(faces, scanBodyFontFamily(helmetAll))
 
   const importsAll = uniq(docs.flatMap((d) => d.imports))
   const components = importsAll.map((name) => ({ name, file: null, kind: 'primitive-or-helper' })) // dc-import children
@@ -839,8 +871,8 @@ function parseVanilla() {
     clampFontSizes: (templateStr.match(/font-size:\s*clamp\(/g) || []).length,
     cssVars: scanCssVars(templateStr),
   }
-  const faces = gatherFaces(templateStr)   // @font-face (standalone) + Google-Fonts <link> (archive raw .html)
-  const brandFonts = pickBrandFonts(faces)
+  const faces = gatherFaces(templateStr)   // @font-face (standalone) + Google-Fonts <link> (archive raw .html) + usage
+  const brandFonts = pickBrandFonts(faces, scanBodyFontFamily(templateStr))
   return {
     sourceFiles: [{ markup: markupFile, bytes: body.length }],
     screens: [{ key: 'index', component: 'Index', role: 'page', file: markupFile }],
@@ -927,6 +959,8 @@ const notes = [
   remoteImages.length
     ? `WARNING: ${remoteImages.length} REMOTE image(s) are referenced by URL and are NOT part of this export — they are absent from images[] and from assets/img/ (${remoteImages.slice(0, 4).map((r) => r.url.replace(/^https?:\/\//, '').slice(0, 52)).join(', ')}${remoteImages.length > 4 ? ', …' : ''}). Read remoteImages[] — each carries its alt= for naming and a use count. Step 0.5 MUST decide WITH THE USER: (a) download + convert to WebP in Step 2, (b) keep them remote (needs images.remotePatterns in next.config.ts), or (c) placeholders. Skipping this ships the design with those photos missing, and NOTHING downstream catches it — missing images compile, type-check and pass every convention grep.`
     : null,
+  images.filter((i) => i.dataDriven).length
+    ? `NOTE: ${images.filter((i) => i.dataDriven).length} of ${images.length} image(s) are DATA-DRIVEN — referenced from a .logic.js data array (\`{ img: './x.jpg' }\` rendered through \`src="{{ item.img }}"\`), not from a literal src= in the markup. They are in images[] and on disk, flagged \`dataDriven: true\`. Step 0.5: cross-check images.length against the distinct image paths in source/ before delegating Step 2 — this scan is deliberately broad but it is a heuristic, and a path built by string concatenation at runtime is still invisible to it.` : null,
   !ir.screens.length ? 'WARNING: no screens/sections derived — inspect source/ manually (unrecognized structure).' : null,
   !ir.brandFonts ? 'WARNING: could not derive brandFonts — inspect source/helmet for the fonts used.' : null,
   usageFonts.length ? `NOTE: brand font(s) ${usageFonts.join(', ')} came from font-family USAGE (no @font-face / Google <link> in the source) — likely loaded via Typekit/Adobe or self-hosted, so probably NOT on Google Fonts. Confirm the loader at Step 0.5 before the tokens agent tries next/font/google; weights are unknown (body≈display).` : null,
@@ -947,7 +981,7 @@ const inventory = {
   fontFamilies,                   // superset of @font-face families
   // `uuid` is the standalone identity; `srcRef` (original relative path) is the archive identity — the screen
   // agent maps a source `<img src>` to its converted asset by whichever the export provided.
-  images: images.map((i) => ({ file: i.file, uuid: i.uuid, srcRef: i.srcRef || null, alias: i.alias, mime: i.mime })),
+  images: images.map((i) => ({ file: i.file, uuid: i.uuid, srcRef: i.srcRef || null, alias: i.alias, mime: i.mime, dataDriven: !!i.dataDriven })),
   // Referenced by URL, NOT shipped in the export — deliberately a SEPARATE list, not `images[]` entries with a
   // null `file`, so an agent looping over images[] can never hit a path that isn't on disk. Each: { url, alt,
   // uses, from }. `alt` is the naming context (dclogic has no `alias`). Requires a Step 0.5 decision — see notes.
