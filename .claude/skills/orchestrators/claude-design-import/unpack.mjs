@@ -27,6 +27,7 @@
 
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync, statSync, readdirSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
+import { createHash } from 'node:crypto'
 import zlib from 'node:zlib'
 
 const EXPECTED_SHAPE = { blocks: ['manifest', 'ext_resources', 'template'] }
@@ -254,6 +255,68 @@ function findReadmeEntry(dir) {
   return null
 }
 
+// INLINE (`data:`) images: decode them to real files AND strip them out of the source.
+//
+// A design can ship its photos base64-inlined in the markup instead of as sibling files. Those refs match no
+// file on disk, so the local scan below skips them — and `collectRemoteImages` only claims the `http(s)` ones,
+// so they fall through BOTH paths and `images[]` reports 0. Measured on Anodal: 33 `data:image/` in a 9.9 MB
+// page, extracted as ZERO images — the whole design would import with no photos, silently. (Third variant of
+// the same failure after remote refs and data-driven arrays; see § the images note in SKILL.md.)
+//
+// Stripping matters as much as decoding: left in place, `source/*.markup.html` carries ~10 MB of base64 that
+// the screen agent has to read to implement the page. Each hit is replaced by a short stable path, which is
+// also the image's `srcRef`, so the screen agent maps `<img src>` → converted asset exactly as it does for a
+// sibling file. Deduped by content hash: one logo inlined at 12 call sites is ONE asset, not 12.
+const DATA_URI = /data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)/gi
+function extractDataUriImages(src, acc) {
+  return src.replace(DATA_URI, (whole, mime, b64, offset) => {
+    let buf
+    try { buf = Buffer.from(b64.replace(/\s+/g, ''), 'base64') } catch { return whole }
+    if (!buf.length) return whole
+    const sha = createHash('sha1').update(buf).digest('hex')
+    const hit = acc.bySha.get(sha)
+    if (hit) return hit.ref                                   // same bytes already extracted → reuse its path
+    const ext = MIME_EXT[mime.toLowerCase()] || 'bin'
+    // Name it, best signal first. Read only a BOUNDED window either side of the URI, keyed off `replace`'s
+    // offset: a data URI is not always inside a tag (Anodal keeps its photos in a `{"k1":"data:…"}` resource
+    // dict), so walking out to the enclosing `<`…`>` can span the whole 10 MB document — slow, and worse, it
+    // can pick up an `alt=` from an unrelated element megabytes away and name the asset WRONG.
+    const W = 300
+    const head = src.slice(Math.max(0, offset - W), offset)
+    const tail = src.slice(offset + whole.length, offset + whole.length + W)
+    //  1. the img's own `alt=` (sits before `src` as often as after) — the same signal the assets agent uses
+    const alt = ((head + ' ' + tail).match(/alt\s*=\s*"([^"]{2,60})"/i) || [])[1]
+    //  2. else the resource-dict KEY this URI is the value of (`"k1": "data:…"`) — opaque, but it is the
+    //     identifier the call sites use, so the screen agent can still correlate it.
+    const key = (head.match(/["'{,]\s*["']([A-Za-z0-9_-]{1,40})["']\s*:\s*["']$/) || [])[1]
+    const name = (alt && slugify(alt)) || (key && slugify(key)) || `inline-${String(acc.images.length + 1).padStart(2, '0')}`
+    const ref = `inline/${name}.${ext}`
+    const rec = { dataBuf: buf, ref, mime, inline: true }
+    acc.bySha.set(sha, rec); acc.images.push(rec)
+    return ref
+  })
+}
+
+// Merge the on-disk and the decoded-inline images, dropping an inline copy that is byte-identical to a file the
+// design already ships — a logo is commonly BOTH inlined at one call site and referenced as a file at another
+// (Hologramas: `logo-hologramas.jpg` = 3855 B, also a `data:` URI). Without this the same asset is reported and
+// converted twice. Size is the pre-filter so only a genuine collision costs a hash — never the whole image set.
+function mergeArchiveImages(localImgs, inlineImgs) {
+  if (!inlineImgs.length) return localImgs
+  const bySize = new Map()
+  for (const l of localImgs) {
+    try { const s = statSync(l.srcPath).size; if (!bySize.has(s)) bySize.set(s, []); bySize.get(s).push(l.srcPath) } catch { /* unreadable — leave it to the writer */ }
+  }
+  const sha = (b) => createHash('sha1').update(b).digest('hex')
+  const kept = inlineImgs.filter((im) => {
+    const cands = bySize.get(im.dataBuf.length)
+    if (!cands) return true
+    const h = sha(im.dataBuf)
+    return !cands.some((p) => { try { return sha(readFileSync(p)) === h } catch { return false } })
+  })
+  return [...localImgs, ...kept]
+}
+
 // Every LOCAL image referenced by the closure source (src/href/url()/ext-resource-dependency), resolved to a real
 // file. Mirrors the standalone bundler, which inlines only referenced images — unreferenced files (other designs,
 // variants) are correctly skipped.
@@ -453,9 +516,12 @@ function ingestArchive(dir) {
   if (/<script type="__bundler\/(?:manifest|template)"/.test(rawEntry)) {
     return { bundledStandalone: rawEntry, entryRel: found.entryRel }
   }
-  // Read a doc AND inline its local <link> stylesheets — in a Project archive the CSS lives in sibling files
-  // (styles.css), not inlined as in a Standalone, so without this the parsers miss colors/sizes/fonts entirely.
-  const readDoc = (file) => inlineLocalCss(readText(file), dirname(file))
+  // Read a doc, inline its local <link> stylesheets, and extract any base64 `data:` images out of it.
+  // The CSS inlining is because a Project archive keeps CSS in sibling files (styles.css) rather than inlined
+  // as a Standalone does — without it the parsers miss colors/sizes/fonts entirely. The data-URI extraction
+  // both rescues images that would otherwise vanish and keeps the written source readable (see the helper).
+  const inlineAcc = { images: [], bySha: new Map() }
+  const readDoc = (file) => extractDataUriImages(inlineLocalCss(readText(file), dirname(file)), inlineAcc)
   const entrySrc = readDoc(entryFull)
   // Detect babel by the entry EXTENSION too (`.jsx`), not only the `text/babel` marker: a README can point
   // straight at a `.jsx`, whose content carries no `type="text/babel"` string and would otherwise fall through
@@ -486,11 +552,12 @@ function ingestArchive(dir) {
     const slugs = Object.keys(bySlug)
     const template = slugs.length > 1 ? { pages: bySlug, entry: entrySlug } : bySlug[entrySlug]
     const navModel = slugs.length > 1 ? 'multi-page' : 'single-page-sections'
-    return { template, format, navModel, images: collectArchiveImages(Object.values(bySlug), entryDir), entryRel: found.entryRel }
+    // Inline (`data:`) images ride along with the on-disk ones — both are real assets of this design.
+    return { template, format, navModel, images: mergeArchiveImages(collectArchiveImages(Object.values(bySlug), entryDir), inlineAcc.images), entryRel: found.entryRel }
   }
 
   if (format === 'vanilla') {
-    return { template: entrySrc, format, navModel: 'single-page', images: collectArchiveImages([entrySrc], entryDir), entryRel: found.entryRel }
+    return { template: entrySrc, format, navModel: 'single-page', images: mergeArchiveImages(collectArchiveImages([entrySrc], entryDir), inlineAcc.images), entryRel: found.entryRel }
   }
 
   // babel — a clean, intentional STOP (not a crash). The archive path exists to fix ONE thing the standalone
@@ -580,13 +647,16 @@ if (archiveImages) {
   // Archive: copy referenced files. There is NO uuid — identity is the original relative ref (`srcRef`), which
   // the screen agent uses to map a source `<img src>` to its converted asset (the standalone's uuid analogue).
   const used = {}
-  for (const { srcPath, ref, dataDriven } of archiveImages) {
-    const ext = (basename(srcPath).match(/\.([a-z0-9]+)$/i) || [, 'bin'])[1].toLowerCase()
+  for (const { srcPath, dataBuf, ref, dataDriven, inline } of archiveImages) {
+    // `dataBuf` = decoded from a `data:` URI (no file on disk); `srcPath` = a real sibling file.
+    const ext = (basename(ref).match(/\.([a-z0-9]+)$/i) || [, 'bin'])[1].toLowerCase()
     let base = slugify(basename(ref).replace(/\.[^.]+$/, '')) || 'img'
     if (used[base]) base = `${base}-${used[base]++}`; else used[base] = 1   // distinct files, same basename (os/x.png vs oslogos/x.png)
     const rel = `assets/img/${base}.${ext}`
-    try { writeFileSync(join(outDir, rel), readFileSync(srcPath)); images.push({ file: rel, uuid: null, mime: EXT_MIME[ext] || 'application/octet-stream', alias: ref, srcRef: ref, dataDriven: !!dataDriven }) }
-    catch (e) { console.warn(`[unpack] warn: image ${ref}: ${e.message}`) }
+    try {
+      writeFileSync(join(outDir, rel), dataBuf || readFileSync(srcPath))
+      images.push({ file: rel, uuid: null, mime: EXT_MIME[ext] || 'application/octet-stream', alias: ref, srcRef: ref, dataDriven: !!dataDriven, inline: !!inline })
+    } catch (e) { console.warn(`[unpack] warn: image ${ref}: ${e.message}`) }
   }
 } else {
   for (const [uuid, entry] of Object.entries(manifest)) {
@@ -964,6 +1034,7 @@ const notes = [
   !ir.screens.length ? 'WARNING: no screens/sections derived — inspect source/ manually (unrecognized structure).' : null,
   !ir.brandFonts ? 'WARNING: could not derive brandFonts — inspect source/helmet for the fonts used.' : null,
   usageFonts.length ? `NOTE: brand font(s) ${usageFonts.join(', ')} came from font-family USAGE (no @font-face / Google <link> in the source) — likely loaded via Typekit/Adobe or self-hosted, so probably NOT on Google Fonts. Confirm the loader at Step 0.5 before the tokens agent tries next/font/google; weights are unknown (body≈display).` : null,
+  images.filter((i) => i.inline).length ? `NOTE: ${images.filter((i) => i.inline).length} image(s) were base64-INLINE (\`data:\`) in the source — decoded to files under assets/img/ and replaced in the written source by their \`inline/<name>.<ext>\` path (that path is their srcRef). Deduped by content, so one glyph inlined N times is ONE asset. Names came from the sibling alt= where present, else inline-NN — rename them at Step 0.5 if they are opaque.` : null,
   ir.brandFonts && ir.brandFonts.families.length > 4 ? `NOTE: ${ir.brandFonts.families.length} font families detected (${ir.brandFonts.families.join(', ')}) — unusually many. The design may load a big set but USE only a few. Review at Step 0.5 and load only what's actually rendered; loading all via next/font/google is an LCP/bundle regression.` : null,
 ].filter(Boolean)
 
@@ -981,7 +1052,7 @@ const inventory = {
   fontFamilies,                   // superset of @font-face families
   // `uuid` is the standalone identity; `srcRef` (original relative path) is the archive identity — the screen
   // agent maps a source `<img src>` to its converted asset by whichever the export provided.
-  images: images.map((i) => ({ file: i.file, uuid: i.uuid, srcRef: i.srcRef || null, alias: i.alias, mime: i.mime, dataDriven: !!i.dataDriven })),
+  images: images.map((i) => ({ file: i.file, uuid: i.uuid, srcRef: i.srcRef || null, alias: i.alias, mime: i.mime, dataDriven: !!i.dataDriven, inline: !!i.inline })),
   // Referenced by URL, NOT shipped in the export — deliberately a SEPARATE list, not `images[]` entries with a
   // null `file`, so an agent looping over images[] can never hit a path that isn't on disk. Each: { url, alt,
   // uses, from }. `alt` is the naming context (dclogic has no `alias`). Requires a Step 0.5 decision — see notes.
