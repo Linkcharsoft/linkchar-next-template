@@ -959,8 +959,26 @@ function parseDcLogic() {
   }
 }
 
+// A vanilla page can still be a MULTI-ROUTE app: a client-side router that keeps every route's markup inline as
+// `<script type="text/template" data-route="X">` blocks and swaps them into a mount node on hashchange. Measured on
+// Anodal (2026-07-20): 10 such blocks — the whole site — which this parser used to report as `screens=1`, because it
+// hard-coded a single `index` screen and never looked at the markup. An import trusting that ships 1 page of 10, and
+// nothing downstream notices (it compiles, type-checks and builds). The `.dc.html` sibling-closure that finds
+// multi-page dclogic cannot fire here: these "pages" are not files, they are blocks in ONE file.
+//
+// Deliberately narrow: this matches the template-block idiom only. A vanilla site split across sibling `.html` files
+// is still captured as its README-named entry alone (see Known limitations) — that closure is not built yet, and
+// guessing at other router shapes would trade a loud, correct `screens=1` for a quiet, wrong screen list.
+function scanVanillaRouteTemplates(str) {
+  const routes = []
+  const re = /<script[^>]*\btype=["']text\/template["'][^>]*\bdata-route=["']([^"']+)["'][^>]*>([\s\S]*?)<\/script>/gi
+  for (const m of str.matchAll(re)) routes.push({ key: slugify(m[1]), markup: m[2] })
+  // Same `data-route` twice = a malformed export, not two screens; first wins.
+  return routes.filter((r, i) => r.key && routes.findIndex((o) => o.key === r.key) === i)
+}
+
 function parseVanilla() {
-  // DEFENSIVE — no reference sample. Treat the whole page as one screen; tokens from inline styles + <style>.
+  // DEFENSIVE — no reference sample. Tokens from inline styles + <style>.
   const bodyMatch = templateStr.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
   const body = bodyMatch ? bodyMatch[1] : templateStr
   const markupFile = write('source/index.markup.html', body)
@@ -968,6 +986,31 @@ function parseVanilla() {
   // The <style> blocks live in <head> (for an archive, inlined from the linked styles.css) — the body markup
   // above excludes them, so write them out or the screen agent reconstructs the design with NO CSS.
   if (styleBlocks.trim()) write('source/index.styles.css', styleBlocks)
+  // Write the <head> too. It is NOT dead weight: the Google-Fonts <link> lives there and nowhere else, so a source
+  // tree without it makes the design look font-less to anything reading only `source/` — which is exactly what the
+  // Step 0.55 gate does. Measured on Anodal: the gate "independently confirmed" that the design declared no fonts
+  // and that `brandFonts` was fabricated. Both wrong, and wrong in the direction that reads as diligence.
+  const headMatch = templateStr.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
+  const headFile = headMatch ? write('source/index.head.html', headMatch[1]) : null
+
+  const routes = scanVanillaRouteTemplates(templateStr)
+  const isRouted = routes.length > 1
+  // `navModel` is module-level and was set optimistically by the caller (the archive branch forces 'single-page'
+  // because it cannot see inside the doc). Correct it BEFORE computeTargetSignals, which branches on it.
+  if (isRouted) navModel = 'multi-page'
+
+  // One source file per route, mirroring the dclogic multi-page shape so `screens[].file` means the same thing in
+  // both: the markup THIS screen is built from. The shell (chrome outside the blocks) stays in index.markup.html —
+  // that is what the layouts agent reads for the shared header/nav/footer.
+  const screens = isRouted
+    ? routes.map((r) => ({
+      key: r.key,
+      component: r.key.replace(/(^|-)([a-z])/g, (_, __, c) => c.toUpperCase()),
+      role: 'page',
+      file: write(`source/route.${r.key}.markup.html`, r.markup),
+    }))
+    : [{ key: 'index', component: 'Index', role: 'page', file: markupFile }]
+
   const rawScan = {
     hexColors: scanHex(templateStr),
     clusters: clusterHexes(templateStr), // B2 pre-grouping — the parent names these instead of clustering 40+ hexes by hand
@@ -979,11 +1022,11 @@ function parseVanilla() {
   const brandFonts = pickBrandFonts(faces, scanBodyFontFamily(templateStr))
   return {
     sourceFiles: [{ markup: markupFile, bytes: body.length }],
-    screens: [{ key: 'index', component: 'Index', role: 'page', file: markupFile }],
+    screens,
     components: [], tokens: { themes: null, brand: null, rawScan }, brandFonts,
     fonts: faces, tokenSource: 'inline+css',
     targetSignals: computeTargetSignals(templateStr, navModel),
-    extra: { defensive: true, styleBytes: styleBlocks.length },
+    extra: { defensive: true, styleBytes: styleBlocks.length, headFile, routedTemplates: isRouted ? routes.length : 0, entry: isRouted ? screens[0].key : null },
   }
 }
 
@@ -1047,6 +1090,8 @@ const notes = [
   isArchive && !archiveBundled ? `source=Project archive — the ONE design named by the handoff README (${archiveEntryRel}). Its dependency closure (linked pages/CSS/images) was resolved from disk; version-copies, bundled variants and other designs in the archive were correctly ignored.` : null,
   isArchive && archiveBundled ? `source=Project archive — the README named a PRE-BUNDLED variant (${archiveEntryRel}); it carries its own __bundler envelope, so it was decoded via the standalone path (no on-disk closure). If this is a multi-page design, a bundled variant may hold only ONE page — prefer the raw .dc.html entry if the import looks short.` : null,
   format === 'vanilla' ? 'WARNING: vanilla flavor — DEFENSIVE/best-effort extraction (no reference sample). Inspect source/index.markup.html manually.' : null,
+  format === 'vanilla' && ir.extra.routedTemplates ? `navModel=multi-page — this vanilla page is a CLIENT-SIDE ROUTER: ${ir.extra.routedTemplates} routes found as <script type="text/template" data-route="…"> blocks (${ir.screens.map((s) => s.key).join(', ')}), each written to its own source/route.{key}.markup.html. Entry: ${ir.extra.entry} → "/". The shared chrome (header/nav/footer) is OUTSIDE those blocks — read source/index.markup.html for it and give it to Step 4 as ONE layout, not re-inlined per route.` : null,
+  format === 'vanilla' && !ir.extra.routedTemplates ? 'NOTE: no <script type="text/template" data-route> blocks found — treating this as a genuine single page. If the design is actually multi-route via some OTHER router idiom, screens[] is WRONG (only the template-block idiom is detected); check the source before trusting screens=1.' : null,
   format === 'dclogic' && navModel === 'single-page-sections' ? `navModel=single-page-sections — this is ONE screen with sections (${ir.screens.map((s) => s.key).join(', ')}), not separate routes. Orchestrator: implement as a single screen (section switching), NOT route/step/modal per key.` : null,
   format === 'dclogic' && navModel === 'multi-page' ? `navModel=multi-page — ${ir.screens.length} web pages → ${ir.screens.length} routes (entry: ${ir.extra.entry}).` : null,
   ir.tokenSource !== 'themes-object' ? 'tokenSource=inline+helmet — NO THEMES object; the tokens agent scans inline styles + <helmet> CSS vars/@font-face (see tokens.json.rawScan + brandFonts).' : null,
