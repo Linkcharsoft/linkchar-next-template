@@ -572,7 +572,18 @@ function ingestArchive(dir) {
   }
 
   if (format === 'vanilla') {
-    return { template: entrySrc, format, navModel: 'single-page', images: mergeArchiveImages(collectArchiveImages([entrySrc], entryDir), inlineAcc.images), entryRel: found.entryRel }
+    // Sibling-page DETECTION (not ingestion). A vanilla design can be split across sibling `.html` files, and the
+    // `.dc.html` closure above has no vanilla counterpart — so those pages are silently dropped. Rather than guess
+    // at a closure (`.html` is far more common than `.dc.html`, so a BFS would happily pull in unrelated pages),
+    // just collect what EXISTS on disk and let the notes report the gap. A loud "I did not import these" beats both
+    // a silent truncation and a heuristic that over-collects. Same-dir relative links only, mirroring the dclogic
+    // filter, which already excludes `standalone/`, `deploy/` and version copies for free.
+    const siblingPages = uniq([...entrySrc.matchAll(/href="([^"?#]+\.html)"/gi)]
+      .map((m) => m[1])
+      .filter((h) => !/^[a-z]+:\/\//i.test(h) && !h.includes('/'))
+      .filter((h) => existsSync(resolve(entryDir, h)))
+      .map((h) => slugify(basename(h).replace(/\.html$/i, ''))))
+    return { template: entrySrc, format, navModel: 'single-page', siblingPages, images: mergeArchiveImages(collectArchiveImages([entrySrc], entryDir), inlineAcc.images), entryRel: found.entryRel }
   }
 
   // babel — a clean, intentional STOP (not a crash). The archive path exists to fix ONE thing the standalone
@@ -591,7 +602,7 @@ function ingestArchive(dir) {
 const isArchive = !/^https?:\/\//i.test(input) && existsSync(input) && statSync(input).isDirectory()
 
 let manifest = {}, extParsed = null, template, format, navModel
-let archiveImages = null, archiveEntryRel = null, archiveBundled = false
+let archiveImages = null, archiveEntryRel = null, archiveBundled = false, archiveSiblingPages = []
 let html = null   // set when we take the envelope path: a real Standalone, OR an archive entry that is bundled
 if (isArchive) {
   console.log(`[unpack] reading Project archive ${input}`)
@@ -602,6 +613,7 @@ if (isArchive) {
     console.log(`[unpack] archive entry is a bundled standalone (__bundler) → envelope path`)
   } else {
     template = a.template; format = a.format; navModel = a.navModel; archiveImages = a.images
+    archiveSiblingPages = a.siblingPages || []
   }
 } else if (/^https?:\/\//i.test(input)) {
   console.log(`[unpack] downloading ${input}`)
@@ -1092,10 +1104,20 @@ const notes = [
   format === 'vanilla' ? 'WARNING: vanilla flavor — DEFENSIVE/best-effort extraction (no reference sample). Inspect source/index.markup.html manually.' : null,
   format === 'vanilla' && ir.extra.routedTemplates ? `navModel=multi-page — this vanilla page is a CLIENT-SIDE ROUTER: ${ir.extra.routedTemplates} routes found as <script type="text/template" data-route="…"> blocks (${ir.screens.map((s) => s.key).join(', ')}), each written to its own source/route.{key}.markup.html. Entry: ${ir.extra.entry} → "/". The shared chrome (header/nav/footer) is OUTSIDE those blocks — read source/index.markup.html for it and give it to Step 4 as ONE layout, not re-inlined per route.` : null,
   format === 'vanilla' && !ir.extra.routedTemplates ? 'NOTE: no <script type="text/template" data-route> blocks found — treating this as a genuine single page. If the design is actually multi-route via some OTHER router idiom, screens[] is WRONG (only the template-block idiom is detected); check the source before trusting screens=1.' : null,
+  // Only pages NOT already covered by a detected route. On Anodal the entry links to index/vivienda/… AND ships them
+  // as sibling files, but the template blocks already produced those routes — warning there would be pure noise.
+  (() => {
+    if (format !== 'vanilla') return null
+    const covered = new Set(ir.screens.map((s) => s.key))
+    const missed = archiveSiblingPages.filter((p) => !covered.has(p))
+    return missed.length
+      ? `WARNING: the entry links to ${missed.length} sibling .html page(s) that EXIST in the archive but were NOT imported: ${missed.join(', ')}. The vanilla path has no page-closure (unlike .dc.html), so only the README's entry was read. **${missed.length} is a FLOOR, not the total** — this scans only the links on the ENTRY page, one level deep, so pages reachable solely from a sub-page are not counted (measured on Anodal: the entry's nav yields 7, while the site really has 9 other pages — 'producto' and 'novedad' are linked only from sub-pages). So this design imports ${ir.screens.length} of AT LEAST ${ir.screens.length + missed.length}. Import each missing page separately (point unpack.mjs at its .html), or treat it as a known gap. Do NOT assume screens[] is the whole site.`
+      : null
+  })(),
+  ir.fonts.some((f) => f.used === false) ? `WARNING: ${ir.fonts.filter((f) => f.used === false).map((f) => f.family).join(', ')} — declared (@font-face/<link>) but NEVER referenced by any font-family rule. Dead weight in the source; do NOT load via next/font. Excluded from brandFonts.` : null,
   format === 'dclogic' && navModel === 'single-page-sections' ? `navModel=single-page-sections — this is ONE screen with sections (${ir.screens.map((s) => s.key).join(', ')}), not separate routes. Orchestrator: implement as a single screen (section switching), NOT route/step/modal per key.` : null,
   format === 'dclogic' && navModel === 'multi-page' ? `navModel=multi-page — ${ir.screens.length} web pages → ${ir.screens.length} routes (entry: ${ir.extra.entry}).` : null,
   ir.tokenSource !== 'themes-object' ? 'tokenSource=inline+helmet — NO THEMES object; the tokens agent scans inline styles + <helmet> CSS vars/@font-face (see tokens.json.rawScan + brandFonts).' : null,
-  ir.fonts.some((f) => f.used === false) ? `WARNING: ${ir.fonts.filter((f) => f.used === false).map((f) => f.family).join(', ')} — declared (@font-face/<link>) but NEVER referenced by any font-family rule. Dead weight in the source; do NOT load via next/font. Excluded from brandFonts.` : null,
   ir.tokens.rawScan.clampFontSizes ? `NOTE: ${ir.tokens.rawScan.clampFontSizes} clamp() font-size(s) not captured in rawScan (responsive display sizes) — the screen agent reads them directly from source.` : null,
   `target guess=${ir.targetSignals.guess} — parent confirms mobile-app|web at the Step 0.5 checkpoint (drives responsive).`,
   dupComponents ? `NOTE: ${ir.screens.length} registry keys → ${screenComponents.length} unique components (some routes share a component).` : null,
