@@ -221,6 +221,11 @@ function clusterHexes (src) {
 // (first/last-by-appearance is a coin flip — StreetBuild's Gotham Ultra 400-900 vs Gill Sans 400 needs the weight.)
 function pickBrandFonts(faces, bodyFamily = null) {
   if (!faces.length) return null
+  // Never nominate a face the design loads but never references (see gatherFaces). Anodal's `Poppins` was reported
+  // as the DISPLAY family purely because it had the highest declared weight — it sets no text on the page. Only
+  // narrow when at least one face survives, so a design whose usage we failed to parse still gets its old answer.
+  const used = faces.filter((f) => f.used !== false)
+  if (used.length) faces = used
   const byFam = {}
   for (const f of faces) { const nums = (String(f.weight || '400').match(/\d+/g) || ['400']).map(Number); byFam[f.family] = Math.max(byFam[f.family] || 0, Math.max(...nums)) }
   const fams = Object.keys(byFam)
@@ -739,7 +744,26 @@ function gatherFaces(str) {
   const seen = new Set(faces.map((f) => f.family))
   for (const lf of scanGoogleFontLinks(str)) if (!seen.has(lf.family)) { faces.push(lf); seen.add(lf.family) }
   for (const fam of scanFontFamilyUsage(str)) if (!seen.has(fam)) { faces.push({ family: fam, weight: null, fromUsage: true }); seen.add(fam) }
+  // Declared ≠ used. A design can LOAD a face and never reference it, and can reference one only deep inside a
+  // fallback stack. Measured on Anodal: the <head> links `Inter` AND `Poppins`; no rule names Poppins at all (dead
+  // weight in the original), while Inter appears only as the 4th entry of the body stack behind three system faces.
+  // Loading the unused one is a real bundle/LCP regression, so mark each face and let the parent drop it.
+  const mentioned = scanAllFontFamilyMentions(str)
+  for (const f of faces) f.used = f.fromUsage || mentioned.has(f.family.toLowerCase())
   return faces
+}
+// Every family named ANYWHERE in a font-family value, not just the first — `scanFontFamilyUsage` deliberately takes
+// only the head of each stack (that is the face the rule actually applies), but "is this face used at all?" has to
+// look at the whole stack or a fallback-position brand face reads as unused.
+function scanAllFontFamilyMentions(str) {
+  const out = new Set()
+  for (const m of str.matchAll(/font-family:\s*([^;}{]+)/gi)) {
+    for (const part of m[1].split(',')) {
+      const fam = part.trim().replace(/^['"]|['"]$/g, '').toLowerCase()
+      if (fam && !/^var\(/i.test(fam)) out.add(fam)
+    }
+  }
+  return out
 }
 // Inline a Project archive's LOCAL <link rel="stylesheet" href="styles.css"> as a <style> block, so the parsers
 // (which scan one doc string for tokens/fonts) see the CSS the way they would in a Standalone (all-inlined) export.
@@ -1026,6 +1050,7 @@ const notes = [
   format === 'dclogic' && navModel === 'single-page-sections' ? `navModel=single-page-sections — this is ONE screen with sections (${ir.screens.map((s) => s.key).join(', ')}), not separate routes. Orchestrator: implement as a single screen (section switching), NOT route/step/modal per key.` : null,
   format === 'dclogic' && navModel === 'multi-page' ? `navModel=multi-page — ${ir.screens.length} web pages → ${ir.screens.length} routes (entry: ${ir.extra.entry}).` : null,
   ir.tokenSource !== 'themes-object' ? 'tokenSource=inline+helmet — NO THEMES object; the tokens agent scans inline styles + <helmet> CSS vars/@font-face (see tokens.json.rawScan + brandFonts).' : null,
+  ir.fonts.some((f) => f.used === false) ? `WARNING: ${ir.fonts.filter((f) => f.used === false).map((f) => f.family).join(', ')} — declared (@font-face/<link>) but NEVER referenced by any font-family rule. Dead weight in the source; do NOT load via next/font. Excluded from brandFonts.` : null,
   ir.tokens.rawScan.clampFontSizes ? `NOTE: ${ir.tokens.rawScan.clampFontSizes} clamp() font-size(s) not captured in rawScan (responsive display sizes) — the screen agent reads them directly from source.` : null,
   `target guess=${ir.targetSignals.guess} — parent confirms mobile-app|web at the Step 0.5 checkpoint (drives responsive).`,
   dupComponents ? `NOTE: ${ir.screens.length} registry keys → ${screenComponents.length} unique components (some routes share a component).` : null,
