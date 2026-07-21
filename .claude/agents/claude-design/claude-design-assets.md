@@ -67,9 +67,12 @@ Save path depends on `screenSlug`:
 Rule per image (do them all in ONE batch `sharp` script):
 1. **Dedup by content hash** — SHA1 the source file. Glob `src/assets/images/**/*.hash.txt`, read each `{"url":..., "sha1":...}`. If a `sha1` matches **AND the `.webp` it points at still exists on disk** → SKIP, reuse it (cross-screen reuse is fine). Report `REUSED: {path} (matched by contentHash)`. **The existence check is not optional**: a hash whose `.webp` was deleted must re-convert, not skip — matching on the hash alone would ship an import referencing a file that isn't there.
 2. **Inspect** via `sharp(src).metadata()` → `{ format, width, height, hasAlpha }`.
-3. **Convert with sharp**:
+3. **Convert with sharp — but ONLY if the source is not already WebP:**
+   - **`format === 'webp'` → COPY THE BYTES VERBATIM** (`copyFileSync(src, target)`), do NOT re-encode. Re-encoding an existing WebP is a lossy→lossy generation loss for zero benefit: the source was already optimized by the design tool, and `quality: 85` throws away detail it cannot recover. Measured on Anodal (2026-07-20): all 30 already-WebP photos were needlessly re-encoded, and one of them (`obra-torre-capitalinas`) came out **larger** than the source — 374 KB → 386 KB — so the pass was pure loss in both directions. The only work left for a WebP source is renaming it into place.
    - **Lossless** when the source has alpha (`hasAlpha === true`) AND ≤ 512×512 (logos/UI): `sharp(src).webp({ lossless: true }).toFile(target)`.
    - **Lossy** otherwise: `sharp(src).webp({ quality: 85 }).toFile(target)`.
+
+   > A large PNG/JPEG logo is NOT covered by the ≤512×512 lossless rule and will go lossy. That is usually wrong for a logo — hard edges and flat color are exactly what lossy WebP smears. If the image is a **logo or flat-color mark at any size** (you know this from its name/`alt`), prefer `{ lossless: true }` regardless of dimensions. Anodal's two 1247×244 logos hit this: they were encoded lossy at q85 by the size rule alone.
 4. Create the target folder if missing.
 5. Write a sibling `{name}.hash.txt` containing `{"url": "{srcRef-or-alias-or-uuid}", "sha1": "{contentHash}"}` so future runs dedup (the `url` is just a provenance label — use whichever identity the export provided).
 6. Do NOT keep the raw source in the project — only the `.webp` + `.hash.txt`.
@@ -79,11 +82,12 @@ Rule per image (do them all in ONE batch `sharp` script):
 ```js
 import sharp from 'sharp'
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, writeFileSync, mkdirSync, globSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync, mkdirSync, globSync, copyFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 
-// IMAGES: [{ src: '<unpacked>/assets/img/xxx.png', out: 'src/assets/images/<slug?>/<name>.webp', ref: '...' }]
+// IMAGES: [{ src: '<unpacked>/assets/img/xxx.png', out: 'src/assets/images/<slug?>/<name>.webp', ref: '...', isLogo?: true }]
 // `ref` = provenance label for the hash sibling: srcRef (archive) OR uuid (standalone), whichever the export gave.
+// `isLogo` = set it on logos / flat-color marks so they encode lossless at ANY size (the ≤512px rule misses big ones).
 const IMAGES = []
 
 // Build the sha1 -> existing .webp index ONCE, from every hash sibling already on disk.
@@ -98,18 +102,25 @@ for (const hf of globSync('src/assets/images/**/*.hash.txt')) {
   try { index.set(JSON.parse(readFileSync(hf, 'utf8')).sha1, posix(hf).replace(/\.hash\.txt$/, '.webp')) } catch {}
 }
 
-for (const { src, out, ref } of IMAGES) {
+for (const { src, out, ref, isLogo } of IMAGES) {
   const buf = readFileSync(src)
   const sha1 = createHash('sha1').update(buf).digest('hex')
   const hit = index.get(sha1)
   if (hit && existsSync(hit)) { console.log(`REUSED ${hit}  <- ${out} (matched by contentHash)`); continue }
   const m = await sharp(buf).metadata()
-  const lossless = m.hasAlpha && m.width <= 512 && m.height <= 512
   mkdirSync(dirname(out), { recursive: true })
-  await sharp(buf).webp(lossless ? { lossless: true } : { quality: 85 }).toFile(out)
+  // Already WebP → copy verbatim. Re-encoding is generation loss for nothing (and can even grow the file).
+  // `isLogo` is passed per image by the parent (logo/flat-color mark) — the size rule alone smears a big logo.
+  if (m.format === 'webp') {
+    copyFileSync(src, out)
+    console.log(`COPIED (already webp)  ${out}`)
+  } else {
+    const lossless = isLogo || (m.hasAlpha && m.width <= 512 && m.height <= 512)
+    await sharp(buf).webp(lossless ? { lossless: true } : { quality: 85 }).toFile(out)
+    console.log(`${lossless ? 'LOSSLESS' : 'lossy'}  ${out}`)
+  }
   writeFileSync(out.replace(/\.webp$/, '.hash.txt'), JSON.stringify({ url: ref ?? null, sha1 }))
   index.set(sha1, out) // so a later IMAGES entry with the same source reuses this one
-  console.log(`${lossless ? 'LOSSLESS' : 'lossy'}  ${out}`)
 }
 ```
 
