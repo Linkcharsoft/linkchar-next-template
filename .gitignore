@@ -41,3 +41,8 @@ next-env.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Claude Design source archives ("Send to coding agent" .zip exports)
+# Kept on disk as fixtures for testing /claude-design-import (unpack.mjs runs against the
+# unzipped folder), but never committed: they are large binary design exports, not source.
+/*.zip
