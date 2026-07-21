@@ -180,7 +180,17 @@ function clusterHexes (src) {
 
   // 2) Every `prop: value` declaration, and EVERY hex in the value — a lazy `[^;}]*?(hex)` stops at the
   //    first one, silently dropping e.g. the 2nd colour of `box-shadow:0 1px 0 #fff, 0 8px 24px #0d2740`.
-  for (const m of masked.matchAll(/(--[a-zA-Z][\w-]*|[a-zA-Z][\w-]*)\s*:\s*([^;{}]*)/g)) {
+  // The `{0,80}` bounds are load-bearing, NOT cosmetic: unbounded `[\w-]*` makes this quadratic. On a long run of
+  // identifier chars with no `:` the engine starts at every position, scans to the end, backtracks, and retries one
+  // char over. Measured: 25k chars = 1.1s, 200k = 73.6s; a second shape (letters followed by a long whitespace run,
+  // which attacks the `\s*`) hit 31s at 80k. Bounding the IDENTIFIER makes it O(80·n) — 200k drops to 180ms and the
+  // whitespace shape to 92ms, with the doubling ratio measured flat at 2.0 from 50k to 800k.
+  // Bound ONLY the identifier. The value's `[^;{}]*` is a negated class at the end of the pattern, so it never
+  // backtracks (verified: 400k-char value = 0.6ms) — and bounding it DOES change results (it lets the scan re-enter
+  // text the greedy version had swallowed, which silently inflates the declaration count).
+  // 80 is safe with room to spare: across 83,069 declarations in 125 files from all 7 sample designs the longest
+  // identifier is 27 chars (`webkit-box-decoration-break`), and extraction is byte-identical on every one of them.
+  for (const m of masked.matchAll(/(--[a-zA-Z][\w-]{0,80}|[a-zA-Z][\w-]{0,80})\s*:\s*([^;{}]*)/g)) {
     const role = roleOfProp(m[1])
     if (!role) continue
     for (const h of m[2].matchAll(new RegExp(HEX, 'g'))) bump(h[0], role)
