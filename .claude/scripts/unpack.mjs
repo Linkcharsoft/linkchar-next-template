@@ -106,7 +106,14 @@ const uniq = (a) => [...new Set(a)]
 const scanHex = (s) => uniq([...s.matchAll(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g)].map((m) => m[0].toLowerCase())).sort()
 const scanCssVars = (s) => uniq([...s.matchAll(/var\((--[a-z-]+)/g)].map((m) => m[1])).sort()
 // CSS font-size scan: px + rem (rem→px @16). clamp()/vw responsive sizes aren't captured (reported separately).
-const scanFontSizes = (s) => uniq([...s.matchAll(/font-size:\s*(\d+(?:\.\d+)?)\s*(px|rem)/g)].map((m) => (m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1])))).sort((a, b) => a - b)
+// The length matcher is `\d*\.?\d+`, NOT `\d+(\.\d+)?` — CSS allows a leading-dot literal (`.74rem`) and it is
+// the form a stylesheet minifier emits, so requiring a digit first silently drops it. Measured on the Anodal
+// archive: 28 of its 33 font-size declarations use `.Nrem`, so the old pattern captured 5 of 20 distinct sizes
+// and the rest vanished with no note — the clamp() NOTE below covers a different case and did not fire for them.
+// A rawScan missing the 10–16px band means § B1 ("every off-scale size becomes a real token") builds a palette
+// with no body/caption/label sizes, and Step 5.2 then re-STOPs on TOKENS_MISSING per screen.
+// `em` is deliberately NOT matched: it is parent-relative, so there is no correct ×16 conversion to a px token.
+const scanFontSizes = (s) => uniq([...s.matchAll(/font-size:\s*(\d*\.?\d+)\s*(px|rem)/g)].map((m) => (m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1])))).sort((a, b) => a - b)
 
 // ── Color clustering (design-import-shared.md § B2) ───────────────────────────
 // A `tokenSource=inline+helmet` rawScan dumps 40+ hexes; the parent must reduce that to a
