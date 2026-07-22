@@ -76,6 +76,8 @@ Notes: {one-line count summary}
 - `Duration` / `Tool calls` / `Tokens` ← the `<usage>` block of the `Agent(...)` result (above). The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
 - `Notes` / `Validation` ← from the footer, but see the verification rule immediately below — the `Notes` line is a self-reported summary, not a measurement.
 
+**Append the footer's `Validation:` line to the checkpoint message after each step**, so the user sees lint/type-check status without scrolling through the agent's full report. (Restored from the figma twin, which had carried this and this copy had not — the drift the banner above warns about, in the opposite direction from the one it names.)
+
 ### Verify the deliverable counts against the filesystem — do NOT trust the report
 
 The rule above ("`Tokens`/`Tool calls`/`Duration` come from the harness, never from the agent") exists because an agent's self-report is a reconstruction, not a measurement. **That applies to the DELIVERABLE counts too, and those are the ones that reach the user.** A sub-agent runs in isolated context, makes dozens of tool calls, and then summarizes from memory at the end; the summary is the least reliable part of an otherwise-correct run.
