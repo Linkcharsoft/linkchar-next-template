@@ -304,9 +304,7 @@ The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/se
 
 ## Testing
 
-> ⚠️ **This section is pending review — treat it as a description of the tooling, not as guidance.** It previously documented a Vitest + `@testing-library/react` unit-testing setup, in detail, that **does not exist in this project**: no `vitest`, no `@testing-library/*`, no `vitest.config.*`, no `__tests__/` folders, and neither `pnpm test` nor `pnpm test-unit` is a real script. It also said "unit tests only (NOT E2E)" while the only thing installed is an E2E runner. All of it was fiction. Cut back to what's verifiable until the testing strategy is decided.
-
-**What's actually installed: Cypress (E2E).**
+**The only test runner installed is Cypress (E2E). There is no unit-testing setup** — no `vitest`, no `@testing-library/*`, no `__tests__/` folders, and neither `pnpm test` nor `pnpm test-unit` exists. Verify against `package.json` before assuming any other runner is available.
 
 - `cypress` + helpers (`cypress-dotenv`, `cypress-file-upload`, `cypress-mailslurp`), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
 - Config: `cypress.config.ts` at the repo root — `specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}'`, `baseUrl: http://localhost:3000` (so the app must be running).
@@ -315,4 +313,4 @@ The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/se
 
 **`src/cypress/utils/` encodes live DOM contracts — components must not break them.** `checkInputError.ts` selects `.parents('.InputContainer').find('.InputError')`, `checkPasswordErrors.ts` likewise leans on `PasswordValidator`'s markup. Changing or extending those components means keeping the root class and the error element's descendant relationship intact, or the auth specs go red.
 
-**Do NOT scaffold NEW test infrastructure unprompted** (the testing strategy beyond the auth flow is still undecided), and do not follow the removed Vitest conventions — writing `src/**/__tests__/*.test.ts` against a framework that isn't installed produces code that cannot run.
+**Do NOT scaffold NEW test infrastructure unprompted** — the testing strategy beyond the auth flow is still undecided. Writing specs against a framework that isn't installed produces code that cannot run; if a task seems to need one, ask first.

@@ -498,7 +498,7 @@ Branch on the reply exactly like the figma flow (empty/"siguiente"→next; free 
 
 ## Step 6 — Code validation
 
-> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'claude-design-import'` so it names `claude-design-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `figma-design-import`); it carries ~42 static checks including source-import leak checks (untranslated inline styles, leaked prototype CSS vars, stack-router remnants), **plus a runtime invariant sweep** that renders every route in a browser.
+> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'claude-design-import'` so it names `claude-design-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `figma-design-import`); it carries 44 static checks including source-import leak checks (untranslated inline styles, leaked prototype CSS vars, stack-router remnants), **plus a runtime invariant sweep** that renders every route in a browser.
 >
 > **Pass the ROUTE LIST with a value for every dynamic segment** (`/novedades/[slug]` → a slug that exists in the mock data). The runtime sweep skips a route it cannot resolve, and a skipped route is reported as unverified — which is correct, but it means you lose the check unless you supply the parameter.
 >

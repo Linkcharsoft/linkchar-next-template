@@ -488,7 +488,7 @@ Pass any provided fields to `figma-design-screen`; fall back to the registry for
 
 ## Step 6 — Code validation
 
-> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `claude-design-import`); it carries ~42 static checks **plus a runtime invariant sweep** that renders every route in a browser.
+> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `claude-design-import`); it carries 44 static checks **plus a runtime invariant sweep** that renders every route in a browser.
 >
 > **Pass the ROUTE LIST with a value for every dynamic segment** (`/products/[id]` → an id that exists in the mock data). The runtime sweep skips a route it cannot resolve, and a skipped route is reported as unverified — which is correct, but it means you lose the check unless you supply the parameter.
 >

@@ -53,7 +53,7 @@ The parent may pass a `scope`: the files this import created or modified. Withou
 
 **If `scope` is absent**, report a single undivided list and say so explicitly in the report header: `Scope: none supplied — findings are NOT attributed to this import`. An unscoped report is not wrong, it just cannot tell the reader who caused what.
 
-> ⚠️ **Known approximation — do not read this as finished.** Partitioning by file path is a proxy for the real question, which is whether a given CHECK is per-file or a repo-wide invariant. **Those 45 checks have not been classified.** Until they are, a repo-wide invariant violated in an out-of-scope file lands under `PRE-EXISTING` even when this import is what broke it — visible, but filed under the wrong heading. That is the deliberate, safe direction of the error. When the classification is done, invariant checks should report their findings as `IN SCOPE` regardless of which file they land in.
+> **When the file path and the CHECK disagree, say so on the finding.** File path is a proxy for the real question — is this check per-file, or does it assert a repo-wide invariant? For an invariant check (one whose rule spans files: exactly one `<main>` per rendered page, global-only modals, `'use client'` on layouts, provider nesting), a violation can land in a file this import never wrote but did break. File it under `PRE-EXISTING` as the path says, and append `— repo-wide invariant, may have been broken by this import`. Do not silently promote it to `IN SCOPE`: the path is the only evidence you have, and mislabelling in the visible direction beats guessing.
 
 ## Steps
 
