@@ -1,6 +1,6 @@
 ---
 name: figma-design-import
-description: Orchestrates the bottom-up import of a full Figma design file into this codebase — inventory → tokens → assets → components → layouts → screens → validation. Delegates each step to a dedicated sub-agent in `.claude/agents/figma/` so each task runs in the right model (Haiku for mechanical, Sonnet for moderate, Opus for architectural). Invoke when starting to translate a complete Figma design to code, NOT for one-off component tweaks. For a single screen/component, prefer `/figma:figma-implement-design`.
+description: Orchestrates the bottom-up import of a full Figma design file into this codebase — inventory → tokens → assets → components → layouts → screens → validation. Delegates each step to a dedicated sub-agent in `.claude/agents/figma-design/` so each task runs in the right model (Haiku for mechanical, Sonnet for moderate, Opus for architectural). Invoke when starting to translate a complete Figma design to code, NOT for one-off component tweaks. For a single screen/component, prefer `/figma:figma-implement-design`.
 ---
 
 Import a Figma design end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
@@ -28,16 +28,16 @@ If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the us
 
 > ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already had** (this copy was missing the Step 6 `.hash.txt` check the twin had).
 >
-> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma/` vs `.claude/agents/claude-design/`), the token-namespace grep, and each flow's own step numbering.
+> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma-design/` vs `.claude/agents/claude-design/`), the token-namespace grep, and each flow's own step numbering.
 
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
 ```
 | Step | Sub-agent | Model | Duration | Tool calls | Tokens | Notes |
 |------|-----------|-------|----------|------------|--------|-------|
-| 1 | figma-tokens | Haiku | 12s | 5 | 8k | 6 colors + 4 sizes added |
-| 2 | figma-assets | Haiku | 45s | 21 | 14k | 14 images, 5 icons |
-| 3 | figma-components | Opus | 3m | 23 | 85k | 6 new + 1 extended |
+| 1 | figma-design-tokens | Haiku | 12s | 5 | 8k | 6 colors + 4 sizes added |
+| 2 | figma-design-assets | Haiku | 45s | 21 | 14k | 14 images, 5 icons |
+| 3 | figma-design-components | Opus | 3m | 23 | 85k | 6 new + 1 extended |
 | ... | ... | ... | ... | ... | ... | ... |
 ```
 
@@ -60,7 +60,7 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary}
 ```
 
-- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline. **One exception:** Step 0.55's `general-purpose` is a builtin with no file under `.claude/agents/` — record the model you actually passed it.
+- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma-design/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline. **One exception:** Step 0.55's `general-purpose` is a builtin with no file under `.claude/agents/` — record the model you actually passed it.
 - `Duration`, `Tool calls`, `Tokens` ← the `<usage>` block of the `Agent(...)` result (see above). Exact, harness-measured. The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
 - `Notes` ← `Notes:` line from the footer — but **do not repeat its counts to the user unverified**; see the rule immediately below. It is a self-reported summary, not a measurement.
 - `Validation` ← `Validation:` line from the footer.
@@ -136,18 +136,18 @@ This makes the model-assignment promise verifiable — if Step 1 ends up running
 
 ## How this skill manages models automatically
 
-You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 0 directly because it requires holistic judgment. Every other step is delegated via the `Agent` tool to a dedicated sub-agent in `.claude/agents/figma/`. Each sub-agent has its model pre-set in its frontmatter, runs in **isolated context**, and returns only a summary — keeping your context lean and using the cheapest viable model per task.
+You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 0 directly because it requires holistic judgment. Every other step is delegated via the `Agent` tool to a dedicated sub-agent in `.claude/agents/figma-design/`. Each sub-agent has its model pre-set in its frontmatter, runs in **isolated context**, and returns only a summary — keeping your context lean and using the cheapest viable model per task.
 
 | Step | Sub-agent | Model | Why this model |
 |------|-----------|-------|----------------|
 | 0 | (you, the parent) | Opus | Holistic judgment + checkpoint with user |
 | 0.55 | `general-purpose` | Sonnet | Re-derives the spec from Figma to catch the parent's own errors — the only step that gates YOUR decisions. Builtin agent, no file under `.claude/agents/`; record the model you actually passed it |
-| 1 | `figma-tokens` | Haiku | Mechanical config edits |
-| 2 | `figma-assets` | Haiku | Bash + boilerplate from templates |
-| 3 | `figma-components` | Opus | Component API design, extend-vs-create judgment |
-| 4 | `figma-layouts` | Sonnet | Moderate decisions, known patterns |
-| 5.1 | `figma-scaffold` | Haiku | Mechanical `/new-screen` invocations |
-| 5.2 | `figma-screen` | Opus | Pixel-perfect fidelity, heaviest token user |
+| 1 | `figma-design-tokens` | Haiku | Mechanical config edits |
+| 2 | `figma-design-assets` | Haiku | Bash + boilerplate from templates |
+| 3 | `figma-design-components` | Opus | Component API design, extend-vs-create judgment |
+| 4 | `figma-design-layouts` | Sonnet | Moderate decisions, known patterns |
+| 5.1 | `figma-design-scaffold` | Haiku | Mechanical `/new-screen` invocations |
+| 5.2 | `figma-design-screen` | Opus | Pixel-perfect fidelity, heaviest token user |
 | 6 | `design-validation` | Haiku | Run commands + report findings (shared agent). Its runtime half is a deterministic script, so no model measures anything |
 
 **Always pass enough context** in each delegation prompt — sub-agents start fresh, they don't see your conversation. Include relevant gap-analysis data, file paths, and decisions already made.
@@ -186,20 +186,20 @@ Read the Figma source AND the relevant codebase before touching any file.
    ```markdown
    ## Tokens
    - Already mapped (in design-tokens-map.md): [list — `figmaVar` → `tailwindToken`]
-   - Add: [list new Figma variables that need a token decision; the figma-tokens agent will apply its REUSE/CREATE/BLOCK policy]
+   - Add: [list new Figma variables that need a token decision; the figma-design-tokens agent will apply its REUSE/CREATE/BLOCK policy]
    - Already covered (Tailwind has an exact match by hex AND name is not yet mapped): [list]
-   - **Warnings**: if any proposed token would override `surface-*` or any existing token, flag it here — the figma-tokens agent will block these unless the user explicitly confirms.
+   - **Warnings**: if any proposed token would override `surface-*` or any existing token, flag it here — the figma-design-tokens agent will block these unless the user explicitly confirms.
 
    ## Assets
    - SVGs to convert to React components: [list with Figma node IDs]
    - Images to convert to WebP: [list]
 
    ## Components (with representative Figma nodeIds — MANDATORY)
-   Every component (whether to extend or create) MUST have a representative Figma `nodeId` resolved here. `figma-components` will refuse to work without one — it forbids prose-only specs because building components from text descriptions consistently produces wrong-but-plausible output (screenshots hide structure: a colored area may be the IMAGE fill rather than a card frame; auto-layout direction, exact spacing per side, and hover/focus variants are invisible until the node is inspected).
+   Every component (whether to extend or create) MUST have a representative Figma `nodeId` resolved here. `figma-design-components` will refuse to work without one — it forbids prose-only specs because building components from text descriptions consistently produces wrong-but-plausible output (screenshots hide structure: a colored area may be the IMAGE fill rather than a card frame; auto-layout direction, exact spacing per side, and hover/focus variants are invisible until the node is inspected).
 
    How to resolve a nodeId:
    - If the Figma file has a dedicated "Components / Library / Design System" page → pull the nodeId from there (canonical source).
-   - Otherwise → take the FIRST instance of that component you find in any screen frame. Any single instance works; `figma-components` will fetch its design context.
+   - Otherwise → take the FIRST instance of that component you find in any screen frame. Any single instance works; `figma-design-components` will fetch its design context.
 
    - Extend existing:
      - `CustomButton` ← nodeId `X:Y` (Figma: "Button - Primary - Default")
@@ -221,7 +221,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    ## Detected language
    - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
    - Decision: `en` | `es` — with brief reasoning ({% of strings that are Spanish, presence of accented chars / ñ / common Spanish words like "iniciar/nuevo/comprar/usuario"})
-   - **Current `<html lang>`** in `src/app/layout.tsx`: read it and report. If it doesn't match the detected language, flag for switching (the figma-scaffold agent will perform the switch).
+   - **Current `<html lang>`** in `src/app/layout.tsx`: read it and report. If it doesn't match the detected language, flag for switching (the figma-design-scaffold agent will perform the switch).
    ```
 
    **How to detect language**: from the design context of the screens, collect every `characters` value (visible text). Score: a string is "Spanish-leaning" if it contains any of: `ñ`, accented Latin characters (`á é í ó ú ü`), or whole-word matches against a small list (`iniciar`, `comenzar`, `nuevo`, `usuario`, `comprar`, `ingresar`, `nosotros`, `productos`, `acerca`, `contacto`). If ≥50% of sampled strings are Spanish-leaning → language = `es`. Otherwise → `en`. **Default to `en` on tie or insufficient data** — the template ships English-first, and forcing a switch should only happen with clear majority-Spanish evidence.
@@ -238,7 +238,7 @@ Read the Figma source AND the relevant codebase before touching any file.
 
    > **Delegate to**: `Agent({ subagent_type: 'general-purpose' })` — **Sonnet or cheaper**. One call, before the checkpoint.
 
-   Everything downstream has a source-of-truth gate except **you**. `figma-components` refuses a prose-only spec and re-fetches each component's `nodeId` itself — but that gate only proves the agent built *the node you named*. It cannot tell you that you named the **wrong** node, missed a primitive that repeats, or paired the wrong mobile frame. Those global decisions reach the render with nothing checking them, and they are invisible to lint, type-check, `pnpm build` and `design-validation` — they all compile. (On the first `claude-design-import` run of this same gate, **four spec errors were caught, all the orchestrator's own**, including a spec that named a non-representative instance of a repeated glyph — extracting it would have silently re-drawn every call site.)
+   Everything downstream has a source-of-truth gate except **you**. `figma-design-components` refuses a prose-only spec and re-fetches each component's `nodeId` itself — but that gate only proves the agent built *the node you named*. It cannot tell you that you named the **wrong** node, missed a primitive that repeats, or paired the wrong mobile frame. Those global decisions reach the render with nothing checking them, and they are invisible to lint, type-check, `pnpm build` and `design-validation` — they all compile. (On the first `claude-design-import` run of this same gate, **four spec errors were caught, all the orchestrator's own**, including a spec that named a non-representative instance of a repeated glyph — extracting it would have silently re-drawn every call site.)
 
    **⚠️ Bound the MCP cost — this is the one way this step differs sharply from its `claude-design-import` twin.** That flow's auditor reads local files for free; here every `get_design_context` runs **~80–120K tokens** (see Step 5.2). An auditor told to "re-derive the whole design" would cost as much as implementing a screen. So scope it explicitly:
 
@@ -318,7 +318,7 @@ Read the Figma source AND the relevant codebase before touching any file.
 
 ## Step 1 — Tokens (colors, typography, fonts)
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-tokens' })` — runs in **Haiku**.
+> **Delegate to**: `Agent({ subagent_type: 'figma-design-tokens' })` — runs in **Haiku**.
 
 Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
 
@@ -328,11 +328,11 @@ You receive: confirmation of changes + type-check result.
 
 ## Step 2 — Assets
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-assets' })` — runs in **Haiku**.
+> **Delegate to**: `Agent({ subagent_type: 'figma-design-assets' })` — runs in **Haiku**.
 
 Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and `screenSlug` when the asset belongs to a single screen (omit for shared assets like logos). The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `sharp` (no ffmpeg), registers exports in `src/assets/icons/index.ts`. Per-screen raster images land at `src/assets/images/{screenSlug}/{name}.webp`; shared raster assets land flat at `src/assets/images/{name}.webp`.
 
-**You (the orchestrator) pre-filter icons before delegating** — the `figma-assets` agent does not re-check this. Filter per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph), NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (compare the icon nodes' stroke weight / style): if it does, **every member keeps its Figma asset and the import yields zero PrimeIcons** — that is correct, not an oversight. Only when there is no set (mixed/system icons — more common from Figma than from a Claude Design export) do generic affordances (hamburger, close, chevron, search) get dropped from the asset list with a `→ use <i className='pi pi-{name}'/>` note in the gap analysis so the screen agent (Step 5.2) knows. **Brand marks always keep the Figma asset**, set or no set. Decide it here; do NOT ask the user.
+**You (the orchestrator) pre-filter icons before delegating** — the `figma-design-assets` agent does not re-check this. Filter per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph), NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (compare the icon nodes' stroke weight / style): if it does, **every member keeps its Figma asset and the import yields zero PrimeIcons** — that is correct, not an oversight. Only when there is no set (mixed/system icons — more common from Figma than from a Claude Design export) do generic affordances (hamburger, close, chevron, search) get dropped from the asset list with a `→ use <i className='pi pi-{name}'/>` note in the gap analysis so the screen agent (Step 5.2) knows. **Brand marks always keep the Figma asset**, set or no set. Decide it here; do NOT ask the user.
 
 You receive: list of files created with their final sizes + lint/type-check status.
 
@@ -340,7 +340,7 @@ You receive: list of files created with their final sizes + lint/type-check stat
 
 ## Step 3 — Components
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-components' })` — runs in **Opus**.
+> **Delegate to**: `Agent({ subagent_type: 'figma-design-components' })` — runs in **Opus**.
 
 Pass to the agent:
 - The Figma `fileKey` (so the agent can call MCP tools itself).
@@ -348,7 +348,7 @@ Pass to the agent:
 - The list of new components to create, AND a representative **`figmaNodeId`** for each one.
 - The design tokens already added in Step 1 (colors/typography names, not hex).
 
-`figma-components` will INDEPENDENTLY fetch `get_design_context` + `get_screenshot` on each component's nodeId before writing code — that's the gate against prose-driven implementation errors. Do not try to pre-extract the design and pass it in as prose; let the agent fetch and interpret the structured data directly.
+`figma-design-components` will INDEPENDENTLY fetch `get_design_context` + `get_screenshot` on each component's nodeId before writing code — that's the gate against prose-driven implementation errors. Do not try to pre-extract the design and pass it in as prose; let the agent fetch and interpret the structured data directly.
 
 If any component in your input lacks a `figmaNodeId`, the agent will refuse to proceed. Resolve the nodeIds in Step 0 — they are cheap to obtain (any instance of the component in any screen frame works) and save much more in rework cycles down the line.
 
@@ -360,7 +360,7 @@ You receive: a table of which variants were added to which component, file paths
 
 ## Step 4 — Layouts
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-layouts' })` — runs in **Sonnet**.
+> **Delegate to**: `Agent({ subagent_type: 'figma-design-layouts' })` — runs in **Sonnet**.
 
 Pass to the agent:
 - Current state of `src/layouts/` (existing layouts).
@@ -381,7 +381,7 @@ Two phases: scaffold all screens at once (5.1), then implement each one in detai
 
 ### 5.1 — Scaffold all screens with placeholders
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-scaffold' })` — runs in **Haiku**.
+> **Delegate to**: `Agent({ subagent_type: 'figma-design-scaffold' })` — runs in **Haiku**.
 
 Pass to the agent the full screen list from the gap analysis. **Before delegating, read `src/app/layout.tsx` and extract the current `<html lang>` value** — pass it as `currentHtmlLang`. Required input to the agent:
 
@@ -396,23 +396,23 @@ You receive: list of created routes + lint/type-check status.
 
 ### 5.2 — Per-screen implementation (sequential auto with checkpoint between each)
 
-> **Delegate to**: `Agent({ subagent_type: 'figma-screen' })` — runs in **Opus**, **one invocation per screen, sequential with a per-screen checkpoint**.
+> **Delegate to**: `Agent({ subagent_type: 'figma-design-screen' })` — runs in **Opus**, **one invocation per screen, sequential with a per-screen checkpoint**.
 
-This is the heaviest token usage of the whole flow. By delegating each screen to its own `figma-screen` agent invocation, the screen's `get_design_context` (~80–120K tokens), screenshots, and image downloads stay in the sub-agent's context — they NEVER touch yours. After each screen, you only see a short report.
+This is the heaviest token usage of the whole flow. By delegating each screen to its own `figma-design-screen` agent invocation, the screen's `get_design_context` (~80–120K tokens), screenshots, and image downloads stay in the sub-agent's context — they NEVER touch yours. After each screen, you only see a short report.
 
 **Sequential auto-iterate with checkpoints.** As soon as Step 5.1 commits, walk the Step 0 registry one screen at a time:
 
 1. Pick the next screen with a real Figma source (skip "Próximamente" / TBD).
-2. Delegate to `figma-screen` with the standard prompt (below).
+2. Delegate to `figma-design-screen` with the standard prompt (below).
 3. When the subagent returns, post a SHORT report and ask the user a checkpoint question.
 4. Branch on the user's response:
    - **Empty / "siguiente" / "continuá" / "ok" / "next"** → move to step 1 with the next screen.
-   - **Adjustment instructions** (free text, e.g. "achicá el hero un 20%", "el contact form va del lado izquierdo en mobile") → re-delegate to `figma-screen` for THE SAME screen with the adjustment notes appended to the prompt. After it returns, post the new report and re-ask the checkpoint.
+   - **Adjustment instructions** (free text, e.g. "achicá el hero un 20%", "el contact form va del lado izquierdo en mobile") → re-delegate to `figma-design-screen` for THE SAME screen with the adjustment notes appended to the prompt. After it returns, post the new report and re-ask the checkpoint.
    - **"parar" / "stop" / "pausá"** → halt the batch and tell the user how to resume (e.g. "decime `seguí desde {ScreenName}` cuando quieras retomar").
    - **Skip-specific** ("saltá esta", "después la veo") → mark the screen as skipped, move to next.
 5. After the last screen (or when user halts), post the cumulative final report.
 
-**Standard prompt for each `figma-screen` invocation:**
+**Standard prompt for each `figma-design-screen` invocation:**
 
 ```
 Screen name: {Name}Page
@@ -425,13 +425,13 @@ Images: descargá de Figma
 Existing components to reuse:
   - {ComponentA} (variants: [primary, secondary]) → src/components/{ComponentA}/{ComponentA}.tsx
   - {ComponentB} (created in Step 3, no variants) → src/components/{ComponentB}/{ComponentB}.tsx
-  # Pre-resolved from Step 3 output (screen registry → expected reusable components) — short-circuits the per-screen reuse audit so figma-screen doesn't have to re-grep src/components/.
+  # Pre-resolved from Step 3 output (screen registry → expected reusable components) — short-circuits the per-screen reuse audit so figma-design-screen doesn't have to re-grep src/components/.
 Tokens available: {list from Step 1}
 Container rule: every top-level <section> MUST be anchored with `container-custom` (or wrap its content in a child <div className='container-custom ...'> when the section has a full-bleed background). The class already brings a built-in 16px lateral gutter — do NOT add `px-*` on the same element. Ignore Figma's absolute frame width and per-section padding-x — they break cross-section alignment. BUT keep the per-section `py-*` / `pt-*` / `pb-*` from Figma intact — `container-custom` only handles horizontal spacing, so every section still needs its own vertical rhythm.
 Adjustment notes (only on re-runs): {text from user}
 ```
 
-The default image strategy is `descargá de Figma` since the user didn't provide URLs. The `figma-screen` agent will curl + `sharp` each asset into `src/assets/images/{screen-slug}/`.
+The default image strategy is `descargá de Figma` since the user didn't provide URLs. The `figma-design-screen` agent will curl + `sharp` each asset into `src/assets/images/{screen-slug}/`.
 
 **Per-screen checkpoint message (post after each subagent returns).** Keep it tight so the user can decide quickly:
 
@@ -456,7 +456,7 @@ If the previous subagent failed, surface the error in the same checkpoint:
 
 **Edge cases — handle automatically, do not ask:**
 
-- **Screen with desktop only (no mobile pair found)** → pass only the desktop URL and tell `figma-screen` to apply best-effort responsive defaults (mobile-first Tailwind, stacked layout below `md:`). Mention this in the checkpoint message so the user knows.
+- **Screen with desktop only (no mobile pair found)** → pass only the desktop URL and tell `figma-design-screen` to apply best-effort responsive defaults (mobile-first Tailwind, stacked layout below `md:`). Mention this in the checkpoint message so the user knows.
 - **Screen with mobile only** → same in reverse: pass mobile URL and ask the agent to extrapolate desktop from the project's container/breakpoint conventions.
 - **Subagent failure** → checkpoint with the error and ask whether to retry, skip, or stop. Do NOT silently move on after a failure.
 
@@ -482,7 +482,7 @@ Mobile: figma.com/design/.../?node-id=...     (optional override)
 Imágenes: ['/products/p1.webp', '/products/p2.webp']
 ```
 
-Pass any provided fields to `figma-screen`; fall back to the registry for the rest.
+Pass any provided fields to `figma-design-screen`; fall back to the registry for the rest.
 
 ---
 
@@ -543,7 +543,7 @@ Say how many you removed. The `.webp` files are the deliverable and stay. A futu
 
 So a clean Step 6 means *nothing violated a known invariant*, never *the design was reproduced*. Visual review against Figma is still the developer's job via the per-screen checkpoint in Step 5.2. (Measured on an Anodal run: five real defects shipped after Step 6 reported clean on every static check — which is why the runtime half exists, and why this paragraph no longer says the whole step is blind.)
 
-You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-tokens` for hex, `figma-components` for a11y, etc).
+You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-design-tokens` for hex, `figma-design-components` for a11y, etc).
 
 ---
 
@@ -560,9 +560,9 @@ When you see `STOP-BLOCKING`:
 
 | `next_agent` value | What to do |
 | ------------------ | ---------- |
-| `figma-tokens` | Delegate to `figma-tokens` with the `details:` payload, then re-invoke the original sub-agent. |
-| `figma-components` | Delegate to `figma-components` with the missing variant nodeId, then re-invoke. |
-| `figma-layouts` | Delegate to `figma-layouts` with the user's decision, then re-invoke. |
+| `figma-design-tokens` | Delegate to `figma-design-tokens` with the `details:` payload, then re-invoke the original sub-agent. |
+| `figma-design-components` | Delegate to `figma-design-components` with the missing variant nodeId, then re-invoke. |
+| `figma-design-layouts` | Delegate to `figma-design-layouts` with the user's decision, then re-invoke. |
 | `user_decision` | Stop the batch, surface the STOP to the user with the exact `reason:` and `resolution:` quoted. Wait for the user's response, then proceed. |
 | `manual` | Stop the batch and ask the user how to resolve. Common case: re-invoke with corrected input. |
 
@@ -595,7 +595,7 @@ If a sub-agent's STOP is malformed (missing `category:`, unknown category name, 
 
 ### Ledger row for STOPs
 
-Every STOP contributes one row to the workload ledger with the `Notes` column quoting the category and severity (e.g. `Notes: 1 STOP-BLOCKING TOKENS_MISSING (delegated to figma-tokens)`). This makes per-batch STOP frequency visible — if `COMPONENT_GAP` advisories keep firing on the same component across multiple screens, the user can decide to upgrade the component once via `figma-components`.
+Every STOP contributes one row to the workload ledger with the `Notes` column quoting the category and severity (e.g. `Notes: 1 STOP-BLOCKING TOKENS_MISSING (delegated to figma-design-tokens)`). This makes per-batch STOP frequency visible — if `COMPONENT_GAP` advisories keep firing on the same component across multiple screens, the user can decide to upgrade the component once via `figma-design-components`.
 
 ---
 
@@ -618,8 +618,8 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 - ❌ Strip vertical padding from sections "because container-custom handles spacing" — IT DOES NOT. `container-custom` is horizontal-only (max-width + 16px lateral gutter). Every section must keep its own `py-*` / `pt-*` / `pb-*` translated from Figma; sections without vertical padding collapse against each other and look broken.
 - ❌ Skip the "confirm with user" checkpoint at the end of Step 0
 - ❌ Manual scaffolding instead of invoking `/new-component`, `/new-screen`, `/new-modal` (sub-agents already follow this rule, but you might be tempted)
-- ❌ Pass components to `figma-components` as PROSE only (no `figmaNodeId`) — screenshots and text descriptions hide structure (e.g. which fill belongs to which node, auto-layout direction, exact paddings, hover/focus variants), and prose-driven components are the #1 source of rework. Resolve a representative nodeId for every component during Step 0.
-- ❌ Pre-extract the design context for each component in Step 0 and pass it as prose to `figma-components` — that is exactly the failure mode the nodeId-per-component rule prevents. Let the agent fetch its own design context per nodeId; that's the whole point of isolated sub-agent contexts.
+- ❌ Pass components to `figma-design-components` as PROSE only (no `figmaNodeId`) — screenshots and text descriptions hide structure (e.g. which fill belongs to which node, auto-layout direction, exact paddings, hover/focus variants), and prose-driven components are the #1 source of rework. Resolve a representative nodeId for every component during Step 0.
+- ❌ Pre-extract the design context for each component in Step 0 and pass it as prose to `figma-design-components` — that is exactly the failure mode the nodeId-per-component rule prevents. Let the agent fetch its own design context per nodeId; that's the whole point of isolated sub-agent contexts.
 - ❌ Mis-route assets across the flat-vs-nested split. The convention is:
   - **SVG icons** → ALWAYS flat at `src/assets/icons/{Name}Icon.tsx`. Icons are reused across screens.
   - **Per-screen raster images** (hero photos, screen-specific illustrations) → nested at `src/assets/images/{screenSlug}/{name}.webp`. The orchestrator passes `screenSlug` to the asset agent when the image belongs to one screen.
@@ -634,10 +634,10 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 |------|------|-----------|-------|--------------------|
 | 0 | Inventory & gap analysis | (parent) | Opus | **FULL design file URL** |
 | 0.55 | Gate the spec against the source | `general-purpose` | Sonnet | fileKey + root nodeId + your gap-analysis report (**bound the MCP pulls** — `get_metadata` first, `get_design_context` only on the nodeIds the spec names) |
-| 1 | Tokens | `figma-tokens` | Haiku | List of colors/sizes/fonts to add |
-| 2 | Assets | `figma-assets` | Haiku | List of assets with type + URL + target name |
-| 3 | Components | `figma-components` | Opus | fileKey + extend list (with `figmaNodeId` each) + create list (with `figmaNodeId` each) + token names |
-| 4 | Layouts | `figma-layouts` | Sonnet | Current layouts state + Figma findings |
-| 5.1 | Scaffold screens | `figma-scaffold` | Haiku | Screen list (name, **screenType**, route, routeGroup, Figma-or-TBD) + `detectedLanguage` + `currentHtmlLang` |
-| 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
+| 1 | Tokens | `figma-design-tokens` | Haiku | List of colors/sizes/fonts to add |
+| 2 | Assets | `figma-design-assets` | Haiku | List of assets with type + URL + target name |
+| 3 | Components | `figma-design-components` | Opus | fileKey + extend list (with `figmaNodeId` each) + create list (with `figmaNodeId` each) + token names |
+| 4 | Layouts | `figma-design-layouts` | Sonnet | Current layouts state + Figma findings |
+| 5.1 | Scaffold screens | `figma-design-scaffold` | Haiku | Screen list (name, **screenType**, route, routeGroup, Figma-or-TBD) + `detectedLanguage` + `currentHtmlLang` |
+| 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-design-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
 | 6 | Validation | `design-validation` | Haiku | Scope (or empty for full sweep) + `importFlow: 'figma-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |

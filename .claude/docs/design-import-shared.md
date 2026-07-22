@@ -35,7 +35,7 @@ and `*-screen` agents of both flows.
 ## B1. Typography — off-scale sizes become real tokens (both flows), never rounded
 
 **Both flows treat an off-scale source `fontSize` identically:** it is a real design value → emit
-`STOP-BLOCKING / TOKENS_MISSING` so the tokens agent (`figma-tokens` / `claude-design-tokens`) adds it as a
+`STOP-BLOCKING / TOKENS_MISSING` so the tokens agent (`figma-design-tokens` / `claude-design-tokens`) adds it as a
 `text-{weight}-{size}` token. **Do NOT round / snap to a nearby scale step** — the exact size is preserved.
 Typography is still ALWAYS `text-{weight}-{size}`, never `text-[Npx]` or a loose `text-lg`/`font-bold`.
 

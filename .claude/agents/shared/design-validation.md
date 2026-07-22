@@ -100,7 +100,7 @@ JSX tags in this codebase routinely span multiple lines. A single-line regex mis
     - Project sizes used WITHOUT a weight prefix (regex, not enumerated): `rg -nU --type-add 'styles:*.{tsx,ts,sass}' --type styles '\btext-\d+\b' src/screens src/components src/layouts` — `\b` avoids false positives on `text-bold-24` etc. Fix = add explicit weight. Optionally cross-check against `tailwind.config.js` `fontSize` keys. Exclude `src/app/sentry-example-page/page.tsx` ONLY if it still exists.
 
 ### 10. Design tokens map sync
-33. **`design-tokens-map.md` consistency with `tailwind.config.js`**: this shared map is maintained by the tokens agent (`figma-tokens` / `claude-design-tokens`) and documents the source-variable → Tailwind-token mapping.
+33. **`design-tokens-map.md` consistency with `tailwind.config.js`**: this shared map is maintained by the tokens agent (`figma-design-tokens` / `claude-design-tokens`) and documents the source-variable → Tailwind-token mapping.
     1. If `design-tokens-map.md` is missing → skip as `n/a`.
     2. Parse each row's `Source variable` + `Tailwind token`.
     3. Build the set of tokens that exist (walk `theme.extend.colors` recursing nested namespaces, `fontSize`, `screens`, `spacing`).

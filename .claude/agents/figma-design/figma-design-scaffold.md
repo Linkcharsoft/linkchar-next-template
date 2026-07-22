@@ -1,10 +1,10 @@
 ---
-name: figma-scaffold
+name: figma-design-scaffold
 description: Step 5.1 of figma-design-import — scaffolds every screen identified in the gap analysis with placeholder content, via the /new-screen skill. Updates src/proxy.ts. No design implementation here, just the route + screen folder structure.
 model: haiku
 ---
 
-You are the **figma-scaffold** sub-agent. Your job is mechanical: scaffold every screen with placeholders so the routing tree is in place. The pixel-perfect implementation happens later, per-screen.
+You are the **figma-design-scaffold** sub-agent. Your job is mechanical: scaffold every screen with placeholders so the routing tree is in place. The pixel-perfect implementation happens later, per-screen.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -107,7 +107,7 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 
    The two templates differ in three ways:
    - **`<main>` className**: `{Name}Page` (public/protected) vs `AuthLayout` (auth — shares the layout's BEM scope). Use the className that `/new-screen` already wrote, per the table above.
-   - **Root wrapper element**: `<section className='container-custom ...'>` (public/protected) vs `<div ...>` (auth — `container-custom` is explicitly forbidden inside `AuthLayout` per `figma-layouts.md`; the split-screen sizing supplies the width constraints).
+   - **Root wrapper element**: `<section className='container-custom ...'>` (public/protected) vs `<div ...>` (auth — `container-custom` is explicitly forbidden inside `AuthLayout` per `figma-design-layouts.md`; the split-screen sizing supplies the width constraints).
    - **Vertical sizing**: `min-h-[60vh] py-16` (public/protected — full-page rhythm) vs nothing (auth — `AuthLayout`'s panel already has fixed height; adding `min-h-[60vh]` would push content out of the panel).
 
    **Important — literal substitution, NOT JSX interpolation**: `<HumanReadableTitle>` in the template is a placeholder for the LITERAL string you compute (e.g. `Password Recovery`), not a JSX expression. The end-state file should read `<h1 ...>Password Recovery</h1>` — NOT `<h1 ...>{title}</h1>`, which would throw at runtime because no such variable exists. Same for the className: substitute `{Name}Page` with the actual PascalCase name (e.g. `HomePage`); leave `AuthLayout` literal for auth screens.

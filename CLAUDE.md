@@ -47,7 +47,7 @@ Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all 12 at ONE level,
 >
 > This is not hypothetical. Commit `4d30140` (2026-07-08) grouped the skills into `orchestrators/` and `scaffold/` on the unverified assumption that discovery recursed; **11 of 12 skills were dead for twelve days** and nobody noticed, because the workflows kept working: when the intent is recognized the `SKILL.md` gets read from disk and followed by hand, producing the same output as a loaded skill. Confirmed across 7 project transcripts — the `Skill` tool was invoked **zero** times. Flattened again on 2026-07-22, which also meant rewriting 105 relative links (`../../../` → `../../`) and 8 external references. The failure mode is silent in exactly the way [a stuck sub-agent](#when-a-sub-agent-silently-doesnt-load) is.
 >
-> **Agents, in the same `.claude/` tree, DO recurse** (`.claude/agents/figma/*.md`, `.claude/agents/claude-design/*.md` all load from subfolders). That asymmetry is the trap — it makes it natural to assume skills behave the same. They do not: **agents may nest, skills may not.**
+> **Agents, in the same `.claude/` tree, DO recurse** (`.claude/agents/figma-design/*.md`, `.claude/agents/claude-design/*.md` all load from subfolders). That asymmetry is the trap — it makes it natural to assume skills behave the same. They do not: **agents may nest, skills may not.**
 
 ### When a sub-agent silently doesn't load
 
@@ -97,12 +97,12 @@ The old rigid 1:1 map is now just a **navigation aid** (find your twin to compar
 | figma-design-import | claude-design-import |
 | ------------------- | -------------------- |
 | `skills/figma-design-import/SKILL.md` | `skills/claude-design-import/SKILL.md` |
-| `agents/figma/figma-tokens.md` | `agents/claude-design/claude-design-tokens.md` |
-| `agents/figma/figma-assets.md` | `agents/claude-design/claude-design-assets.md` |
-| `agents/figma/figma-components.md` | `agents/claude-design/claude-design-components.md` |
-| `agents/figma/figma-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
-| `agents/figma/figma-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
-| `agents/figma/figma-screen.md` | `agents/claude-design/claude-design-screen.md` |
+| `agents/figma-design/figma-design-tokens.md` | `agents/claude-design/claude-design-tokens.md` |
+| `agents/figma-design/figma-design-assets.md` | `agents/claude-design/claude-design-assets.md` |
+| `agents/figma-design/figma-design-components.md` | `agents/claude-design/claude-design-components.md` |
+| `agents/figma-design/figma-design-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
+| `agents/figma-design/figma-design-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
+| `agents/figma-design/figma-design-screen.md` | `agents/claude-design/claude-design-screen.md` |
 | `agents/shared/design-validation.md` + `docs/design-import-shared.md` | *(same files — already shared; a change benefits both automatically)* |
 
 > **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
@@ -160,7 +160,7 @@ src/
 
 Color, typography, and breakpoint tokens added through `/figma-design-import` or `/claude-design-import` are tracked in `design-tokens-map.md` at the project root — a **single map shared by both import flows**. That file is the canonical source-variable → Tailwind token mapping (the source variable is a Figma variable for Figma imports, or a Claude Design `THEMES` key / rawScan value for Claude Design imports) — it documents which existing token each source variable was reused into, which new tokens were created, and the reasoning (heuristic match, namespace decision, etc.).
 
-**Consult `design-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across imports (from either source). If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-tokens` and `claude-design-tokens` sub-agents maintain the map automatically during their runs.
+**Consult `design-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across imports (from either source). If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-design-tokens` and `claude-design-tokens` sub-agents maintain the map automatically during their runs.
 
 The `surface-50`…`surface-900` namespace is immutable and template-shipped (not import-derived), so it never appears in `design-tokens-map.md`. Same for Tailwind defaults (`red-600`, `blue-600`, etc.).
 

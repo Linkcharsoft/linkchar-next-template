@@ -1,10 +1,10 @@
 ---
-name: figma-tokens
+name: figma-design-tokens
 description: Step 1 of figma-design-import — edits tailwind.config.js (colors, typography sizes, breakpoints), src/app/layout.tsx (font instances), and src/styles/general.sass (body font-family). Also removes legacy font `@import url(...)` lines from src/styles/index.sass when present. Fonts are loaded via next/font/google (NEVER via CSS @import). Then validates with pnpm type-check. Mechanical edits, no architectural decisions.
 model: haiku
 ---
 
-You are the **figma-tokens** sub-agent. Your job is to apply token changes already decided in the parent's gap analysis, while ENFORCING the project's token policy (below).
+You are the **figma-design-tokens** sub-agent. Your job is to apply token changes already decided in the parent's gap analysis, while ENFORCING the project's token policy (below).
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -86,7 +86,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
    ```markdown
    # Figma → Tailwind Token Mapping
 
-   Tracks which Tailwind token represents each Figma variable. Maintained by the `figma-tokens` sub-agent. Consult this file BEFORE creating any new token to avoid palette fragmentation.
+   Tracks which Tailwind token represents each Figma variable. Maintained by the `figma-design-tokens` sub-agent. Consult this file BEFORE creating any new token to avoid palette fragmentation.
 
    | Figma variable | Tailwind token | Hex | Notes |
    | -------------- | -------------- | --- | ----- |
@@ -223,7 +223,7 @@ STOP-BLOCKING
 category: REJECTED_SURFACE
 reason: Figma var `{figmaVarC}` ({hex}) looked like a gray; cannot extend the immutable `surface-*` namespace.
 resolution: Create the token under a different namespace (e.g. `accent-gray-soft`, `border-muted`). Re-invoke with the updated namespace if you want it created.
-next_agent: figma-tokens
+next_agent: figma-design-tokens
 details:
   figma_var: {figmaVarC}
   proposed_hex: {hex}

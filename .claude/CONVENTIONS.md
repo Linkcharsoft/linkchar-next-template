@@ -572,7 +572,7 @@ details:
 
 ### Categories
 
-**`next_agent` is written as `{flow}-*` — substitute YOUR flow's family.** These categories are shared by both import flows, so `{flow}-tokens` means `figma-tokens` in a `figma-design-import` run and `claude-design-tokens` in a `claude-design-import` run. A STOP that names the wrong family is unroutable by the orchestrator — always emit the one matching the flow that invoked you.
+**`next_agent` is written as `{flow}-*` — substitute YOUR flow's family.** These categories are shared by both import flows, so `{flow}-tokens` means `figma-design-tokens` in a `figma-design-import` run and `claude-design-tokens` in a `claude-design-import` run. A STOP that names the wrong family is unroutable by the orchestrator — always emit the one matching the flow that invoked you.
 
 | Category | Severity | When | Next agent |
 | -------- | -------- | ---- | ---------- |
@@ -589,9 +589,9 @@ details:
 
 ### Defaults applied by ADVISORY STOPs
 
-When `COMPONENT_GAP` fires as advisory (variant used once), the screen agent inlines a bespoke version with a `// TODO: refactor into <ComponentName> variant` comment. The orchestrator surfaces the advisory; the user can decide to delegate to `figma-components` post-batch or accept the inline.
+When `COMPONENT_GAP` fires as advisory (variant used once), the screen agent inlines a bespoke version with a `// TODO: refactor into <ComponentName> variant` comment. The orchestrator surfaces the advisory; the user can decide to delegate to `figma-design-components` post-batch or accept the inline.
 
-When `CONTAINER_CUSTOM_DECISION` fires as advisory, the layout agent renders the chrome WITHOUT `container-custom` (the safer default — does not break alignment but also does not enforce it). The orchestrator surfaces the question; the user can re-invoke `figma-layouts` with an explicit decision.
+When `CONTAINER_CUSTOM_DECISION` fires as advisory, the layout agent renders the chrome WITHOUT `container-custom` (the safer default — does not break alignment but also does not enforce it). The orchestrator surfaces the question; the user can re-invoke `figma-design-layouts` with an explicit decision.
 
 ### Orchestrator handler
 

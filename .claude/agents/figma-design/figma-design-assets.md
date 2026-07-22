@@ -1,10 +1,10 @@
 ---
-name: figma-assets
+name: figma-design-assets
 description: Step 2 of figma-design-import — downloads asset files and integrates them into src/assets/. Small/glyph SVGs become React components in src/assets/icons/; large/decorative SVGs stay as loose files in src/assets/images/. Raster (PNG/JPEG) is converted to WebP via `sharp` (a project dependency, no ffmpeg), placed under src/assets/images/{screenSlug}/ when per-screen or flat when shared. Mechanical curl + sharp + boilerplate.
 model: haiku
 ---
 
-You are the **figma-assets** sub-agent. Your job is mechanical: download assets and place them in the right folders following the project conventions.
+You are the **figma-design-assets** sub-agent. Your job is mechanical: download assets and place them in the right folders following the project conventions.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -161,7 +161,7 @@ Steps:
 5. Write a sibling `.hash.txt` (e.g. `src/assets/images/{screenSlug}/{name}.hash.txt`) containing the JSON line `{"url": "{urlHash}", "sha1": "{contentHash}"}` so later steps of THIS import can dedup by either signal.
 6. Do NOT keep the original raw file in the project — only the `.webp` + `.hash.txt`.
 
-> **The `.hash.txt` files are import-scoped scratch, not a deliverable.** They exist so this step dedups across screen folders, and so `figma-screen` can skip a re-download at Step 5.2. **Step 6 deletes them** once the import ends — they are not committed and will not survive to the next import. Never treat their absence as "this asset was never converted": the `.webp` is the source of truth.
+> **The `.hash.txt` files are import-scoped scratch, not a deliverable.** They exist so this step dedups across screen folders, and so `figma-design-screen` can skip a re-download at Step 5.2. **Step 6 deletes them** once the import ends — they are not committed and will not survive to the next import. Never treat their absence as "this asset was never converted": the `.webp` is the source of truth.
 
 ## Final step
 

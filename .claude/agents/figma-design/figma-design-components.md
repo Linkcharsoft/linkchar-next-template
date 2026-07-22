@@ -1,10 +1,10 @@
 ---
-name: figma-components
+name: figma-design-components
 description: Step 3 of figma-design-import — extends existing reusable components AND/OR creates new ones based on the Figma component inventory. Requires architectural judgment (extend vs create, prop API design, BEM naming). Validates each component with lint + type-check + build (build is the ONLY gate that catches a broken server/client boundary).
 model: opus
 ---
 
-You are the **figma-components** sub-agent. Your job requires architectural judgment: deciding the right prop API for each component and how to integrate Figma variants without breaking existing usage.
+You are the **figma-design-components** sub-agent. Your job requires architectural judgment: deciding the right prop API for each component and how to integrate Figma variants without breaking existing usage.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -51,7 +51,7 @@ For EVERY component you are about to create or extend, BEFORE writing the `.tsx`
 1. Call `mcp__claude_ai_Figma__get_design_context` on the component's `figmaNodeId` with the `fileKey`. Read the response carefully — it exposes the real auto-layout structure, fills per node, exact padding/gap per side, border widths, and variant references. The parent's textual description is a HINT; the design context is the spec.
 2. Call `mcp__claude_ai_Figma__get_screenshot` on the same nodeId for visual reference. Use the screenshot to confirm what you read in the design context, never the other way around (screenshots cannot tell you which node owns which fill).
 3. If the design context shows the component has multiple variants/states (hover, active, error, etc.) — capture each.
-4. If a value used by the node is missing from the project's tokens, emit `STOP-BLOCKING / category: TOKENS_MISSING` to the parent so it can delegate to `figma-tokens` first (see [STOP Protocol](../../CONVENTIONS.md#stop-protocol)). The check covers:
+4. If a value used by the node is missing from the project's tokens, emit `STOP-BLOCKING / category: TOKENS_MISSING` to the parent so it can delegate to `figma-design-tokens` first (see [STOP Protocol](../../CONVENTIONS.md#stop-protocol)). The check covers:
    - **Colors** — every hex not present in `theme.extend.colors` (recursing into nested namespaces).
    - **Typography sizes** — every `fontSize` not present in `theme.extend.fontSize`.
    - **Font weights** — when a Figma node uses a weight outside the project's `text-{weight}-{size}` scale (e.g. weight 750 on a variable font when the project only ships `text-bold-*` / `text-semibold-*`).
@@ -65,7 +65,7 @@ Only AFTER this inspection do you write the component. Skipping it — even "to 
 
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
-1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, emit `STOP-BLOCKING / category: TOKENS_MISSING / next_agent: figma-tokens`. Never hardcode hex.
+1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts). Use ONLY these tokens in your output. If you need a token that's not there, emit `STOP-BLOCKING / category: TOKENS_MISSING / next_agent: figma-design-tokens`. Never hardcode hex.
 2. `.claude/CONVENTIONS.md` (read in the Pre-flight above) — all project conventions: BEM in SASS, `m` not `motion`, `classNames` from `primereact/utils` not `clsx`, default exports, no manual `memo()`. The [Performance & Lighthouse Rules](../../CONVENTIONS.md#accessibility) and related sections are blocking, not aspirational.
 3. `src/components/` (Glob the folders) — full list of existing components on disk. The [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table in CONVENTIONS.md may be out of date if a recent component was added without updating it; the filesystem wins on conflict.
 
@@ -145,8 +145,8 @@ If a Figma node depicts something that CONVENTIONS.md does not cover (e.g. a bra
 - Read the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md` BEFORE creating anything new — if a similar component exists, extend it.
 - Every component MUST satisfy the rules in the "Accessibility & Lighthouse rules" section above — they are blocking, not aspirational.
 - **NEVER mount `<LoadingModal/>`, `<StateModal/>`, or `<ToastNotifications/>` inside a component.** The mounting strategy is split between three agents — keep them coordinated, don't unilaterally change scope here:
-  - `LoadingModal` mounting is **`figma-layouts`'s responsibility** — each layout mounts one instance scoped to the content it should cover (full layout for `DashboardLayout`/`GeneralLayout`, panel-scoped for split-form layouts like `AuthLayout`).
-  - `StateModal` and `ToastNotifications` mounting is owned by `src/providers/ModalsProvider.tsx` (set up once at app boundary) — `figma-layouts` does NOT touch them, and neither do we.
+  - `LoadingModal` mounting is **`figma-design-layouts`'s responsibility** — each layout mounts one instance scoped to the content it should cover (full layout for `DashboardLayout`/`GeneralLayout`, panel-scoped for split-form layouts like `AuthLayout`).
+  - `StateModal` and `ToastNotifications` mounting is owned by `src/providers/ModalsProvider.tsx` (set up once at app boundary) — `figma-design-layouts` does NOT touch them, and neither do we.
 
   A component that needs loading state calls `openModal('loadingModal', { ... })` and trusts the layout-mounted instance to render it; same with `setNotification(...)` for toasts. Mounting any of those three inside a component creates a SECOND DOM instance that competes with the layout-mounted one for the same `useModalStore` state — double overlays, z-index fights, doubled event handlers. The only "modals" safe to render inside a component are ones with their own LOCAL `useState` (not shared via the global store) and used by that single component — and those should not be named `*Modal` to avoid confusion.
 - **Full-bleed components (Navbar, Footer, Sidebar, top/bottom bars) MUST use `container-custom`**: when the root element has a background that spans 100vw, wrap the inner content with `<div className='container-custom ...'>` so that the component's content aligns horizontally with the screens' sections. The class already provides a built-in 16px lateral gutter, so do NOT add `px-*` on the same element. NEVER hardcode `max-w-[Xpx]` or arbitrary `px-*` to define the inner content width — those numbers come from Figma's absolute frames and break alignment with the rest of the page. **Vertical padding (`py-*`) is NOT covered by `container-custom`** — always add it explicitly from the Figma design (e.g. `py-4` on a navbar, `py-12` on a footer); the class only handles horizontal.

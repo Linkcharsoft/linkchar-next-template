@@ -41,7 +41,7 @@ The "Standalone HTML" export is **not** flat HTML — it's a self-contained page
 
 > ⚠️ **DELIBERATELY DUPLICATED — the twin at `figma-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already has** (the twin was missing the Step 6 check below).
 >
-> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`claude-design-*` vs `figma-*`), the frontmatter path (`.claude/agents/claude-design/` vs `.claude/agents/figma/`), the token-namespace grep, and each flow's own step numbering.
+> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`claude-design-*` vs `figma-*`), the frontmatter path (`.claude/agents/claude-design/` vs `.claude/agents/figma-design/`), the token-namespace grep, and each flow's own step numbering.
 
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 

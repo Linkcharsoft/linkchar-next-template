@@ -108,7 +108,7 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
    | Source variable | Tailwind token | Hex | Notes |
    | --------------- | -------------- | --- | ----- |
    ```
-   If the file already exists (e.g. created by `figma-tokens`), just append rows — do not rewrite its header.
+   If the file already exists (e.g. created by `figma-design-tokens`), just append rows — do not rewrite its header.
 
 3. **For each token from the parent**, decide by applying the policy in order (first match wins):
 

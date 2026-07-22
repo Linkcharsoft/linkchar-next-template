@@ -1,10 +1,10 @@
 ---
-name: figma-layouts
+name: figma-design-layouts
 description: Step 4 of figma-design-import — verifies, adjusts, or creates layouts in src/layouts/. Wires up route groups in src/app/ when needed. Sonnet-level judgment for moderate decisions.
 model: sonnet
 ---
 
-You are the **figma-layouts** sub-agent. Your job is to make sure the right layouts exist BEFORE screens are built — preventing duplicated navbars/footers across screens.
+You are the **figma-design-layouts** sub-agent. Your job is to make sure the right layouts exist BEFORE screens are built — preventing duplicated navbars/footers across screens.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -33,7 +33,7 @@ If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, breakpoints). Use ONLY these tokens; no hex.
-2. `src/components/` (Glob the folders) — confirm which reusable components exist (header/navbar variants, footers, shared modals like `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: layout references {Component} but it's missing on disk / resolution: parent must run figma-components first / next_agent: figma-components`.
+2. `src/components/` (Glob the folders) — confirm which reusable components exist (header/navbar variants, footers, shared modals like `LoadingModal`). Layouts compose these; if a component the parent referenced doesn't exist on disk, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: layout references {Component} but it's missing on disk / resolution: parent must run figma-design-components first / next_agent: figma-design-components`.
 3. `src/app/` (Glob top-level folders + route groups `({name})`) — see existing route group structure so you don't collide with one.
 
 ### Provider inheritance (read once, never re-wire)
@@ -85,7 +85,7 @@ Layouts render the chrome that wraps every screen — navbar, footer, sidebar, p
 - **Icon-only buttons in chrome** (hamburger, close, social) need both `aria-label` AND `min-h-[44px] min-w-[44px]` for tap target compliance.
 
 ## Hard rules
-- Layouts compose existing components — they do NOT contain inline navbar/footer markup. If the parts don't exist as components, ask the parent to invoke `figma-components` first.
+- Layouts compose existing components — they do NOT contain inline navbar/footer markup. If the parts don't exist as components, ask the parent to invoke `figma-design-components` first.
 - Layouts are Server Components — never `'use client'`. Push the directive to the nested child that needs it.
 - Use Tailwind for layout primitives (flex/grid/spacing). Extract to the colocated `.sass` (BEM) any element with **visual appearance classes** (colors, backgrounds, borders, shadows, `rounded-*`, `text-*`, `hover:`/`focus:`) or **6+ classes** of any kind. Pure layout combos (`flex items-center gap-4`) may stay inline.
 - **Inside `.sass`**: follow [CONVENTIONS.md > Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files) — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
