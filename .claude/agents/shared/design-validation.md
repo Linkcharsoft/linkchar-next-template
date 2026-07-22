@@ -151,12 +151,15 @@ node .claude/scripts/render-audit.mjs --app . \
 
 Pass the import's route list (the parent has it); with no `--routes` it derives them from `src/app/**/page.tsx`, which also pulls in auth/dashboard routes that will redirect. Every dynamic segment needs a `--param`, or that route is reported as SKIPPED rather than quietly dropped.
 
+> **Run it from PowerShell on Windows.** Under Git Bash, MSYS rewrites a bare `/` argument into a filesystem path, so `--routes "/,/a"` arrives as `["C:/Program Files/Git/", "/a"]` and the HOME PAGE is never rendered. Measured on a real run: 9 of 10 routes audited, 3 defects unreported, and it read as a complete sweep. The script now aborts on a malformed route instead of degrading — if you see that error, switch shell or prefix `MSYS_NO_PATHCONV=1`.
+
 **How to handle its output — five rules, all of them about not overstating what ran:**
 
 - **Do not start, stop, or look for a dev server.** The script builds, serves on port 4123 and tree-kills its own process in a `finally`. Starting one yourself is how ports get left occupied.
 - **Exit code 1 means "findings", not "crash".** `0` = no MEASURED findings, `1` = MEASURED findings present, `2` = the sweep itself failed. Only `2` means it did not run.
 - **On exit 2, report the runtime check as FAILED, never as clean, and fall back to the static checks 45/46** saying so. "Could not verify" is not a pass — the script applies the same rule internally, which is why it emits a SKIPPED list instead of omitting what it could not reach.
-- **Paste the MEASURED table verbatim.** Every row carries the two numbers it was derived from; do not re-word, re-round, or summarise them away. A finding without its number is not reportable.
+- **Paste the MEASURED table verbatim.** Every row carries the two numbers it was derived from; do not re-word, re-round, or summarise them away. A finding without its number is not reportable. It is also the only source of runtime findings: do not re-file them under checks 45/46, which are a different (weaker, static) test.
+- **Copy the `Coverage: N/M routes` line into your report, always — and lead with it when `N < M`.** A route that was never rendered has UNKNOWN defects, not zero, so a partial sweep changes what every other number means. Do not guess why a route was missed; quote the script's reason. (Measured: a run lost the home page to a shell quoting bug, reported 8 findings instead of 11, and the reader was told the cause was "likely a dynamic-slug parameter issue" — which was wrong, and the guess is what made a broken run look explained.)
 - **Do NOT adjudicate SUSPECT findings.** They are measured anomalies that may be intentional (a `FLUSH_HEADING` is a real gap of 0px, but the design may genuinely abut). Deciding needs the design source, which the orchestrator has and you do not. Hand each one over with its selector and its number.
 
 **Report its "out of scope" list too.** A green sweep means *0 runtime-invariant violations*, never *the design was reproduced* — it cannot see a breakpoint mapped to the wrong width, a swapped typeface, or a spacing loss that is not degenerate. Dropping that caveat is the exact mistake this file made when its clean report was read as fidelity.
@@ -199,6 +202,7 @@ Single structured report grouped by category. Map each violation to the fixer. *
 ✅/❌ {inline styles, leaked vars, router remnants, re-embedded fonts}
 
 ### Runtime invariants (render-audit.mjs)
+{the script's `Coverage: N/M routes` line — FIRST, and called out when N < M}
 {the script's MEASURED table, verbatim}
 {the script's SUSPECT table, verbatim — flagged "for the orchestrator to adjudicate against the source"}
 {the script's SKIPPED list — what could NOT be verified}
@@ -210,7 +214,7 @@ Single structured report grouped by category. Map each violation to the fixer. *
 ---
 Workload: model=haiku, tool_calls≈{N}, files_touched=0
 Validation: lint=✅/❌, type-check=✅/❌
-Runtime: {N} MEASURED · {N} SUSPECT · {N} SKIPPED  — or `did not run ({reason})`, never blank
+Runtime: {N}/{M} routes · {N} MEASURED · {N} SUSPECT · {N} SKIPPED  — or `did not run ({reason})`, never blank
 Notes: {one-line count summary, e.g. "13 categories scanned, 10 clean, 3 with findings, 5 violations total"}
 ```
 

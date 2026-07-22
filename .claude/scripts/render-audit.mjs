@@ -400,23 +400,23 @@ const push = (route, width, f) => findings.push({ route, width, ...f })
 async function auditRoute(page, baseUrl, route, width, skipHover) {
   const target = resolveRoute(route)
   if (!target) {
-    skipped.push({ route, width, reason: 'dynamic segment with no --param value — NOT verified' })
+    skipped.push({ route, width, level: 'route', reason: 'dynamic segment with no --param value — NOT verified' })
     return
   }
   let res
   try {
     res = await page.goto(baseUrl + target, { waitUntil: 'load', timeout: 120_000 })
   } catch (e) {
-    skipped.push({ route, width, reason: `navigation failed: ${String(e).split('\n')[0]}` })
+    skipped.push({ route, width, level: 'route', reason: `navigation failed: ${String(e).split('\n')[0]}` })
     return
   }
   const landed = new URL(page.url()).pathname
   if (landed !== target) {
-    skipped.push({ route, width, reason: `redirected to ${landed} (route-protected?) — NOT verified` })
+    skipped.push({ route, width, level: 'route', reason: `redirected to ${landed} (route-protected?) — NOT verified` })
     return
   }
   if (res && res.status() >= 400) {
-    skipped.push({ route, width, reason: `HTTP ${res.status()} — NOT verified` })
+    skipped.push({ route, width, level: 'route', reason: `HTTP ${res.status()} — NOT verified` })
     return
   }
 
@@ -509,7 +509,7 @@ async function probeHoverColour(page, c, route, width) {
     if (!(await loc.evaluate((e) => e.matches(':hover')))) throw new Error('pointer did not land')
     return await loc.evaluate((e) => getComputedStyle(e).color)
   } catch (e) {
-    skipped.push({ route, width, reason: `hover probe on ${c.selector} — NOT verified: ${String(e.message || e).split('\n')[0]}` })
+    skipped.push({ route, width, level: 'element', reason: `hover probe on ${c.selector} — NOT verified: ${String(e.message || e).split('\n')[0]}` })
     return null
   }
 }
@@ -524,7 +524,7 @@ async function auditMobileNav(page, route, width) {
   try {
     const toggle = page.locator('[aria-expanded]').first()
     if (!(await toggle.count()) || !(await toggle.isVisible())) {
-      skipped.push({ route, width, reason: 'no [aria-expanded] toggle found at this width — mobile nav NOT verified' })
+      skipped.push({ route, width, level: 'feature', reason: 'no [aria-expanded] toggle found at this width — mobile nav NOT verified' })
       return
     }
     const controls = await toggle.getAttribute('aria-controls')
@@ -546,7 +546,7 @@ async function auditMobileNav(page, route, width) {
       })
     }
   } catch (e) {
-    skipped.push({ route, width, reason: `mobile-nav probe failed: ${String(e).split('\n')[0]}` })
+    skipped.push({ route, width, level: 'feature', reason: `mobile-nav probe failed: ${String(e).split('\n')[0]}` })
   }
 }
 
@@ -567,6 +567,16 @@ function report(routes, baseUrl) {
   L.push('')
   L.push(`Routes: ${routes.length} · widths: ${WIDTHS.join(', ')} · engine: webkit · base: ${baseUrl}`)
   L.push(`**${measured.length} MEASURED · ${suspect.length} SUSPECT · ${skipped.length} SKIPPED**`)
+
+  /* Coverage is stated up front, in the script, because the alternative was measured and it failed:
+   * a shell mangled the "/" route, the home page was never rendered, its 3 defects went unreported,
+   * and the reader of the report treated a 9-of-10 sweep as complete. A route-level miss is not a
+   * detail to be found further down a SKIPPED list — it changes what the whole run means. */
+  const unverified = [...new Set(skipped.filter((s) => s.level === 'route').map((s) => s.route))]
+  const covered = routes.length - unverified.length
+  L.push(covered === routes.length
+    ? `**Coverage: ${covered}/${routes.length} routes rendered at every width.**`
+    : `**⚠️ Coverage: ${covered}/${routes.length} routes. NOT rendered at all: ${unverified.map((r) => `\`${r}\``).join(', ')} — any defect on them is UNKNOWN, not absent.**`)
   L.push('')
 
   const table = (rows, title) => {
@@ -611,6 +621,22 @@ async function main() {
   if (!fs.existsSync(path.join(APP, 'package.json'))) throw new Error(`no package.json at ${APP}`)
   const routes = list(flag('routes')) || discoverRoutes(APP)
   if (!routes.length) throw new Error('no routes to audit — pass --routes')
+
+  /* Reject a corrupted route list before anything else. Git Bash / MSYS rewrites a bare `/`
+   * argument into a Windows path, so `--routes "/,/a"` silently arrives as
+   * `["C:/Program Files/Git/", "/a"]` — the home page then fails to navigate and is reported as
+   * one SKIPPED row among many. Measured: a real Step 6 run audited 9 of 10 routes that way and
+   * read as a complete sweep. A malformed route is bad INPUT, not a page that could not be
+   * reached, so it aborts the run instead of degrading it. */
+  const malformed = routes.filter((r) => !r.startsWith('/') || /^\/[A-Za-z]:/.test(r) || r.includes('\\'))
+  if (malformed.length) {
+    throw new Error(
+      `malformed route(s): ${JSON.stringify(malformed)}\n`
+      + 'Every route must be a URL path starting with "/". If a bare "/" turned into a filesystem\n'
+      + 'path, your shell rewrote it — run this from PowerShell, or prefix the command with\n'
+      + 'MSYS_NO_PATHCONV=1 under Git Bash. Aborting: a partial sweep reads like a complete one.',
+    )
+  }
   fs.mkdirSync(OUT, { recursive: true })
 
   const { webkit } = appRequire('playwright-webkit')
@@ -658,8 +684,10 @@ async function main() {
   }
 
   const measured = findings.filter((f) => f.severity === 'MEASURED')
+  const unverified = [...new Set(skipped.filter((s) => s.level === 'route').map((s) => s.route))]
   const payload = {
     appDir: APP, baseUrl, widths: WIDTHS, routes,
+    coverage: { requested: routes.length, rendered: routes.length - unverified.length, unverifiedRoutes: unverified },
     summary: { measured: measured.length, suspect: findings.length - measured.length, skipped: skipped.length },
     findings, skipped, intentionalHoverChanges: notes, notCovered: NOT_COVERED,
   }
