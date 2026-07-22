@@ -19,7 +19,8 @@
  *
  * USAGE
  *   node <this> --app <appDir> [--routes /,/a,/b] [--widths 1440,900,390] [--port 4123]
- *               [--base-url http://localhost:3000] [--out <dir>] [--param slug=foo] [--no-screenshots]
+ *               [--base-url http://localhost:3000] [--no-build] [--out <dir>] [--param slug=foo]
+ *               [--no-screenshots]
  *
  *   --app          app root (default: cwd). Must hold package.json + node_modules.
  *   --routes       comma list. Default: derived from src/app/ ** /page.tsx.
@@ -103,7 +104,7 @@ function resolveRoute(route) {
   return out
 }
 
-/* ────────────────────────── dev server lifecycle ────────────────────────── */
+/* ────────────────────────── server lifecycle ────────────────────────── */
 /* The script owns the server. The model never starts or kills one — that is where the zombie
  * processes came from. Spawned on a dedicated port, torn down in `finally`, tree-killed on Windows. */
 
@@ -156,11 +157,11 @@ async function startServer() {
 
   const deadline = Date.now() + 180_000
   while (Date.now() < deadline) {
-    if (serverProc.exitCode !== null) throw new Error(`dev server exited (${serverProc.exitCode}):\n${log.slice(-2000)}`)
+    if (serverProc.exitCode !== null) throw new Error(`server exited (${serverProc.exitCode}):\n${log.slice(-2000)}`)
     if (await probe(url)) return url
     await new Promise((r) => setTimeout(r, 1000))
   }
-  throw new Error(`dev server did not become ready in 180s:\n${log.slice(-2000)}`)
+  throw new Error(`server did not become ready in 180s:\n${log.slice(-2000)}`)
 }
 
 function stopServer() {
