@@ -2,7 +2,7 @@
 
 This file is the canonical reference for **how** to write code in this project. `CLAUDE.md` describes what the project is (tech stack, structure, automation skills); this file describes the rules a Claude agent must follow when generating, editing, or validating code.
 
-**Loading model**: Skills and the `figma-design-*` / `claude-design-*` / `design-validation` agents `Read` this file (or specific sections of it) at their Step 0 before generating any code. The Read is mandatory — if it fails, the agent stops and reports.
+**Loading model**: Skills and every agent under `.claude/agents/` `Read` this file (or specific sections of it) at their Step 0 before generating any code. The Read is mandatory — if it fails, the agent stops and reports.
 
 **Maintenance**: when you edit a rule here, no other file needs to be updated — the skills/agents reference this file directly and do not duplicate its contents.
 
