@@ -41,7 +41,7 @@ This file describes **what** this project is: the tech stack, structure, and hig
 
 > **`/init-project` is enforced on fresh clones.** Until it runs (sentinel: `package.json` `name` is still `linkchar-next-template`), two guards block work: the Husky **`pre-commit`** hook refuses commits, and a Claude **PreToolUse** hook (`.claude/hooks/require-init.mjs`) refuses `Edit`/`Write`. Running `/init-project` renames the app and disarms both. Maintainers working on the **template itself** bypass with `LINKCHAR_TEMPLATE_DEV` — set it once in `.claude/settings.local.json` (`"env"` key, gitignored) and both guards read it (the shell env also works and takes precedence).
 
-Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all 12 at ONE level, never nested**. Do not duplicate their logic in chat — invoke the skill.
+Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all at ONE level, never nested**. Do not duplicate their logic in chat — invoke the skill.
 
 > ⚠️ **Keep this directory FLAT. Skill discovery is NOT recursive**: Claude Code loads only `.claude/skills/{name}/SKILL.md` at one level, so grouping them into subfolders silently unloads every one it moves — the slash command just returns `Unknown command`.
 >
