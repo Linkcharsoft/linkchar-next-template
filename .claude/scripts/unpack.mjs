@@ -1,7 +1,11 @@
 #!/usr/bin/env node
-// unpack.mjs — deterministic multi-format extractor for a Claude Design "Standalone HTML" export.
+// unpack.mjs — deterministic multi-format extractor for a Claude Design export.
 //
-// A Claude Design export is a self-contained page using a private "__bundler" envelope:
+// Two input shapes, auto-detected (see the dispatch in section 1): a DIRECTORY is a "Project archive"
+// (the unzipped project tree), anything else is a "Standalone HTML" file or URL. Both normalize into the
+// SAME intermediate representation, so everything downstream is source-agnostic.
+//
+// A Standalone HTML export is a self-contained page using a private "__bundler" envelope:
 //   <script type="__bundler/manifest">      { uuid: {mime, compressed, data(base64)} }
 //   <script type="__bundler/ext_resources"> [ {id, uuid}, ... ]  (aliases)  OR  { "Page.dc": [...] } (page map)
 //   <script type="__bundler/template">       "<...inner HTML as a JSON string...>"  OR  { pages:{...}, entry:"X.dc" }
@@ -19,24 +23,29 @@
 //   - vanilla : plain HTML/CSS/JS, no component framework (best-effort — no reference sample).
 //   - Next.js is NOT a standalone-HTML export (it's a code/zip export) → out of scope here.
 //
-// SCOPE: this reads a "Standalone HTML" export, which bundles ONE design. A design that links to sibling
-// .dc pages will be PARTIAL — the siblings aren't in the bundle (see the partial-export guard below). The
-// "Project archive" .zip DOES contain every .dc.html, but ingesting a raw project tree is not wired in yet.
+// SCOPE — which source to pass:
+//   - Project archive (RECOMMENDED): the unzipped project folder. Holds every .dc.html, so a multi-page
+//     design imports COMPLETE. `ingestArchive()` picks the primary design from the handoff README and
+//     resolves its dependency closure from disk. Unzip the .zip yourself and pass the FOLDER.
+//   - Standalone HTML (file or URL): bundles ONE design. A design linking to sibling .dc pages that are
+//     not in the bundle comes out PARTIAL — the partial-export guard below aborts and names them.
 //
-// Usage:  node unpack.mjs <url-or-path> <outDir> [--allow-partial]
+// Usage:  node unpack.mjs <archive-dir | url-or-path> <outDir> [--allow-partial]
 
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync, statSync, readdirSync } from 'node:fs'
 import { join, dirname, basename, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import zlib from 'node:zlib'
 
-const EXPECTED_SHAPE = { blocks: ['manifest', 'ext_resources', 'template'] }
+// The blocks the envelope path REQUIRES. `ext_resources` is deliberately absent — it is optional
+// (dclogic/vanilla exports have no aliases) and is tolerated as missing where it is parsed.
+const REQUIRED_BLOCKS = ['manifest', 'template']
 const die = (msg) => { console.error(`\n[unpack] ERROR: ${msg}\n`); process.exit(1) }
 
 const argv = process.argv.slice(2)
 const allowPartial = argv.includes('--allow-partial')
 const [input, outDir] = argv.filter((a) => !a.startsWith('--'))
-if (!input || !outDir) die('usage: node unpack.mjs <url-or-path> <outDir> [--allow-partial]')
+if (!input || !outDir) die('usage: node unpack.mjs <archive-dir | url-or-path> <outDir> [--allow-partial]')
 
 // ─────────────────────────────────────────────────────────── helpers
 const MIME_EXT = {
@@ -637,13 +646,14 @@ if (isArchive) {
   try { html = readFileSync(input, 'utf8') } catch (e) { die(`cannot read file: ${e.message}`) }
 }
 
-// Envelope path — the private __bundler envelope of a Standalone HTML (file/URL) or an archive's bundled entry.
+// ─────────────────────────────────────────────────────────── 2. envelope path (__bundler)
+// The private __bundler envelope of a Standalone HTML (file/URL) or an archive's bundled entry.
 if (html !== null) {
   const rawManifest = extractBundlerBlock(html, 'manifest')
   const rawExt = extractBundlerBlock(html, 'ext_resources')
   const rawTemplate = extractBundlerBlock(html, 'template')
   if (!rawManifest || !rawTemplate) {
-    die(`unexpected export shape — missing __bundler blocks (expected ${EXPECTED_SHAPE.blocks.join(', ')}). ` +
+    die(`unexpected export shape — missing __bundler blocks (required: ${REQUIRED_BLOCKS.join(', ')}). ` +
         `Not a recognized Claude Design standalone-HTML export. If this is a "Project archive" .zip, unzip it and pass the FOLDER.`)
   }
   try { manifest = JSON.parse(rawManifest) } catch (e) { die(`manifest is not valid JSON: ${e.message}`) }
@@ -1011,8 +1021,8 @@ function parseDcLogic() {
 
 // A vanilla page can still be a MULTI-ROUTE app: a client-side router that keeps every route's markup inline as
 // `<script type="text/template" data-route="X">` blocks and swaps them into a mount node on hashchange. Measured on
-// Anodal (2026-07-20): 10 such blocks — the whole site — which this parser used to report as `screens=1`, because it
-// hard-coded a single `index` screen and never looked at the markup. An import trusting that ships 1 page of 10, and
+// Anodal: 10 such blocks — the whole site — which a parser that hard-codes a single `index` screen and never looks
+// at the markup reports as `screens=1`. An import trusting that ships 1 page of 10, and
 // nothing downstream notices (it compiles, type-checks and builds). The `.dc.html` sibling-closure that finds
 // multi-page dclogic cannot fire here: these "pages" are not files, they are blocks in ONE file.
 //
