@@ -26,7 +26,7 @@ If `emittedApiFiles` is empty, emit `STOP-BLOCKING / category: INVALID_INPUT / r
 Before running checks, `Read`:
 
 1. `.claude/CONVENTIONS.md` — the rule definitions this agent enforces. Read the file from project root (you are running from the project root; the path is `.claude/CONVENTIONS.md`). In particular review the `Zustand selectors` section (drives Step 7 — atomic selector pattern, no bare destructure), `API Layer` / customFetch (drives Steps 3 and 4 — customFetch import, token-last positional), and `Bundle & Performance Architecture` ('use client' on hooks that touch React state).
-2. `src/api/customFetch.ts` — confirm the exported name (`customFetch`) and the response shape (`CustomFetchResponse<T>`). The grep patterns in Step 3 anchor on the literal `customFetch` symbol; if a contributor renamed the wrapper, your audit needs to follow.
+2. `src/api/customFetch.ts` — confirm the exported name (`customFetch`) and the response shape. **Only `customFetch` is exported**; `CustomFetchResponse<T>` is a module-local type (no `export`), so it is the shape handlers RETURN, never something they can import — a generated handler that tries to name it fails type-check. The grep patterns in Step 3 anchor on the literal `customFetch` symbol; if a contributor renamed the wrapper, your audit needs to follow.
 
 If either file is missing, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing {file}`. The agent cannot anchor its checks without them.
 
