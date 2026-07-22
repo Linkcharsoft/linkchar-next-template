@@ -104,7 +104,12 @@ const slugify = (s) => (s || '').replace(/\.dc$/i, '').replace(/[^a-zA-Z0-9]+/g,
 const familyOf = (stack) => { const m = (stack || '').match(/^\s*['"]?([^'",]+)/); return m ? m[1].trim() : null }
 const uniq = (a) => [...new Set(a)]
 const scanHex = (s) => uniq([...s.matchAll(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g)].map((m) => m[0].toLowerCase())).sort()
-const scanCssVars = (s) => uniq([...s.matchAll(/var\((--[a-z-]+)/g)].map((m) => m[1])).sort()
+// The name class must include digits and uppercase: a CSS custom property is case-sensitive and a numbered
+// scale is the single most common naming shape a design system uses. `--[a-z-]+` stopped at the first digit,
+// so it did not merely miss those vars — it silently REWROTE them into a shorter name that does not exist and
+// then deduped the survivors together. Measured: Anodal's `--grey-05/10/20/40/55/70` all collapsed into one
+// bogus `--grey-` (18 real vars reported as 13), TocToc's `--cream-2`/`--cream-3` into `--cream-`.
+const scanCssVars = (s) => uniq([...s.matchAll(/var\((--[a-zA-Z0-9_-]+)/g)].map((m) => m[1])).sort()
 // CSS font-size scan: px + rem (rem→px @16). clamp()/vw responsive sizes aren't captured (reported separately).
 // The length matcher is `\d*\.?\d+`, NOT `\d+(\.\d+)?` — CSS allows a leading-dot literal (`.74rem`) and it is
 // the form a stylesheet minifier emits, so requiring a digit first silently drops it. Measured on the Anodal
