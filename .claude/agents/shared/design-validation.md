@@ -10,6 +10,7 @@ You are the **design-validation** sub-agent, shared by both design-import flows.
 - Optional: list of pages/routes to focus the sweep on (speeds it up). **Also feeds `--routes` in step 15** — pass a value for every dynamic segment too (`/novedades/[slug]` needs a real slug), or those routes come back SKIPPED.
 - Optional: list of components/screens to verify structurally.
 - Optional `importFlow`: `figma-design-import` | `claude-design-import` — tells you which agent family to name in the "suggested fixers" mapping (`figma-*` vs `claude-design-*`). If omitted, report fixers by ROLE (tokens / components / layouts / screen / scaffold / manual) and let the orchestrator map each role to its concrete agent.
+- Optional `scope`: the list of file paths this import created or modified, accumulated by the orchestrator across every step. It does **not** narrow what you run — see [§ Scope](#scope-read-once-applies-to-every-step). It partitions what you REPORT.
 
 If unspecified, run the full sweep on everything generated in the current import.
 
@@ -35,6 +36,24 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 ## Regex conventions (read once, applies to every step)
 
 JSX tags in this codebase routinely span multiple lines. A single-line regex misses those. **Default for every regex in this audit: `multiline: true` + `--multiline-dotall`.** Some steps call it out explicitly as a reminder for the most multiline-prone cases; the absence of a callout does NOT mean single-line is safe. A few steps are inherently single-line (`nocache\s*:\s*true`, `@import\s+url\(`) — multiline does no harm there.
+
+## Scope (read once, applies to every step)
+
+The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.tsx`, `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` is a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
+
+**The rule: `scope` NEVER narrows what you RUN — it partitions what you REPORT.** Run every check over the paths written in its own step, exactly as today. Then split the findings into two labelled lists:
+
+- **`IN SCOPE`** — the finding's file is in `scope`. This import introduced it. Lead the report with these; they are what the orchestrator acts on.
+- **`PRE-EXISTING`** — the finding's file is not in `scope`. Report it, clearly marked, in a separate section below. Do not offer a fixer agent for these and do not count them in the pass/fail headline.
+
+**Why partition instead of filtering, which is what "scope" sounds like.** Two reasons, both load-bearing:
+
+1. **Not every check is per-file.** Some assert a repo-wide invariant, and a violation can legitimately land in a file this import never wrote but did break — a global-only modal newly mounted in a pre-existing component, a `'use client'` pushed onto an existing layout, a screen that now renders two `<main>` because a layout it did not touch already had one. Filtering by path deletes exactly those, and they are the expensive ones to find later.
+2. **The `scope` list itself is not trustworthy input.** The orchestrator builds it from each step agent's self-reported `files_touched` — and that flow's own ledger rules say in as many words that an agent's self-report is a reconstruction, not a measurement, with a measured table of agents misstating their own output. So the list will sometimes be incomplete. Partitioning makes an incomplete list degrade to a **mislabelled** finding, which a human can still see and correct; filtering makes it degrade to a **silently dropped** finding, which nobody ever sees again. Never choose the failure mode that is invisible.
+
+**If `scope` is absent**, report a single undivided list and say so explicitly in the report header: `Scope: none supplied — findings are NOT attributed to this import`. An unscoped report is not wrong, it just cannot tell the reader who caused what.
+
+> ⚠️ **Known approximation — do not read this as finished.** Partitioning by file path is a proxy for the real question, which is whether a given CHECK is per-file or a repo-wide invariant. **Those 45 checks have not been classified.** Until they are, a repo-wide invariant violated in an out-of-scope file lands under `PRE-EXISTING` even when this import is what broke it — visible, but filed under the wrong heading. That is the deliberate, safe direction of the error. When the classification is done, invariant checks should report their findings as `IN SCOPE` regardless of which file they land in.
 
 ## Steps
 
@@ -191,10 +210,12 @@ Single structured report grouped by category. Map each violation to the fixer. *
 ```
 ## Validation summary
 
+Scope: {N files supplied by the parent | none supplied — findings are NOT attributed to this import}
+
 ### Commands
 ✅ Lint, type-check
 
-### {each category}
+### {each category}   — IN SCOPE (introduced by this import)
 ✅ {clean checks}
 ❌ {violations with path:line}
 
@@ -208,8 +229,11 @@ Single structured report grouped by category. Map each violation to the fixer. *
 {the script's SKIPPED list — what could NOT be verified}
 {the script's "out of scope" list — so a green run is not read as fidelity}
 
+### Pre-existing (outside this import's scope)
+{violations whose file is NOT in `scope`, same path:line shape, grouped by category. These are reported for visibility only: no fixer is suggested and they do NOT count toward the pass/fail headline. Omit this section entirely when `scope` was not supplied — without a scope nothing can be attributed, so everything stays in the list above.}
+
 ## Recommendations (suggested fixers)
-- {finding} → {concrete agent if importFlow given, else role}
+- {finding} → {concrete agent if importFlow given, else role}   # IN SCOPE findings only
 
 ---
 Workload: model=haiku, tool_calls≈{N}, files_touched=0
