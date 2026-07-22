@@ -148,7 +148,7 @@ You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 
 | 4 | `figma-layouts` | Sonnet | Moderate decisions, known patterns |
 | 5.1 | `figma-scaffold` | Haiku | Mechanical `/new-screen` invocations |
 | 5.2 | `figma-screen` | Opus | Pixel-perfect fidelity, heaviest token user |
-| 6 | `design-validation` | Haiku | Run commands + report findings (shared agent) |
+| 6 | `design-validation` | Haiku | Run commands + report findings (shared agent). Its runtime half is a deterministic script, so no model measures anything |
 
 **Always pass enough context** in each delegation prompt — sub-agents start fresh, they don't see your conversation. Include relevant gap-analysis data, file paths, and decisions already made.
 
@@ -488,7 +488,9 @@ Pass any provided fields to `figma-screen`; fall back to the registry for the re
 
 ## Step 6 — Code validation
 
-> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `claude-design-import`); it carries ~42 checks.
+> **Delegate to**: `Agent({ subagent_type: 'design-validation' })` — **Haiku**. Pass `importFlow: 'figma-design-import'` so it names `figma-*` agents in the suggested-fixers mapping, plus the **scope** (below). This is the **shared** validation agent (also used by `claude-design-import`); it carries ~42 static checks **plus a runtime invariant sweep** that renders every route in a browser.
+>
+> **Pass the ROUTE LIST with a value for every dynamic segment** (`/products/[id]` → an id that exists in the mock data). The runtime sweep skips a route it cannot resolve, and a skipped route is reported as unverified — which is correct, but it means you lose the check unless you supply the parameter.
 >
 > **Fallback — ONLY if `design-validation` is not an available `subagent_type`.** A project agent can silently fail to load ([#14018](https://github.com/anthropics/claude-code/issues/14018)) — see [CLAUDE.md > When a sub-agent silently doesn't load](../../../../CLAUDE.md). Then run the sweep inline (below) rather than hard-failing or skipping validation, and **say in the report that validation ran inline (fallback) and is a reduced check set** — the inline sweep is a strict subset of the agent's, so a clean inline run proves less.
 
@@ -516,6 +518,13 @@ grep -rn "from 'clsx'\|import { motion }\|from '@/api\|useSWR\|customFetch" $F
 > Do NOT grep for `theme(` — [§ B4](../../../docs/design-import-shared.md#b4-brand-gradients--the-one-hex-exception-besides-icons) tells agents to *prefer* `bg-[linear-gradient(…,theme(colors.x),…)]`, so its presence in a `.sass` is the recommended output, not a defect. Step 3's `pnpm build` already fails on a genuinely unresolvable `theme()`.
 
 5. Structural checks that greps get wrong — **verify these by reading, not by regex**: exactly one `<h1>` and one `<main>` per rendered page (a multi-line JSX `<a>` will make a naive `target='_blank'`-without-`rel` grep produce false positives — check the 2 lines after each hit before reporting it); SEO metadata completeness on every public page (`title`/`description`/`alternates.canonical`/`openGraph`/`twitter`); heading hierarchy; a11y on clickable non-buttons; `aria-label` on icon-only buttons.
+6. **The runtime sweep — run it even in the fallback.** It is a script, not an agent, so the load failure that sent you here cannot affect it, and it is the only part of Step 6 that would have caught the defects greps miss:
+
+```bash
+node .claude/scripts/render-audit.mjs --app . --routes "<the import's routes>" --param <k>=<v> --out "<scratch>/render-audit"
+```
+
+Exit `0` = clean · `1` = findings (a result, not a crash) · `2` = the sweep did not run, so report the runtime check as FAILED rather than clean. Paste its tables verbatim, numbers included, and hand its `SUSPECT` rows to yourself to adjudicate against the design source — they are measured anomalies that may be intentional.
 
 Report findings in a categorized `path:line` shape. **Don't auto-fix** — surface and offer to delegate to the relevant agent.
 
@@ -527,7 +536,12 @@ find src/assets/images -name '*.hash.txt' -delete
 
 Say how many you removed. The `.webp` files are the deliverable and stay. A future import re-downloads and re-converts from Figma — the cost is one MCP round-trip per asset, paid once.
 
-**This is an automated CODE sweep — it is blind to fidelity.** Neither path can see a breakpoint mapped to the wrong width, a glyph swapped for a near-identical one, or a section rendered 300px too wide: all of those compile, type-check and pass every grep. Visual review against Figma is the developer's job via the per-screen checkpoint in Step 5.2, and a clean Step 6 is **not** evidence the design was reproduced.
+**Step 6 now has two halves, and only one of them renders.** The static half (lint, type-check, build, the greps) is blind to anything that needs layout. The runtime sweep closes part of that gap — it measures widths, background bands, overflow, hover colours and the mobile menu in a real browser — but it is still **not** a fidelity check:
+
+- it **cannot** see a breakpoint mapped to the wrong width, a glyph or typeface swapped for a near-identical one, or a spacing value that shipped at 40px instead of 72px. Each of those renders a perfectly coherent page.
+- it reports what it could **not** reach in a `SKIPPED` list. Read it — an unreachable route is unverified, not passing.
+
+So a clean Step 6 means *nothing violated a known invariant*, never *the design was reproduced*. Visual review against Figma is still the developer's job via the per-screen checkpoint in Step 5.2. (Measured on an Anodal run: five real defects shipped after Step 6 reported clean on every static check — which is why the runtime half exists, and why this paragraph no longer says the whole step is blind.)
 
 You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-tokens` for hex, `figma-components` for a11y, etc).
 
@@ -626,4 +640,4 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 | 4 | Layouts | `figma-layouts` | Sonnet | Current layouts state + Figma findings |
 | 5.1 | Scaffold screens | `figma-scaffold` | Haiku | Screen list (name, **screenType**, route, routeGroup, Figma-or-TBD) + `detectedLanguage` + `currentHtmlLang` |
 | 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
-| 6 | Validation | `design-validation` | Haiku | Scope (or empty for full sweep) + `importFlow: 'figma-design-import'` |
+| 6 | Validation | `design-validation` | Haiku | Scope (or empty for full sweep) + `importFlow: 'figma-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |
