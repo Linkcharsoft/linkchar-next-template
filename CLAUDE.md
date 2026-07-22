@@ -51,21 +51,26 @@ Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all 12 at ONE level,
 
 ### When a sub-agent silently doesn't load
 
-Sub-agents live in `.claude/agents/**` (scanned recursively). **A project agent can silently fail to load**: no error, no warning — it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. This cost two full debugging rounds; 4 of this repo's 17 agents were stuck for weeks, which meant **`/openapi-import` was dead** (missing 3 of its 4 agents) without anyone noticing.
+Sub-agents live in `.claude/agents/**` (scanned recursively). **A project agent can silently fail to load**: no error, no warning — it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. This cost three full debugging rounds; 3 of this repo's 17 agents stayed stuck for **weeks**, which meant **`/openapi-import` was dead** (missing 3 of its 4 agents) without anyone noticing. All 17 load as of 2026-07-22.
 
-**The remedy that works: make a real content change to the file, then restart Claude Code.**
+**How to check, in one call** — the available-agent list is not printed anywhere, so probe it: invoke any agent with a trivial prompt. If it is missing, the error names *every* agent that IS registered, which is the full inventory in one shot. Compare that against `find .claude/agents -name '*.md'`; a count mismatch is the whole diagnosis.
 
-That is the only thing that reliably revives a stuck agent. Established by controlled experiment:
+**The remedy: rewrite the file's content substantially, then restart Claude Code.** A *small* edit is NOT enough — see the size caveat below.
 
 | What was done to the file | Result |
 | --- | --- |
-| content edited | ✅ loads |
+| whole-file rewrite (every line changed) | ✅ loads |
+| content edited, **one line** | ❌ still missing |
 | `touch` only (mtime changes, bytes identical) | ❌ still missing |
 | nothing (control, across two restarts) | ❌ still missing |
 
 So it behaves like a cache that **remembers a failed parse and is keyed on content, not mtime** — restarting alone does not clear it. The trigger for the initial failure is unknown and looks non-deterministic (upstream: [#14018](https://github.com/anthropics/claude-code/issues/14018)); the stuck files were valid and byte-identical in frontmatter structure to the ones that loaded.
 
-**Do NOT waste time on these — all were tested and ruled out as causes:** a colon-space in `description:` (an agent carrying two of them loads fine; re-adding one to a working agent did not break it), description length, `model:` value, mtime, BOM/CRLF, invisible unicode, an agent cap, `permissions.deny`, managed-settings, `~/.claude/agents`.
+> ⚠️ **The one-line row is a 2026-07-22 correction — this table used to say "content edited → ✅ loads", full stop, and that is false.** `openapi-handlers`, `openapi-hooks` and `openapi-code-validate` were still stuck after a genuine one-line content fix in each **plus** a restart. What revived all three was the next attempt: a CRLF→LF rewrite of the whole file (+ restart). **Do not read that as "CRLF breaks the loader"** — `openapi-spec-validate` was CRLF and loaded fine throughout, and two CRLF skills load too. The only variable that separated the failed attempt from the successful one was **how much of the file changed**, so size is what this table now records. `.gitattributes` pins `.claude/**` to LF anyway, so a checkout cannot silently revert a revived agent.
+
+**Do NOT waste time on these — all were tested and ruled out as causes:** a colon-space in `description:`, description length, `model:` value, mtime, BOM, CRLF vs LF, invisible unicode, an agent cap, `permissions.deny`, managed-settings, `~/.claude/agents`.
+
+Re-verified 2026-07-22 by tabulating every one of the 17 agents against its loaded/not-loaded state, because the colon-space correlation looked perfect **within the openapi folder** (the one agent that loaded had zero, the three that failed had 1–2) and it was tempting to "fix" it. Widening the sample killed it: **`design-validation` loads carrying two colon-spaces**, and `figma-design-assets` loads with braces in its description. Same for the structural properties — the three stuck files matched the working ones on directory, frontmatter shape, byte size, BOM and non-ASCII content. **The lesson is the method, not the list: a hypothesis that fits 4 files can die on 17, so always widen the sample before editing anything.**
 
 **Still worth doing on hygiene grounds — `.claude/agents/` is for agent files ONLY.** A `.md` there without valid `name:`/`description:` frontmatter is not an agent; shared docs that agents merely `Read` belong in **`.claude/docs/`** (that's why `design-import-shared.md` lives there). This was once believed to poison the scan of its own directory — that turned out to be confounded with a content change and is **not** established. Keep the separation because it's correct, not as a fix.
 
