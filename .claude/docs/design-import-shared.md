@@ -332,8 +332,7 @@ report the no-op — **not** left to hit its own "if the input is missing, ask" 
 ## C6. Registering a new component in the reuse table
 
 The **[Existing Reusable Components](../CONVENTIONS.md#existing-reusable-components)** table lives in
-**`.claude/CONVENTIONS.md`** — **not** in `CLAUDE.md`. (It used to live in `CLAUDE.md`; it moved, and stale
-pointers sent agents to a file where the heading no longer exists.) It is the authoritative reuse list every
+**`.claude/CONVENTIONS.md`** — **not** in `CLAUDE.md`, which carries no such heading. It is the authoritative reuse list every
 `*-components` / `*-screen` / `*-layouts` agent of both flows reads before creating anything, so a component
 missing from it will be silently rebuilt by the next import.
 

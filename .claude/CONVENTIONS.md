@@ -2,9 +2,9 @@
 
 This file is the canonical reference for **how** to write code in this project. `CLAUDE.md` describes what the project is (tech stack, structure, automation skills); this file describes the rules a Claude agent must follow when generating, editing, or validating code.
 
-**Loading model**: Skills and figma-* agents `Read` this file (or specific sections of it) at their Step 0 before generating any code. The Read is mandatory — if it fails, the agent stops and reports.
+**Loading model**: Skills and the `figma-design-*` / `claude-design-*` / `design-validation` agents `Read` this file (or specific sections of it) at their Step 0 before generating any code. The Read is mandatory — if it fails, the agent stops and reports.
 
-**Maintenance**: when you edit a rule here, no other file needs to be updated — the skills/agents reference this file directly and do not duplicate its contents. Old `<!-- mirror: ... -->` markers that used to live in those files are obsolete; do not re-introduce them.
+**Maintenance**: when you edit a rule here, no other file needs to be updated — the skills/agents reference this file directly and do not duplicate its contents.
 
 ---
 
@@ -290,7 +290,7 @@ So: `md:` = "≥768, project scale"; `hg-md:` = "≤860, this design". Both are 
 
 Use `container-custom` class for centered content with responsive max-widths AND a built-in responsive lateral gutter:
 
-- **Max-width tiers** — **the source of truth is [`src/styles/general.sass`](../src/styles/general.sass)**, and it is the ONLY place the numbers live. Read it when an exact value matters; do not copy the tiers into any doc, prompt or agent file. (This paragraph used to carry its own copy of the values — two of the four had silently drifted from the stylesheet, and a design import reasoned about section widths against tiers that did not exist. Same rule, same reason, as `engines` in [`CLAUDE.md`](../CLAUDE.md): a copy nobody enforces rots.)
+- **Max-width tiers** — **the source of truth is [`src/styles/general.sass`](../src/styles/general.sass)**, and it is the ONLY place the numbers live. Read it when an exact value matters; do not copy the tiers into any doc, prompt or agent file — same rule, same reason, as `engines` in [`CLAUDE.md`](../CLAUDE.md): a copy nobody enforces rots, and a design import that reasons about section widths against drifted tiers gets them all wrong.
 - **Lateral padding (built-in)**: 16px on every viewport. This guarantees a safe edge gutter and prevents content from touching the screen edges on mobile.
 
 Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. `px-4`) on the same element that already has `container-custom` — it's redundant. If a specific section truly needs a different inner padding than the global gutter, nest a child `<div>` and apply `px-*` there instead of duplicating it on the container.

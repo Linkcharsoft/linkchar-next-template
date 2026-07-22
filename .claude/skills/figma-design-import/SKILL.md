@@ -26,7 +26,7 @@ If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the us
 
 ## Workload tracking (cost telemetry across the flow)
 
-> ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already had** (this copy was missing the Step 6 `.hash.txt` check the twin had).
+> ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync.
 >
 > Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma-design/` vs `.claude/agents/claude-design/`), the token-namespace grep, and each flow's own step numbering.
 
@@ -541,7 +541,7 @@ Say how many you removed. The `.webp` files are the deliverable and stay. A futu
 - it **cannot** see a breakpoint mapped to the wrong width, a glyph or typeface swapped for a near-identical one, or a spacing value that shipped at 40px instead of 72px. Each of those renders a perfectly coherent page.
 - it reports what it could **not** reach in a `SKIPPED` list. Read it — an unreachable route is unverified, not passing.
 
-So a clean Step 6 means *nothing violated a known invariant*, never *the design was reproduced*. Visual review against Figma is still the developer's job via the per-screen checkpoint in Step 5.2. (Measured on an Anodal run: five real defects shipped after Step 6 reported clean on every static check — which is why the runtime half exists, and why this paragraph no longer says the whole step is blind.)
+So a clean Step 6 means *nothing violated a known invariant*, never *the design was reproduced*. Visual review against Figma is still the developer's job via the per-screen checkpoint in Step 5.2. (Measured on a real import: five defects shipped after Step 6 reported clean on every static check — which is why the runtime half exists.)
 
 You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-design-tokens` for hex, `figma-design-components` for a11y, etc).
 
