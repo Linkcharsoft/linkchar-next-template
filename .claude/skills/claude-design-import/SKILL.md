@@ -579,7 +579,7 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 
 ## Anti-patterns (do NOT do this)
 
-- ❌ Accept anything other than a Standalone-HTML URL (PDF/PPTX/handoff are not code sources here).
+- ❌ Accept a source that is neither a **Project-archive folder** nor a **Standalone-HTML** export/URL — a PDF, a PPTX or a rendered spec doc is not a code source here. (This bullet used to read "anything other than a Standalone-HTML URL … handoff are not code sources", which banned the skill's own RECOMMENDED input: the archive **is** the handoff bundle — its README opens with "This is a handoff bundle from Claude Design". Read literally, it made an orchestrator reject the primary path from Step 0.)
 - ❌ Skip Step 0/0.5 and "just start with the screens".
 - ❌ Run a step yourself when there's a sub-agent for it — waste of Opus on Haiku-grade work.
 - ❌ Dump the unpacked tree into the repo `src/` — extract to a scratch dir; only generated code lands in `src/`.
