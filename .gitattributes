@@ -1,0 +1,15 @@
+# Claude Code parses `.claude/**` itself (agent + skill frontmatter, hook and pipeline
+# scripts). Pin those files to LF in the WORKING TREE, not just in the repo.
+#
+# Why this exists: `core.autocrlf=true` (the Windows default) stores LF but checks out
+# CRLF, so a file's line endings depend on which tool last wrote it — an accident, not a
+# decision. On 2026-07-22 three agents (`openapi-handlers`, `openapi-hooks`,
+# `openapi-code-validate`) were silently NOT loading; rewriting them CRLF→LF is what
+# brought them back. That is NOT proof CRLF breaks the loader — `openapi-spec-validate`
+# is CRLF and loads fine — so treat this as insurance, not a diagnosis: it removes an
+# arbitrary per-file variable and, crucially, stops the next `git checkout` from silently
+# reverting the working tree and re-breaking a flow. See CLAUDE.md > "When a sub-agent
+# silently doesn't load".
+.claude/**/*.md text eol=lf
+.claude/**/*.mjs text eol=lf
+.claude/*.md text eol=lf
