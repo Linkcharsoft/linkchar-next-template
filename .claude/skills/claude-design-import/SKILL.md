@@ -1,6 +1,6 @@
 ---
 name: claude-design-import
-description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation. Ingests either a Project archive (.zip, unzipped — RECOMMENDED, imports multi-page designs complete) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
+description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation. Ingests either a Project archive (.zip, unzipped — RECOMMENDED) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
 ---
 
 Import a Claude Design prototype end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
