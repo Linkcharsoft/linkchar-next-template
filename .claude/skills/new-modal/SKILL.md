@@ -13,15 +13,15 @@ Derive from the name:
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
-Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../../CONVENTIONS.md). The sections that govern this skill:
+Before generating anything, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). The sections that govern this skill:
 
-- **[Naming Conventions](../../../CONVENTIONS.md#naming-conventions)** — PascalCase for component, camelCase for the modal key.
-- **[Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components)** — check whether `StateModal`, `LoadingModal`, or `setNotification()` already cover the use case.
-- **[Styling Rules — TAILWIND-FIRST](../../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../../CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule.
-- **[PrimeReact Usage](../../../CONVENTIONS.md#primereact-usage)** — for `Dialog` + `pt` customization.
-- **[Framer Motion](../../../CONVENTIONS.md#framer-motion)** — reduced-motion is handled globally; do NOT add per-modal `MotionConfig`.
-- **[Accessibility](../../../CONVENTIONS.md#accessibility)** — generic A11y. The Dialog-specific A11y rules (focus trap, initial focus, blockScroll, etc.) live in Step 3 below.
-- **[Bundle & Performance Architecture](../../../CONVENTIONS.md#bundle--performance-architecture)** — global vs local modal mounting decides whether the JS ships on every page.
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — PascalCase for component, camelCase for the modal key.
+- **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — check whether `StateModal`, `LoadingModal`, or `setNotification()` already cover the use case.
+- **[Styling Rules — TAILWIND-FIRST](../../CONVENTIONS.md#styling-rules--tailwind-first)** and **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — the `@apply` LAST rule.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)** — for `Dialog` + `pt` customization.
+- **[Framer Motion](../../CONVENTIONS.md#framer-motion)** — reduced-motion is handled globally; do NOT add per-modal `MotionConfig`.
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — generic A11y. The Dialog-specific A11y rules (focus trap, initial focus, blockScroll, etc.) live in Step 3 below.
+- **[Bundle & Performance Architecture](../../CONVENTIONS.md#bundle--performance-architecture)** — global vs local modal mounting decides whether the JS ships on every page.
 
 If you cannot read `CONVENTIONS.md`, STOP and report `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
@@ -96,7 +96,7 @@ Follow the exact pattern of `src/components/modals/StateModal/StateModal.tsx`:
 - `'use client'` directive at top
 - Import `./ModalName.sass`
 - Use PrimeReact `Dialog` component
-- Get state from `useModalStore` with **atomic selectors** (one per value — never destructure the whole store, see [CONVENTIONS.md > Zustand selectors](../../../CONVENTIONS.md#zustand-selectors)):
+- Get state from `useModalStore` with **atomic selectors** (one per value — never destructure the whole store, see [CONVENTIONS.md > Zustand selectors](../../CONVENTIONS.md#zustand-selectors)):
   ```tsx
   const modalKey = useModalStore((s) => s.modals.modalKey)
   const closeModal = useModalStore((s) => s.closeModal)
@@ -112,7 +112,7 @@ Follow the exact pattern of `src/components/modals/StateModal/StateModal.tsx`:
 
 #### Dialog-specific A11y rules
 
-Generic A11y rules (icon-only buttons, autoComplete on inputs, tap targets, color contrast, etc.) live in [CONVENTIONS.md > Accessibility](../../../CONVENTIONS.md#accessibility). The rules below are specific to PrimeReact's `Dialog` and apply only when you build modals with it.
+Generic A11y rules (icon-only buttons, autoComplete on inputs, tap targets, color contrast, etc.) live in [CONVENTIONS.md > Accessibility](../../CONVENTIONS.md#accessibility). The rules below are specific to PrimeReact's `Dialog` and apply only when you build modals with it.
 
 - **Modal title**: use the `Dialog` `header` prop instead of a manual `<h2>` inside the body — `Dialog` renders the heading semantics for you and pairs it with `aria-labelledby` automatically.
 - **`role='dialog'` and `aria-modal='true'`**: `Dialog` sets these on the root container automatically. NEVER override them via `pt.root.role` — removing them turns the modal into a non-modal popover for assistive tech.
@@ -150,7 +150,7 @@ If styles are needed, use `.sass` indented syntax (no curly braces, no semicolon
     // styles
 ```
 
-Apply the [Inside `.sass` files](../../../CONVENTIONS.md#inside-sass-files) rules from CONVENTIONS.md — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
+Apply the [Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files) rules from CONVENTIONS.md — plain CSS for layout/sizing, `@apply` LAST in each block scope for design tokens.
 
 ---
 

@@ -126,7 +126,7 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
 
    <!--
-     CANONICAL SOURCE: `.claude/skills/scaffold/new-screen/SKILL.md` Step 5.
+     CANONICAL SOURCE: `.claude/skills/new-screen/SKILL.md` Step 5.
      The templates below are duplicated here ONLY so the agent can run without re-loading the new-screen skill on every invocation. If you edit a template here, you MUST mirror the change in /new-screen Step 5 in the same commit (and vice versa) — drift between them causes scaffolded pages to differ from manually-generated ones.
      Before editing: open both files side-by-side. After editing: diff the relevant blocks.
    -->
@@ -222,7 +222,7 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
      The `robots: { index: false, follow: false }` block is the safe default while the page is a placeholder. Drop it (or make it conditional on a not-found check) once the resource fetch is wired and the page returns real content.
    <!-- END canonical-mirror: new-screen Step 5 metadata templates -->
 
-5. Verify all routes are reachable: read `src/proxy.ts` and sanity-check that every public route ended up in `PUBLIC_PATHS` (`/new-screen` adds them automatically — see `.claude/skills/scaffold/new-screen/SKILL.md` Step 2). If any public route from your scaffold list is missing from `PUBLIC_PATHS`, add it manually AND report the discrepancy in your output (it means `/new-screen` mis-handled this case and is worth investigating). For auth routes, also confirm they're in `AUTH_PATHS` unless they're already covered by an existing `pathname.includes(...)` check.
+5. Verify all routes are reachable: read `src/proxy.ts` and sanity-check that every public route ended up in `PUBLIC_PATHS` (`/new-screen` adds them automatically — see `.claude/skills/new-screen/SKILL.md` Step 2). If any public route from your scaffold list is missing from `PUBLIC_PATHS`, add it manually AND report the discrepancy in your output (it means `/new-screen` mis-handled this case and is worth investigating). For auth routes, also confirm they're in `AUTH_PATHS` unless they're already covered by an existing `pathname.includes(...)` check.
 
    **Note on route groups in `proxy.ts`**: route groups like `(marketing-layout)` are transparent to routing — the URL for a page at `src/app/(marketing-layout)/about/page.tsx` is `/about`, NOT `/(marketing-layout)/about`. When verifying `proxy.ts`, match against the URL form (no parentheses), not the filesystem path.
 

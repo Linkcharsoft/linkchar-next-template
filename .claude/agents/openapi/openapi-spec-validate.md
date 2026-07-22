@@ -20,7 +20,7 @@ If `parsedSpec` is missing or malformed (no `paths` object), emit `STOP-BLOCKING
 ## Pre-flight — Read these before running checks (mandatory)
 
 1. `.claude/CONVENTIONS.md` — project rules. You only consult the conventions briefly to anchor function-name inference (the table for verb+path → camelCase function name); the heavy convention enforcement is `openapi-code-validate`'s job, not yours.
-2. `.claude/skills/orchestrators/openapi-import/SKILL.md` — Phase 1 of the orchestrator defines how `BASE_PATH` is derived from a tag's operations and how `--tags` filtering works. Read just the Phase 1 section so your warnings reference the same terminology.
+2. `.claude/skills/openapi-import/SKILL.md` — Phase 1 of the orchestrator defines how `BASE_PATH` is derived from a tag's operations and how `--tags` filtering works. Read just the Phase 1 section so your warnings reference the same terminology.
 
 If either file is missing, STOP and emit `STOP-BLOCKING / category: MISSING_FILE / reason: missing {file}`. The agent's terminology must align with the orchestrator's.
 
@@ -52,9 +52,9 @@ Run BEFORE any other step. This is the gate that prevents the rest of the agent 
    ```
    STOP-BLOCKING / category: MISSING_FILE / reason: missing .claude/CONVENTIONS.md
    ```
-4. **Read `.claude/skills/orchestrators/openapi-import/SKILL.md`** Phase 1 section (for terminology alignment on tag grouping and `BASE_PATH` derivation). If the file is missing, emit and STOP:
+4. **Read `.claude/skills/openapi-import/SKILL.md`** Phase 1 section (for terminology alignment on tag grouping and `BASE_PATH` derivation). If the file is missing, emit and STOP:
    ```
-   STOP-BLOCKING / category: MISSING_FILE / reason: missing .claude/skills/orchestrators/openapi-import/SKILL.md
+   STOP-BLOCKING / category: MISSING_FILE / reason: missing .claude/skills/openapi-import/SKILL.md
    ```
 5. **Validate `paginatedResponseShape`**: confirm it is an object with the four DRF keys `count`, `next`, `previous`, `results`. If the orchestrator passed a different shape, the agent's Step 3.12 pagination check would silently use that other shape — surface a STOP so the user knows the orchestrator contract is broken:
    ```

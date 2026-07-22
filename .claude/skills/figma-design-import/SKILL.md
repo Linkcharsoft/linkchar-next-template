@@ -15,10 +15,10 @@ Do not proceed past Step 0 with a partial design — the inventory will be wrong
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
-Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../../CONVENTIONS.md). As the orchestrator, you need it for two distinct purposes:
+Before delegating to any sub-agent, `Read` [`.claude/CONVENTIONS.md`](../../CONVENTIONS.md). As the orchestrator, you need it for two distinct purposes:
 
-1. **Token / asset / component / layout / screen gap analysis (Step 0)** — the [Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. The [Color System](../../../CONVENTIONS.md#color-system), [Typography System](../../../CONVENTIONS.md#typography-system), and [Breakpoints](../../../CONVENTIONS.md#breakpoints) define what is already in the template vs what's new.
-2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` or `STOP-ADVISORY` blocks following the [STOP Protocol](../../../CONVENTIONS.md#stop-protocol). You parse them and route as described in the "Handling agent STOPs" section below.
+1. **Token / asset / component / layout / screen gap analysis (Step 0)** — the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table is the authoritative reuse list. The [Color System](../../CONVENTIONS.md#color-system), [Typography System](../../CONVENTIONS.md#typography-system), and [Breakpoints](../../CONVENTIONS.md#breakpoints) define what is already in the template vs what's new.
+2. **STOP protocol handling** — every sub-agent may emit `STOP-BLOCKING` or `STOP-ADVISORY` blocks following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol). You parse them and route as described in the "Handling agent STOPs" section below.
 
 If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the user — every sub-agent depends on it, so proceeding would compound errors.
 
@@ -26,7 +26,7 @@ If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the us
 
 ## Workload tracking (cost telemetry across the flow)
 
-> ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already had** (this copy was missing the Step 6 `.hash.txt` check the twin had).
+> ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync, and it **already had** (this copy was missing the Step 6 `.hash.txt` check the twin had).
 >
 > Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma/` vs `.claude/agents/claude-design/`), the token-namespace grep, and each flow's own step numbering.
 
@@ -177,7 +177,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    - `tailwind.config.js` — existing colors (`surface-*`), typography scale, breakpoints
    - `design-tokens-map.md` (project root, may not exist yet) — Figma-variable → Tailwind-token mapping from prior imports. ALWAYS read this first: if a Figma variable from the current node is already mapped, do NOT propose it as a new token; reuse the mapped one.
    - `src/styles/index.sass` — fonts loaded
-   - `src/components/` — list every folder; cross-reference with the [Existing Reusable Components](../../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md`
+   - `src/components/` — list every folder; cross-reference with the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md`
    - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`
    - `src/proxy.ts` — current `AUTH_PATHS`, `PUBLIC_PATHS`
    - `src/assets/icons/index.ts` — existing icons
@@ -304,7 +304,7 @@ Read the Figma source AND the relevant codebase before touching any file.
       blind rather than assuming silence means clean.
    ```
 
-   **Do NOT ask about breakpoints.** Unlike a CSS-based Claude Design export, a Figma file has no `@media` — it carries desktop and mobile *frames*, and Step 5.2 synthesizes responsive from the project scale. Asking an auditor for "the design's breakpoints" invites it to invent values, and [CONVENTIONS > Breakpoints](../../../CONVENTIONS.md#breakpoints) forbids re-pointing `2xs`…`2xl` onto a design's numbers. Frame pairing (question 1) is this flow's real equivalent.
+   **Do NOT ask about breakpoints.** Unlike a CSS-based Claude Design export, a Figma file has no `@media` — it carries desktop and mobile *frames*, and Step 5.2 synthesizes responsive from the project scale. Asking an auditor for "the design's breakpoints" invites it to invent values, and [CONVENTIONS > Breakpoints](../../CONVENTIONS.md#breakpoints) forbids re-pointing `2xs`…`2xl` onto a design's numbers. Frame pairing (question 1) is this flow's real equivalent.
 
    Anything it flags, **verify against Figma yourself** before changing the spec — the auditor can be wrong too. Then fold the confirmed mismatches in and re-show the report.
 
@@ -332,7 +332,7 @@ You receive: confirmation of changes + type-check result.
 
 Pass to the agent a list of every asset: type (`svg-icon` | `raster-logo` | `raster-image`), source URL (Iconify or Figma), target file name, and `screenSlug` when the asset belongs to a single screen (omit for shared assets like logos). The agent downloads each, generates React components for SVG icons (following `GmailIcon.tsx` pattern), converts raster to WebP via `sharp` (no ffmpeg), registers exports in `src/assets/icons/index.ts`. Per-screen raster images land at `src/assets/images/{screenSlug}/{name}.webp`; shared raster assets land flat at `src/assets/images/{name}.webp`.
 
-**You (the orchestrator) pre-filter icons before delegating** — the `figma-assets` agent does not re-check this. Filter per [`design-import-shared.md` § B8](../../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph), NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (compare the icon nodes' stroke weight / style): if it does, **every member keeps its Figma asset and the import yields zero PrimeIcons** — that is correct, not an oversight. Only when there is no set (mixed/system icons — more common from Figma than from a Claude Design export) do generic affordances (hamburger, close, chevron, search) get dropped from the asset list with a `→ use <i className='pi pi-{name}'/>` note in the gap analysis so the screen agent (Step 5.2) knows. **Brand marks always keep the Figma asset**, set or no set. Decide it here; do NOT ask the user.
+**You (the orchestrator) pre-filter icons before delegating** — the `figma-assets` agent does not re-check this. Filter per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph), NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (compare the icon nodes' stroke weight / style): if it does, **every member keeps its Figma asset and the import yields zero PrimeIcons** — that is correct, not an oversight. Only when there is no set (mixed/system icons — more common from Figma than from a Claude Design export) do generic affordances (hamburger, close, chevron, search) get dropped from the asset list with a `→ use <i className='pi pi-{name}'/>` note in the gap analysis so the screen agent (Step 5.2) knows. **Brand marks always keep the Figma asset**, set or no set. Decide it here; do NOT ask the user.
 
 You receive: list of files created with their final sizes + lint/type-check status.
 
@@ -369,7 +369,7 @@ Pass to the agent:
 
 The agent compares, adjusts, or creates layouts in `src/layouts/{Name}/`, wires them up in `src/app/{(group-name)}/layout.tsx` route groups, and ensures they compose existing components (Navbar, Footer) rather than duplicating JSX.
 
-**A confirmed no-op is a valid outcome — still delegate.** See [§ C5b](../../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate). If the design shares no chrome across screens, do NOT skip Step 4 and do NOT run it yourself — delegate, pass your reading, and ask the agent to verify or refute it. Equally, tell it not to invent layout work to justify the step. A cheap Sonnet pass returning "no-op, here's the evidence" is the point: the parent's reading is the one thing with no other gate.
+**A confirmed no-op is a valid outcome — still delegate.** See [§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate). If the design shares no chrome across screens, do NOT skip Step 4 and do NOT run it yourself — delegate, pass your reading, and ask the agent to verify or refute it. Equally, tell it not to invent layout work to justify the step. A cheap Sonnet pass returning "no-op, here's the evidence" is the point: the parent's reading is the one thing with no other gate.
 
 You receive: layouts adjusted/created (or a reasoned no-op) + route groups wired + lint/type-check status.
 
@@ -492,7 +492,7 @@ Pass any provided fields to `figma-screen`; fall back to the registry for the re
 >
 > **Pass the ROUTE LIST with a value for every dynamic segment** (`/products/[id]` → an id that exists in the mock data). The runtime sweep skips a route it cannot resolve, and a skipped route is reported as unverified — which is correct, but it means you lose the check unless you supply the parameter.
 >
-> **Fallback — ONLY if `design-validation` is not an available `subagent_type`.** A project agent can silently fail to load ([#14018](https://github.com/anthropics/claude-code/issues/14018)) — see [CLAUDE.md > When a sub-agent silently doesn't load](../../../../CLAUDE.md). Then run the sweep inline (below) rather than hard-failing or skipping validation, and **say in the report that validation ran inline (fallback) and is a reduced check set** — the inline sweep is a strict subset of the agent's, so a clean inline run proves less.
+> **Fallback — ONLY if `design-validation` is not an available `subagent_type`.** A project agent can silently fail to load ([#14018](https://github.com/anthropics/claude-code/issues/14018)) — see [CLAUDE.md > When a sub-agent silently doesn't load](../../../CLAUDE.md). Then run the sweep inline (below) rather than hard-failing or skipping validation, and **say in the report that validation ran inline (fallback) and is a reduced check set** — the inline sweep is a strict subset of the agent's, so a clean inline run proves less.
 
 **Scope — pass it to the agent, or apply it inline.** Validate ONLY the files this import created/modified, or you'll report pre-existing template violations as import defects (`Waves.tsx`, `Filters.sass`, `mixins.sass` legitimately carry hex; `sentry-example-page/` is a documented throwaway). **Build the file list as you go** — every step agent's report names the files it touched; accumulate them in the workload ledger and hand that list over. Do not reconstruct it from `git status` (the worktree may hold unrelated work) and do not default to `src/`.
 
@@ -515,7 +515,7 @@ grep -rn "container-custom" $F | grep -E "px-[0-9]"
 grep -rn "from 'clsx'\|import { motion }\|from '@/api\|useSWR\|customFetch" $F
 ```
 
-> Do NOT grep for `theme(` — [§ B4](../../../docs/design-import-shared.md#b4-brand-gradients--the-one-hex-exception-besides-icons) tells agents to *prefer* `bg-[linear-gradient(…,theme(colors.x),…)]`, so its presence in a `.sass` is the recommended output, not a defect. Step 3's `pnpm build` already fails on a genuinely unresolvable `theme()`.
+> Do NOT grep for `theme(` — [§ B4](../../docs/design-import-shared.md#b4-brand-gradients--the-one-hex-exception-besides-icons) tells agents to *prefer* `bg-[linear-gradient(…,theme(colors.x),…)]`, so its presence in a `.sass` is the recommended output, not a defect. Step 3's `pnpm build` already fails on a genuinely unresolvable `theme()`.
 
 5. Structural checks that greps get wrong — **verify these by reading, not by regex**: exactly one `<h1>` and one `<main>` per rendered page (a multi-line JSX `<a>` will make a naive `target='_blank'`-without-`rel` grep produce false positives — check the 2 lines after each hit before reporting it); SEO metadata completeness on every public page (`title`/`description`/`alternates.canonical`/`openGraph`/`twitter`); heading hierarchy; a11y on clickable non-buttons; `aria-label` on icon-only buttons.
 6. **The runtime sweep — run it even in the fallback.** It is a script, not an agent, so the load failure that sent you here cannot affect it, and it is the only part of Step 6 that would have caught the defects greps miss:
@@ -549,7 +549,7 @@ You receive: a categorized report (passing / warnings / failing) with `path:line
 
 ## Handling agent STOPs
 
-Every sub-agent in this flow may emit a STOP at the end of its report following the [STOP Protocol](../../../CONVENTIONS.md#stop-protocol) defined in CONVENTIONS.md. As the orchestrator, you MUST parse and handle each STOP. The two severities:
+Every sub-agent in this flow may emit a STOP at the end of its report following the [STOP Protocol](../../CONVENTIONS.md#stop-protocol) defined in CONVENTIONS.md. As the orchestrator, you MUST parse and handle each STOP. The two severities:
 
 - **`STOP-BLOCKING`** — the sub-agent could NOT complete. You must resolve before re-invoking the same agent. Resolution path depends on the `next_agent` field.
 - **`STOP-ADVISORY`** — the sub-agent completed with a documented default (`default_applied:` field describes what). You continue the flow but MUST surface the advisory in the next per-screen checkpoint so the user can decide to re-delegate post-batch.
