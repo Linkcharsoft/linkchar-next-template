@@ -136,11 +136,9 @@ The init guards exist only to force THIS skill to run on a fresh clone. Now that
 Do it in **this order**, so you never leave a hook registration pointing at a deleted file:
 
 1. **Prune the enforcement note in `CLAUDE.md`** — delete the blockquote that begins with `> **`/init-project` is enforced on fresh clones.**` (it documents guards that are about to disappear; leaving it would be false). Remove its surrounding blank line cleanly, but keep the `/init-project` row in the skills table.
-2. **Restore `.husky/pre-commit`** to its original single line (drop the whole guard block):
+2. **Strip the guard block from `.husky/pre-commit`, and ONLY that block.** Delete from the leading `# Block commits until the project is initialized…` comment through the `fi` that closes the `if node -e '…'` test. **Keep everything after that `fi` exactly as it is** — those lines are the hook's real work (the staged-file lint and the whole-project type-check), not part of the guard. Read the file and delete the range; do not retype the remainder.
 
-   ```sh
-   pnpm run check || exit 1
-   ```
+   > **Why this step describes a deletion instead of quoting what should remain.** A doc that quotes the hook's real work would rot the moment the hook changes, and be believed anyway — the same failure as the `engines` versions in [`CLAUDE.md`](../../../CLAUDE.md) and the `container-custom` tiers in [`CONVENTIONS.md`](../../CONVENTIONS.md#global-container). The deletion boundary is stable; the remainder is not. So `.husky/pre-commit` stays the only source of truth for what the hook runs.
 
 3. **Unregister the hook in `.claude/settings.json`** — remove the `PreToolUse` matcher entry that runs `node .claude/hooks/require-init.mjs`. If `hooks` then ends up empty and the file has no other keys, delete `.claude/settings.json` entirely (the template ships it solely for this hook). If a maintainer added other settings/hooks, keep the file and remove only this entry.
 4. **Delete the hook script** with the Bash tool: `rm -f .claude/hooks/require-init.mjs` (and remove `.claude/hooks/` if it's now empty).

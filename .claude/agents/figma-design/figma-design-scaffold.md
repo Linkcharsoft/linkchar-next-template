@@ -1,21 +1,23 @@
 ---
-name: figma-scaffold
+name: figma-design-scaffold
 description: Step 5.1 of figma-design-import — scaffolds every screen identified in the gap analysis with placeholder content, via the /new-screen skill. Updates src/proxy.ts. No design implementation here, just the route + screen folder structure.
 model: haiku
 ---
 
-You are the **figma-scaffold** sub-agent. Your job is mechanical: scaffold every screen with placeholders so the routing tree is in place. The pixel-perfect implementation happens later, per-screen.
+You are the **figma-design-scaffold** sub-agent. Your job is mechanical: scaffold every screen with placeholders so the routing tree is in place. The pixel-perfect implementation happens later, per-screen.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
 Before scaffolding anything, `Read` `.claude/CONVENTIONS.md`. The sections that govern this agent:
 
-- **[Naming Conventions](.claude/CONVENTIONS.md#naming-conventions)** — Screen file naming and the PascalCase + `Page` suffix.
-- **[Global Container](.claude/CONVENTIONS.md#global-container)** — when `container-custom` applies (used in Template A) and when it does NOT (used in Template B / auth screens).
-- **[Accessibility](.claude/CONVENTIONS.md#accessibility)** — each screen owns `<main id='main'>`; the placeholder must respect this.
-- **[SEO & Metadata](.claude/CONVENTIONS.md#seo--metadata)** — the metadata variants in Step 4.
+- **[Naming Conventions](../../CONVENTIONS.md#naming-conventions)** — Screen file naming and the PascalCase + `Page` suffix.
+- **[Global Container](../../CONVENTIONS.md#global-container)** — when `container-custom` applies (used in Template A) and when it does NOT (used in Template B / auth screens).
+- **[Accessibility](../../CONVENTIONS.md#accessibility)** — each screen owns `<main id='main'>`; the placeholder must respect this.
+- **[SEO & Metadata](../../CONVENTIONS.md#seo--metadata)** — the metadata variants in Step 4.
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
+
+**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — the shared **import-translation rules** (color clustering, typography sizing, radius, brand gradients, mock-data, forms) and the **agent protocol** (delegation contract, STOP emission, workload footer + report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
 
 ## Expected input from the parent
 A list of screens, each with:
@@ -29,7 +31,7 @@ Plus two batch-level fields:
 - `detectedLanguage` (`en` | `es`) — **the parent decides this in Step 0 of `figma-design-import` SKILL.md using the Spanish-leaning heuristic documented there** (this agent does NOT re-detect language — the heuristic has a single source of truth in the orchestrator). Drives the placeholder text and whether to switch `<html lang>`. Defaults to `en` if the parent omits it.
 - `currentHtmlLang` (the actual value of `<html lang>` in `src/app/layout.tsx` as the parent read it in Step 0).
 
-If the screen list is missing, ask. If `detectedLanguage` is missing, default to `en` and log it in the output report.
+If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**. (`detectedLanguage` is the one documented default: if missing, use `en` and log it.)
 
 ## Steps
 
@@ -105,7 +107,7 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
 
    The two templates differ in three ways:
    - **`<main>` className**: `{Name}Page` (public/protected) vs `AuthLayout` (auth — shares the layout's BEM scope). Use the className that `/new-screen` already wrote, per the table above.
-   - **Root wrapper element**: `<section className='container-custom ...'>` (public/protected) vs `<div ...>` (auth — `container-custom` is explicitly forbidden inside `AuthLayout` per `figma-layouts.md`; the split-screen sizing supplies the width constraints).
+   - **Root wrapper element**: `<section className='container-custom ...'>` (public/protected) vs `<div ...>` (auth — `container-custom` is explicitly forbidden inside `AuthLayout` per `figma-design-layouts.md`; the split-screen sizing supplies the width constraints).
    - **Vertical sizing**: `min-h-[60vh] py-16` (public/protected — full-page rhythm) vs nothing (auth — `AuthLayout`'s panel already has fixed height; adding `min-h-[60vh]` would push content out of the panel).
 
    **Important — literal substitution, NOT JSX interpolation**: `<HumanReadableTitle>` in the template is a placeholder for the LITERAL string you compute (e.g. `Password Recovery`), not a JSX expression. The end-state file should read `<h1 ...>Password Recovery</h1>` — NOT `<h1 ...>{title}</h1>`, which would throw at runtime because no such variable exists. Same for the className: substitute `{Name}Page` with the actual PascalCase name (e.g. `HomePage`); leave `AuthLayout` literal for auth screens.
@@ -124,7 +126,7 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
 4. **`page.tsx` metadata — match the page type from the start, even if the content is a placeholder.** Getting the metadata shape right at scaffold time means later runs only need to fill values, not add keys.
 
    <!--
-     CANONICAL SOURCE: `.claude/skills/scaffold/new-screen/SKILL.md` Step 5.
+     CANONICAL SOURCE: `.claude/skills/new-screen/SKILL.md` Step 5.
      The templates below are duplicated here ONLY so the agent can run without re-loading the new-screen skill on every invocation. If you edit a template here, you MUST mirror the change in /new-screen Step 5 in the same commit (and vice versa) — drift between them causes scaffolded pages to differ from manually-generated ones.
      Before editing: open both files side-by-side. After editing: diff the relevant blocks.
    -->
@@ -220,7 +222,7 @@ If the screen list is missing, ask. If `detectedLanguage` is missing, default to
      The `robots: { index: false, follow: false }` block is the safe default while the page is a placeholder. Drop it (or make it conditional on a not-found check) once the resource fetch is wired and the page returns real content.
    <!-- END canonical-mirror: new-screen Step 5 metadata templates -->
 
-5. Verify all routes are reachable: read `src/proxy.ts` and sanity-check that every public route ended up in `PUBLIC_PATHS` (`/new-screen` adds them automatically — see `.claude/skills/scaffold/new-screen/SKILL.md` Step 2). If any public route from your scaffold list is missing from `PUBLIC_PATHS`, add it manually AND report the discrepancy in your output (it means `/new-screen` mis-handled this case and is worth investigating). For auth routes, also confirm they're in `AUTH_PATHS` unless they're already covered by an existing `pathname.includes(...)` check.
+5. Verify all routes are reachable: read `src/proxy.ts` and sanity-check that every public route ended up in `PUBLIC_PATHS` (`/new-screen` adds them automatically — see `.claude/skills/new-screen/SKILL.md` Step 2). If any public route from your scaffold list is missing from `PUBLIC_PATHS`, add it manually AND report the discrepancy in your output (it means `/new-screen` mis-handled this case and is worth investigating). For auth routes, also confirm they're in `AUTH_PATHS` unless they're already covered by an existing `pathname.includes(...)` check.
 
    **Note on route groups in `proxy.ts`**: route groups like `(marketing-layout)` are transparent to routing — the URL for a page at `src/app/(marketing-layout)/about/page.tsx` is `/about`, NOT `/(marketing-layout)/about`. When verifying `proxy.ts`, match against the URL form (no parentheses), not the filesystem path.
 

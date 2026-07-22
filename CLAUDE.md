@@ -15,8 +15,10 @@ This file describes **what** this project is: the tech stack, structure, and hig
 - **Forms:** Formik + Yup
 - **Animations:** Framer Motion (use `m` + `LazyMotion`, NEVER `motion`)
 - **Data Fetching:** SWR + custom `customFetch` wrapper (`src/api/customFetch.ts`)
-- **Package Manager:** pnpm (>=10.30.0)
-- **Node Version:** ^22.22.0
+- **Package Manager:** pnpm
+- **Runtime / toolchain versions:** see **`package.json` → `engines`** (node, pnpm). Read it when the exact constraint matters — e.g. before relying on a runtime API whose availability depends on the node major.
+
+> **Why no version numbers here.** `engines` is machine-enforced and is the single source of truth; a copy in a doc is unenforced and drifts silently. It did — this file and `README.md` each carried their own stale node/pnpm constraints, and had even drifted apart from *each other*. The framework versions above are deliberately **majors only**: those are architectural context an agent needs up front (`Next.js 16 App Router` changes how you write a page; `Tailwind 3` vs 4 changes the config shape), they change rarely, and they stayed accurate while the precise constraints rotted. **Rule: a major is context and may live here; anything more precise is a constraint and belongs only in `package.json`.**
 
 ## Automation Skills
 
@@ -33,12 +35,55 @@ This file describes **what** this project is: the tech stack, structure, and hig
 | Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
 | Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
 | Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
-| Import a full OpenAPI YAML spec and wire the backend layer (handlers + GET hooks, no UI) — typically runs AFTER `/figma-design-import` | `/openapi-import` | `/openapi-import ./openapi.yaml --tags=users,products` |
+| Import a full Claude Design prototype — a "Standalone HTML" export — to code (unpack → tokens → assets → components → layouts → screens) | `/claude-design-import` | `/claude-design-import https://inferencia-demo.s3.amazonaws.com/.../PROTOTIPO.html` |
+| Import a full OpenAPI YAML spec and wire the backend layer (handlers + GET hooks, no UI) — typically runs AFTER `/figma-design-import` or `/claude-design-import` | `/openapi-import` | `/openapi-import ./openapi.yaml --tags=users,products` |
 | Scaffold a single API resource by hand (no spec) — `src/api/{resource}.ts` with the canonical interleaved layout | `/new-api-resource` | `/new-api-resource Users` |
 
 > **`/init-project` is enforced on fresh clones.** Until it runs (sentinel: `package.json` `name` is still `linkchar-next-template`), two guards block work: the Husky **`pre-commit`** hook refuses commits, and a Claude **PreToolUse** hook (`.claude/hooks/require-init.mjs`) refuses `Edit`/`Write`. Running `/init-project` renames the app and disarms both. Maintainers working on the **template itself** bypass with `LINKCHAR_TEMPLATE_DEV` — set it once in `.claude/settings.local.json` (`"env"` key, gitignored) and both guards read it (the shell env also works and takes precedence).
 
-Skills live in `.claude/skills/{skill-name}/SKILL.md`, grouped into subfolders by purpose (`scaffold/` for the `/new-*` generators, `orchestrators/` for the Figma/OpenAPI orchestrators, `init-project/` at the root). Subfolders are for organization only — Claude Code discovers skills recursively and the slash command is still the skill's own directory name (e.g. `/new-component`), independent of the parent folder. Do not duplicate their logic in chat — invoke them.
+Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all at ONE level, never nested**. Do not duplicate their logic in chat — invoke the skill.
+
+> ⚠️ **Keep this directory FLAT. Skill discovery is NOT recursive**: Claude Code loads only `.claude/skills/{name}/SKILL.md` at one level, so grouping them into subfolders silently unloads every one it moves — the slash command just returns `Unknown command`.
+>
+> **The breakage is invisible, which is why this warning exists.** When a skill is unloaded the workflows keep producing correct-looking output: the intent is still recognized, the `SKILL.md` still gets read from disk and followed by hand. Nothing fails; the `Skill` tool simply stops being invoked. Do not treat "it still works" as evidence the skills are loaded.
+>
+> **Agents, in the same `.claude/` tree, DO recurse** (`.claude/agents/figma-design/*.md`, `.claude/agents/claude-design/*.md` all load from subfolders). That asymmetry is the trap — it makes it natural to assume skills behave the same. They do not: **agents may nest, skills may not.**
+
+**A sub-agent can also silently fail to load** — no error, it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. Symptom check, remedy, and the causes already ruled out: [`.claude/docs/agent-loading-troubleshooting.md`](./.claude/docs/agent-loading-troubleshooting.md). After adding or renaming an agent, **restart and verify it appears** before relying on it.
+
+### Keep `figma-design-import` and `claude-design-import` in sync
+
+These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
+
+**The shared substance lives in ONE place, so it can't drift — there is no manual "mirror it to the twin in the same commit" step.** Two single sources of truth, both `Read` at pre-flight by every step agent of both flows:
+
+- **Code conventions** — what valid *output* looks like (tokens, typography, color/no-hex, a11y, `container-custom`, SASS) → [`.claude/CONVENTIONS.md`](./.claude/CONVENTIONS.md).
+- **Import-translation rules** — how to translate a design into that code (color clustering, typography snapping, radius, brand gradients, mock-data, forms) — **plus the agent protocol** (delegation contract, STOP emission, workload footer, report shape) → [`.claude/docs/design-import-shared.md`](./.claude/docs/design-import-shared.md).
+
+Edit either file **once** and both flows inherit automatically; `design-validation` is likewise one shared agent, and **`.claude/scripts/` holds EVERY executable of the import flows**, whether shared or single-owner: `render-audit.mjs` (the runtime invariant sweep `design-validation` runs at its step 15, called by both flows) and `unpack.mjs` (the Claude Design extractor, called only by `claude-design-import`). The folder is organised by KIND, not by ownership — a script lives here even when one flow owns it, so there is one place to look for "what code, as opposed to prose, does this pipeline run". A script is the right home for anything that must be *measured* rather than judged: it is deterministic across runs, it costs no tokens beyond its own output, and — unlike an agent — it cannot report a check as passing without having performed it. **Each agent's own `.md` holds ONLY its source-ingestion mechanics** — which diverge *by design* and are never synced to the twin.
+
+**Decision test when you change something:**
+
+- Shared **convention / translation rule / protocol** (would apply to both flows)? → edit the shared file (`CONVENTIONS.md` or `design-import-shared.md`) **once**; touch neither agent. Both inherit.
+- **Source-ingestion mechanics** of one format? → edit only that agent's `.md`; the twin is unaffected. These diverge by design: how the design context is read (Figma `get_design_context` / screenshots / asset URLs vs `unpack.mjs`'s source tree, `tokens.json`, `nav-graph.json`, local `assets/img/`), the "spec gate" (a Figma `nodeId` vs a source-file path/region), asset acquisition (download vs decode-from-manifest), navigation (Figma frames → screens vs the prototype's stack-router → hybrid route/step/modal mapping), and responsive strategy (Figma desktop+mobile frames vs target detection).
+- A **new format-specific rule** (e.g. dclogic's empty-`components.json` handling, or a Figma-variable quirk) lives in that flow's agent only — it has no counterpart to sync.
+
+**The one documented exception: `## Workload tracking` is duplicated in both `SKILL.md` files ON PURPOSE.** By the test above it is protocol and belongs in `design-import-shared.md` — but that file is `Read` at pre-flight by **every step agent of both flows**, and the workload ledger is instruction only the *orchestrator* ever acts on. Moving it there would load it into ~7 sub-agent contexts per import to serve a single reader. So it stays duplicated, and both copies carry a banner saying so.
+
+> This exception is **not** a precedent for "duplicating is fine when it's convenient" — it is narrowly about *audience*: orchestrator-only content in a file whose readers are the step agents. Anything a step agent acts on still goes in the shared file, once. And the cost is real, not theoretical: within days of being written the two copies had already diverged (one was missing a verification command the other had). **If you edit one, edit the other in the same commit.**
+
+The old rigid 1:1 map is now just a **navigation aid** (find your twin to compare), NOT a "move them together" mandate:
+
+| figma-design-import | claude-design-import |
+| ------------------- | -------------------- |
+| `skills/figma-design-import/SKILL.md` | `skills/claude-design-import/SKILL.md` |
+| `agents/figma-design/figma-design-tokens.md` | `agents/claude-design/claude-design-tokens.md` |
+| `agents/figma-design/figma-design-assets.md` | `agents/claude-design/claude-design-assets.md` |
+| `agents/figma-design/figma-design-components.md` | `agents/claude-design/claude-design-components.md` |
+| `agents/figma-design/figma-design-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
+| `agents/figma-design/figma-design-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
+| `agents/figma-design/figma-design-screen.md` | `agents/claude-design/claude-design-screen.md` |
+| `agents/shared/design-validation.md` + `docs/design-import-shared.md` | *(same files — already shared; a change benefits both automatically)* |
 
 > **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
 
@@ -91,13 +136,13 @@ src/
 - Layout components live in `src/layouts/LayoutName/LayoutName.tsx` with colocated styles.
 - `GeneralLayout` handles auth token/user fetching and wraps with `ProvidersContainer`.
 
-## Design Tokens (Figma imports)
+## Design Tokens (Figma & Claude Design imports)
 
-Color, typography, and breakpoint tokens added through `/figma-design-import` are tracked in `figma-tokens-map.md` at the project root. That file is the canonical Figma variable → Tailwind token mapping — it documents which existing token a Figma variable was reused into, which new tokens were created, and the reasoning (heuristic match, namespace decision, etc.).
+Color, typography, and breakpoint tokens added through `/figma-design-import` or `/claude-design-import` are tracked in `design-tokens-map.md` at the project root — a **single map shared by both import flows**. That file is the canonical source-variable → Tailwind token mapping (the source variable is a Figma variable for Figma imports, or a Claude Design `THEMES` key / rawScan value for Claude Design imports) — it documents which existing token each source variable was reused into, which new tokens were created, and the reasoning (heuristic match, namespace decision, etc.).
 
-**Consult `figma-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across Figma imports. If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-tokens` sub-agent maintains the map automatically during its runs.
+**Consult `design-tokens-map.md` BEFORE manually adding a new color/typography/breakpoint token to `tailwind.config.js`** to avoid duplicate tokens across imports (from either source). If you create a token manually (outside the agent flow), add a row to the map so future imports see it. The `figma-design-tokens` and `claude-design-tokens` sub-agents maintain the map automatically during their runs.
 
-The `surface-50`…`surface-900` namespace is immutable and template-shipped (not Figma-derived), so it never appears in `figma-tokens-map.md`. Same for Tailwind defaults (`red-600`, `blue-600`, etc.).
+The `surface-50`…`surface-900` namespace is immutable and template-shipped (not import-derived), so it never appears in `design-tokens-map.md`. Same for Tailwind defaults (`red-600`, `blue-600`, etc.).
 
 ## Modals & Notifications System
 
@@ -162,7 +207,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 
 ### Slash Commands
 
-- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` scaffolds the UI. Delegates to four sub-agents in `.claude/agents/openapi/`: `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-spec-validate` (Haiku) for input spec audit, `openapi-code-validate` (Haiku) for emitted code audit.
+- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` or `/claude-design-import` scaffolds the UI (both leave screens rendering `MOCK_*` data with a `// TODO: openapi-import` marker for this flow to replace). Delegates to four sub-agents in `.claude/agents/openapi/`: `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-spec-validate` (Haiku) for input spec audit, `openapi-code-validate` (Haiku) for emitted code audit.
 - **`/new-api-resource {ResourceName} [list,detail,create,update,delete] [no-auth]`** — single-file manual scaffold. No spec input, no merge logic. Use for ad-hoc endpoints not yet in the spec or for quick prototyping.
 
 ### Conventions
@@ -230,19 +275,17 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 
 ## Cleanup before production
 
-The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/sentry-example-api/route.ts` — these exist only to validate that Sentry is correctly wired up and report errors as expected. **Delete both files** (and remove `/sentry-example-page` from `next.config.ts` rewrites / `robots.ts` if applicable) before shipping to production. The page contains inline styles with hardcoded hex colors that intentionally don't follow the project's token system — that's expected for a throwaway test page, but it WILL flag in `figma-validation` if left in. Validating Sentry: open the page, click the buttons, confirm the errors appear in your Sentry dashboard, then delete.
+The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/sentry-example-api/route.ts` — these exist only to validate that Sentry is correctly wired up and report errors as expected. **Delete both files** (and remove `/sentry-example-page` from `next.config.ts` rewrites / `robots.ts` if applicable) before shipping to production. The page contains inline styles with hardcoded hex colors that intentionally don't follow the project's token system — that's expected for a throwaway test page, but it WILL flag in `design-validation` if left in. Validating Sentry: open the page, click the buttons, confirm the errors appear in your Sentry dashboard, then delete.
 
 ## Testing
 
-- **Framework:** Vitest + @testing-library/react
-- Write **unit tests only** (NOT E2E, NOT integration).
-- Focus on: utility functions, store logic, hook behavior, component rendering.
-- Test files live in `__tests__/` folders colocated with the source:
-  - `src/utils/__tests__/validateEmail.test.ts`
-  - `src/stores/__tests__/modalStore.test.ts`
-  - `src/hooks/__tests__/usePressKey.test.ts`
-  - `src/components/Label/__tests__/Label.test.tsx`
-- Naming: `{Name}.test.ts` for logic, `{Name}.test.tsx` for components.
-- Commands: `pnpm test` (watch mode), `pnpm test-unit` (single run).
-- Mock `.sass` imports and framer-motion when needed.
-- Use `vi.fn()` and `vi.mock()` for mocking.
+**The only test runner installed is Cypress (E2E). There is no unit-testing setup** — no `vitest`, no `@testing-library/*`, no `__tests__/` folders, and neither `pnpm test` nor `pnpm test-unit` exists. Verify against `package.json` before assuming any other runner is available.
+
+- `cypress` + helpers (`cypress-dotenv`, `cypress-file-upload`, `cypress-mailslurp`), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
+- Config: `cypress.config.ts` at the repo root — `specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}'`, `baseUrl: http://localhost:3000` (so the app must be running).
+- Commands: `pnpm run test-open` (interactive) · `pnpm run test-run` (headless).
+- **Specs DO exist** — 8 of them, under **`src/cypress/e2e/`** (**not** a root `cypress/`; looking for one is what hides them): the auth flow (`Login`, `SignUp`, `EmailValidation`, `PasswordRecovery`, `ChangePassword`, `Flow`, `DeleteTestUser`) plus `NavigationProtection.cy.ts`. Alongside them: `src/cypress/support/` (`commands.ts`, `e2e.ts`), `src/cypress/utils/` (shared helpers), and its own `tsconfig.json`.
+
+**`src/cypress/utils/` encodes live DOM contracts — components must not break them.** `checkInputError.ts` selects `.parents('.InputContainer').find('.InputError')`, `checkPasswordErrors.ts` likewise leans on `PasswordValidator`'s markup. Changing or extending those components means keeping the root class and the error element's descendant relationship intact, or the auth specs go red.
+
+**Do NOT scaffold NEW test infrastructure unprompted** — the testing strategy beyond the auth flow is still undecided. Writing specs against a framework that isn't installed produces code that cannot run; if a task seems to need one, ask first.

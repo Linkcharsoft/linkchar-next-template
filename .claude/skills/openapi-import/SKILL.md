@@ -187,7 +187,7 @@ Glob `src/api/*.ts` and `src/hooks/use*.ts`. Report which tags already have a fi
 
 ### 1.4 — Figma context hint (non-blocking)
 
-Check whether `figma-tokens-map.md` exists at the project root. If it does, add a soft note: "Figma UI layer detected — this run wires the backend to an existing UI scaffold." If it doesn't, add: "No Figma import detected — this run generates a standalone API layer."
+Check whether `design-tokens-map.md` exists at the project root. If it does, add a soft note: "Figma UI layer detected — this run wires the backend to an existing UI scaffold." If it doesn't, add: "No Figma import detected — this run generates a standalone API layer."
 
 ### 1.5 — Emit the gap analysis to chat
 

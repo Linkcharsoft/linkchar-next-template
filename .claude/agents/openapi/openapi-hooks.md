@@ -24,7 +24,7 @@ If any field is missing or malformed, emit `STOP-BLOCKING / category: INVALID_IN
 Before generating any file, `Read`:
 
 1. `.claude/CONVENTIONS.md` — project rules (Zustand atomic selectors, `'use client'` policy, import order).
-2. `src/screens/ExamplePage/ExamplePage.tsx` lines 305-315 — the **only** canonical `useSWR` call site in the codebase. Mirror its shape exactly: token gating on the key, path interpolation, second-arg fetcher calling the handler with `(path, token)`.
+2. `src/screens/ExamplePage/ExamplePage.tsx` — the **only** canonical `useSWR` call site in the codebase. **Grep for `useSWR(` to locate it, never a line number** — pinned ranges rot silently. Mirror its shape exactly: token gating on the key, path interpolation, second-arg fetcher calling the handler with `(path, token)`.
 3. `src/hooks/useTableParams.ts` — confirms the `stringParams: string` output contract that list hooks consume. List hooks accept `stringParams?: string`, never an object.
 4. `src/stores/userStore.ts` — confirms the atomic selector `const token = useUserStore((s) => s.token)` shape. NEVER destructure the whole store.
 

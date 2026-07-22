@@ -1,0 +1,11 @@
+# Claude Code parses `.claude/**` itself (agent + skill frontmatter, hook and pipeline
+# scripts). Pin those files to LF in the WORKING TREE, not just in the repo.
+#
+# Why: `core.autocrlf=true` (the Windows default) stores LF but checks out CRLF, so a file's
+# line endings depend on which tool last wrote it — an accident, not a decision. This is
+# insurance, not a diagnosis (CRLF is not known to break the loader): it removes an arbitrary
+# per-file variable, and stops a `git checkout` from silently rewriting a file whose content
+# the loader caches. See `.claude/docs/agent-loading-troubleshooting.md`.
+.claude/**/*.md text eol=lf
+.claude/**/*.mjs text eol=lf
+.claude/*.md text eol=lf
