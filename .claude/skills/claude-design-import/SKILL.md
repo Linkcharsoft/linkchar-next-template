@@ -161,10 +161,10 @@ Run the extractor. Pick a scratch output directory **outside** the repo `src/` t
 ```bash
 # Project archive (RECOMMENDED): unzip first, then pass the FOLDER.
 unzip "<archive>.zip" -d "<SCRATCH_DIR>/archive"          # or Expand-Archive on Windows
-node .claude/skills/claude-design-import/unpack.mjs "<SCRATCH_DIR>/archive" "<SCRATCH_DIR>/unpacked"
+node .claude/scripts/unpack.mjs "<SCRATCH_DIR>/archive" "<SCRATCH_DIR>/unpacked"
 
 # OR a Standalone HTML export (URL or local .html):
-node .claude/skills/claude-design-import/unpack.mjs "<EXPORT_URL_OR_HTML>" "<SCRATCH_DIR>/unpacked"
+node .claude/scripts/unpack.mjs "<EXPORT_URL_OR_HTML>" "<SCRATCH_DIR>/unpacked"
 ```
 
 > **`unpack.mjs` auto-detects the source** (a **directory** → Project archive; a `.html`/URL → Standalone) and writes the SAME IR either way, so every downstream step is source-agnostic. `inventory.sourceMode` records which (`archive` | `standalone`) and `inventory.archiveEntry` names the design the archive's README selected.
