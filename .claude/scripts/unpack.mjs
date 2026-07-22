@@ -959,6 +959,32 @@ function parseDcLogic() {
   const knownSlugs = new Set(docs.map((d) => d.slug))
   const danglingPages = uniq(docs.flatMap((d) => d.dcHrefs)).filter((h) => !knownSlugs.has(slugify(h.replace(/\.html$/i, ''))))
 
+  // The README's entry is "the file the user had OPEN when they hit export" (the handoff README says exactly that)
+  // — which is NOT necessarily the site's home. On a multi-page archive the two diverge whenever the user was
+  // looking at a variant or a WIP page, and `SKILL.md` maps `entry` straight onto `/`. Measured on the StreetBuild
+  // archive: the README named `Streetbuild Home Short.dc.html` (16KB, linked by NOBODY) while the real home (40KB)
+  // is linked by all 8 siblings — the import put an orphan variant at `/` and demoted the home to `/streetbuild-home`,
+  // leaving every sibling's nav "home" link pointing at a subroute. Nothing downstream can catch that: 9 individually
+  // correct pages wired into the wrong topology compile, type-check, build and pass design-validation — including the
+  // runtime sweep, which audits routes one at a time and never looks at the graph between them.
+  // We already hold every page's outgoing hrefs, so MEASURE the in-degree and let the parent judge. Deliberately no
+  // guess at which page IS the home: on StreetBuild all 8 non-orphan pages tie at in-degree 8 (they share one nav),
+  // so picking a winner would be a heuristic, while "the entry is an orphan" is a fact.
+  let entryLinkage = null
+  if (isMultiPage) {
+    const slugOfHref = (h) => slugify(h.replace(/\.html$/i, ''))
+    const inDegree = Object.fromEntries(docs.map((d) => [d.slug, 0]))
+    for (const d of docs) for (const t of uniq(d.dcHrefs.map(slugOfHref))) if (t !== d.slug && t in inDegree) inDegree[t]++
+    const entrySlug = slugify(template.entry)
+    const otherDegrees = docs.filter((d) => d.slug !== entrySlug).map((d) => inDegree[d.slug])
+    const maxOther = otherDegrees.length ? Math.max(...otherDegrees) : 0
+    // Fire ONLY on a true orphan sitting next to a real navigation hub. The `>= 2` floor keeps a linear or
+    // two-page design (where nothing linking back is normal) from tripping this.
+    if (inDegree[entrySlug] === 0 && maxOther >= 2) {
+      entryLinkage = { entry: entrySlug, inDegree, maxOther, hubs: docs.filter((d) => inDegree[d.slug] === maxOther).map((d) => d.slug) }
+    }
+  }
+
   let screens
   if (isMultiPage) {
     // one screen/route per .dc page
@@ -974,7 +1000,7 @@ function parseDcLogic() {
     screens, components, tokens: { themes: null, brand: null, rawScan }, brandFonts,
     fonts: faces, tokenSource: 'inline+helmet',
     targetSignals: computeTargetSignals(allSrc, navModel),
-    extra: { dcDocs: docs.map((d) => ({ slug: d.slug, sections: d.pageVals, imports: d.imports })), entry: isMultiPage ? slugify(template.entry) : null, danglingPages },
+    extra: { dcDocs: docs.map((d) => ({ slug: d.slug, sections: d.pageVals, imports: d.imports })), entry: isMultiPage ? slugify(template.entry) : null, danglingPages, entryLinkage },
   }
 }
 
@@ -1124,6 +1150,9 @@ const notes = [
   ir.fonts.some((f) => f.used === false) ? `WARNING: ${ir.fonts.filter((f) => f.used === false).map((f) => f.family).join(', ')} — declared (@font-face/<link>) but NEVER referenced by any font-family rule. Dead weight in the source; do NOT load via next/font. Excluded from brandFonts.` : null,
   format === 'dclogic' && navModel === 'single-page-sections' ? `navModel=single-page-sections — this is ONE screen with sections (${ir.screens.map((s) => s.key).join(', ')}), not separate routes. Orchestrator: implement as a single screen (section switching), NOT route/step/modal per key.` : null,
   format === 'dclogic' && navModel === 'multi-page' ? `navModel=multi-page — ${ir.screens.length} web pages → ${ir.screens.length} routes (entry: ${ir.extra.entry}).` : null,
+  ir.extra.entryLinkage
+    ? `WARNING: ORPHAN ENTRY — "${ir.extra.entryLinkage.entry}" is the entry (README's primary design) but NO other page in this design links to it, while ${ir.extra.entryLinkage.hubs.length} page(s) are linked ${ir.extra.entryLinkage.maxOther}× each (${ir.extra.entryLinkage.hubs.join(', ')}). The README names the file the user had OPEN at export, which is not the same thing as the site's home — so mapping entry → "/" may INVERT the site: an unlinked variant at the root, and the real home demoted to a subroute that every sibling's nav still points at. In-degree per page: ${Object.entries(ir.extra.entryLinkage.inDegree).map(([k, v]) => `${k}=${v}`).join(', ')}. Step 0.5 MUST surface this and CONFIRM the entry with the user before assigning routes — nothing downstream catches a wrong entry, because each page renders correctly on its own (lint, type-check, build and design-validation, runtime sweep included, all pass on a site with the wrong topology).`
+    : null,
   ir.tokenSource !== 'themes-object' ? 'tokenSource=inline+helmet — NO THEMES object; the tokens agent scans inline styles + <helmet> CSS vars/@font-face (see tokens.json.rawScan + brandFonts).' : null,
   ir.tokens.rawScan.clampFontSizes ? `NOTE: ${ir.tokens.rawScan.clampFontSizes} clamp() font-size(s) not captured in rawScan (responsive display sizes) — the screen agent reads them directly from source.` : null,
   `target guess=${ir.targetSignals.guess} — parent confirms mobile-app|web at the Step 0.5 checkpoint (drives responsive).`,
