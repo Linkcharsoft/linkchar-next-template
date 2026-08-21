@@ -248,12 +248,16 @@ const COLLECTOR = /* js */ `(() => {
 
   /* ── 2 · BACKGROUND_CLIPPED — a painting band that stops short of its parent ──
    * container-custom caps max-width, so on the SAME element as the background it clips the paint:
-   * the band reads as an inset box instead of a full-width strip. Restricted to structural elements
-   * (top-level sections, header/footer, and anything carrying container-custom) so ordinary painted
-   * cards and buttons — legitimately narrower than their parent — never enter the candidate set. */
+   * the band reads as an inset box instead of a full-width strip. Two guards keep ordinary painted
+   * cards, pills and buttons out: the candidate set is tag-qualified — a bare grandchild of <main>
+   * (the pills of a category grid) never enters it, and interactive/inline-ish tags are dropped
+   * however they matched — and the element must already span most of its parent, since only a band
+   * that is nearly full-bleed and STILL short is clipped rather than legitimately narrow. */
+  const BAND_EXCLUDED = 'button, a, input, label, li, summary'
+  const BAND_MIN_RATIO = 0.6
   const bandCandidates = new Set()
-  document.querySelectorAll('main > *, main > * > *, section, header, footer, .container-custom')
-    .forEach((e) => bandCandidates.add(e))
+  document.querySelectorAll('main > *, main > * > section, main > * > header, main > * > footer, section, header, footer, .container-custom')
+    .forEach((e) => { if (!e.matches(BAND_EXCLUDED)) bandCandidates.add(e) })
   for (const el of bandCandidates) {
     if (!rendered(el)) continue
     const s = cs(el)
@@ -264,7 +268,7 @@ const COLLECTOR = /* js */ `(() => {
     if (!p) continue
     const avail = contentWidth(p)
     const actual = el.offsetWidth
-    if (avail - actual > 1) {
+    if (avail > 0 && actual / avail >= BAND_MIN_RATIO && avail - actual > 1) {
       const behind = bgBehind(el)
       add('MEASURED', 'BACKGROUND_CLIPPED', {
         selector: sel(el), expected: Math.round(avail), actual: Math.round(actual),
