@@ -69,6 +69,8 @@ The prototype is usually **mobile-app shaped** (phone frame, `TopBar`, bottom ta
 
 Roles → route groups: `host` and `guest` become route groups (e.g. `(host-layout)` / `(guest-layout)`) mapping to protected/public per the parent's decision. Confirm with the parent's classification; don't invent auth semantics.
 
+**Route group vs persistent nav — structural, not a preference.** A route group for a persistent nav (bottom tab bar, sidebar) only holds while **no member of the group has sub-routes**. The moment a tab needs a pushed detail route, the same URL segment would have to exist both inside and outside the group — which Next.js rejects. So: **any tab with children ⇒ no route group.** Put the nav in the shared layout with flat routes and drive its visibility off `usePathname()` (in a `'use client'` child, per the reminders below). Check the parent's route list for children BEFORE choosing the group.
+
 ## Steps
 
 1. Compare each existing layout in `src/layouts/{AuthLayout,DashboardLayout,GeneralLayout}` against the prototype's chrome intent (per target).
@@ -79,9 +81,9 @@ Roles → route groups: `host` and `guest` become route groups (e.g. `(host-layo
    3. Render `{children}` directly (**NO `<main>` wrapper** — the screen owns `<main id='main'>`). Use `<div className='flex-1'>` for sizing, `<aside>` for decorative side panels. If an existing layout wraps `{children}` in `<main>`, STOP and fix the LAYOUT (`grep '<main' src/layouts/` must be zero).
    4. Mount `<LoadingModal />` per-layout: sibling of `{children}` for single-content layouts (default); panel-scoped inside a `<section>` for split layouts. `ToastNotifications`/`StateModal` stay global — do NOT mount them here.
    5. **Server Component** — never `'use client'`. A child needing hooks (mobile menu, tab-bar active state via `usePathname`) gets `'use client'`, not the layout.
-4. **Wire up** the layout in `src/app/{(group-name)}/layout.tsx` (create the route group if needed). Route-group naming: always `(<kebab-case>-layout)` — `(host-layout)`, `(guest-layout)`, never bare `(host)`.
+4. **Wire up** the layout in `src/app/{(group-name)}/layout.tsx` (create the route group if needed — first re-check the sub-route constraint above). Route-group naming: always `(<kebab-case>-layout)` — `(host-layout)`, `(guest-layout)`, never bare `(host)`.
 5. **Verify the root `src/app/layout.tsx` has a skip-to-content link** (`<a href='#main' className='SkipToContent'>…</a>` + the `.SkipToContent` class in `general.sass`). Add if missing (one-time).
-6. `pnpm run lint-check --fix` + `pnpm run type-check`.
+6. `pnpm run lint-check --fix` + `pnpm run type-check` — **plus `pnpm run build` if this run wired a route group**: moving `page.tsx` files changes the route tree, and `typedRoutes: true` means `type-check` only validates against the LAST build's `.next/types` ([§ C3c](../../docs/design-import-shared.md#c3c-an-agent-that-creates-moves-or-removes-a-route-must-run-pnpm-run-build)). A run that only touched `src/layouts/` keeps the two gates.
 
 ## Layout-agent reminders
 - **Exactly one `<main>` per rendered page** — the SCREEN owns it. Layouts MUST NOT render `<main>`.
@@ -101,6 +103,8 @@ Roles → route groups: `host` and `guest` become route groups (e.g. `(host-layo
 A summary (each layout adjusted/created: file paths + route groups wired). End with the footer:
 
 <!-- The `model=sonnet` literal below must match the `model:` frontmatter. Keep it in sync on any model change. -->
+
+Append `, build=✅/❌` to `Validation:` when this run wired a route group (§ C3c); a layouts-only run reports the two gates.
 
 ```
 ---

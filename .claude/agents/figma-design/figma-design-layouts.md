@@ -71,9 +71,11 @@ If the Figma design suggests a layout needs a feature that would require its own
    5. **Server Component by default**: layouts should NOT be marked `'use client'`. A nested child that needs hooks (e.g. `MobileMenu`, `ScrollSpy`) is the one that gets `'use client'`, not the layout itself — otherwise the entire route subtree opts out of SSR.
 4. **Wire up** the layout in the matching `src/app/{(group-name)}/layout.tsx` route group (create the route group folder if needed). The route-group `layout.tsx` is a thin wrapper that delegates to the layout component.
 
+   **Before creating the group — does any of its routes have children?** A route group for a persistent nav (a bottom tab bar, a sidebar) only holds while **no member of the group has sub-routes**. The moment a nav destination needs a pushed detail route, the same URL segment would have to exist both inside and outside the group, which Next.js rejects. This is a structural constraint, not a styling preference: **any destination with children ⇒ do NOT use a route group**. Put the nav in the shared layout with flat routes instead, and drive its visibility off `usePathname()` in a `'use client'` child (the layout itself stays a Server Component). Check the parent's screen list for `/x` + `/x/[id]` pairs BEFORE choosing.
+
    **Route group naming convention**: always `(<kebab-case-name>-layout)` — kebab-case name + the literal `-layout` suffix in parentheses. Examples: `(auth-layout)` (already in the repo), `(landing-layout)`, `(dashboard-layout)`, `(marketing-layout)`. NEVER `(landing)` / `(marketing)` / `(dashboard)` without the suffix — without `-layout`, the folder name reads like a URL segment instead of a wrapper definition, which confuses anyone scanning `src/app/` for the first time.
 5. **Verify the root `src/app/layout.tsx` has a skip-to-content link** as the first child of `<body>` (`<a href='#main' className='SkipToContent'>Skip to content</a>`, paired with a `.SkipToContent` BEM class in `src/styles/general.sass`). Use whatever language the project ships in. If missing, add it — it pairs with the `id='main'` on each screen's `<main>` (set by the `/new-screen` skill) and is required for the "Bypass blocks of repetitive content" Lighthouse audit. This is a one-time setup; only edit `src/app/layout.tsx` if the link is missing.
-6. Run `pnpm run lint-check --fix` + `pnpm run type-check`.
+6. Run `pnpm run lint-check --fix` + `pnpm run type-check` — **plus `pnpm run build` if this run wired a route group**: moving `page.tsx` files changes the route tree, and `typedRoutes: true` means `type-check` only validates against the LAST build's `.next/types`, so it can go stale-green or stale-red ([§ C3c](../../docs/design-import-shared.md#c3c-an-agent-that-creates-moves-or-removes-a-route-must-run-pnpm-run-build)). A run that only touched `src/layouts/` keeps the two gates.
 
 ## Layout-agent reminders
 
@@ -132,6 +134,8 @@ If the sidebar pattern doesn't match any of the above (e.g. floating sidebar tha
 A summary: for each layout (adjusted or created), the file paths and the route groups wired up. End with the standardized footer:
 
 <!-- The `model=sonnet` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its cost ledger (the footer string is just for the human reader), so a drift here doesn't poison telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
+
+Append `, build=✅/❌` to `Validation:` when this run wired a route group (§ C3c); a layouts-only run reports the two gates.
 
 ```
 ---

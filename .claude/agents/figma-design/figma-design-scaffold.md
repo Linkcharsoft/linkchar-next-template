@@ -17,7 +17,10 @@ Before scaffolding anything, `Read` `.claude/CONVENTIONS.md`. The sections that 
 
 If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
-**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — the shared **import-translation rules** (color clustering, typography sizing, radius, brand gradients, mock-data, forms) and the **agent protocol** (delegation contract, STOP emission, workload footer + report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
+**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — the shared **import-translation rules** (color clustering, typography sizing, radius, brand gradients, mock-data, forms) and the **agent protocol** (delegation contract, STOP emission, workload footer + report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`). Two of its sections govern this agent in particular:
+
+- **[§ C7](../../docs/design-import-shared.md#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-then-verify-on-disk)** — this is the skill-invoking step; invocations are sequential and verified on disk.
+- **[§ C3c](../../docs/design-import-shared.md#c3c-an-agent-that-creates-moves-or-removes-a-route-must-run-pnpm-run-build)** — this is the step that creates routes, so it validates with `build` too.
 
 ## Expected input from the parent
 A list of screens, each with:
@@ -35,7 +38,14 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 
 ## Steps
 
+**`/new-screen` invocations run ONE AT A TIME, sequentially — never several in one turn.** After each, confirm on disk that the screen folder it should have created exists before invoking the next; the acknowledgement is not evidence. If an invocation returns an acknowledgement but creates nothing, write the files yourself following `.claude/skills/new-screen/SKILL.md` and say so in your report. Full rule: [§ C7](../../docs/design-import-shared.md#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-then-verify-on-disk).
+
 1. For each screen, invoke the project's `/new-screen` skill with the right arguments. The skill creates the screen folder, the thin `page.tsx` wrapper, and updates `src/proxy.ts` when needed.
+
+   **Route already served by the template.** `Glob src/app/**/page.tsx` BEFORE invoking anything. The template ships `/` (`HomePage` in `(landing-layout)`), `/dashboard`, and a **working, Cypress-tested auth flow** — `/login`, `/signup` (+ `email-validation`, `confirmation`), `/password-recovery`, `/change-password`. A Figma file carrying its own login / signup / dashboard frame collides with those. In every such case: do NOT run `/new-screen` for that route (it collides) and do NOT scaffold a parallel screen — **reuse the existing route + screen** (Step 5.2 implements the design INTO it; leave the screen body alone for now). BUT skipping `/new-screen` must NOT mean skipping the metadata: **bring the existing `page.tsx` up to the full per-type metadata shape** the skill would have generated (the templates in Step 4 below). A template placeholder often ships only `title: '…'`; rewrite its `metadata` to include `title`, `description`, `alternates.canonical`, `openGraph`, and `twitter` (per [CONVENTIONS > SEO & Metadata](../../CONVENTIONS.md#seo--metadata)) in `detectedLanguage`. That lost-metadata gap is the real bug this case prevents. Report `REUSED ROUTE: /{path} ({Name}Page) — metadata upgraded`.
+
+   - **Reuse never means removal.** `typedRoutes: true` makes every route literal type-checked wherever it appears, so deleting or renaming a route the template serves breaks `redirect('/')` calls, route constants and error-page links in files this import never touched — plus the auth specs in `src/cypress/e2e/`. Removing a shipped route is never your call ([§ C3c](../../docs/design-import-shared.md#c3c-an-agent-that-creates-moves-or-removes-a-route-must-run-pnpm-run-build)).
+   - If the parent's screen list collides in a way reuse cannot resolve (the design wants a different page type on a shipped route, or two Figma frames claim one route), that is `STOP-BLOCKING / category: INVALID_INPUT / next_agent: user_decision` — not a judgement call you make here.
 
 2. **Path override for route groups** (this is critical — `/new-screen` does NOT know about route groups, except for the built-in `(auth-layout)` it handles for `auth` screens). After `/new-screen` runs, check if a `route group` was specified for that screen:
    - **No group, or screen is `auth`** → leave the page where `/new-screen` put it (`src/app/{route}/page.tsx` for protected/public, `src/app/(auth-layout)/{route}/page.tsx` for auth — `/new-screen` already places auth pages in the auth group). Done.
@@ -226,10 +236,10 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 
    **Note on route groups in `proxy.ts`**: route groups like `(marketing-layout)` are transparent to routing — the URL for a page at `src/app/(marketing-layout)/about/page.tsx` is `/about`, NOT `/(marketing-layout)/about`. When verifying `proxy.ts`, match against the URL form (no parentheses), not the filesystem path.
 
-6. Run `pnpm run lint-check --fix` + `pnpm run type-check`.
+6. **Validate**: `pnpm run lint-check --fix` → `pnpm run type-check` → **`pnpm run build`**, in that order, all three reported. `typedRoutes: true` means `type-check` validates against the `.next/types` route union generated by the LAST build, so it goes stale-green or stale-red the moment you add a route — only `build` regenerates it ([§ C3c](../../docs/design-import-shared.md#c3c-an-agent-that-creates-moves-or-removes-a-route-must-run-pnpm-run-build)). Practical consequence: scaffold **ALL** routes first, then validate once; while a target route does not exist yet, link to it with the object form `href={{ pathname: '/x' }}`, which is not narrowed to the generated union.
 
 ## Hard rules
-- ALWAYS invoke `/new-screen` — never scaffold manually.
+- ALWAYS invoke `/new-screen` — never scaffold manually, and never more than one invocation per turn ([§ C7](../../docs/design-import-shared.md#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-then-verify-on-disk)).
 - Page wrappers must be THIN (just metadata + render the screen component). No business logic in `page.tsx`.
 - Default exports for both screen and page.
 - The screen root MUST be `<main id='main' className='{Name}Page'>` — each screen owns its own `<main>`. Layouts do NOT render `<main>` themselves, so this never creates nesting. The `/new-screen` skill already does this; verify after the skill runs.
@@ -237,13 +247,13 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 - Dynamic routes always use `generateMetadata` (function), never `metadata` (const).
 
 ## Output to parent
-A list of created routes (route → screen file path), followed by the standardized footer:
+A list of created routes (route → screen file path) — noting per screen whether `/new-screen` generated it or you fell back to writing it by hand ([§ C7](../../docs/design-import-shared.md#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-then-verify-on-disk)) — plus any `REUSED ROUTE:` lines, followed by the standardized footer:
 
 <!-- The `model=haiku` literal in the footer below must match the `model:` value in this agent's frontmatter. The orchestrator re-reads the frontmatter for its cost ledger (the footer string is just for the human reader), so a drift here doesn't poison telemetry — but a drift is confusing. If the frontmatter model changes, update the footer literal in the same commit. -->
 
 ```
 ---
 Workload: model=haiku, tool_calls≈{N}, files_touched={M}
-Validation: lint=✅/❌, type-check=✅/❌
+Validation: lint=✅/❌, type-check=✅/❌, build=✅/❌
 Notes: {one-line count summary, e.g. "8 screens scaffolded (5 protected, 2 public, 1 auth), 3 moved into route groups, proxy.ts updated with 2 public paths"}
 ```
