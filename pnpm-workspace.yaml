@@ -10,5 +10,17 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - lint-staged@17.1.1
   - postcss@8.5.22
-  - sass@1.101.5
+  - sass@1.101.5 || 1.103.1
   - globals@17.9.0
+  - '@next/env@16.3.2'
+  - '@next/eslint-plugin-next@16.3.2'
+  - '@next/swc-darwin-arm64@16.3.2'
+  - '@next/swc-darwin-x64@16.3.2'
+  - '@next/swc-linux-arm64-gnu@16.3.2'
+  - '@next/swc-linux-arm64-musl@16.3.2'
+  - '@next/swc-linux-x64-gnu@16.3.2'
+  - '@next/swc-linux-x64-musl@16.3.2'
+  - '@next/swc-win32-arm64-msvc@16.3.2'
+  - '@next/swc-win32-x64-msvc@16.3.2'
+  - eslint-config-next@16.3.2
+  - next@16.3.2
