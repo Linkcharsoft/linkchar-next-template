@@ -128,6 +128,25 @@ const scanCssVars = (s) => uniq([...s.matchAll(/var\((--[a-zA-Z0-9_-]+)/g)].map(
 // with no body/caption/label sizes, and Step 5.2 then re-STOPs on TOKENS_MISSING per screen.
 // `em` is deliberately NOT matched: it is parent-relative, so there is no correct ×16 conversion to a px token.
 const scanFontSizes = (s) => uniq([...s.matchAll(/font-size:\s*(\d*\.?\d+)\s*(px|rem)/g)].map((m) => (m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1])))).sort((a, b) => a - b)
+// JSX font sizes (babel). THREE shapes, all real in one export, and the old `fontSize:\s*(\d+(?:\.\d+)?)` read
+// only the first: unitless `fontSize: 13.5`; QUOTED with a unit `fontSize: '14px'` / `"1.25rem"`, where the leading
+// `'` breaks the pattern outright so it matched nothing at all (rem→px @16; `em` skipped for the same reason
+// scanFontSizes skips it — parent-relative, no correct ×16); and the size passed as a PROP to a typographic helper
+// (`<Display size={29}>`, `<H size={31}>`), which no style scan can see. A source using the last shape extracted
+// ZERO sizes and surfaced downstream as a TOKENS_MISSING STOP in the middle of the Opus screen step.
+// The prop tier is a heuristic, so it is reported separately (rawScan.propFontSizes → a NOTE): ONLY `size` and
+// `fontSize` qualify — `width`/`height`/`w`/`h` are layout, and scooping them would poison the type scale.
+function scanJsxFontSizes (src) {
+  const direct = []
+  for (const m of src.matchAll(/fontSize:\s*(?:['"]\s*(\d*\.?\d+)\s*(px|rem|em)?\s*['"]|(\d*\.?\d+))/g)) {
+    if (m[3] !== undefined) direct.push(Number(m[3]))
+    else if (m[2] !== 'em') direct.push(m[2] === 'rem' ? Number(m[1]) * 16 : Number(m[1]))
+  }
+  const seen = new Set(direct)
+  const fromProps = uniq([...src.matchAll(/\b(?:fontSize|size)\s*=\s*(?:\{\s*(\d*\.?\d+)\s*\}|["'](\d*\.?\d+)["'])/g)]
+    .map((m) => Number(m[1] ?? m[2])).filter((n) => !seen.has(n))).sort((a, b) => a - b)
+  return { sizes: uniq([...direct, ...fromProps]).sort((a, b) => a - b), fromProps }
+}
 
 // ── Color clustering (design-import-shared.md § B2) ───────────────────────────
 // A `tokenSource=inline+helmet` rawScan dumps 40+ hexes; the parent must reduce that to a
@@ -186,6 +205,37 @@ function suggestFamily (hex, role) {
   return l < 0.25 ? 'ink' : l > 0.85 ? 'tint' : 'muted'
 }
 
+// Blank every [start,len] span of `s` in ONE pass (same-length, so every other offset survives). Blanking them
+// one at a time rebuilds the whole string per span — quadratic on a 10MB source.
+function maskSpans (s, spans) {
+  if (!spans.length) return s
+  spans.sort((a, b) => a[0] - b[0])
+  let out = '', pos = 0
+  for (const [i, len] of spans) {
+    const end = i + len
+    if (end <= pos) continue
+    const start = Math.max(i, pos)
+    out += s.slice(pos, start) + ' '.repeat(end - start)
+    pos = end
+  }
+  return out + s.slice(pos)
+}
+// Index of the first top-level comma that separates two PROPERTIES, or -1. A comma inside balanced parens, or one
+// NOT followed by another `key:`, belongs to the VALUE and must stay in the match: `box-shadow: 0 1px 0 #fff,
+// 0 8px 24px #0d2740` is two stops that are both real, and `rgba(…,…)` / `linear-gradient(…,…)` / `font-family: a, b`
+// must not be split either.
+const NEXT_KEY = /\s*['"]?(?:--)?[a-zA-Z][\w-]{0,80}['"]?\s*:/y
+function propSeparatorComma (v) {
+  let depth = 0
+  for (let i = 0; i < v.length; i++) {
+    const c = v[i]
+    if (c === '(') depth++
+    else if (c === ')') depth--
+    else if (c === ',' && depth === 0) { NEXT_KEY.lastIndex = i + 1; if (NEXT_KEY.test(v)) return i }
+  }
+  return -1
+}
+
 function clusterHexes (src) {
   const roles = {}, total = {}
   const bump = (h, role) => { h = expandHex(h.toLowerCase()); (roles[h] ||= {})[role] = (roles[h][role] || 0) + 1; total[h] = (total[h] || 0) + 1 }
@@ -211,14 +261,34 @@ function clusterHexes (src) {
   // text the greedy version had swallowed, which silently inflates the declaration count).
   // 80 is safe with room to spare: across 83,069 declarations in 125 files from all 7 sample designs the longest
   // identifier is 27 chars (`webkit-box-decoration-break`), and extraction is byte-identical on every one of them.
-  for (const m of masked.matchAll(/(--[a-zA-Z][\w-]{0,80}|[a-zA-Z][\w-]{0,80})\s*:\s*([^;{}]*)/g)) {
-    const role = roleOfProp(m[1])
+  // A JSX style object has NO `;`, so `[^;{}]*` ran past the property's own value and swallowed the next one:
+  // `{ background: '#fff', color: '#111' }` counted BOTH hexes under role `background`. The count was right, the
+  // role was not — and dominantRole → suggestedFamily is derived from it. So cut the value at a property-separating
+  // comma and rewind `lastIndex` there, which re-enters the tail as its own declaration with its own role.
+  const consumed = []
+  const decl = /(--[a-zA-Z][\w-]{0,80}|[a-zA-Z][\w-]{0,80})\s*:\s*([^;{}]*)/g
+  let d
+  while ((d = decl.exec(masked))) {
+    const head = d[0].length - d[2].length
+    let value = d[2]
+    const cut = propSeparatorComma(value)
+    if (cut >= 0) { value = value.slice(0, cut); decl.lastIndex = d.index + head + cut }
+    const role = roleOfProp(d[1])
     if (!role) continue
-    for (const h of m[2].matchAll(new RegExp(HEX, 'g'))) bump(h[0], role)
+    for (const h of value.matchAll(new RegExp(HEX, 'g'))) bump(h[0], role)
+    consumed.push([d.index, head + value.length])
   }
 
   // 3) SVG presentation ATTRIBUTES (`stroke="#..."`), which are not `prop: value` declarations.
-  for (const m of masked.matchAll(new RegExp(`(?:stroke|fill|stop-color)\\s*=\\s*["'](${HEX})`, 'g'))) bump(m[1], 'icon')
+  for (const m of masked.matchAll(new RegExp(`(?:stroke|fill|stop-color)\\s*=\\s*["'](${HEX})`, 'g'))) { bump(m[1], 'icon'); consumed.push([m.index, m[0].length]) }
+
+  // 4) Hexes that exist ONLY as a string literal — a palette array (`const AVATAR_COLORS = ['#7c5ce6', …]`) or a
+  //    ternary branch has no `prop:` in front of it, so passes 1-3 never counted it: `scanHex` listed the colour
+  //    while its cluster came out `uses: 0, roles: {}, dominantRole: 'unknown'`, i.e. a real palette (avatars,
+  //    status colours) reading as dead. Role `literal` records exactly what was observed — seen, but not in a
+  //    role-bearing position; `suggestFamily` handles it through its saturation/luminance fallback. Masked against
+  //    passes 2-3 (same discipline as the gradient pass) so nothing is counted twice.
+  for (const m of maskSpans(masked, consumed).matchAll(new RegExp(`["'\`]\\s*(${HEX})\\s*["'\`]`, 'g'))) bump(m[1], 'literal')
 
   // B2.1: pure white/black are Tailwind defaults, never tokens — keep them out of the clusters.
   const NEUTRAL = new Set(['#ffffff', '#000000'])
@@ -848,10 +918,13 @@ function parseBabel() {
     const t = themes[brand], body = familyOf(t.fontBody), display = familyOf(t.fontDisplay)
     brandFonts = { body, display, families: uniq([body, display].filter(Boolean)) }
   }
+  const jsxSizes = scanJsxFontSizes(allSrc)
   const rawScan = {
     hexColors: scanHex(allSrc),
     clusters: clusterHexes(allSrc), // B2 pre-grouping (babel usually has THEMES — this is a cross-check)
-    fontSizes: uniq([...allSrc.matchAll(/fontSize:\s*(\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]))).sort((a, b) => a - b),
+    fontSizes: jsxSizes.sizes,
+    propFontSizes: jsxSizes.fromProps, // heuristic tier, reported apart so the NOTE can name it for verification
+    clampFontSizes: (allSrc.match(/font-size:\s*clamp\(|fontSize:\s*['"`]\s*clamp\(/g) || []).length,
     cssVars: scanCssVars(allSrc),
   }
 
@@ -1170,6 +1243,15 @@ const notes = [
     : null,
   ir.tokenSource !== 'themes-object' ? 'tokenSource=inline+helmet — NO THEMES object; the tokens agent scans inline styles + <helmet> CSS vars/@font-face (see tokens.json.rawScan + brandFonts).' : null,
   ir.tokens.rawScan.clampFontSizes ? `NOTE: ${ir.tokens.rawScan.clampFontSizes} clamp() font-size(s) not captured in rawScan (responsive display sizes) — the screen agent reads them directly from source.` : null,
+  ir.tokens.rawScan.propFontSizes && ir.tokens.rawScan.propFontSizes.length
+    ? `NOTE: font size(s) ${ir.tokens.rawScan.propFontSizes.join(', ')} came from a JSX SIZE PROP (\`<Display size={29}>\`), not from a fontSize style — the one shape no style scan can see, and the reason such sizes used to vanish from rawScan entirely. This tier is a HEURISTIC: only \`size\`/\`fontSize\` props are read (never width/height), but a \`size\` prop on a NON-typographic component lands here too. Verify each against its call site in source/ before the tokens agent turns it into a type token.`
+    : null,
+  (() => {
+    const unseen = (ir.tokens.rawScan.clusters || []).filter((c) => !c.uses)
+    return unseen.length
+      ? `NOTE: ${unseen.length} colour cluster(s) came out uses=0 (${unseen.map((c) => c.representative).join(', ')}). uses=0 means the scanner did not see that hex in a ROLE-BEARING position (a \`prop: value\` declaration, a gradient stop, an SVG fill/stroke/stop-color, or a string literal) — it does NOT mean the colour is dead. A hex assembled at runtime, or held in a structure this scan cannot read, still renders on screen. Verify these against source/ before discarding any of them; their \`dominantRole: unknown\` / \`suggestedFamily\` is a luminance guess, not an observation.`
+      : null
+  })(),
   `target guess=${ir.targetSignals.guess} — parent confirms mobile-app|web at the Step 0.5 checkpoint (drives responsive).`,
   dupComponents ? `NOTE: ${ir.screens.length} registry keys → ${screenComponents.length} unique components (some routes share a component).` : null,
   ir.extra.usedRegistryFallback ? 'NOTE: no window.* registries — used the const-registry NAME heuristic; double-check screens[] for spurious entries.' : null,
