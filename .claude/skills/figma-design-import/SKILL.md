@@ -148,6 +148,7 @@ You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 
 | 4 | `figma-design-layouts` | Sonnet | Moderate decisions, known patterns |
 | 5.1 | `figma-design-scaffold` | Haiku | Mechanical `/new-screen` invocations |
 | 5.2 | `figma-design-screen` | Opus | Pixel-perfect fidelity, heaviest token user |
+| 5.2b | `general-purpose` (fidelity diff) | Sonnet | Diffs each implemented screen against its frame — the twin of 0.55, on the output side. Builtin agent, no file under `.claude/agents/` |
 | 6 | `design-validation` | Haiku | Run commands + report findings (shared agent). Its runtime half is a deterministic script, so no model measures anything |
 
 **Always pass enough context** in each delegation prompt — sub-agents start fresh, they don't see your conversation. Include relevant gap-analysis data, file paths, and decisions already made.
@@ -217,6 +218,16 @@ Read the Figma source AND the relevant codebase before touching any file.
      - Desktop: `X:Y` ({Figma frame name})
      - Mobile: `X:Z` ({Figma frame name}) — or `(no mobile variant found)` if missing
      - Expected reusable components (from Step 3 inventory): `[{Component1}, {Component2}, ...]` — populated after Step 3 returns, used by Step 5.2 to short-circuit the per-screen reuse audit.
+
+   ## Route collisions with what the template already serves
+   - Cross the screen list against the routes THIS template already ships and list every collision. The template is not an empty app: it serves `/` (`HomePage`), `/dashboard`, and a **working, Cypress-tested auth flow** — `/login`, `/signup`, email validation, password recovery. A design carrying its own login or signup maps straight onto them, and nothing downstream notices: both screens compile, both routes render, and the app ships with two signups.
+   - Per collision: `{ScreenName}Page → {route}` · what the template already serves there · proposal (**reuse the existing route** / **map the design's screen elsewhere** / **the design's version replaces it**). **Reuse is the default** — the auth flow is wired to real session handling and has E2E coverage; the design's version is a drawing of one.
+   - **Removing a template route is never a step-agent decision, and rarely the right one.** `typedRoutes: true` makes every route literal type-checked, so deleting `/` or `/dashboard` breaks `redirect('/')`, the auth redirect constants and the error pages — in files this import never touched, plus the specs under `src/cypress/e2e/`.
+   - Write `none` when there are none. Deciding this now costs a line; deciding it after Step 5.2 costs an Opus screen.
+
+   ## Cost estimate for Step 5.2
+   - `{N} screens · Step 5.2 is the bulk of the cost`. Do NOT quote a per-screen constant from another import — cost varies by screen density. Offer to run the first 2–3 screens, then **recalibrate from the ledger's measured `<usage>` figures** and re-quote the remainder.
+   - Past ~10 screens, offer **batching by flow** (auth → marketing → dashboard → …) with a real stop between batches, not just the per-screen checkpoint. A long import is easier to abandon at a batch boundary than at screen 19. This is an offer, not a gate.
 
    ## Detected language
    - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
@@ -390,7 +401,15 @@ Pass to the agent the full screen list from the gap analysis. **Before delegatin
 
 All screens — both those with Figma sources and those that are TBD — get the same placeholder for consistency (`"Coming soon"` when language is `en`, `"Próximamente"` when language is `es`). Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each (which generates `metadata.alternates.canonical` from the start), sets the placeholder content in the right language, switches `<html lang>` and `openGraph.locale` in `src/app/layout.tsx` if they don't match the detected language, and verifies routes are reachable.
 
-After this step, **commit the scaffold as a checkpoint** before moving on — *unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own). Their instruction wins; skip the commit and say so rather than committing anyway or silently dropping the step.
+After this step, **commit the scaffold as a checkpoint** — per the cadence rule below.
+
+#### Commit cadence — after every validated step, not just this one
+
+**Commit each step once its validation is green**, with a `[ TYPE ] description` subject scoped to that step's concern (`[ ADD ] Design tokens`, `[ ADD ] Converted design assets`, `[ FEATURE ] Scaffold design routes`, `[ FEATURE ] {Name}Page`). An import touches tokens, assets, components, layouts, routes and N screens; batching all of it into one commit produces a diff nobody can review and nothing to bisect when a later step regresses an earlier one. It also makes "revert just the screens, keep the tokens" a real option — which is what a user actually asks for after a long import.
+
+Screens commit **per screen**, at the checkpoint, so the history mirrors the checkpoints the user already walked through.
+
+*Unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own) — **their instruction wins**; skip the commits and say so rather than committing anyway or silently dropping the step. Same for a step that returned red: fix it or surface it, do not commit a broken gate.
 
 You receive: list of created routes + lint/type-check status.
 
@@ -433,12 +452,43 @@ Adjustment notes (only on re-runs): {text from user}
 
 The default image strategy is `descargá de Figma` since the user didn't provide URLs. The `figma-design-screen` agent will curl + `sharp` each asset into `src/assets/images/{screen-slug}/`.
 
+**Gate the IMPLEMENTATION against the design (the twin of Step 0.55) — before each checkpoint.**
+
+> **Delegate to**: `Agent({ subagent_type: 'general-purpose' })` — **Sonnet**. One call per screen, between the screen agent returning and you posting the checkpoint. Give it the screen's **desktop nodeId** and the emitted files; tell it to pull `get_design_context` on that node ONCE and read no other node — this is the same pull the screen agent already made, and letting it wander the file is how a cheap gate turns expensive.
+
+Step 0.55 diffs your **spec** against the design *before* anything is built. Step 6 runs *after*, but only over **generic invariants** — lint, type-check, build, the convention greps, and a runtime sweep that measures widths and overflow. **Neither one ever compares the implemented screen to its own frame.** So a screen can be visually or interactively unfaithful while being token-clean, convention-clean and build-clean, and pass every gate the flow has: an extra field added to a form, a static label rendered as an input, a bottom sheet turned into a centered dialog, a near-match component substituted for the one the design draws, an optional prop switched on where the design's instance does not use it.
+
+```
+Design: fileKey {key}, desktop nodeId {X:Y}   # pull get_design_context on THIS node only
+Output: src/screens/{Name}Page/{Name}Page.tsx + .sass
+
+Read the frame, then the output, and report where the output is NOT faithful to the frame.
+Check exactly these, per § B9/B10 of .claude/docs/design-import-shared.md:
+1. CONTROL SET — every input/button/link/toggle in the output with no counterpart in the frame, and every
+   one in the frame missing from the output. Include required-markers.
+2. AFFORDANCES — anything the frame draws as static text rendered as editable/clickable, or vice versa.
+3. LABELS — the frame's label typography vs what the output renders.
+4. MODAL PRESENTATION — bottom-sheet / centered / full-screen, per overlay.
+5. COMPONENT SUBSTITUTION — a frame primitive implemented with an existing component that differs in
+   radius/border/fill/stroke/aspect. Say which parameters differ.
+6. INSTANCE PROPS — optional props or variants enabled on a call site the frame's instance does not use.
+7. DERIVED VISUALS — hash colours, initials, generated placeholders: does the mapping match?
+8. FORM INITIAL STATE — if this screen creates something, does it start blank/minimal as the frame shows?
+Report ONLY mismatches, each with the frame's element name + the output line. Where it matches, say "match".
+Do NOT fix anything. Do NOT judge whether the design is right — only whether the output matches it.
+```
+
+**Its findings are ADVISORY and the user adjudicates them — never auto-fix, and never "correct" a screen on the strength of this report alone.** The design is not automatically right for the codebase either: an import with no backend legitimately turns a mocked edit into static text. That is exactly why the output is a list for a person rather than a patch. Surface the findings inside the checkpoint below; if the user wants any applied, re-delegate the screen with them as `Adjustment notes:`.
+
+Skip the gate for a screen the user skipped. If the diff agent returns nothing, say `fidelity diff: sin hallazgos` — silence is a result, not an omission.
+
 **Per-screen checkpoint message (post after each subagent returns).** Keep it tight so the user can decide quickly:
 
 ```
 ✅ {Name}Page implementada ({images_count} imágenes, {duration})
    Ruta: /{path}
    Archivos: src/screens/{Name}Page/, src/assets/images/{slug}/
+   Fidelidad vs diseño: {"sin hallazgos" | the diff's findings, one line each, marked as adjudicables}
 
 ¿Ajustes para {Name}Page o seguimos con {NextName}Page?
   • Pegá instrucciones específicas para refinarla
@@ -640,4 +690,5 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 | 4 | Layouts | `figma-design-layouts` | Sonnet | Current layouts state + Figma findings |
 | 5.1 | Scaffold screens | `figma-design-scaffold` | Haiku | Screen list (name, **screenType**, route, routeGroup, Figma-or-TBD) + `detectedLanguage` + `currentHtmlLang` |
 | 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-design-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
+| 5.2b | Gate the implementation against the design | `general-purpose` | Sonnet | That screen's desktop nodeId (ONE `get_design_context` pull) + the emitted `.tsx`/`.sass` |
 | 6 | Validation | `design-validation` | Haiku | Scope (or empty for full sweep) + `importFlow: 'figma-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |

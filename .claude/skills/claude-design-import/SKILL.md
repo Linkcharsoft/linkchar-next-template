@@ -148,6 +148,7 @@ You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0
 | 4 | `claude-design-layouts` | Sonnet | Moderate decisions, known patterns |
 | 5.1 | `claude-design-scaffold` | Haiku | Mechanical `/new-screen` + `/new-store` |
 | 5.2 | `claude-design-screen` | Opus | Highest-fidelity re-styling + responsive |
+| 5.2b | `general-purpose` (fidelity diff) | Sonnet | Diffs each implemented screen against its source — the twin of 0.55, on the output side |
 | 6 | `design-validation` | Haiku | Run commands + report (shared agent). Its runtime half is a deterministic script, so no model measures anything |
 
 **Always pass enough context** in each delegation — sub-agents start fresh. Above all, pass the **path to the unpacked working tree** and the **specific extracted file(s)** each agent needs (its source of truth), plus decisions already made.
@@ -269,6 +270,7 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 | (c) placeholders | Pass the list to Step 5.2 via `Remote images:` with the intended box sizes, so the screen agent renders sized placeholders + `// TODO:` instead of silently omitting the element. |
 - Icons: babel → the `Icon` component's named glyphs; flat dclogic (empty `components.json`) → the inline `<svg>` glyphs, counted by repetition.
 - **Pre-filter per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph)** — NOT by "a PrimeIcon with that name exists". First **measure** whether the design ships a coherent icon set (tabulate every inline `<svg>`'s `stroke-width`/style): if it does, **every member keeps its source glyph and the import yields zero PrimeIcons** — that is the correct outcome, not an oversight. Only when there is no set do generic glyphs become `pi pi-{name}`. Brand marks always keep their source path — and use the **majority** path across instances, not the longest (a nav instance may carry an extra sub-path the other N don't; extracting that outlier silently re-draws every call site). Of the kept glyphs, pass the ones reused **2+ times** to the assets agent for extraction; single-use ones stay inline. Decide this here; do NOT ask the user.
+- **Glyphs referenced BY NAME from data need a resolver, and it belongs to Step 2.** A source that stores an icon name in its data (`{ icon: 'gift' }` rendered through `<Icon name={item.icon}/>`) cannot import a component per call site — it needs a `name → component` map. Detect it here (grep the source's data arrays for an icon-ish string field) and tell Step 2 to emit that map alongside the icon components, in `src/assets/icons/index.ts`. Otherwise every screen agent improvises its own local `Record<string, ComponentType>` — N divergent copies of one map, each with its own idea of which names exist.
 
 ## Components (each with its SOURCE FILE — mandatory)
 Every primitive to extend/create MUST cite its source in the unpacked tree (babel: `source/jsx/03_display.jsx`; dclogic: a `<dc-import>` child listed in `components.json`, OR — when `components.json` is **empty** (a flat landing / single-page dclogic with no `<dc-import>`) — a **`file:lines` markup region** in `source/{screen}.markup.html`, e.g. `source/app.markup.html:140-149`).
@@ -284,6 +286,8 @@ This is the equivalent of Figma's nodeId gate — claude-design-components reads
 **Derive the full store spec HERE, up front** (analogous to deriving component primitives) — do NOT leave it for Step 5.2's isolated per-screen contexts (that produces divergent store APIs). Read the App/entry file's centralized state + reducers and, for each Zustand store, specify:
 - **State fields** (`gifts`, `contribs`, `cart`, `draft`, …).
 - **Initial seed** — the prototype seeds shared state from demo data (`useState(INITIAL_CONTRIBS)`, `setGifts(GIFTS.map(...))`). So the store's INITIAL STATE **is that mock seed**, defined in the store file and marked `// TODO: openapi-import — replace seeded mock with fetched data`. Screens then read POPULATED data from the store (never a blank list). Do NOT scatter shared-state mock as `MOCK_*` in screens — that leaves the store empty and the screen rendering `[]`.
+- **Initial state for CREATION flows, when it differs from the seed.** The seed exists so a dashboard renders populated. A creation/onboarding flow in the same design initializes its own draft **blank or minimal** — read that initialization from the source and put it in the spec as a separate value the creation screen resets to. Omit this and the onboarding step opens pre-filled with the dashboard's demo entities, which reads as a data-ownership bug and passes every gate ([§ B6](../../docs/design-import-shared.md#b6-data-is-out-of-scope--mock_-or-seeded-store-always-deferred-to-openapi-import)).
+- **Persistence, when the prototype persists.** Grep the source for `localStorage` / `sessionStorage`. If it persists state, the spec carries the requirement AND the **scope** (per-tab vs shared) — `/new-store` ships the `persist` middleware for it. An in-memory translation satisfies client navigation and loses everything on a hard refresh; nothing downstream flags that.
 - **Action bodies — including cross-entity reducers no single screen owns** (`addContribution` mutates `gifts` AND `contribs` atomically; `confirmContribution` recomputes both). **Author the full bodies here** — you (the Opus parent) have the App source, so translate the atomic logic now; the spec carries the IMPLEMENTATIONS, not just signatures, because scaffold runs on Haiku and must not invent atomic logic from a signature.
 - Which screens consume which store.
 Pass this spec to Step 5.1 (scaffold transcribes each store — seed + fields + reducer bodies — verbatim) and Step 5.2 (screens consume it, never redefine it).
@@ -318,6 +322,29 @@ Authoritative list = **every registry key** in `inventory.screens`. `nav-graph.t
 - **The shared chrome lives OUTSIDE the route blocks** — header/nav/footer/floating buttons sit in the shell, so read `source/index.markup.html` (the full body) for them and hand them to Step 4 as ONE layout wrapping all N routes. Do not let each screen re-inline the chrome.
 - **The router's own behavior is design intent, not scaffolding** — read the inline `<script>` at the bottom of `index.markup.html`. Anodal's carried: a scroll-driven solid-header state, an `aria-current` **alias map** (`producto`→Complementos, `novedad`→Novedades), a `forceSolid` flag for the one route with no hero, and a dynamic footer year. All of that belongs in the layout (Step 4), and the per-route bits (e.g. force-solid) need an explicit mechanism the screen can opt into.
 - **Detail routes usually want to be dynamic.** A `producto` / `novedad` block is the detail template for a listing — prefer `/productos/[slug]` + `/novedades/[slug]` over a static route, and confirm with the user at the checkpoint. Then remember `src/proxy.ts`'s `PUBLIC_PATHS` is an **exact-match `Set`** — a dynamic public route needs a prefix mechanism (mirror `AUTH_PATH_PREFIXES`) or real visitors get bounced to `/login`.
+
+## Route collisions with what the template already serves
+Cross the design's route list against the routes THIS template already ships, and list every collision here. The template is not an empty app: it serves `/` (`HomePage`), `/dashboard`, and a **working, Cypress-tested auth flow** — `/login`, `/signup`, email validation, password recovery. A prototype that draws its own login or signup maps straight onto them, and nothing downstream notices: both screens compile, both routes render, and the app ships with two signups.
+- For each collision: `{design key} → {route}` · what the template already serves there · proposal (**reuse the existing route** / **map the design's screen to a different route** / **the design's version replaces it**).
+- **Reuse is the default.** The auth flow is wired to real session handling and has E2E coverage; the prototype's version is a drawing of one.
+- **Removing a template route is never a step-agent decision, and rarely the right one.** `typedRoutes: true` makes every route literal type-checked, so deleting `/` or `/dashboard` breaks `redirect('/')`, the auth redirect constants and the error pages — in files this import never touched.
+- Put the list in front of the user at the checkpoint. Deciding it now costs a line; deciding it after Step 5.2 costs an Opus screen.
+
+## Post-design feedback in `uploads/` (archive path only)
+`inventory.sourceMode = archive` → the unzipped project may carry an `uploads/` folder: briefs, references, and **design feedback written AFTER the design was drawn**. Those corrections are not in the JSX — the design does not reflect them yet — so nothing in the extraction can surface them.
+- `ls` the archive's `uploads/` and READ anything that reads as a brief or feedback (dated notes, `feedback`/`revisión`/`v1.7`-style names). Skip binaries you cannot read and say so.
+- Fold each actionable item into the gap analysis, and **carry it into the delegation of the screen it affects** (Step 5.2's `Adjustment notes:`) — an item noted only here is an item that never reaches the code.
+- Write `none` if there is no `uploads/`, or `standalone — n/a` on the standalone path. An unread `uploads/` is the one input the user KNOWS about and will expect to see honoured.
+
+## Cost estimate for Step 5.2
+Screens are the Opus-heavy step and the only one that scales with the design. Before the checkpoint, state: `{N} route screens · Step 5.2 is the bulk of the cost`. Do **not** quote a per-screen constant from another import — cost varies by screen density and format. Instead: offer to run the first 2–3 screens, then **recalibrate from the ledger's measured `<usage>` figures** and re-quote the remainder.
+- For a design past ~10 routes, offer **batching by flow** (auth → onboarding → dashboard → …) with a real stop between batches, not just the per-screen checkpoint. A long import is easier to abandon at a batch boundary than at screen 19.
+- This is an offer, not a gate — if the user wants the whole list in one run, run it.
+
+## PrimeReact accent (app-wide input fidelity)
+The template ships the `lara-light-blue` PrimeReact theme (`src/app/layout.tsx`), so **every** input's focus border and focus ring render blue regardless of the brand you just tokenized. The import produces correct brand tokens and still leaves every form off-brand, app-wide — a fidelity gap no per-screen work can close and no check reports.
+- If the design's accent is not blue, propose the override at the checkpoint: focus/hover border + the focus `box-shadow` ring → the brand accent, **preserving `.p-invalid`'s red**. Step 1 applies it in `general.sass` (it already owns that file).
+- **Offer it; do not apply it silently.** It is a global visual change to a template default, and a project may deliberately keep the PrimeReact look.
 
 ## Detected language
 - Sample the VISIBLE strings of the source (babel: JSX text nodes; dclogic: the text between tags in `{screen}.markup.html`, plus `<option>` labels and `placeholder=` — NOT `{{holes}}`, class names, or `data-*`). Decision `en`|`es` + reasoning.
@@ -392,6 +419,8 @@ Also pass: the pre-rounded off-scale **integer** typography sizes (see Step 0.5 
 
 The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
 
+**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it** — the agent already owns `general.sass`. Pass the accent token and be explicit about the boundary: focus/hover **border** + the focus **`box-shadow` ring** on inputs move to the brand accent; `.p-invalid`'s red stays. Skip the whole item if the user declined or the design's accent is blue anyway.
+
 ---
 
 ## Step 2 — Assets
@@ -406,6 +435,7 @@ Pass: the path to `assets/img/*` + `inventory.images` (each entry carries `file`
 
 - **`screenSlug`** is **not** a field `unpack.mjs` emits. It is *your* decision (per-screen → `src/assets/images/{screenSlug}/`; shared brand asset → flat). Pass it per image.
 - **`isLogo`** per image — set it on logos and flat-color marks. The agent's default rule encodes lossless only when the source has alpha AND is ≤512×512; a brand logo above that size falls through to lossy `quality: 85`, which is exactly what smears hard edges and flat color. Measured on Anodal: two 1247×244 logos went lossy for want of this flag. You know which images are logos (from their `alt`/name), the agent does not. (Sources that are ALREADY `.webp` are copied verbatim and never re-encoded, so this only matters for PNG/JPEG sources.)
+- **The `iconByName` map, when Step 0.5 found data-driven glyphs.** Say which names must resolve and to which components; the agent exports the map from `src/assets/icons/index.ts` next to the components themselves. Without it, each screen agent re-invents a local one.
 - **A semantic `name` per image.** `alias` is `null` for every image on a dclogic export (it comes from babel's `ext_resources` map, which dclogic has no equivalent of), so the agent's naming-sanitization rules cannot fire and **every image falls through to `STOP-BLOCKING / NAMING_NEEDED`** — 28 of them on a landing like Hologramas. The semantic context exists, but only YOU are positioned to read it: the markup's `alt=` attributes (`alt="SanCor Salud"` → `obra-sancor-salud`, `alt="Atención y acompañamiento…"` → `hero-atencion`). Derive the `uuid → name` map at Step 0.5 and hand it over — the same "the parent names, the agent applies" split already used for colors, breakpoints and icons.
 
 ---
@@ -434,14 +464,22 @@ Pass: current `src/layouts/` state, the chrome findings, the host/guest roles, t
 
 > **Delegate to**: `Agent({ subagent_type: 'claude-design-scaffold' })` — **Haiku**.
 
-Before delegating, read `src/app/layout.tsx` and extract the current `<html lang>` (pass as `currentHtmlLang`). Pass: for each **route** screen — `screenName`, `screenType` (auth|public|protected), `route`, `routeGroup`, `role`; the Zustand `stores` to create; batch-level `detectedLanguage` + `currentHtmlLang`. The agent runs `/new-screen` per route (placeholder in the right language), `/new-store` per store, updates `src/proxy.ts`, switches `<html lang>`/`openGraph.locale` if needed. **Only `route` screens are scaffolded — `step`/`modal` are not routes.**
+Before delegating, read `src/app/layout.tsx` and extract the current `<html lang>` (pass as `currentHtmlLang`). Pass: for each **route** screen — `screenName`, `screenType` (auth|public|protected), `route`, `routeGroup`, `role`; the Zustand `stores` to create; batch-level `detectedLanguage` + `currentHtmlLang`. The agent runs `/new-screen` per route (placeholder in the right language), `/new-store` per store, updates `src/proxy.ts`, switches `<html lang>`/`openGraph.locale` if needed. **Only `route` screens are scaffolded — `step`/`modal` are not routes.** Also pass the **route-collision decisions** from the Step 0.5 checkpoint (which design screens map onto routes the template already serves, and whether each reuses or relocates) — the agent re-checks the app tree itself, but it cannot know what the user decided.
 
 **Expect a near-total no-op on a `single-page` / `single-page-sections` import, and do NOT mistake that for "skip the step".** The design maps to `/`, which the template already serves via `HomePage` — so `/new-screen` is skipped (it would collide), `/` is already in `PUBLIC_PATHS`, and there may be zero stores. Two duties survive, and they are the whole point of the step here:
 
 1. **The language switch** (`<html lang>` + `openGraph.locale`) — often the only file this step writes.
 2. **The reused route's metadata upgrade.** The agent is REQUIRED to bring the existing `page.tsx` up to the full per-type metadata shape `/new-screen` would have generated (a template placeholder typically ships only `title`), and to report `REUSED ROUTE: /{path} ({Name}Page) — metadata upgraded`. **Do not instruct it to leave that file alone** — that contradicts its contract and re-opens the lost-metadata gap the rule exists to close. If you want Step 5.2 to own the final SEO copy, say so as a follow-up, not as a prohibition here.
 
-After this step, **commit the scaffold as a checkpoint** — *unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own). Their instruction wins; skip the commit and say so rather than committing anyway or silently dropping the step.
+After this step, **commit the scaffold as a checkpoint** — per the cadence rule below.
+
+### Commit cadence — after every validated step, not just this one
+
+**Commit each step once its validation is green**, with a `[ TYPE ] description` subject scoped to that step's concern (`[ ADD ] Design tokens`, `[ ADD ] Converted design assets`, `[ FEATURE ] Scaffold design routes`, `[ FEATURE ] {Name}Page`). An import touches tokens, assets, components, layouts, routes and N screens; batching all of it into one commit produces a diff nobody can review and nothing to bisect when a later step regresses an earlier one. Per-step commits also make "revert just the screens, keep the tokens" a real option — which is what a user actually asks for after a long import.
+
+Screens commit **per screen**, at the checkpoint, so the history mirrors the checkpoints the user already walked through.
+
+*Unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own) — **their instruction wins**; skip the commits and say so rather than committing anyway or silently dropping the step. Same for a step that returned red: fix it or surface it, do not commit a broken gate.
 
 ### 5.2 — Per-screen implementation (sequential auto with per-screen checkpoint)
 
@@ -471,12 +509,48 @@ Images: [{sourceUuid-or-srcRef → `@/assets/images/…webp`}, ...]   # ALREADY 
 Remote images: {mode: downloaded|keep-remote|placeholder} + [{sourceUrl → target}, ...]   # from the Step 0.5 checkpoint decision. `downloaded` → the entries are already in `Images:` above, keyed by URL, nothing else to do. `keep-remote` → render `next/image` against the ORIGINAL URL (I have already added the host to `next.config.ts` remotePatterns). `placeholder` → render a correctly-SIZED placeholder box + `// TODO: remote image {url}` — never omit the element, and never substitute another image. Omit this field only when `inventory.remoteImages` was empty.
 Existing components to reuse: [{Component} → path, ...]   # from Step 3
 Tokens available: [list from Step 1]
-Container rule: every top-level <section> anchored with `container-custom` (16px built-in gutter — no px-* on the same element); keep per-section py-* from the design. Ignore the prototype's fixed 430px frame width.
-Bespoke widths: [{section → max-width}, ...]   # sections whose source width is NOT the design's default frame width. `container-custom` replaces the DEFAULT width only; a section the design deliberately narrowed keeps its cap (nest it inside the container-custom section). List them or they silently render full-width.
+Container rule: BRANCHES ON `Target` — § B5. `web` → every top-level <section> anchored with `container-custom` (16px built-in gutter, no px-* on the same element), and the prototype's own frame width is ignored. `mobile-app` → NO `container-custom`: the layout's app-shell caps the width, so the screen keeps the source's horizontal padding as px-*. Either way, per-section py-* from the design. State the branch explicitly here — the agent STOPs rather than guessing.
+Bespoke widths: [{section → max-width}, ...]   # `web` only. Sections whose source width is NOT the design's default frame width: `container-custom` replaces the DEFAULT width only, so a section the design deliberately narrowed keeps its cap (nest it inside the container-custom section). List them or they silently render full-width. N/A on `mobile-app` (no container-custom to override) — say so.
 Adjustment notes (only on re-runs): {text}
 ```
 
 The screen agent re-styles the inline `style={{}}` source into Tailwind + tokens + `container-custom` + BEM, reuses components, wires forms to Formik+Yup, animates with `m`, keeps mock data as `MOCK_*`, absorbs `step`s as an internal stepper, mounts local modals, and **synthesizes responsive per `target`** (`web` → full desktop+mobile; `mobile-app` → mobile-first fidelity + conservative desktop centering).
+
+**Gate the IMPLEMENTATION against the source (the twin of Step 0.55) — before each checkpoint.**
+
+> **Delegate to**: `Agent({ subagent_type: 'general-purpose' })` — **Sonnet**. One call per screen, between the screen agent returning and you posting the checkpoint.
+
+Step 0.55 diffs your **spec** against the source *before* anything is built. Step 6 runs *after*, but only over **generic invariants** — lint, type-check, build, the convention greps, and a runtime sweep that measures widths and overflow. **Neither one ever compares the implemented screen to its own source.** So a screen can be visually or interactively unfaithful while being token-clean, convention-clean and build-clean, and pass every gate the flow has. That is not a hypothetical class — it is where the addendum's eight measured drifts live (extra controls, a static label turned editable, a bottom sheet turned into a centered dialog, a near-match primitive, an optional prop switched on, a form seeded from the dashboard's demo data).
+
+Running it here, per screen, is deliberate: the user is already stopping at this checkpoint, the findings are about a screen still fresh, and a Sonnet pass is marginal next to the Opus run that just finished. Batching it to the end of the import instead produces one long adjudication session about screens nobody remembers.
+
+```
+Source: {unpacked}/{inventory.screens[].file}  (the region implementing {component})
+Output: src/screens/{Name}Page/{Name}Page.tsx + .sass
+Target: {mobile-app|web}
+
+Read the source, then the output, and report where the output is NOT faithful to the source.
+Check exactly these, per § B9/B10 of .claude/docs/design-import-shared.md:
+1. CONTROL SET — every input/button/link/toggle/menu item in the output that has no counterpart in the
+   source, and every one in the source that is missing from the output. Include required-markers.
+2. AFFORDANCES — anything static in the source rendered as editable/clickable in the output, or vice
+   versa. Name the handler.
+3. LABELS — the source's label typography vs what the output renders.
+4. MODAL PRESENTATION — bottom-sheet / centered / full-screen, per overlay.
+5. COMPONENT SUBSTITUTION — a source primitive implemented with an existing component that differs in
+   radius/border/fill/stroke/aspect. Say which parameters differ.
+6. INSTANCE PROPS — optional props or variants enabled on a call site the source did not use them on.
+7. DERIVED VISUALS — hash colours, initials, generated placeholders: does the output's mapping match the
+   source's function exactly?
+8. FORM INITIAL STATE — if this screen creates something, does it start from the source's blank/minimal
+   draft, or from populated demo data?
+Report ONLY mismatches, each with source line + output line. Where the output matches, say "match".
+Do NOT fix anything. Do NOT judge whether the source is right — only whether the output matches it.
+```
+
+**Its findings are ADVISORY and the user adjudicates them — never auto-fix, and never "correct" a screen on the strength of this report alone.** The source is not automatically right for this target: an import with no backend legitimately turns a mocked edit into static text, and a mobile-app frame legitimately drops chrome. That is exactly why the output is a list for a person rather than a patch. Surface the findings inside the checkpoint below; if the user wants any of them applied, re-delegate the screen with them as `Adjustment notes:`.
+
+Skip the gate for a screen the user skipped. If the diff agent returns nothing, say `fidelity diff: sin hallazgos` — silence is a result, not an omission.
 
 **Per-screen checkpoint (post after each return):**
 
@@ -484,6 +558,7 @@ The screen agent re-styles the inline `style={{}}` source into Tailwind + tokens
 ✅ {Name}Page implementada ({images_count} imágenes, {duration})
    Ruta: /{path}   ·   Archivos: src/screens/{Name}Page/, src/assets/images/{slug}/
    {if steps absorbed: "Incluye stepper interno: {step list}"}
+   Fidelidad vs fuente: {"sin hallazgos" | the diff's findings, one line each, marked as adjudicables}
 
 ¿Ajustes para {Name}Page o seguimos con {NextName}Page?
   • Pegá instrucciones específicas para refinarla
@@ -584,7 +659,7 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 - ❌ Run a step yourself when there's a sub-agent for it — waste of Opus on Haiku-grade work.
 - ❌ Dump the unpacked tree into the repo `src/` — extract to a scratch dir; only generated code lands in `src/`.
 - ❌ Translate the prototype's inline `style={{}}` hex/px literally — always tokens + Tailwind; hardcoded hex is banned.
-- ❌ Translate the fixed 430px frame width / per-section padding-x literally — anchor every `<section>` with `container-custom` (horizontal only; keep per-section `py-*`).
+- ❌ Apply the same horizontal anchor at both targets — it branches ([§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target)). `web` → discard the prototype's frame width and anchor every `<section>` with `container-custom`. `mobile-app` → the layout's app-shell caps the width; `container-custom` there stretches every section past the shell. Either way, keep per-section `py-*`.
 - ❌ Create one route per `step` screen — wizard sub-steps are internal stepper state inside the flow's route (D6 hybrid).
 - ❌ Re-embed the woff2 fonts from the manifest — fonts are Google Fonts, loaded via `next/font/google` by name.
 - ❌ Port iOS chrome (status bar, home indicator, `IOSDevice`) literally — it's demo framing, not product UI.
@@ -609,4 +684,5 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target |
 | 5.1 | Scaffold routes + stores | `claude-design-scaffold` | Haiku | `route` screens (name, type, route, group, role, **component**) + store specs (full shape) + language |
 | 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX + component**, absorbed steps, modals, target, language, reuse list, store spec |
+| 5.2b | Gate the implementation against the source | `general-purpose` | Sonnet | That screen's source region + the emitted `.tsx`/`.sass` + the target |
 | 6 | Validation | `design-validation` | Haiku | The accumulated touched-file list + `importFlow: 'claude-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |
