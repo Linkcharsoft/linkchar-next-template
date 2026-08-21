@@ -609,10 +609,26 @@ function ingestArchive(dir) {
   if (!found) die(`archive has no README.md — not a recognized Claude Design "Project archive". Point at the unzipped handoff (Export → .zip → "Project archive"/"Send to coding agent"), whose README names the primary design.`)
   if (!found.entryRel) die(`archive README (${found.readmePath}) has no "**Read \`…\` in full**" line — cannot identify the primary design. Entry-detection-without-README is not wired yet.`)
 
-  // entryRel is relative to the zip root = the parent of the slug dir that holds the README.
-  const base = dirname(dirname(found.readmePath))
-  let entryFull = resolve(base, found.entryRel)
-  if (!existsSync(entryFull)) die(`archive README names entry "${found.entryRel}" but it is not on disk at ${entryFull}. Unzip may be incomplete, or the README path is unexpected.`)
+  // entryRel is relative to the ZIP ROOT and prefixed with the project slug (`givxo/project/x.html`), but the
+  // unzipped dir is routinely NOT named after the slug — `unzip -d <scratch>/archive` alone breaks the assumption.
+  // So try the slug-relative path, then the same path with its slug segment dropped, then a basename search.
+  const readmeDir = dirname(found.readmePath)
+  const withoutSlug = found.entryRel.replace(/^[^/\\]+[/\\]/, '')
+  const tried = [resolve(dirname(readmeDir), found.entryRel), resolve(readmeDir, withoutSlug), resolve(readmeDir, found.entryRel)]
+  let entryFull = tried.find((p) => existsSync(p))
+  if (!entryFull) {
+    const wanted = basename(found.entryRel)
+    const hits = []
+    const walk = (d, depth) => {
+      if (depth > 3 || hits.length) return
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        if (e.isDirectory()) { if (e.name !== 'node_modules') walk(join(d, e.name), depth + 1) } else if (e.name === wanted) hits.push(join(d, e.name))
+      }
+    }
+    walk(readmeDir, 0)
+    entryFull = hits[0]
+  }
+  if (!entryFull) die(`archive README names entry "${found.entryRel}" but no such file is on disk. Tried:\n  ${tried.join('\n  ')}\n  ...and a search for "${basename(found.entryRel)}" under ${readmeDir}.\nUnzip may be incomplete, or the README path is unexpected.`)
 
   const entryDir = dirname(entryFull)
   // The README can name a BUNDLED variant (`(offline)`, `(standalone-src)`) — a self-contained __bundler export,
