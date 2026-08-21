@@ -167,7 +167,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 5. **Component reuse audit (BEFORE writing JSX).** The parent passes a list of "Existing components to reuse" but it may be incomplete, stale, or written from the parent's interpretation rather than the file system. Before writing any section, walk the design context and identify every reusable visual primitive (cards, buttons, inputs, callouts, list items, badges, tabs, paginators, breadcrumbs, accordions, etc.). For each:
 
    1. Grep `src/components/` (and `src/components/**/`) for an obvious name match (e.g. design has a numbered step → grep for `Step`, design has tab pills → grep for `Tab` / `Pill`).
-   2. If a match exists AND the component covers this variant → IMPORT and use it. Do NOT inline a one-off version.
+   2. If a match exists AND the component covers this variant → IMPORT and use it. Do NOT inline a one-off version. **"Covers it" means the visual parameters agree** — corner radius, border style, fill vs outline, stroke weight, aspect. A close-but-different component is a *near match*; reusing it with overrides records a real gap as a win, so treat it as a missing variant and take one of the branches in 3 ([§ B10](../../docs/design-import-shared.md#b10-reusing-a-component--match-the-instance-not-just-the-component)).
    3. If a match exists but does NOT cover this variant (e.g. needs a new size or state):
       - **Used 2+ times in the screen** → emit `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-design-components` (format below).
       - **Used 1 time only** → emit `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: implemented inline with a `// TODO: refactor into {ComponentName} variant {variant}` comment so the user can decide to delegate post-batch.`
@@ -187,12 +187,14 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
       - No match, used 2+ times → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-design-components`, so the parent creates it via `figma-design-components` instead of you inlining bespoke JSX.
       - No match, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into a component if it repeats`.
 
-   **The usage count is the ONLY criterion** — 1× advisory, 2+× blocking, per [CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol). Do NOT add side conditions ("…or is a clearly named primitive"): that contradicts the source-of-truth table (it makes the same 1× case ADVISORY there and BLOCKING here) and leaves the single-use no-match case — the most common one — with no branch.
+   **The usage count is the ONLY criterion** for SEVERITY — 1× advisory, 2+× blocking, per [CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol). Do NOT add side conditions ("…or is a clearly named primitive"): that contradicts the source-of-truth table (it makes the same 1× case ADVISORY there and BLOCKING here) and leaves the single-use no-match case — the most common one — with no branch. (§ B10 widens *what counts as a gap*, never how loudly one is reported — a near match routes through these same two severities.)
+
+   **Then reuse the INSTANCE, not just the component (§ B10).** Read each call site's props off the Figma instance you are translating, one at a time: a shared component's optional props and variants exist for the call sites that need them, and switching one on where the frame did not changes what the screen asserts — while staying type-safe. Same for a **derived visual** (a colour from a name hash, initials, a generated placeholder): reproduce the frame's mapping exactly, or treat the difference as a missing variant. And keep one entity's fallback/placeholder consistent across its list, detail and preview unless the design deliberately differs.
 
    Inlining bespoke versions of what should be reusable components is the most common silent regression in this flow. The reuse audit costs ~2-3 extra Grep calls per screen and prevents it.
 
 6. **Implement the screen** at the path that matches `screenType` (see "File path and `<main>` className by screen type" above): `src/screens/{Name}Page/{Name}Page.tsx` for `public`/`protected`, `src/screens/auth/{Name}Page/{Name}Page.tsx` for `auth`. Replace the placeholder content INSIDE the existing `<main>`; do NOT change the `<main>` wrapper or its className. Follow the project's `CLAUDE.md` strictly:
-   - **`container-custom` is MANDATORY on every top-level section.** Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute *horizontal* padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a 16px built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. **Vertical padding is a separate concern**: `container-custom` does NOT set any `py-*` / `pt-*` / `pb-*`, so you MUST translate the vertical spacing from the Figma frame (e.g. a hero `padding-top: 120px; padding-bottom: 80px` → `pt-[120px] pb-20` or the closest token-friendly equivalent). NEVER ship a section without vertical padding — it will collapse against its siblings. Two valid patterns:
+   - **`container-custom` is MANDATORY on every top-level section.** Unconditional here because the Figma flow has no `mobile-app` target — every Figma frame is a desktop artboard, so this agent is always on the `web` branch of [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target). Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute *horizontal* padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a 16px built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. **Vertical padding is a separate concern**: `container-custom` does NOT set any `py-*` / `pt-*` / `pb-*`, so you MUST translate the vertical spacing from the Figma frame (e.g. a hero `padding-top: 120px; padding-bottom: 80px` → `pt-[120px] pb-20` or the closest token-friendly equivalent). NEVER ship a section without vertical padding — it will collapse against its siblings. Two valid patterns:
 
      ```tsx
      // 1) Section with a full-bleed background (color/image spans 100vw)
@@ -216,7 +218,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    - Reuse components from `src/components/` (parent will tell you which); do NOT create one-off variants inside the screen.
    - Use `m` from `framer-motion` (NEVER `motion`).
    - Use `classNames` from `primereact/utils` (NEVER `clsx`).
-   - Inputs via PrimeReact wrapped in `InputContainer`.
+   - Inputs via PrimeReact wrapped in `InputContainer` — the wrapper is mandatory, the design's own label treatment goes in its `label` node ([§ B7](../../docs/design-import-shared.md#b7-forms--formik--yup-wrapped-in-inputcontainer)).
    - **Data-fetching is out of scope** for this agent — this skill translates design to code; the data layer (API endpoints, `customFetch`, SWR) is owned by the separate `openapi-import` flow. Render everything from inline mock data; do NOT add `customFetch`, SWR, or any `src/api/*` import here. The pattern: place mock arrays as top-level `const`s named `MOCK_{KIND}` (uppercase) at the top of the screen file, with a `// TODO: replace with API call once openapi-import has run for {endpoint}` comment. Do NOT split mock data into a sibling `.ts` file — that signals permanence, and mock data should be obviously temporary.
 7. **Mobile responsive**: implement the variants from Step 2's mobile context. Use `md:` (768px) and `lg:` (1024px) Tailwind prefixes per the codebase's breakpoints.
 
@@ -289,7 +291,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    })
    ```
 
-   Wrap each input in `InputContainer` so the project's `<Label>` + `<InputError>` pattern displays validation errors. Pass `formik.values.{field}`, `formik.handleChange`, and `formik.errors.{field}` to each input. The only TODOs left should be (a) the API wiring, and (b) the success/error UI choice (toast vs inline) — never the validation, state wiring, or types.
+   Wrap each input in `InputContainer` so the project's `<Label>` + `<InputError>` pattern displays validation errors. **The wrapper is mandatory, but it must not re-style the design's labels**: pass Figma's own label treatment as the `label` node (it is typed `ReactNode`), e.g. `label={<span className='text-bold-11 uppercase text-brand-400'>Nombre</span>}`, instead of letting the template's default `Label` silently replace it in every form of the import ([§ B7](../../docs/design-import-shared.md#b7-forms--formik--yup-wrapped-in-inputcontainer)). Pass `formik.values.{field}`, `formik.handleChange`, and `formik.errors.{field}` to each input. The only TODOs left should be (a) the API wiring, and (b) the success/error UI choice (toast vs inline) — never the validation, state wiring, or types.
 
 9. **Animations — translate Figma hints to framer-motion `m` components**. The project uses `LazyMotion` AND `<MotionConfig reducedMotion='user'>` (both wired in `src/providers/ProvidersContainer.tsx`), and `src/styles/general.sass` ships a `@media (prefers-reduced-motion: reduce)` reset for CSS animations. That means:
 
@@ -321,9 +323,12 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 
 10. **Validate**:
     - `pnpm run lint-check --fix`
+    - `pnpm run lint-check` (no `--fix`) — not redundant: several of this project's rules are `fixable: "code"`,
+      so `--fix` REWRITES your source and a bad rewrite lands silently; re-running without `--fix` is what proves
+      the file survived it. `git diff` the files you wrote if the autofix touched anything you did not expect.
     - `pnpm run type-check`
     - `pnpm run build`
-    - All three must pass clean. The build is the ONLY gate that catches a broken server/client boundary
+    - All four must pass clean. The build is the ONLY gate that catches a broken server/client boundary
       ([§ C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build))
       and the only one that proves the route still prerenders — report each route's `○ (Static)` / `ƒ (Dynamic)`
       status, not just "build passed".
@@ -372,14 +377,16 @@ The full A11y / image / bundle rules live in [CONVENTIONS.md](../../CONVENTIONS.
   )}
   ```
 - **Loading states**: never render the screen blank while data is fetching — use a `{Name}PageSkeleton` (generated by `/new-skeleton`) or `<Loader/>` for sub-sections. Wrap the loading container with `aria-busy={isLoading}` so SR users hear that data is on the way.
-- **Screen-local modals**: modals opened ONLY by this screen are mounted INSIDE the screen, not in the global `ModalsProvider`. After implementation, report which modals you mounted locally (`SCREEN-LOCAL MODAL: <ModalName> — mounted at src/screens/{Name}Page/{Name}Page.tsx:NNN`).
+- **Screen-local modals**: modals opened ONLY by this screen are mounted INSIDE the screen, not in the global `ModalsProvider`. After implementation, report which modals you mounted locally (`SCREEN-LOCAL MODAL: <ModalName> — mounted at src/screens/{Name}Page/{Name}Page.tsx:NNN`). **Where it mounts and how it presents are two different questions** — read the frame's overlay treatment and preserve it (bottom sheet vs centered dialog vs full-screen takeover are three different components to a user, not three skins of one); swapping one for another changes the interaction pattern with nothing downstream to catch it ([§ B9](../../docs/design-import-shared.md#b9-fidelity-is-not-only-about-copy--the-control-set-and-its-affordances-are-the-design-too)).
 
 ## Hard rules
 - Verbatim text from Figma — do NOT paraphrase or "improve" copy.
+- **Verbatim UI too — the control set and its affordances are the design ([§ B9](../../docs/design-import-shared.md#b9-fidelity-is-not-only-about-copy--the-control-set-and-its-affordances-are-the-design-too)).** Every input, button, link and toggle you emit traces to one in the frame; a static label stays static, an editable field stays editable, a bottom sheet stays a bottom sheet. Anything you add, drop or convert goes through `STOP-ADVISORY` with `default_applied` — never silently.
+- **Never an indexed Zustand selector.** `useXxxStore((s) => s.items[0])` / `s.a.b[i]` trips the `granular-selectors` ESLint rule, whose autofix is `fixable: "code"` and has been measured rewriting such a selector into a syntactically valid but semantically nonsense path. Select the array or object, then index in a local `const` AFTER the hook.
 - If Figma uses a typography size outside the project scale, ask the parent to add it via `figma-design-tokens` rather than using arbitrary `text-[Xpx]`.
 - All `<a>` for internal routes must use Next.js `<Link>` or `CustomButton` with `href`.
 - For interactive non-button elements, add proper a11y attributes (`role`, `tabIndex`, `onKeyDown`).
-- `container-custom` on EVERY top-level section. Reject the impulse to translate Figma's absolute frame width / per-section `padding-x` literally — that's exactly what produces misaligned sections. Self-check before finishing: every `<section>` either has `container-custom` directly or wraps its content in a `<div className='container-custom ...'>`. AND every section has explicit vertical padding (`py-*` / `pt-*` / `pb-*`) translated from the Figma design — `container-custom` only covers horizontal, not vertical, so a section with only `container-custom` and no `py-*` is incomplete.
+- `container-custom` on EVERY top-level section — unconditional here, since the Figma flow is always the `web` target ([§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target)). Reject the impulse to translate Figma's absolute frame width / per-section `padding-x` literally — that's exactly what produces misaligned sections. Self-check before finishing: every `<section>` either has `container-custom` directly or wraps its content in a `<div className='container-custom ...'>`. AND every section has explicit vertical padding (`py-*` / `pt-*` / `pb-*`) translated from the Figma design — `container-custom` only covers horizontal, not vertical, so a section with only `container-custom` and no `py-*` is incomplete.
 - All Lighthouse rules from "Accessibility & Lighthouse rules" and "Bundle architecture rules" above are blocking — if you can't satisfy one, STOP and surface the conflict to the parent.
 
 ## Output to parent
