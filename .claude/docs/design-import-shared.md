@@ -209,10 +209,15 @@ A design's inputs become a real Formik form. **Every** input is wrapped in `Inpu
 bare `InputText` + manual `<label>` + `InputError`. `validateOnChange: false`. Error copy matches
 `detectedLanguage` (`Required`/`Requerido`, `Invalid email`/`Email inválido`). Leave `onSubmit` as a
 marked `// TODO (openapi-import): replace with the real API call` — no `src/api/*`. On form-level errors,
-move focus to the first invalid field or render `<div role='alert' aria-live='assertive'>`. Icon-free
-file inputs use a styled `<label>` + visually-hidden `<input type=file>` — the one deliberate native-input
-exception (PrimeReact DOES ship `FileUpload`, but its imposed UI fights a design's bespoke file control; the
-exception is registered in [CONVENTIONS > PrimeReact Usage](../CONVENTIONS.md#primereact-usage)).
+move focus to the first invalid field or render `<div role='alert' aria-live='assertive'>`. File inputs
+go through PrimeReact `FileUpload`, wrapped in `InputContainer` like every other input: `mode='basic'` (a
+re-stylable choose button) by default; `mode='advanced'` + `emptyTemplate`/`headerTemplate`/`itemTemplate`
+when the design draws a dropzone; `customUpload` so `onSubmit` keeps the openapi-import TODO; skin via
+per-instance `pt` + the colocated `.sass`. Only when `FileUpload`'s own DOM makes the design's control
+irreproducible (neither button nor dropzone — a fully clickable card, an avatar-circle picker) fall back to a
+styled `<label>` + visually-hidden `<input type=file>`, and emit `STOP-ADVISORY` with `default_applied` naming
+the fallback — never take it silently ([CONVENTIONS > PrimeReact Usage](../CONVENTIONS.md#primereact-usage)
+records the same rule).
 
 **The wrapper is mandatory; the label's TYPOGRAPHY still comes from the source.** `InputContainer` renders
 its `label` through the template's `Label`, whose default treatment (sentence case, neutral grey, 16px) will

@@ -322,7 +322,7 @@ So: **whenever `container-custom` is a child of a flex (or grid) parent — head
 ## PrimeReact Usage
 
 - PrimeReact is configured with Tailwind passthrough (`pt: Tailwind`) in `ProvidersContainer`.
-- Use PrimeReact components for inputs: `InputText`, `Password`, `Calendar`, `Dropdown`, `MultiSelect`. **NO native HTML inputs.** One documented exception: icon-free FILE inputs use a styled `<label>` + visually-hidden `<input type=file>` — PrimeReact DOES ship `FileUpload`, but it imposes its own UI, and fighting it to match a bespoke file control loses; see [`design-import-shared.md` § B7](docs/design-import-shared.md#b7-forms--formik--yup-wrapped-in-inputcontainer).
+- Use PrimeReact components for inputs: `InputText`, `Password`, `Calendar`, `Dropdown`, `MultiSelect`, and `FileUpload` for file inputs (`mode='basic'` by default; `advanced` + `emptyTemplate`/`headerTemplate`/`itemTemplate` when the design draws a dropzone; re-skin via per-instance `pt` and the colocated `.sass`, like any other PrimeReact override). **NO native HTML inputs.** Last-resort fallback: when `FileUpload`'s own DOM makes the design's file control irreproducible (neither a button nor a dropzone — a fully clickable card, an avatar-circle picker), a styled `<label>` + visually-hidden `<input type=file>` is allowed — flagged, never silent; see [`design-import-shared.md` § B7](docs/design-import-shared.md#b7-forms--formik--yup-wrapped-in-inputcontainer).
 - Use PrimeIcons for icons: `<i className="pi pi-{icon-name}" />`. **NO inline SVGs when a PrimeIcon exists.** (Writing code from scratch, this is absolute. The design-import flows carve a narrow, role-based exception — brand marks and coherent stroke-matched icon sets keep the source glyph; see [`design-import-shared.md` § B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph).)
 - Customize PrimeReact components via the `pt` (passthrough) prop.
 - Use `classNames` from `primereact/utils` for conditional classes — **NEVER `clsx`**.
@@ -534,7 +534,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 ## Component Rules
 
 1. **REUSE**: Check the [Existing Reusable Components](#existing-reusable-components) table BEFORE creating new ones. NEVER duplicate functionality.
-2. **PrimeReact** for inputs (`InputText`, `Dropdown`, `Calendar`, `MultiSelect`). NO native HTML inputs — except the documented file-input exception in [PrimeReact Usage](#primereact-usage).
+2. **PrimeReact** for inputs (`InputText`, `Dropdown`, `Calendar`, `MultiSelect`, `FileUpload`). NO native HTML inputs — the native file-input fallback is last-resort only, when `FileUpload`'s DOM cannot reproduce the design; see [PrimeReact Usage](#primereact-usage).
 3. **PrimeIcons** (`pi pi-xxx`) for icons. NO inline SVGs when a PrimeIcon exists — except the design-import carve-out for brand marks and coherent icon sets ([§ B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph)).
 4. **Conditional classes**: `classNames()` from `primereact/utils`. NOT `clsx`.
 5. **Images**: `next/image` + WebP in `src/assets/images/`. See [Image Performance](#image-performance) for `sizes` / `priority` / `fetchPriority` requirements.
