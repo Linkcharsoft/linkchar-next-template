@@ -210,7 +210,9 @@ bare `InputText` + manual `<label>` + `InputError`. `validateOnChange: false`. E
 `detectedLanguage` (`Required`/`Requerido`, `Invalid email`/`Email inválido`). Leave `onSubmit` as a
 marked `// TODO (openapi-import): replace with the real API call` — no `src/api/*`. On form-level errors,
 move focus to the first invalid field or render `<div role='alert' aria-live='assertive'>`. Icon-free
-file inputs (no PrimeReact primitive) use a styled `<label>` + hidden `<input type=file>`.
+file inputs use a styled `<label>` + visually-hidden `<input type=file>` — the one deliberate native-input
+exception (PrimeReact DOES ship `FileUpload`, but its imposed UI fights a design's bespoke file control; the
+exception is registered in [CONVENTIONS > PrimeReact Usage](../CONVENTIONS.md#primereact-usage)).
 
 **The wrapper is mandatory; the label's TYPOGRAPHY still comes from the source.** `InputContainer` renders
 its `label` through the template's `Label`, whose default treatment (sentence case, neutral grey, 16px) will
