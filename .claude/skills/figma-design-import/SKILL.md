@@ -60,7 +60,7 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary}
 ```
 
-- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma-design/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline. **One exception:** Step 0.55's `general-purpose` is a builtin with no file under `.claude/agents/` — record the model you actually passed it.
+- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/figma-design/{name}.md` (Read the file, parse `model: {value}` from the YAML header). Do NOT trust `Workload: model=...` in the footer — that's a string the sub-agent typed, and it drifts if the frontmatter changes without the footer template being updated in lockstep. The frontmatter is the source of truth; the footer field exists only so the human reader sees the value inline. **Two exceptions:** Steps 0.55 and 5.2b run the builtin `general-purpose`, which has no file under `.claude/agents/` — record the model you actually passed.
 - `Duration`, `Tool calls`, `Tokens` ← the `<usage>` block of the `Agent(...)` result (see above). Exact, harness-measured. The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
 - `Notes` ← `Notes:` line from the footer — but **do not repeat its counts to the user unverified**; see the rule immediately below. It is a self-reported summary, not a measurement.
 - `Validation` ← `Validation:` line from the footer.

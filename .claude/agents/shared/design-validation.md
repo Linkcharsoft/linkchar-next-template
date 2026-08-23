@@ -242,4 +242,4 @@ Runtime: {N}/{M} routes · {N} MEASURED · {N} SUSPECT · {N} SKIPPED  — or `d
 Notes: {one-line count summary, e.g. "13 categories scanned, 10 clean, 3 with findings, 5 violations total"}
 ```
 
-`files_touched=0` is fixed — this agent only reads; if the parent ever invokes it with `--fix`, increment per file actually modified.
+`files_touched` is 0 unless step 1's `lint-check --fix` actually rewrote files (count those and say so in Notes); beyond that this agent only reads — if the parent ever invokes it with `--fix`, increment per file actually modified.

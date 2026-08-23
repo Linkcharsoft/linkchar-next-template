@@ -34,7 +34,7 @@ Each screen with:
 - Page type (`auth` | `public` | `protected`).
 - Route path (e.g. `/`, `/gifts`, `/about`).
 - **Route group** (optional, e.g. `(host-layout)`, `(guest-layout)`) from Step 4.
-- Role (`host`|`guest`) — informational, drives the route group.
+- Role (e.g. `host`/`guest`, or the design's own roles — `cliente`/`prestador`) — informational, drives the route group.
 
 Plus batch-level:
 - `stores` — the Zustand stores the parent decided to create (name + a one-line purpose), e.g. `Cart`, `Contributions`. May be empty.

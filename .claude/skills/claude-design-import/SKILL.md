@@ -72,7 +72,7 @@ Validation: lint=✅/❌, type-check=✅/❌
 Notes: {one-line count summary}
 ```
 
-- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/claude-design/{name}.md` (source of truth; the footer string can drift). The one exception is Step 0.55's `general-purpose`, a builtin with no file under `.claude/agents/` — record the model you actually passed it.
+- `Model` ← **read from the sub-agent's frontmatter** in `.claude/agents/claude-design/{name}.md` (source of truth; the footer string can drift). The exceptions are Steps 0.55 and 5.2b (`general-purpose`), builtins with no file under `.claude/agents/` — record the model you actually passed.
 - `Duration` / `Tool calls` / `Tokens` ← the `<usage>` block of the `Agent(...)` result (above). The footer's `tool_calls≈` is the agent's own count — ignore it for the ledger; `<usage>` wins.
 - `Notes` / `Validation` ← from the footer, but see the verification rule immediately below — the `Notes` line is a self-reported summary, not a measurement.
 
@@ -130,7 +130,7 @@ The check is two seconds: `git status --porcelain <path>` (untracked/modified me
 
 > Both of these generalize past their own step: the rule is that an agent's claims about **things outside its own turn** — what existed before, what another step did, whether something is related — carry no evidence and must be checked. Its claims about **what it just did** are merely unreliable (see the counts rule above).
 
-**Show the ledger at every checkpoint from 5.1 onward** (end of 5.1, between each 5.2 screen, end of 6) with a cumulative sum + per-model breakdown, so the trajectory is inspectable and the user can pause before the Opus-heavy Step 5.2 creeps up. (Not at the end of 0.5 — nothing has been delegated yet, so the ledger is empty.)
+**Show the ledger at every checkpoint from 5.1 onward** (end of 5.1, between each 5.2 screen, end of 6) with a cumulative sum + per-model breakdown, so the trajectory is inspectable and the user can pause before the Opus-heavy Step 5.2 creeps up. (Not at the end of 0.5 — the only row by then is Step 0.55's audit, not worth a table on its own.)
 
 ---
 
@@ -152,6 +152,7 @@ You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0
 |------|-----------|-------|----------------|
 | 0 | `unpack.mjs` (you run it) | — | Deterministic script, no LLM |
 | 0.5 | (you, the parent) | Opus | Holistic judgment + checkpoint with user |
+| 0.55 | `general-purpose` (spec audit) | Sonnet | Re-derives the spec from the unpacked source to catch the parent's own errors — the only gate on YOUR decisions. Builtin, no file under `.claude/agents/` |
 | 1 | `claude-design-tokens` | Haiku | Mechanical config edits |
 | 2 | `claude-design-assets` | Haiku | Decode base64 + boilerplate |
 | 3 | `claude-design-components` | Opus | Component API design, extend-vs-create |
@@ -536,7 +537,7 @@ The screen agent re-styles the inline `style={{}}` source into Tailwind + tokens
 
 > **Delegate to**: `Agent({ subagent_type: 'general-purpose' })` — **Sonnet**. One call per screen, between the screen agent returning and you posting the checkpoint.
 
-Step 0.55 diffs your **spec** against the source *before* anything is built. Step 6 runs *after*, but only over **generic invariants** — lint, type-check, build, the convention greps, and a runtime sweep that measures widths and overflow. **Neither one ever compares the implemented screen to its own source.** So a screen can be visually or interactively unfaithful while being token-clean, convention-clean and build-clean, and pass every gate the flow has. That is not a hypothetical class — it is where the addendum's eight measured drifts live (extra controls, a static label turned editable, a bottom sheet turned into a centered dialog, a near-match primitive, an optional prop switched on, a form seeded from the dashboard's demo data).
+Step 0.55 diffs your **spec** against the source *before* anything is built. Step 6 runs *after*, but only over **generic invariants** — lint, type-check, build, the convention greps, and a runtime sweep that measures widths and overflow. **Neither one ever compares the implemented screen to its own source.** So a screen can be visually or interactively unfaithful while being token-clean, convention-clean and build-clean, and pass every gate the flow has. That is not a hypothetical class — it is where the eight measured drift classes behind § B9/B10 live (extra controls, a static label turned editable, a bottom sheet turned into a centered dialog, a near-match primitive, an optional prop switched on, a form seeded from the dashboard's demo data).
 
 Running it here, per screen, is deliberate: the user is already stopping at this checkpoint, the findings are about a screen still fresh, and a Sonnet pass is marginal next to the Opus run that just finished. Batching it to the end of the import instead produces one long adjudication session about screens nobody remembers.
 
@@ -697,7 +698,7 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 1 | Tokens | `claude-design-tokens` | Haiku | Named tokens (`hex → name` + REUSE/CREATE/BLOCK) + off-scale integer sizes + fonts |
 | 2 | Assets | `claude-design-assets` | Haiku | `assets/img/*` + `inventory.images` (+ `remoteImages` if the user chose to download them) + per-image `name`/`screenSlug`/`isLogo` + `Icon` glyph list |
 | 3 | Components | `claude-design-components` | Opus | Extend/create list, each with **source JSX file** + token names |
-| 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target |
+| 4 | Layouts | `claude-design-layouts` | Sonnet | Layouts state + chrome findings + roles + target + `navModel` + new-layout names (empty list = valid no-op) |
 | 5.1 | Scaffold routes + stores | `claude-design-scaffold` | Haiku | `route` screens (name, type, route, group, role, **component**) + store specs (full shape) + language |
 | 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX + component**, absorbed steps, modals, target, language, reuse list, store spec |
 | 5.2b | Gate the implementation against the source | `general-purpose` | Sonnet | That screen's source region + the emitted `.tsx`/`.sass` + the target |
