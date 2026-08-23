@@ -522,25 +522,27 @@ Do not override the tier from inside the agent.
 
 ## C5b. A confirmed no-op is a valid outcome — still delegate
 
-A step whose gap analysis says "there's nothing to do here" is **not** a step to skip, and **not** a step for the
-orchestrator to run itself (that's Opus doing Haiku-grade work — see each SKILL's anti-patterns). Delegate it
-anyway, pass your reading, and ask the agent to **verify or refute it**. A cheap agent returning "no-op, and
-here's the evidence" is the point: it's the only thing that distinguishes *"correctly nothing to do"* from
-*"the parent missed it"* — and the parent's reading is exactly what has no other gate.
+The orchestrator delegates a step even when its own gap analysis says "there's nothing to do here" — that
+instruction lives in each SKILL's Step 4, not here. The reason concerns YOU: a cheap agent returning "no-op,
+and here's the evidence" is the only thing that distinguishes *"correctly nothing to do"* from *"the parent
+missed it"* — the parent's reading is exactly what has no other gate. So when your brief says "we believe this
+step is a no-op — verify or refute it", that IS the task, not a formality to acknowledge.
 
-Two symmetric failure modes to name in the delegation:
+Two symmetric failure modes:
 
 - **Don't invent work to justify the step.** "A landing usually has a layout header" is not a reason. If the
   chrome is state-coupled to a single screen, hoisting it to a layout would force UI state into a store — out
   of scope for an import.
-- **Don't rubber-stamp.** If the agent finds real work the parent missed, it says so; if it finds work that
-  would need a decision outside its scope, it emits a STOP rather than guessing.
+- **Don't rubber-stamp.** If you find real work the parent missed, say so; if you find work that would need a
+  decision outside your scope, emit a STOP rather than guessing.
 
-Applies to any step, most often **Step 4 (layouts)** — e.g. `navModel = single-page-sections`, where the header
-and footer belong to the one screen. An agent whose required inputs don't exist for the format (roles/registries
-are a `screen-registry` construct; dclogic has none) should be told so explicitly in the delegation and asked to
-report the no-op — **not** left to hit its own "if the input is missing, ask" branch (see C1: it emits
-`STOP-BLOCKING / INVALID_INPUT`; it has no user to ask).
+Report the confirmed no-op with its evidence in the normal report shape (C4) — a reasoned no-op is a
+deliverable, not a failure. Applies to any step, most often **Step 4 (layouts)** — e.g.
+`navModel = single-page-sections`, where the header and footer belong to the one screen. Expect the brief to
+SAY when a required input does not exist for the format (roles/registries are a `screen-registry` construct;
+dclogic has none): a named absence is valid input, not a missing field — do not emit
+`STOP-BLOCKING / INVALID_INPUT` over it. C1's missing-input rule covers fields the parent forgot, not fields
+the format cannot have.
 
 ## C6. Registering a new component in the reuse table
 
