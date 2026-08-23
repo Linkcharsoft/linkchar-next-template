@@ -47,9 +47,9 @@ isolated per-screen runs agree: `13.5 → 14`, `16.5 → 17`), THEN apply the ru
 already on the scale, use it as-is (no token); if it's off-scale, add it as a token. This is the **only**
 place a size is rounded, and only because the class name physically cannot carry a fraction.
 
-> Consequence to expect: a noisy `rawScan` produces several new typography tokens (e.g. Holograma's
-> `13/15/17/19/21/27/30/34/50/58` → ~10 tokens). That's intended under this rule — fidelity over a lean
-> token set.
+> Consequence to expect: a noisy `rawScan` produces several new typography tokens (e.g. one dclogic
+> rawScan's `13/15/17/19/21/27/30/34/50/58` → ~10 tokens). That's intended under this rule — fidelity
+> over a lean token set.
 
 ## B2. Color — cluster the raw scan, map to tokens, never raw hex
 
@@ -272,7 +272,7 @@ Then, among the glyphs kept from the source:
 > from 2 screens' markup, against a source component declaring 50, missing three that a seeded array referenced.
 
 **The parent applies this in the Step 0.5 pre-filter and does NOT ask the user** — it's a mechanical rule, not a
-preference. **Worked example** (the Holograma dclogic landing): measured, 16 of 18 glyphs are stroke-based at
+preference. **Worked example** (one dclogic landing): measured, 16 of 18 glyphs are stroke-based at
 `stroke-width:2` and 5 of those at `1.9` — one lucide-style set with a sub-variant → **the design HAS a set** →
 every glyph keeps its source path, **zero PrimeIcons**, even though `pi-whatsapp`/`pi-instagram`/`pi-clock`/
 `pi-bars` all exist. Extracted (2+): WhatsApp ×11 (majority path — NOT the nav's ringed variant), Instagram ×2,
@@ -414,9 +414,9 @@ So:
   how it goes unnoticed.
 - **Replacing a file's contents wholesale is a deletion** of whatever you did not carry over. Same rule.
 
-This is measured, not hypothetical. On the Tercer Milenium run the parent's brief was wrong three times and the
+This is measured, not hypothetical. On one multi-page dclogic run the parent's brief was wrong three times and the
 screen agents caught all three by preferring what they could see: a hero's vertical padding quoted from the
-wrong section, a `tm-lg:` step that did not match the sibling screen already on disk, and a blanket
+wrong section, a namespaced design-breakpoint step that did not match the sibling screen already on disk, and a blanket
 "bracket-form required" alpha warning that was over-broad (Tailwind's default opacity scale *does* include
 5/10/20/25/30/…, so only genuinely off-scale values like 6/12/15/55/78/85/92 need it) — that last one sent an
 agent hunting a non-existent bug in a shared component.
@@ -459,7 +459,7 @@ actually renders it. So the defect ships from the components step and detonates 
 step.
 
 **This is not a hypothetical, and the package involved is one CONVENTIONS actively mandates.** `classNames`
-from `primereact/utils` ships that banner. On the Tercer Milenium run, four of six new presentational
+from `primereact/utils` ships that banner. On one multi-page dclogic run, four of six new presentational
 components left the components step with `lint=✅ type-check=✅` and were unusable from any server component;
 the other two were latent and would have broken three more routes. It surfaced in the first screen agent, ~44
 minutes of Opus later. See [CONVENTIONS > PrimeReact Usage](../CONVENTIONS.md#primereact-usage) for the

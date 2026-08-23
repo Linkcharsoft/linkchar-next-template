@@ -13,9 +13,9 @@
 // The envelope is shared; the CONTENT comes in three flavors this script normalizes into ONE
 // intermediate representation (IR) so the downstream pipeline stays format-agnostic:
 //   - babel   : a React SPA (`<script type="text/babel">`, `function` components). A screen registry drives
-//               routing, but its SHAPE is not mandated — flat `{key: Comp}` (GIVXO) and nested
-//               `{key: {c: Comp, role}}` (Homfix/TocToc) both occur; THEMES/window.HOST/GUEST/HOST_TABS
-//               appear in SOME exports (GIVXO) and not others (TocToc has none). Read the registry, don't
+//               routing, but its SHAPE is not mandated — flat `{key: Comp}` in some exports and nested
+//               `{key: {c: Comp, role}}` in others both occur; THEMES/window.HOST/GUEST/HOST_TABS
+//               appear in SOME exports and not in others (one measured export has none). Read the registry, don't
 //               assume the shape. This flavor is NOT dead: Claude Design's system prompt now mandates DC for
 //               NEW UI, but existing .jsx projects still edit and export as babel.
 //   - dclogic : Claude Design's NATIVE format — `<x-dc>` markup + `class Component extends DCLogic` + `<helmet>`.
@@ -116,12 +116,12 @@ const scanHex = (s) => uniq([...s.matchAll(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/
 // The name class must include digits and uppercase: a CSS custom property is case-sensitive and a numbered
 // scale is the single most common naming shape a design system uses. `--[a-z-]+` stopped at the first digit,
 // so it did not merely miss those vars — it silently REWROTE them into a shorter name that does not exist and
-// then deduped the survivors together. Measured: Anodal's `--grey-05/10/20/40/55/70` all collapsed into one
-// bogus `--grey-` (18 real vars reported as 13), TocToc's `--cream-2`/`--cream-3` into `--cream-`.
+// then deduped the survivors together. Measured on a vanilla export: `--grey-05/10/20/40/55/70` all collapsed into
+// one bogus `--grey-` (18 real vars reported as 13), another export's `--cream-2`/`--cream-3` into `--cream-`.
 const scanCssVars = (s) => uniq([...s.matchAll(/var\((--[a-zA-Z0-9_-]+)/g)].map((m) => m[1])).sort()
 // CSS font-size scan: px + rem (rem→px @16). clamp()/vw responsive sizes aren't captured (reported separately).
 // The length matcher is `\d*\.?\d+`, NOT `\d+(\.\d+)?` — CSS allows a leading-dot literal (`.74rem`) and it is
-// the form a stylesheet minifier emits, so requiring a digit first silently drops it. Measured on the Anodal
+// the form a stylesheet minifier emits, so requiring a digit first silently drops it. Measured on a vanilla
 // archive: 28 of its 33 font-size declarations use `.Nrem`, so the old pattern captured 5 of 20 distinct sizes
 // and the rest vanished with no note — the clamp() NOTE below covers a different case and did not fire for them.
 // A rawScan missing the 10–16px band means § B1 ("every off-scale size becomes a real token") builds a palette
@@ -309,10 +309,10 @@ function clusterHexes (src) {
   }).sort((a, b) => b.uses - a.uses)
 }
 // pick body/display from @font-face weights: lightest family → body text, heaviest → display/headings.
-// (first/last-by-appearance is a coin flip — StreetBuild's Gotham Ultra 400-900 vs Gill Sans 400 needs the weight.)
+// (first/last-by-appearance is a coin flip — one export's display face at 400-900 vs its body face at 400 needs the weight.)
 function pickBrandFonts(faces, bodyFamily = null) {
   if (!faces.length) return null
-  // Never nominate a face the design loads but never references (see gatherFaces). Anodal's `Poppins` was reported
+  // Never nominate a face the design loads but never references (see gatherFaces). One export's `Poppins` was reported
   // as the DISPLAY family purely because it had the highest declared weight — it sets no text on the page. Only
   // narrow when at least one face survives, so a design whose usage we failed to parse still gets its old answer.
   const used = faces.filter((f) => f.used !== false)
@@ -365,7 +365,7 @@ function findReadmeEntry(dir) {
 //
 // A design can ship its photos base64-inlined in the markup instead of as sibling files. Those refs match no
 // file on disk, so the local scan below skips them — and `collectRemoteImages` only claims the `http(s)` ones,
-// so they fall through BOTH paths and `images[]` reports 0. Measured on Anodal: 33 `data:image/` in a 9.9 MB
+// so they fall through BOTH paths and `images[]` reports 0. Measured on a vanilla export: 33 `data:image/` in a 9.9 MB
 // page, extracted as ZERO images — the whole design would import with no photos, silently. (Third variant of
 // the same failure after remote refs and data-driven arrays; see § the images note in SKILL.md.)
 //
@@ -384,7 +384,7 @@ function extractDataUriImages(src, acc) {
     if (hit) return hit.ref                                   // same bytes already extracted → reuse its path
     const ext = MIME_EXT[mime.toLowerCase()] || 'bin'
     // Name it, best signal first. Read only a BOUNDED window either side of the URI, keyed off `replace`'s
-    // offset: a data URI is not always inside a tag (Anodal keeps its photos in a `{"k1":"data:…"}` resource
+    // offset: a data URI is not always inside a tag (one export keeps its photos in a `{"k1":"data:…"}` resource
     // dict), so walking out to the enclosing `<`…`>` can span the whole 10 MB document — slow, and worse, it
     // can pick up an `alt=` from an unrelated element megabytes away and name the asset WRONG.
     const W = 300
@@ -405,7 +405,7 @@ function extractDataUriImages(src, acc) {
 
 // Merge the on-disk and the decoded-inline images, dropping an inline copy that is byte-identical to a file the
 // design already ships — a logo is commonly BOTH inlined at one call site and referenced as a file at another
-// (Hologramas: `logo-hologramas.jpg` = 3855 B, also a `data:` URI). Without this the same asset is reported and
+// (one dclogic export: a logo .jpg at 3855 B, also a `data:` URI). Without this the same asset is reported and
 // converted twice. Size is the pre-filter so only a genuine collision costs a hash — never the whole image set.
 function mergeArchiveImages(localImgs, inlineImgs) {
   if (!inlineImgs.length) return localImgs
@@ -437,7 +437,7 @@ function collectArchiveImages(srcList, baseDir) {
     // idiom is `<sc-for list="{{ fotos }}">` rendering `src="{{ item.img }}"`, with the REAL paths living as bare
     // quoted string literals in the page's `.logic.js` data array (`{ img: './carrusel-01.jpg' }`). Those match
     // none of the patterns above, so a design whose images are all data-driven extracted as ~0 images while
-    // `inventory.json` reported the count with no warning at all. Measured on Tercer Milenium: 7 of 34 found.
+    // `inventory.json` reported the count with no warning at all. Measured on one dclogic design: 7 of 34 found.
     // A bare-literal scan is deliberately broad; false positives are harmless because the resolve+existsSync
     // gate below drops anything that is not a real file on disk.
     for (const m of src.matchAll(/['"]([^'"\s>]+\.(?:png|jpe?g|webp|gif|svg|avif))['"]/gi)) refs.add(m[1])
@@ -457,7 +457,7 @@ function collectArchiveImages(srcList, baseDir) {
 // path's output: not in the standalone's base64 manifest, not on disk for the archive closure. So `images[]` — the
 // list every downstream step reads — silently omits them, and an import that trusts it ships the design with those
 // photos missing. Nothing downstream catches that: it compiles, type-checks and passes every convention grep.
-// (Measured on Hologramas: 17 local logos in images[], while the hero, the about photo and all 5 service-card
+// (Measured on one dclogic export: 17 local logos in images[], while the hero, the about photo and all 5 service-card
 // photos were remote — 7 images, including the LCP one.) Surface them so Step 0.5 must make a decision.
 // ONE entry per distinct IMAGE, not per distinct URL: a CDN serves the same photo at several sizes via a query
 // param (`?w=600` in a preview card, `?w=700` in a detail card — the same file), so the query is a rendition
@@ -632,7 +632,7 @@ function ingestArchive(dir) {
 
   const entryDir = dirname(entryFull)
   // The README can name a BUNDLED variant (`(offline)`, `(standalone-src)`) — a self-contained __bundler export,
-  // not raw source. (GIVXO's handoff points at "GIVXO App (offline) v3.html".) Reading it as raw source misreads
+  // not raw source. (A handoff can point at an "(offline)" variant.) Reading it as raw source misreads
   // the escaped envelope; hand it to the standalone path instead, which decodes the envelope properly.
   const rawEntry = readText(entryFull)
   if (/<script type="__bundler\/(?:manifest|template)"/.test(rawEntry)) {
@@ -748,7 +748,7 @@ if (html !== null) {
 }
 
 // ext_resources may be an ARRAY of aliases (babel/dclogic-single) or an OBJECT page-map (dclogic-multi).
-// Guard both — a raw `for..of` over an object throws (this was the StreetBuild crash). (Archive: no aliases.)
+// Guard both — a raw `for..of` over an object throws (this crashed on a real multi-page export). (Archive: no aliases.)
 const extAliases = Array.isArray(extParsed) ? extParsed : []
 const aliasByUuid = {}
 for (const r of extAliases) if (r && r.uuid && r.id) aliasByUuid[r.uuid] = r.id
@@ -855,8 +855,8 @@ function scanBodyFontFamily(str) {
 //
 // The usage tier is ADDITIVE, not a last-resort fallback. It used to run only `if (!faces.length)`, which meant a
 // design that declares one family properly and uses a SECOND one only in inline styles silently lost the second.
-// Measured on Tercer Milenium: `acumin-pro` was found (named in the helmet's `body` rule) while `fertigo-pro` —
-// the display serif on all 31 headings, set via inline `style="font-family:'fertigo-pro'…"` — was not, and
+// Measured on one dclogic design: the body face was found (named in the helmet's `body` rule) while the display
+// serif on all 31 headings, set only via inline `style="font-family:…"` and declared nowhere else, was not, and
 // `inventory.brandFonts` reported a single family with no warning. Callers must therefore pass the FULL source
 // (markup included), not just the helmet/stylesheet.
 function gatherFaces(str) {
@@ -865,7 +865,7 @@ function gatherFaces(str) {
   for (const lf of scanGoogleFontLinks(str)) if (!seen.has(lf.family)) { faces.push(lf); seen.add(lf.family) }
   for (const fam of scanFontFamilyUsage(str)) if (!seen.has(fam)) { faces.push({ family: fam, weight: null, fromUsage: true }); seen.add(fam) }
   // Declared ≠ used. A design can LOAD a face and never reference it, and can reference one only deep inside a
-  // fallback stack. Measured on Anodal: the <head> links `Inter` AND `Poppins`; no rule names Poppins at all (dead
+  // fallback stack. Measured on a vanilla export: the <head> links `Inter` AND `Poppins`; no rule names Poppins at all (dead
   // weight in the original), while Inter appears only as the 4th entry of the body stack behind three system faces.
   // Loading the unused one is a real bundle/LCP regression, so mark each face and let the parent drop it.
   const mentioned = scanAllFontFamilyMentions(str)
@@ -948,10 +948,10 @@ function parseBabel() {
   const registries = {}
   const nestedRegistries = new Set()
   // A registry maps a screen key → its component. TWO shapes are real, and babel mandates neither:
-  //   flat   — `{ home: HomeScreen, ... }`                     (GIVXO)
-  //   nested — `{ home: { c: HomeScreen, role:'cliente' }, ... }`  (Homfix/TocToc)
+  //   flat   — `{ home: HomeScreen, ... }`
+  //   nested — `{ home: { c: HomeScreen, role:'cliente' }, ... }`
   // Scanning the whole object body for `key: Component` matches the INNER pairs of the nested shape, so
-  // every screen collapses onto one bogus key (measured on Homfix: 16 screens → 1 entry named "c").
+  // every screen collapses onto one bogus key (measured on a nested export: 16 screens → 1 entry named "c").
   // Split the top level first, THEN read each value.
   const mergeRegistry = (name, objText) => {
     const map = registries[name] || (registries[name] = {})
@@ -1057,7 +1057,7 @@ function parseDcLogic() {
   const components = importsAll.map((name) => ({ name, file: null, kind: 'primitive-or-helper' })) // dc-import children
 
   // A Standalone HTML bundles ONE design, so a cross-DC `href` can point at a page that is NOT in the bundle.
-  // Measured on Tercer Milenium: the landing links to 4 siblings, the 26MB standalone carries none of them
+  // Measured on one multi-page design: the landing links to 4 siblings, the 26MB standalone carries none of them
   // (34 manifest entries, zero HTML), and the flow happily reported `screens=1` — a 5-page site silently
   // imported as 1. Collect the misses here; the caller decides (a bare WARNING would be read past).
   const knownSlugs = new Set(docs.map((d) => d.slug))
@@ -1065,14 +1065,14 @@ function parseDcLogic() {
 
   // The README's entry is "the file the user had OPEN when they hit export" (the handoff README says exactly that)
   // — which is NOT necessarily the site's home. On a multi-page archive the two diverge whenever the user was
-  // looking at a variant or a WIP page, and `SKILL.md` maps `entry` straight onto `/`. Measured on the StreetBuild
-  // archive: the README named `Streetbuild Home Short.dc.html` (16KB, linked by NOBODY) while the real home (40KB)
-  // is linked by all 8 siblings — the import put an orphan variant at `/` and demoted the home to `/streetbuild-home`,
-  // leaving every sibling's nav "home" link pointing at a subroute. Nothing downstream can catch that: 9 individually
+  // looking at a variant or a WIP page, and `SKILL.md` maps `entry` straight onto `/`. Measured on one multi-page
+  // archive: the README named a "Home Short" variant .dc.html (16KB, linked by NOBODY) while the real home (40KB)
+  // is linked by all 8 siblings — the import put an orphan variant at `/` and demoted the real home to a subroute,
+  // leaving every sibling's nav "home" link pointing at that subroute. Nothing downstream can catch that: 9 individually
   // correct pages wired into the wrong topology compile, type-check, build and pass design-validation — including the
   // runtime sweep, which audits routes one at a time and never looks at the graph between them.
   // We already hold every page's outgoing hrefs, so MEASURE the in-degree and let the parent judge. Deliberately no
-  // guess at which page IS the home: on StreetBuild all 8 non-orphan pages tie at in-degree 8 (they share one nav),
+  // guess at which page IS the home: in that archive all 8 non-orphan pages tie at in-degree 8 (they share one nav),
   // so picking a winner would be a heuristic, while "the entry is an orphan" is a fact.
   let entryLinkage = null
   if (isMultiPage) {
@@ -1110,7 +1110,7 @@ function parseDcLogic() {
 
 // A vanilla page can still be a MULTI-ROUTE app: a client-side router that keeps every route's markup inline as
 // `<script type="text/template" data-route="X">` blocks and swaps them into a mount node on hashchange. Measured on
-// Anodal: 10 such blocks — the whole site — which a parser that hard-codes a single `index` screen and never looks
+// a vanilla export: 10 such blocks — the whole site — which a parser that hard-codes a single `index` screen and never looks
 // at the markup reports as `screens=1`. An import trusting that ships 1 page of 10, and
 // nothing downstream notices (it compiles, type-checks and builds). The `.dc.html` sibling-closure that finds
 // multi-page dclogic cannot fire here: these "pages" are not files, they are blocks in ONE file.
@@ -1137,7 +1137,7 @@ function parseVanilla() {
   if (styleBlocks.trim()) write('source/index.styles.css', styleBlocks)
   // Write the <head> too. It is NOT dead weight: the Google-Fonts <link> lives there and nowhere else, so a source
   // tree without it makes the design look font-less to anything reading only `source/` — which is exactly what the
-  // Step 0.55 gate does. Measured on Anodal: the gate "independently confirmed" that the design declared no fonts
+  // Step 0.55 gate does. Measured on a vanilla export: the gate "independently confirmed" that the design declared no fonts
   // and that `brandFonts` was fabricated. Both wrong, and wrong in the direction that reads as diligence.
   const headMatch = templateStr.match(/<head[^>]*>([\s\S]*?)<\/head>/i)
   const headFile = headMatch ? write('source/index.head.html', headMatch[1]) : null
@@ -1188,7 +1188,7 @@ const ir = format === 'babel' ? parseBabel() : format === 'dclogic' ? parseDcLog
 // This runs AFTER the parser, not before, because of babel: there `template` is only the page SHELL, and every
 // component — so every `<img>` — lives in the manifest as a `text/babel` script that `parseBabel` decodes to
 // `source/jsx/*.jsx`. Scanning `template` alone made `remoteImages` structurally 0 for EVERY babel design
-// (measured on GIVXO: 9 `<img>` in the jsx, 0 in template.html). dclogic/vanilla carry their markup in
+// (measured on one babel export: 9 `<img>` in the jsx, 0 in template.html). dclogic/vanilla carry their markup in
 // `template` itself and are unaffected by the move.
 //
 // Note the JSX caveat: React writes `src={expr}` far more often than `src="…"`, and only the literal form is
@@ -1241,14 +1241,14 @@ const notes = [
   format === 'vanilla' ? 'WARNING: vanilla flavor — DEFENSIVE/best-effort extraction (no reference sample). Inspect source/index.markup.html manually.' : null,
   format === 'vanilla' && ir.extra.routedTemplates ? `navModel=multi-page — this vanilla page is a CLIENT-SIDE ROUTER: ${ir.extra.routedTemplates} routes found as <script type="text/template" data-route="…"> blocks (${ir.screens.map((s) => s.key).join(', ')}), each written to its own source/route.{key}.markup.html. Entry: ${ir.extra.entry} → "/". The shared chrome (header/nav/footer) is OUTSIDE those blocks — read source/index.markup.html for it and give it to Step 4 as ONE layout, not re-inlined per route.` : null,
   format === 'vanilla' && !ir.extra.routedTemplates ? 'NOTE: no <script type="text/template" data-route> blocks found — treating this as a genuine single page. If the design is actually multi-route via some OTHER router idiom, screens[] is WRONG (only the template-block idiom is detected); check the source before trusting screens=1.' : null,
-  // Only pages NOT already covered by a detected route. On Anodal the entry links to index/vivienda/… AND ships them
-  // as sibling files, but the template blocks already produced those routes — warning there would be pure noise.
+  // Only pages NOT already covered by a detected route. In one vanilla archive the entry links to index/… AND ships
+  // them as sibling files, but the template blocks already produced those routes — warning there would be pure noise.
   (() => {
     if (format !== 'vanilla') return null
     const covered = new Set(ir.screens.map((s) => s.key))
     const missed = archiveSiblingPages.filter((p) => !covered.has(p))
     return missed.length
-      ? `WARNING: the entry links to ${missed.length} sibling .html page(s) that EXIST in the archive but were NOT imported: ${missed.join(', ')}. The vanilla path has no page-closure (unlike .dc.html), so only the README's entry was read. **${missed.length} is a FLOOR, not the total** — this scans only the links on the ENTRY page, one level deep, so pages reachable solely from a sub-page are not counted (measured on Anodal: the entry's nav yields 7, while the site really has 9 other pages — 'producto' and 'novedad' are linked only from sub-pages). So this design imports ${ir.screens.length} of AT LEAST ${ir.screens.length + missed.length}. Import each missing page separately (point unpack.mjs at its .html), or treat it as a known gap. Do NOT assume screens[] is the whole site.`
+      ? `WARNING: the entry links to ${missed.length} sibling .html page(s) that EXIST in the archive but were NOT imported: ${missed.join(', ')}. The vanilla path has no page-closure (unlike .dc.html), so only the README's entry was read. **${missed.length} is a FLOOR, not the total** — this scans only the links on the ENTRY page, one level deep, so pages reachable solely from a sub-page are not counted (measured on one vanilla archive: the entry's nav yields 7, while the site really has 9 other pages — the other 2 are linked only from sub-pages). So this design imports ${ir.screens.length} of AT LEAST ${ir.screens.length + missed.length}. Import each missing page separately (point unpack.mjs at its .html), or treat it as a known gap. Do NOT assume screens[] is the whole site.`
       : null
   })(),
   ir.fonts.some((f) => f.used === false) ? `WARNING: ${ir.fonts.filter((f) => f.used === false).map((f) => f.family).join(', ')} — declared (@font-face/<link>) but NEVER referenced by any font-family rule. Dead weight in the source; do NOT load via next/font. Excluded from brandFonts.` : null,

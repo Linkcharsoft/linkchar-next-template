@@ -278,12 +278,12 @@ Use the custom typography classes defined in `tailwind.config.js`:
 
 Do not invent new breakpoints. When responsive variants are needed in SASS, use `@apply md:flex-row` etc.
 
-**The one way the set grows: a design import.** The scale above is **mobile-first** (`min-width`). A design brings its own media queries, and those become **real breakpoint tokens** — added by `{flow}-tokens` under their own namespace (`hg-lg`/`hg-md`/`hg-sm`), exactly as an off-scale font size becomes a token instead of being snapped. Two rules follow:
+**The one way the set grows: a design import.** The scale above is **mobile-first** (`min-width`). A design brings its own media queries, and those become **real breakpoint tokens** — added by `{flow}-tokens` under their own namespace (`ac-lg`/`ac-md`/`ac-sm`), exactly as an off-scale font size becomes a token instead of being snapped. Two rules follow:
 
 - **Never re-point `2xs`…`2xl`** to a design's value — that is an override, and it silently re-flows every existing screen.
-- **A design breakpoint is usually desktop-first** (`@media (max-width: 860px)`), so it MUST be declared in the explicit max form — `'hg-md': { max: '860px' }`, never `'hg-md': '860px'` (which means *≥860*, the exact inverse, and still builds).
+- **A design breakpoint is usually desktop-first** (`@media (max-width: 860px)`), so it MUST be declared in the explicit max form — `'ac-md': { max: '860px' }`, never `'ac-md': '860px'` (which means *≥860*, the exact inverse, and still builds).
 
-So: `md:` = "≥768, project scale"; `hg-md:` = "≤860, this design". Both are tokens. **Neither an arbitrary `max-[860px]:` nor a snap of `860` onto `md` is acceptable** — the first makes a repeated design constant a magic number, the second shifts every rule and breaks a viewport band.
+So: `md:` = "≥768, project scale"; `ac-md:` = "≤860, this design". Both are tokens. **Neither an arbitrary `max-[860px]:` nor a snap of `860` onto `md` is acceptable** — the first makes a repeated design constant a magic number, the second shifts every rule and breaks a viewport band.
 
 ---
 
@@ -431,7 +431,7 @@ Lighthouse "Accessibility".
 - **Required fields: convey it in the label's accessible name — NOT with `required` or `aria-required`.** A visual `*` alone is not an accessible name, but the two obvious fixes both break on this stack: native `required` fires the browser's own validation before Formik's `onSubmit`, pre-empting the Yup flow and showing native bubbles in the browser's locale (not `detectedLanguage`); and `aria-required` cannot be placed correctly on a PrimeReact `Dropdown` — it emits none itself, and its `pt` sections do not isolate the focusable element (`input` covers both the real `<input>` and a `<span tabindex="-1">`), so the attribute lands on a `generic`-role span and fails `aria-allowed-attr`. Trading one a11y violation for another is not a fix. Use the one mechanism valid on every control type:
 
   ```tsx
-  <span>Nombre <span aria-hidden='true' className='text-hg-red'>*</span><span className='sr-only'>(obligatorio)</span></span>
+  <span>Nombre <span aria-hidden='true' className='text-ac-red'>*</span><span className='sr-only'>(obligatorio)</span></span>
   ```
 
   The accessible name reads "Nombre (obligatorio)". Keep `(opcional)` markers **announced** (they are information, not decoration) — only the `*` glyph is `aria-hidden`.

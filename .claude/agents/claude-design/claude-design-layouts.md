@@ -36,7 +36,7 @@ If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next
 - **`navModel = single-page-sections` / `single-page` with no chrome to hoist.** The chrome belongs to the one screen and is wired to its own `page`/`menuOpen` state; hoisting it would force UI state into a store (out of scope). **A confirmed no-op is a valid outcome — report it as one** (per [§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)); do not manufacture a layout to look productive, and do not STOP.
 - **An empty "names of new layouts to create" list** — it means the existing layouts already cover the design.
 
-## navModel = `multi-page` (dclogic web — e.g. StreetBuild): extract the shared chrome to ONE layout
+## navModel = `multi-page` (dclogic web): extract the shared chrome to ONE layout
 
 A dclogic multi-page export is N `.dc` pages (`inventory.screens`), and the **header / nav / footer repeats in EVERY page's `.markup.html`** (a corporate site's shared shell). Your #1 job here:
 
