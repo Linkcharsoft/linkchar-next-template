@@ -356,7 +356,7 @@ agent given exactly that brief translated it to hex both times, and nothing in l
 The canonical form, verified to compile through this project's SASS → Tailwind pipeline:
 
 ```sass
-.p-inputtext:focus, .p-dropdown:not(.p-disabled).p-focus, .p-inputtextarea:focus
+.p-inputtext:not(.p-invalid):focus, .p-dropdown:not(.p-disabled):not(.p-invalid).p-focus, .p-inputtextarea:not(.p-invalid):focus
   @apply border-{ns}-accent ring-[0.2rem] ring-{ns}-accent/25
 ```
 
