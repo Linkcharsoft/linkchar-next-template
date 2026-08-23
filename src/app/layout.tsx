@@ -57,11 +57,10 @@ export const metadata: Metadata = {
   authors: [
     { name: 'Inferencia AI Solutions', url: 'https://www.linkedin.com/company/inferencia-ai/posts/' },
     { name: 'Lucas Ojeda De Sousa (Lukway)', url: 'https://www.linkedin.com/in/lukway/' },
-    { name: 'Lucas Ezequiel Pereyra', url: 'https://www.linkedin.com/in/lucas-pereyra-dw/' }
-    // { name: 'Luca Cittá Giordano', url: 'https://www.linkedin.com/in/lucacittagiordano/' },
-    // { name: 'Francesco Silvetti', url: 'https://www.linkedin.com/in/francescosilvetti/' },
-    // { name: 'Melanie Cavanna', url: 'https://www.linkedin.com/in/melanie-cavanna-921716170/' },
-    // { name: 'Mariana Sofía Ulloque', url: 'https://www.linkedin.com/in/mariana-sof%C3%ADa-ulloque-6129bb13a/' }
+    { name: 'Luca Cittá Giordano', url: 'https://www.linkedin.com/in/lucacittagiordano/' },
+    { name: 'Francesco Silvetti', url: 'https://www.linkedin.com/in/francescosilvetti/' },
+    { name: 'Melanie Cavanna', url: 'https://www.linkedin.com/in/melanie-cavanna-921716170/' },
+    { name: 'Mariana Sofía Ulloque', url: 'https://www.linkedin.com/in/mariana-sof%C3%ADa-ulloque-6129bb13a/' }
   ],
   creator: 'Inferencia AI Solutions',
   publisher: 'Inferencia - Next.js Template',
