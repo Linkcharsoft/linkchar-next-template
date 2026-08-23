@@ -45,7 +45,7 @@ The "Standalone HTML" export is **not** flat HTML — it's a self-contained page
 
 > ⚠️ **DELIBERATELY DUPLICATED — the twin at `figma-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync.
 >
-> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`claude-design-*` vs `figma-*`), the frontmatter path (`.claude/agents/claude-design/` vs `.claude/agents/figma-design/`), the token-namespace grep, and each flow's own step numbering.
+> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`claude-design-*` vs `figma-*`), the frontmatter path (`.claude/agents/claude-design/` vs `.claude/agents/figma-design/`) and each flow's own step numbering.
 
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
@@ -94,12 +94,13 @@ This is measured, not hypothetical — on one dclogic single-page-sections run *
 
 **So: after any step that produces files, spend one command confirming the count before you write it into the ledger or repeat it to the user.** The check is seconds long and the asymmetry is the whole point — an invented number that reaches the final report is one the user has no way left to catch.
 
-Substitute `{ns}` with the namespace you actually used (`acme-`, …) — pasted verbatim it matches nothing and reports 0.
-
 ```bash
 # POSIX
-# Step 1 — tokens actually in the config (the trailing screens/ entries are NOT colors; count the hex rows)
-grep -cE "'\{ns\}-[a-z]+-[0-9]+': '#" tailwind.config.js
+# Step 1 — token decisions actually recorded: the tokens agent appends ONE ROW per CREATE/REUSE to
+# design-tokens-map.md, so count the rows this run added (the step is not committed yet at verification
+# time). Grepping tailwind.config.js keys is unreliable — nested namespaces and digitless names like
+# brand-primary match no single pattern. First import: subtract the 2 header rows the agent just created.
+git diff -U0 -- design-tokens-map.md | grep -c '^+|'
 # Step 2 — converted assets + extracted icons
 find src/assets/images -name '*.webp' | wc -l ; ls src/assets/icons/*.tsx | wc -l
 # Step 3 / 5.1 / 5.2 — the files the agent said it wrote really exist
@@ -110,7 +111,7 @@ find src/assets/images -name '*.hash.txt' | wc -l    # expect 0
 
 ```powershell
 # Windows — this project's primary shell (`wc`, `find -name` and `grep -c` do not exist in PowerShell)
-(Select-String -Path tailwind.config.js -Pattern "'\{ns\}-[a-z]+-[0-9]+': '#").Count
+(git diff -U0 -- design-tokens-map.md | Select-String '^\+\|').Count    # first import: subtract the 2 header rows
 (Get-ChildItem src/assets/images -Recurse -Filter *.webp).Count ; (Get-ChildItem src/assets/icons/*.tsx).Count
 Get-ChildItem src/components/{Name}/, src/screens/{Name}Page/
 (Get-ChildItem src/assets/images -Recurse -Filter *.hash.txt).Count    # expect 0

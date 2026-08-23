@@ -28,7 +28,7 @@ If `CONVENTIONS.md` is missing, STOP the entire import flow and report to the us
 
 > ⚠️ **DELIBERATELY DUPLICATED — the twin at `claude-design-import/SKILL.md` carries a parallel copy of this whole section. Edit BOTH or they drift.** This is the one documented exception to [`CLAUDE.md`'s "edit once, both inherit" doctrine](../../../CLAUDE.md#keep-figma-design-import-and-claude-design-import-in-sync). The rule would put it in `design-import-shared.md`, but that file is `Read` at pre-flight by **every step agent of both flows** — and the ledger is orchestrator-only instruction. Moving it there would load it into ~7 sub-agent contexts per import to serve one reader. Duplication was chosen with eyes open; the cost is that this section is the likeliest place in the two skills to go out of sync.
 >
-> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma-design/` vs `.claude/agents/claude-design/`), the token-namespace grep, and each flow's own step numbering.
+> Only the *substance* is shared. Naturally-divergent details stay per-flow: the agent-name column (`figma-*` vs `claude-design-*`), the frontmatter path (`.claude/agents/figma-design/` vs `.claude/agents/claude-design/`) and each flow's own step numbering.
 
 Maintain a running ledger of every sub-agent invocation. After each delegation returns, append a row:
 
@@ -85,8 +85,11 @@ Measured, not hypothetical. On a `claude-design-import` run, all three main step
 
 ```bash
 # POSIX
-# Step 1 — tokens actually in the config (count the hex rows; `screens:` entries are not colors)
-grep -cE "'[a-z]+-[a-z]+-[0-9]+': '#" tailwind.config.js
+# Step 1 — token decisions actually recorded: the tokens agent appends ONE ROW per CREATE/REUSE to
+# design-tokens-map.md, so count the rows this run added (the step is not committed yet at verification
+# time). Grepping tailwind.config.js keys is unreliable — nested namespaces and digitless names like
+# brand-primary match no single pattern. First import: subtract the 2 header rows the agent just created.
+git diff -U0 -- design-tokens-map.md | grep -c '^+|'
 # Step 2 — downloaded/converted assets + generated icon components
 find src/assets/images -name '*.webp' | wc -l ; ls src/assets/icons/*.tsx | wc -l
 # Steps 3 / 5.1 / 5.2 — the files the agent said it wrote really exist
@@ -97,13 +100,11 @@ find src/assets/images -name '*.hash.txt' | wc -l    # expect 0
 
 ```powershell
 # Windows — this project's primary shell (`wc`, `find -name` and `grep -c` do not exist in PowerShell)
-(Select-String -Path tailwind.config.js -Pattern "'[a-z]+-[a-z]+-[0-9]+': '#").Count
+(git diff -U0 -- design-tokens-map.md | Select-String '^\+\|').Count    # first import: subtract the 2 header rows
 (Get-ChildItem src/assets/images -Recurse -Filter *.webp).Count ; (Get-ChildItem src/assets/icons/*.tsx).Count
 Get-ChildItem src/components/{Name}/, src/screens/{Name}Page/
 (Get-ChildItem src/assets/images -Recurse -Filter *.hash.txt).Count    # expect 0
 ```
-
-The Step 1 pattern assumes a two-word token namespace (`brand-blue-500`). A single-word one (`acme-500`) needs `'[a-z]+-[0-9]+': '#` instead — check which shape you actually created.
 
 If a count disagrees with the report, **the filesystem wins**: use the real number and say so in the checkpoint. A mismatch is worth one line to the user, not a re-delegation — the work is usually fine.
 
