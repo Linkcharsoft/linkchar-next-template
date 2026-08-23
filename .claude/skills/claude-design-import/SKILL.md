@@ -134,6 +134,16 @@ The check is two seconds: `git status --porcelain <path>` (untracked/modified me
 
 ---
 
+## Commit cadence — commit each validated step, not just the scaffold
+
+**Commit each step once its validation is green**, with a `[ TYPE ] description` subject scoped to that step's concern (`[ ADD ] Design tokens`, `[ ADD ] Converted design assets`, `[ FEATURE ] Scaffold design routes`, `[ FEATURE ] {Name}Page`). An import touches tokens, assets, components, layouts, routes and N screens; batching all of it into one commit produces a diff nobody can review and nothing to bisect when a later step regresses an earlier one. Per-step commits also make "revert just the screens, keep the tokens" a real option — which is what a user actually asks for after a long import.
+
+Screens commit **per screen**, at the checkpoint, so the history mirrors the checkpoints the user already walked through.
+
+*Unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own) — **their instruction wins**; skip the commits and say so rather than committing anyway or silently dropping the step. Same for a step that returned red: fix it or surface it, do not commit a broken gate.
+
+---
+
 ## How this skill manages models automatically
 
 You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0.5 directly (extraction + holistic judgment); every other step is delegated via the `Agent` tool to a sub-agent in `.claude/agents/claude-design/`, each with its model pre-set, running in isolated context and returning only a summary.
@@ -157,7 +167,7 @@ You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0
 
 ## Why this flow exists
 
-Implementing a prototype top-down (screen-first) leads to hardcoded hex/px (tokens not in `tailwind.config.js` yet), duplicated components (existing `src/components/` not checked), repeated chrome (layouts not decided first), and refactor passes. Bottom-up prevents all of that. **Do not skip steps.**
+Implementing a prototype top-down (screen-first) leads to hardcoded hex/px (tokens not in `tailwind.config.js` yet), duplicated components (existing `src/components/` not checked), repeated chrome (layouts not decided first), and refactor passes. Bottom-up prevents all of that. **Do not skip steps.** Each layer depends on the previous — so **run them in order, one delegation at a time, and wait for each to return before starting the next.** Steps that look independent are not safe to overlap: several of them write the same files (`src/app/layout.tsx` is touched by Steps 1, 4 and 5.1; `src/styles/general.sass` by Steps 1 and 4), and a step running with stale knowledge of what exists can undo work another step just did (see [§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name) for the measured case). The checkpoint after each step is the sequencing mechanism, not a formality.
 
 ---
 
@@ -387,8 +397,22 @@ Re-derive these FROM THE SOURCE, without reference to my spec, then diff:
    `.logic.js` data arrays (`{ img: './x.jpg' }` rendered through `src="{{ item.img }}"`), not just literal
    `src=` in markup. Compare that count to `inventory.counts.images`. List any referenced path that is not in
    `inventory.images[]`, and any that does not exist on disk in the archive.
+BUDGET — this is a cheap audit, not a re-derivation. Work the questions IN ORDER and stop when you run out
+of room; a short honest answer beats a complete expensive one. If a question needs more of the source than
+you can hold, WRITE "unanswered — needs {file}" and move on to the next. Never stall on one question.
 Report ONLY mismatches, with source line numbers. If my spec is right on a point, say "match" and move on.
 ```
+
+**Send the 8 questions above and nothing else.** They are the audit; adding your own (routing, stores, anything
+you feel unsure about) makes the pass bigger than the one this step was scoped for — measured: a run that
+appended two extra questions produced an agent that stalled at 600s with zero output, and the same content
+split across three passes completed fine. If you genuinely need a ninth question, that is a **second** call
+after this one returns, not a longer prompt.
+
+> **On a very large design, split by question group rather than growing the prompt** (`1-4` / `5-8` is the
+> natural cut — the first four are per-value checks, the last four are inventory checks). Three passes of the
+> claude flow's questions cost nothing extra: the auditor reads local files. **This does NOT transfer to the
+> Figma twin**, where each pass re-pays `get_design_context` at ~80–120K tokens — there, keep it to one call.
 
 **7 and 8 audit the EXTRACTOR, not just your spec — that is the point, and they stay even though `unpack.mjs` handles both cases.** Every other question checks a judgment call of yours; these two check whether `inventory.json` itself is complete, because nothing else in the flow does. Both have been silent failures in practice: `images: 7` when the design referenced 34 (the other 27 were data-driven), and `brandFonts: [acumin-pro]` when `fertigo-pro` set all 31 headings from inline styles. Neither raised a note; an import trusting the inventory ships with the photos missing and the headings in the wrong face, **and it compiles, type-checks, builds and passes `design-validation`**.
 
@@ -419,7 +443,7 @@ Also pass: the pre-rounded off-scale **integer** typography sizes (see Step 0.5 
 
 The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
 
-**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it** — the agent already owns `general.sass`. Pass the accent token and be explicit about the boundary: focus/hover **border** + the focus **`box-shadow` ring** on inputs move to the brand accent; `.p-invalid`'s red stays. Skip the whole item if the user declined or the design's accent is blue anyway.
+**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--apply-it-only-when-asked-and-write-it-with-apply), which carries the edit spec (the `@apply border-… ring-…` form, the `:not(.p-invalid)` guards, no `!important`, no invented CSS vars). **Omit the item entirely if the user declined** — the agent applies this only when the brief passes a token, so silence is the off switch. Naming the token is not enough on its own: measured twice, a brief that said `→ {ns}-accent` and nothing else produced raw hex both times.
 
 ---
 
@@ -471,15 +495,7 @@ Before delegating, read `src/app/layout.tsx` and extract the current `<html lang
 1. **The language switch** (`<html lang>` + `openGraph.locale`) — often the only file this step writes.
 2. **The reused route's metadata upgrade.** The agent is REQUIRED to bring the existing `page.tsx` up to the full per-type metadata shape `/new-screen` would have generated (a template placeholder typically ships only `title`), and to report `REUSED ROUTE: /{path} ({Name}Page) — metadata upgraded`. **Do not instruct it to leave that file alone** — that contradicts its contract and re-opens the lost-metadata gap the rule exists to close. If you want Step 5.2 to own the final SEO copy, say so as a follow-up, not as a prohibition here.
 
-After this step, **commit the scaffold as a checkpoint** — per the cadence rule below.
-
-### Commit cadence — after every validated step, not just this one
-
-**Commit each step once its validation is green**, with a `[ TYPE ] description` subject scoped to that step's concern (`[ ADD ] Design tokens`, `[ ADD ] Converted design assets`, `[ FEATURE ] Scaffold design routes`, `[ FEATURE ] {Name}Page`). An import touches tokens, assets, components, layouts, routes and N screens; batching all of it into one commit produces a diff nobody can review and nothing to bisect when a later step regresses an earlier one. Per-step commits also make "revert just the screens, keep the tokens" a real option — which is what a user actually asks for after a long import.
-
-Screens commit **per screen**, at the checkpoint, so the history mirrors the checkpoints the user already walked through.
-
-*Unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own) — **their instruction wins**; skip the commits and say so rather than committing anyway or silently dropping the step. Same for a step that returned red: fix it or surface it, do not commit a broken gate.
+After this step, **commit the scaffold as a checkpoint** — per [§ Commit cadence](#commit-cadence--commit-each-validated-step-not-just-the-scaffold) above.
 
 ### 5.2 — Per-screen implementation (sequential auto with per-screen checkpoint)
 

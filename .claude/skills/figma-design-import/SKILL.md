@@ -134,6 +134,16 @@ This makes the model-assignment promise verifiable — if Step 1 ends up running
 
 ---
 
+## Commit cadence — commit each validated step, not just the scaffold
+
+**Commit each step once its validation is green**, with a `[ TYPE ] description` subject scoped to that step's concern (`[ ADD ] Design tokens`, `[ ADD ] Converted design assets`, `[ FEATURE ] Scaffold design routes`, `[ FEATURE ] {Name}Page`). An import touches tokens, assets, components, layouts, routes and N screens; batching all of it into one commit produces a diff nobody can review and nothing to bisect when a later step regresses an earlier one. It also makes "revert just the screens, keep the tokens" a real option — which is what a user actually asks for after a long import.
+
+Screens commit **per screen**, at the checkpoint, so the history mirrors the checkpoints the user already walked through.
+
+*Unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own) — **their instruction wins**; skip the commits and say so rather than committing anyway or silently dropping the step. Same for a step that returned red: fix it or surface it, do not commit a broken gate.
+
+---
+
 ## How this skill manages models automatically
 
 You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 0 directly because it requires holistic judgment. Every other step is delegated via the `Agent` tool to a dedicated sub-agent in `.claude/agents/figma-design/`. Each sub-agent has its model pre-set in its frontmatter, runs in **isolated context**, and returns only a summary — keeping your context lean and using the cheapest viable model per task.
@@ -163,7 +173,7 @@ Implementing Figma top-down (screen-first) leads to:
 - Repeated navbars/footers (because layouts weren't decided before screens)
 - Refactor passes after the fact
 
-Bottom-up (this skill) prevents all of that. **Do not skip steps.** Each layer depends on the previous.
+Bottom-up (this skill) prevents all of that. **Do not skip steps.** Each layer depends on the previous — so **run them in order, one delegation at a time, and wait for each to return before starting the next.** Steps that look independent are not safe to overlap: several of them write the same files (`src/app/layout.tsx` is touched by Steps 1, 4 and 5.1; `src/styles/general.sass` by Steps 1 and 4), and a step running with stale knowledge of what exists can undo work another step just did (see [§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name) for the measured case). The checkpoint after each step is the sequencing mechanism, not a formality.
 
 ---
 
@@ -228,6 +238,11 @@ Read the Figma source AND the relevant codebase before touching any file.
    ## Cost estimate for Step 5.2
    - `{N} screens · Step 5.2 is the bulk of the cost`. Do NOT quote a per-screen constant from another import — cost varies by screen density. Offer to run the first 2–3 screens, then **recalibrate from the ledger's measured `<usage>` figures** and re-quote the remainder.
    - Past ~10 screens, offer **batching by flow** (auth → marketing → dashboard → …) with a real stop between batches, not just the per-screen checkpoint. A long import is easier to abandon at a batch boundary than at screen 19. This is an offer, not a gate.
+
+   ## PrimeReact accent (app-wide input fidelity)
+   The template ships the `lara-light-blue` PrimeReact theme (`src/app/layout.tsx`), so **every** input's focus border and focus ring render blue regardless of the brand you just tokenized. The import produces correct brand tokens and still leaves every form off-brand, app-wide — a fidelity gap no per-screen work can close and no check reports.
+   - If the design's accent is not blue, propose the override at the checkpoint: focus/hover border + the focus `box-shadow` ring → the brand accent, **preserving `.p-invalid`'s red**. Step 1 applies it in `general.sass` (it already owns that file).
+   - **Offer it; do not apply it silently.** It is a global visual change to a template default, and a project may deliberately keep the PrimeReact look.
 
    ## Detected language
    - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
@@ -333,6 +348,10 @@ Read the Figma source AND the relevant codebase before touching any file.
 
 Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
 
+**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--apply-it-only-when-asked-and-write-it-with-apply), which carries the edit spec (the `@apply border-… ring-…` form, the `:not(.p-invalid)` guards, no `!important`, no invented CSS vars). **Omit the item entirely if the user declined** — the agent applies this only when the brief passes a token, so silence is the off switch. Naming the token is not enough on its own: measured twice, a brief that said `→ {ns}-accent` and nothing else produced raw hex both times.
+
+> **The accent block is deliberately duplicated in both `SKILL.md` files** — the Step 0 report item and this paragraph, same convention as [§ Workload tracking](#workload-tracking-cost-telemetry-across-the-flow). It is orchestrator instruction, and the orchestrator's only mandatory pre-flight read is `CONVENTIONS.md`, not `design-import-shared.md`. § B11 there owns the mechanism; these two spots own the decision. Edit both skills or they drift.
+
 You receive: confirmation of changes + type-check result.
 
 ---
@@ -401,15 +420,7 @@ Pass to the agent the full screen list from the gap analysis. **Before delegatin
 
 All screens — both those with Figma sources and those that are TBD — get the same placeholder for consistency (`"Coming soon"` when language is `en`, `"Próximamente"` when language is `es`). Step 5.2 will replace the Figma-sourced ones with real implementations. The agent invokes `/new-screen` for each (which generates `metadata.alternates.canonical` from the start), sets the placeholder content in the right language, switches `<html lang>` and `openGraph.locale` in `src/app/layout.tsx` if they don't match the detected language, and verifies routes are reachable.
 
-After this step, **commit the scaffold as a checkpoint** — per the cadence rule below.
-
-#### Commit cadence — after every validated step, not just this one
-
-**Commit each step once its validation is green**, with a `[ TYPE ] description` subject scoped to that step's concern (`[ ADD ] Design tokens`, `[ ADD ] Converted design assets`, `[ FEATURE ] Scaffold design routes`, `[ FEATURE ] {Name}Page`). An import touches tokens, assets, components, layouts, routes and N screens; batching all of it into one commit produces a diff nobody can review and nothing to bisect when a later step regresses an earlier one. It also makes "revert just the screens, keep the tokens" a real option — which is what a user actually asks for after a long import.
-
-Screens commit **per screen**, at the checkpoint, so the history mirrors the checkpoints the user already walked through.
-
-*Unless the user asked you not to commit* (a test/dry run, a dirty worktree they're inspecting, a branch they own) — **their instruction wins**; skip the commits and say so rather than committing anyway or silently dropping the step. Same for a step that returned red: fix it or surface it, do not commit a broken gate.
+After this step, **commit the scaffold as a checkpoint** — per [§ Commit cadence](#commit-cadence--commit-each-validated-step-not-just-the-scaffold) above.
 
 You receive: list of created routes + lint/type-check status.
 
