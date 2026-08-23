@@ -103,7 +103,7 @@ Get-ChildItem src/components/{Name}/, src/screens/{Name}Page/
 (Get-ChildItem src/assets/images -Recurse -Filter *.hash.txt).Count    # expect 0
 ```
 
-The Step 1 pattern assumes a two-word token namespace (`brand-blue-500`). A single-word one (`ac-500`) needs `'[a-z]+-[0-9]+': '#` instead — check which shape you actually created.
+The Step 1 pattern assumes a two-word token namespace (`brand-blue-500`). A single-word one (`acme-500`) needs `'[a-z]+-[0-9]+': '#` instead — check which shape you actually created.
 
 If a count disagrees with the report, **the filesystem wins**: use the real number and say so in the checkpoint. A mismatch is worth one line to the user, not a re-delegation — the work is usually fine.
 

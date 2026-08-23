@@ -41,7 +41,7 @@ Bespoke widths: [{section → max-width}, ...]      # sections whose source widt
 Detected language: {en | es}
 Images: [{sourceUuid → `@/assets/images/…webp`}, ...]   # ALREADY converted by Step 2 (claude-design-assets) — import these static paths. Do NOT re-convert: it's Step 2's job, and the `.hash.txt` dedup only makes a re-run idempotent, not free. Convert yourself ONLY if a source image reaches you that Step 2 never received (say so in the report).
 Remote images: {mode: downloaded | keep-remote | placeholder} + [{sourceUrl → target}, ...]   # OPTIONAL — present only when the export referenced photos by URL (inventory.remoteImages) and the user picked a handling at the Step 0.5 checkpoint. See "Remote images" under Images below. An ABSENT field means the export had none — it is NOT a missing required field, so never STOP on it.
-Breakpoints: [{design @media → token}, ...]   # the design's OWN media queries, ALREADY added as tokens by Step 1 (`max-width:860px → ac-md:`). An EMPTY list is valid and meaningful: the design has no @media, so you synthesize responsive with the project scale. See "Breakpoints — two distinct sources" below.
+Breakpoints: [{design @media → token}, ...]   # the design's OWN media queries, ALREADY added as tokens by Step 1 (`max-width:860px → acme-md:`). An EMPTY list is valid and meaningful: the design has no @media, so you synthesize responsive with the project scale. See "Breakpoints — two distinct sources" below.
 Existing components to reuse: [{Component} (variants) → path, ...]
 Tokens available: [list from Step 1]
 Store spec: {store → {state fields, actions}}     # from Step 0.5; CONSUME this shape, never redefine it (only when the screen touches shared state)
@@ -114,10 +114,10 @@ Scan the source's **colors** (hex or `var(--x)`), **font sizes**, **font weights
 
 > **Breakpoints — two distinct sources, do not mix them up.**
 >
-> - **The design's own `@media`** arrive already tokenized: the parent's `Breakpoints:` field maps each to a token (`max-width:860px → ac-md:`). **Use the token.** A raw `max-[860px]:` is a magic number, and re-labelling `860` onto `md` (768) is the § B1 snapping error applied to layout — it shifts every rule and breaks a viewport band. If the source has an `@media` the parent's map does not cover, that IS a `TOKENS_MISSING` STOP.
+> - **The design's own `@media`** arrive already tokenized: the parent's `Breakpoints:` field maps each to a token (`max-width:860px → acme-md:`). **Use the token.** A raw `max-[860px]:` is a magic number, and re-labelling `860` onto `md` (768) is the § B1 snapping error applied to layout — it shifts every rule and breaks a viewport band. If the source has an `@media` the parent's map does not cover, that IS a `TOKENS_MISSING` STOP.
 > - **Synthesized responsive** — when the design has NO media queries (an empty `Breakpoints:` list, e.g. a 430px mobile-only frame with `Target: web`), there is nothing to reproduce and you invent the desktop treatment. **There** you use the project scale (`md:`/`lg:`), mobile-first. That is not a breakpoint from the design, so no token is needed.
 >
-> `md:` means "≥768, project scale"; `ac-md:` means "≤860, this design". Design exports are usually desktop-first (`max-width`) and the project scale is mobile-first (`min-width`) — they are not interchangeable.
+> `md:` means "≥768, project scale"; `acme-md:` means "≤860, this design". Design exports are usually desktop-first (`max-width`) and the project scale is mobile-first (`min-width`) — they are not interchangeable.
 
 ```
 STOP-BLOCKING

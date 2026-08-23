@@ -65,9 +65,9 @@ Colors (no THEMES — parent-named rawScan.clusters):
 Typography sizes: [11, 13, 15, 17, 19, 21, 27, 30, 34, 50, 58]
 
 Breakpoints (the design's own @media — desktop-first, so MAX form):
-- {source: 'helmet @media (max-width: 980px)', max: '980px', name: 'ac-lg', decision: CREATE}
-- {source: 'helmet @media (max-width: 860px)', max: '860px', name: 'ac-md', decision: CREATE}
-- {source: 'helmet @media (max-width: 560px)', max: '560px', name: 'ac-sm', decision: CREATE}
+- {source: 'helmet @media (max-width: 980px)', max: '980px', name: 'acme-lg', decision: CREATE}
+- {source: 'helmet @media (max-width: 860px)', max: '860px', name: 'acme-md', decision: CREATE}
+- {source: 'helmet @media (max-width: 560px)', max: '560px', name: 'acme-sm', decision: CREATE}
 ```
 
 `hexes[]` is the cluster's full member list — the parent already collapsed them to one token, so map EVERY member to `name`. Only `hex` (the representative) reaches `tailwind.config.js`.
@@ -130,13 +130,13 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
      ```js
      screens: {
        '2xs': '375px', xs: '480px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1420px',
-       'ac-lg': { max: '980px' },   // ← design breakpoints: explicit max form
-       'ac-md': { max: '860px' },
-       'ac-sm': { max: '560px' },
+       'acme-lg': { max: '980px' },   // ← design breakpoints: explicit max form
+       'acme-md': { max: '860px' },
+       'acme-sm': { max: '560px' },
      }
      ```
 
-     `'ac-md': '860px'` would silently mean *≥860* — the exact inverse of the design, and it type-checks and builds. **Never overwrite or re-point an existing project breakpoint** (`sm`…`2xl`) to a design value: that is an override, and rule 3 applies (`OVERRIDE_BLOCKED`). Design breakpoints are ADDED alongside, in their own namespace.
+     `'acme-md': '860px'` would silently mean *≥860* — the exact inverse of the design, and it type-checks and builds. **Never overwrite or re-point an existing project breakpoint** (`sm`…`2xl`) to a design value: that is an override, and rule 3 applies (`OVERRIDE_BLOCKED`). Design breakpoints are ADDED alongside, in their own namespace.
 
 5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`** (auto-hosts, preloads, adds `font-display: swap`):
    - **Remove** any `@import url('https://fonts.googleapis.com/...')` from `src/styles/index.sass` (legacy).
