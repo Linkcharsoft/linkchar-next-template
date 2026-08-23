@@ -25,7 +25,7 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 - **Chrome findings** from the prototype: which screens share a `TopBar`, a bottom tab bar (`HOST_TABS`), a header/footer — plus the source JSX files.
 - **Roles**: the prototype's `host` / `guest` split (from the registries) and how they map to route groups + protected/public.
 - **Target**: `mobile-app` | `web` (from Step 0.5). This decides how mobile chrome translates.
-- **`navModel`** (from `inventory`): `screen-registry` (babel) | `multi-page` (dclogic web) | `single-page-sections`/`single-page`.
+- **`navModel`** (from `inventory`): `screen-registry` (babel) | `multi-page` (dclogic web / routed vanilla) | `single-page-sections`/`single-page`.
 - Names of any new layout to create.
 
 If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**.
@@ -36,20 +36,22 @@ If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next
 - **`navModel = single-page-sections` / `single-page` with no chrome to hoist.** The chrome belongs to the one screen and is wired to its own `page`/`menuOpen` state; hoisting it would force UI state into a store (out of scope). **A confirmed no-op is a valid outcome — report it as one** (per [§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)); do not manufacture a layout to look productive, and do not STOP.
 - **An empty "names of new layouts to create" list** — it means the existing layouts already cover the design.
 
-## navModel = `multi-page` (dclogic web): extract the shared chrome to ONE layout
+## navModel = `multi-page`: extract the shared chrome to ONE layout (dclogic web & routed vanilla)
 
 A dclogic multi-page export is N `.dc` pages (`inventory.screens`), and the **header / nav / footer repeats in EVERY page's `.markup.html`** (a corporate site's shared shell). Your #1 job here:
 
 1. Read one or two pages' `.markup.html` (the parent points you at them) and identify the shared chrome — the top nav (with links to the other pages), any announcement bar, the footer. It's the markup that's byte-similar across pages.
-2. **Create ONE layout** (`src/layouts/{Name}Layout/`) holding that chrome. The shared header/footer are raw `<header>`/`<footer>` markup **regions** (NOT `<dc-import>` children), so **create the Navbar/Footer components yourself from the region** (you have the markup — translate its inline styles/`style-hover` the same way) or inline them in the layout. Do NOT route this through `claude-design-components` — its dclogic path only handles `<dc-import>` children listed in `components.json`, not arbitrary markup regions. The nav's links = the page list (entry → `/`, others → `/{slug}`), using `next/link`. **If the header contains imperative behavior** (sticky-shrink on scroll, dropdowns — see the screen agent's imperative note), transcribe it as a `// TODO: port imperative behavior` for now.
+2. **Create ONE layout** (`src/layouts/{Name}Layout/`) holding that chrome. The shared header/footer are raw `<header>`/`<footer>` markup **regions** (NOT `<dc-import>` children), so **create the Navbar/Footer components yourself from the region** (you have the markup — translate its inline styles/`style-hover` the same way) as real components under `src/components/` — never inlined in the layout. Do NOT route this through `claude-design-components` — its dclogic path only handles `<dc-import>` children listed in `components.json`, not arbitrary markup regions. The nav's links = the page list (entry → `/`, others → `/{slug}`), using `next/link`. **If the header contains imperative behavior** (sticky-shrink on scroll, dropdowns — see the screen agent's imperative note), transcribe it as a `// TODO: port imperative behavior` for now.
 3. **Wrap all N routes in a single route-group** (`src/app/(site-layout)/…`) whose `layout.tsx` delegates to the layout. So every page inherits the chrome ONCE.
 4. Translate the chrome's `style-hover`/inline styles the same way the screen agent does (Tailwind `hover:` / tokens / `container-custom`).
+
+**Routed `vanilla` (client-side router) — same job, different source location.** The per-route files (`source/route.{key}.markup.html`) deliberately EXCLUDE the chrome, so do NOT look for byte-similar markup across them (there is none): the header/nav/footer/floating buttons live in the shell, `source/index.markup.html` (full body), which the parent points you at. The shell's inline `<script>` also carries router behavior that is design intent (scroll-driven solid header, `aria-current` alias map, per-route `forceSolid`, dynamic footer year) — the parent specs it; the layout owns it, exposing an explicit opt-in for the per-route bits.
 
 Without this, each of the N `claude-design-screen` runs would re-inline the header/nav/footer (N× duplication) — that is the failure this step prevents. For `single-page-sections`/`single-page`, the sticky header is part of the ONE screen (no layout needed) unless a genuine shared shell exists.
 
 ## Pre-flight (read BEFORE creating/adjusting)
 1. `tailwind.config.js` — tokens only, no hex.
-2. `src/components/` (Glob) — confirm the chrome components exist on disk. If a referenced component is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: layout references {Component} but it's missing on disk / next_agent: claude-design-components`.
+2. `src/components/` (Glob) — confirm the chrome components exist on disk. If a referenced component is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / reason: layout references {Component} but it's missing on disk / next_agent: claude-design-components`. (Exception: the `multi-page` shared-chrome components do not exist yet by design — YOU create them; see the multi-page section.)
 3. `src/app/` (Glob top-level + route groups `({name})`) — avoid colliding with an existing group.
 
 ### Provider inheritance (read once, never re-wire)
@@ -92,7 +94,7 @@ Roles → route groups: `host` and `guest` become route groups (e.g. `(host-layo
 - **Bottom-nav active state** on `mobile-app`: derive from `usePathname()` in a `'use client'` child, not the layout.
 
 ## Hard rules
-- Layouts compose existing components — no inline nav/footer markup. Missing part → `claude-design-components` first.
+- Layouts compose existing components — no inline nav/footer markup. Missing part → `claude-design-components` first. **One carve-out:** on `navModel = multi-page` the shared chrome has no `<dc-import>` source, so YOU create the Navbar/Footer components from the markup region (see that section) — created by you, still never inlined.
 - Layouts are Server Components — never `'use client'`.
 - Tailwind for layout primitives; extract to `.sass` (BEM) any element with visual-appearance classes or 6+ classes; `@apply` LAST.
 - Responsive: show/hide chrome variants via `hidden md:block` / `block md:hidden`, NOT JS conditionals.
