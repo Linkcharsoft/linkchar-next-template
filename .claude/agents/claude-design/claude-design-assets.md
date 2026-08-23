@@ -64,6 +64,8 @@ Save path depends on `screenSlug`:
 - **`screenSlug` present** → `src/assets/images/{screenSlug}/{name}.webp`.
 - **`screenSlug` omitted** → `src/assets/images/{name}.webp` (flat — logos, shared brand graphics only).
 
+**Validate every `screenSlug` BEFORE any path construction** (same defense-in-depth check as `figma-design-screen`'s): assert `^[a-z][a-z0-9-]*$`. An empty or malformed value produces `src/assets/images//{name}.webp` — POSIX tolerates the empty segment; Windows and some bundlers/CDNs trip on it. On failure emit `STOP-BLOCKING / category: INVALID_INPUT / reason: screenSlug "{value}" is not non-empty kebab-case / next_agent: manual`. Do NOT fall back to the flat path — flat is reserved for genuinely-shared assets, and silently downgrading per-screen → flat scatters per-screen images into the shared bucket.
+
 Rule per image (do them all in ONE batch `sharp` script):
 1. **Dedup by content hash** — SHA1 the source file. Glob `src/assets/images/**/*.hash.txt`, read each `{"url":..., "sha1":...}`. If a `sha1` matches **AND the `.webp` it points at still exists on disk** → SKIP, reuse it (cross-screen reuse is fine). Report `REUSED: {path} (matched by contentHash)`. **The existence check is not optional**: a hash whose `.webp` was deleted must re-convert, not skip — matching on the hash alone would ship an import referencing a file that isn't there.
 2. **Inspect** via `sharp(src).metadata()` → `{ format, width, height, hasAlpha }`.
