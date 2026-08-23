@@ -262,6 +262,15 @@ Then, among the glyphs kept from the source:
 - **Used exactly once → stays inline** in the screen. Repetition decides only WHERE a kept glyph lives; it never
   changes whether it's kept.
 
+> **The repetition filter is the flat-source rule (inline `<svg>` scattered through the markup). It does NOT
+> bound a source whose glyphs live in ONE component.** When the design ships a single `Icon` component holding a
+> `name → svg` map, **that map is the universe** — every entry gets split out, regardless of how many times the
+> screens in scope happen to render it. Two reasons it cannot be filtered by usage: a glyph reached as
+> `<Icon name={item.icon}/>` has no call site to "stay inline" at, and the names come from **data**, so counting
+> renders in the markup of the screens you are looking at systematically undercounts. Deriving the list from a
+> subset of screens is how a later screen ends up rendering an undefined glyph — measured: a 9-glyph list taken
+> from 2 screens' markup, against a source component declaring 50, missing three that a seeded array referenced.
+
 **The parent applies this in the Step 0.5 pre-filter and does NOT ask the user** — it's a mechanical rule, not a
 preference. **Worked example** (the Holograma dclogic landing): measured, 16 of 18 glyphs are stroke-based at
 `stroke-width:2` and 5 of those at `1.9` — one lucide-style set with a sub-variant → **the design HAS a set** →
@@ -327,6 +336,41 @@ same hash function and the same number of initials. A different hash over the sa
 colours, which is a different design, not an implementation detail. If the shared component's derivation
 differs from the source's, that is a missing variant, per the rule above.
 
+## B11. The PrimeReact accent override — apply it only when asked, and write it with `@apply`
+
+The template ships PrimeReact's `lara-light-blue` theme (`src/app/layout.tsx`), so every input's focus border
+and focus ring render **blue** no matter what accent the import just tokenised. Whether to repaint them is the
+orchestrator's call at its checkpoint (both `SKILL.md` files carry that decision); this section is only the
+**edit spec** for the tokens agent that carries it out.
+
+**Apply it ONLY if the parent's brief passes the accent token.** No token in the brief means the user declined
+or the design's accent is already blue — leave the theme alone. Never infer it from the palette you just added.
+
+**Write it with `@apply`, never a raw hex and never `theme()` in plain CSS.** A brief that names a token
+(`→ {ns}-accent`) is naming the *class*, not a colour to look up — measured across two independent runs, an
+agent given exactly that brief translated it to hex both times, and nothing in lint or type-check catches it.
+The canonical form, verified to compile through this project's SASS → Tailwind pipeline:
+
+```sass
+.p-inputtext:focus, .p-dropdown:not(.p-disabled).p-focus, .p-inputtextarea:focus
+  @apply border-{ns}-accent ring-[0.2rem] ring-{ns}-accent/25
+```
+
+`ring-*` carries the colour into the ring's `box-shadow` without you writing one — which is why `@apply` is
+sufficient here and `theme()` is not needed. Plain CSS would also break
+[CONVENTIONS § Inside `.sass` files](../CONVENTIONS.md#inside-sass-files), which requires an overridable
+property to go through `@apply`.
+
+**Leave the error state alone, with `:not(.p-invalid)` guards — not `!important`.** `.p-invalid`'s red is a
+state signal, not brand chrome, and repainting it hides validation. Guard the accent rules rather than trying
+to out-specify them afterwards: `@apply !border-x` **does not compile** in SASS's indented syntax (`expected
+newline` at the `!`), so an agent that reaches for `!important` ends up in hand-written CSS and, measured,
+invents a design-system-looking CSS variable that nothing defines. Guarding is also the smaller diff.
+
+**Do not invent CSS custom properties.** If a value needs to vary, it is a token in `tailwind.config.js`. A
+`var(--something, #hex)` fallback chain in a file where `--something` is never defined is dead syntax that
+reads as a design system.
+
 ---
 
 # Section C — Agent protocol
@@ -347,6 +391,28 @@ after reading dozens of files; its per-value details (a `clamp()` endpoint, a se
 responsive step a sibling screen used, which alpha values need bracket form) are the least reliable part of an
 otherwise-correct plan. You are looking at the actual file — it is the gate, exactly as the `file:lines` /
 `nodeId` rule makes it the gate for component structure.
+
+## C1b. Stay inside your brief — never delete what it does not name
+
+Writing outside your brief is usually harmless; **deleting outside it destroys another step's work, and the
+report reads like diligence.** Measured: the tokens agent removed an icon export that the assets agent had just
+created, filed it under "CLEANUP" as an errant entry that "should not be in `src`", and reported
+`lint=✅ type-check=✅`. The icon was required by two screens. Nothing downstream catches this — the deletion
+compiles.
+
+The trap is that some agents carry a standing tidy-up mandate (removing legacy `@import` lines, stripping dead
+rules) with no file boundary attached, and "this looks like it doesn't belong" is exactly how a fresh-context
+agent misreads a file another step wrote ten minutes earlier — see C3's rule that your claims about things
+outside your own turn carry no evidence.
+
+So:
+
+- **Delete only inside the files your brief names.** Anything else — even something that looks obviously
+  wrong — is `STOP-ADVISORY` with what you found and why, not a removal.
+- **A removal is never "cleanup" in your report.** Report it as `DELETED: {path} — {reason}`, on its own line,
+  so the orchestrator can weigh it against what the other steps produced. Burying it in a tidy-up section is
+  how it goes unnoticed.
+- **Replacing a file's contents wholesale is a deletion** of whatever you did not carry over. Same rule.
 
 This is measured, not hypothetical. On the Tercer Milenium run the parent's brief was wrong three times and the
 screen agents caught all three by preferring what they could see: a hero's vertical padding quoted from the
@@ -487,22 +553,35 @@ After **creating** a component, append its row. After **extending** one, update 
   `replace_all` — rows share substrings.
 - Do NOT proactively re-sort the table; place your row by the rules above and move on.
 
-## C7. Invoking a project skill from inside a sub-agent — one at a time, then verify on disk
+## C7. Invoking a project skill from inside a sub-agent — one at a time, and YOU do the writing
 
 Some steps are specified as "invoke `/new-screen` / `/new-store` / `/new-modal`" rather than "write these
-files". That is deliberate — the skill is the canonical generator and hand-rolling drifts from it. But a skill
-invocation from inside a sub-agent has a failure mode that looks nothing like an error:
+files". That is deliberate — the skill is the canonical generator and hand-rolling drifts from it.
 
-- **Batch it and it can queue without running.** Firing N invocations in one turn has been observed to return
-  an acknowledgement for each and execute none — zero files created, and the agent then reports downstream
-  type errors that are really just missing routes. **Invoke one at a time, sequentially.** Never fan out.
-- **The acknowledgement is not evidence.** After each invocation, confirm the deliverable exists
-  (`ls`/`Test-Path` the folder the skill was supposed to create) before moving to the next. This is the same
-  rule the orchestrator applies to your own counts: a claim about what happened is not a measurement of it.
-- **If it did not run, fall back to writing the files yourself** — following the skill's `SKILL.md` exactly
-  (`Read` it; it is on disk). Say in your report that you fell back and why. A skill can silently fail to load
-  in a given session ([CLAUDE.md § Automation Skills](../../CLAUDE.md#automation-skills)); a whole step
-  producing nothing is a far worse outcome than a documented fallback.
+**First, what invoking a skill actually does, because getting this wrong makes a correct run look like a
+failure.** The `Skill` tool does not execute anything. It loads that skill's `SKILL.md` into YOUR context, and
+you then carry out its steps — including writing the files — yourself. **Writing the files by hand after
+invoking the skill IS the skill path**, not a fallback from it. Measured twice: `Skill(new-store)` from inside
+a step agent returns `Launching skill: new-store` plus the full instruction body, and creates zero files on its
+own. So:
 
-Report the mechanism you used, per deliverable, so the orchestrator can tell a skill-generated file from a
-hand-written one without diffing.
+- **Never report "the skill did not run, so I wrote the files manually."** If you invoked the tool and then
+  wrote the files it described, the skill ran. Reporting that as a fallback tells the orchestrator a step
+  failed when it succeeded.
+- **The one real failure is the tool not being there or the skill not loading** — the tell is an error or an
+  `Unknown command`, never a normal-looking return. Only then do you `Read` the `SKILL.md` from disk and follow
+  it without invoking ([CLAUDE.md § Automation Skills](../../CLAUDE.md#automation-skills) — its warning is
+  about the tool ceasing to be *invoked*, not about you doing the typing).
+- **Report which of the two happened**, per deliverable: `via Skill` or `SKILL.md read from disk (tool
+  unavailable)`. That distinction is real and worth a line; "skill-generated vs hand-written" is not — every
+  file a skill produces is one you typed.
+
+**Invoke one at a time, sequentially — never fan out.** Firing N invocations in a single turn injects N full
+instruction bodies at once, and the observed result is an agent that treats the acknowledgements as the
+deliverable and writes nothing: 28 parallel `/new-screen` calls produced 28 acknowledgements and zero screens,
+while the same agent invoking the same skill sequentially across a 10-route import worked. One invocation,
+carry out its steps, then the next.
+
+**The acknowledgement is not evidence.** After completing each one, confirm the deliverable exists
+(`ls`/`Test-Path` the folder) before starting the next. Same rule the orchestrator applies to your reported
+counts: a claim about what happened is not a measurement of it.
