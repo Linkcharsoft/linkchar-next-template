@@ -262,14 +262,18 @@ Then, among the glyphs kept from the source:
 - **Used exactly once → stays inline** in the screen. Repetition decides only WHERE a kept glyph lives; it never
   changes whether it's kept.
 
-> **The repetition filter is the flat-source rule (inline `<svg>` scattered through the markup). It does NOT
-> bound a source whose glyphs live in ONE component.** When the design ships a single `Icon` component holding a
-> `name → svg` map, **that map is the universe** — every entry gets split out, regardless of how many times the
-> screens in scope happen to render it. Two reasons it cannot be filtered by usage: a glyph reached as
-> `<Icon name={item.icon}/>` has no call site to "stay inline" at, and the names come from **data**, so counting
-> renders in the markup of the screens you are looking at systematically undercounts. Deriving the list from a
-> subset of screens is how a later screen ends up rendering an undefined glyph — measured: a 9-glyph list taken
-> from 2 screens' markup, against a source component declaring 50, missing three that a seeded array referenced.
+> **The repetition filter is the SCATTERED-glyph rule. It does NOT bound a design whose glyphs are collected in
+> ONE place.** Both flows have that shape: a code source with a single `Icon` component holding a `name → svg`
+> map, or a Figma file with an icon **component set** whose variants are the glyphs. Either way **the collection
+> is the universe** — every member gets split out, regardless of how many times the screens in scope happen to
+> place it.
+>
+> **Derive the list from the collection, never from the screens you are looking at.** The screens in scope are a
+> subset in three ordinary situations: a batch that implements 2 of 25 screens, a partial import, and — for a
+> code source — glyphs reached by NAME FROM DATA (`<Icon name={item.icon}/>`), which have no call site to count
+> and no call site to "stay inline" at. Each undercounts, and the failure surfaces later as a screen rendering
+> an undefined glyph. Measured: a 9-glyph list taken from 2 screens' markup, against a source collection
+> declaring 50, missing three that a seeded data array referenced.
 
 **The parent applies this in the Step 0.5 pre-filter and does NOT ask the user** — it's a mechanical rule, not a
 preference. **Worked example** (one dclogic landing): measured, 16 of 18 glyphs are stroke-based at
