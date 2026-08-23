@@ -54,7 +54,7 @@ If any required field (screen name, screen type, screen slug, desktop URL, mobil
 These files are the source of truth — the parent's prompt is a hint, but the filesystem wins on conflict:
 
 1. `tailwind.config.js` — the authoritative list of tokens (colors, typography sizes, fonts, breakpoints). Use ONLY these tokens in your output. If Figma uses a value that's not there, emit `STOP-BLOCKING / category: TOKENS_MISSING / next_agent: figma-design-tokens` (see Step "Token validation gate" below for the full format).
-2. `CLAUDE.md` (project root) — project conventions (BEM, framer-motion `m`, classNames from primereact/utils, no hex, etc.).
+2. `.claude/CONVENTIONS.md` (read at pre-flight above) — BEM, `m` not `motion`, `classNames` from `primereact/utils` not `clsx`, no hex. NOT `CLAUDE.md`: it describes what the project IS; the rules live in CONVENTIONS.
 3. `src/components/` (Glob the folders) — confirm which reusable components actually exist on disk. Reuse them; do not assume the parent's list is complete.
 
 ### Async params and searchParams (Next.js 16 pattern)
@@ -193,7 +193,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 
    Inlining bespoke versions of what should be reusable components is the most common silent regression in this flow. The reuse audit costs ~2-3 extra Grep calls per screen and prevents it.
 
-6. **Implement the screen** at the path that matches `screenType` (see "File path and `<main>` className by screen type" above): `src/screens/{Name}Page/{Name}Page.tsx` for `public`/`protected`, `src/screens/auth/{Name}Page/{Name}Page.tsx` for `auth`. Replace the placeholder content INSIDE the existing `<main>`; do NOT change the `<main>` wrapper or its className. Follow the project's `CLAUDE.md` strictly:
+6. **Implement the screen** at the path that matches `screenType` (see "File path and `<main>` className by screen type" above): `src/screens/{Name}Page/{Name}Page.tsx` for `public`/`protected`, `src/screens/auth/{Name}Page/{Name}Page.tsx` for `auth`. Replace the placeholder content INSIDE the existing `<main>`; do NOT change the `<main>` wrapper or its className. Follow `.claude/CONVENTIONS.md` strictly:
    - **`container-custom` is MANDATORY on every top-level section.** Unconditional here because the Figma flow has no `mobile-app` target — every Figma frame is a desktop artboard, so this agent is always on the `web` branch of [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target). Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute *horizontal* padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a 16px built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. **Vertical padding is a separate concern**: `container-custom` does NOT set any `py-*` / `pt-*` / `pb-*`, so you MUST translate the vertical spacing from the Figma frame (e.g. a hero `padding-top: 120px; padding-bottom: 80px` → `pt-[120px] pb-20` or the closest token-friendly equivalent). NEVER ship a section without vertical padding — it will collapse against its siblings. Two valid patterns:
 
      ```tsx

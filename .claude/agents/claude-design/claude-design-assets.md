@@ -126,7 +126,7 @@ for (const { src, out, ref, isLogo } of IMAGES) {
 
 **When you report `REUSED`, tell the parent the path that actually exists** — the screen agent imports the path YOU report, not the `out` it asked for.
 
-> **The `.hash.txt` files are import-scoped scratch, not source.** They exist so this dedup works within the run (and so `figma-design-screen` can skip a re-download at Step 5.2). **Step 6 deletes them** once the import ends — do not treat them as a deliverable, and do not expect them to survive to the next import.
+> **The `.hash.txt` files are import-scoped scratch, not source.** They exist so this dedup works within the run — a re-invocation of Step 2 (after a STOP, or a follow-up batch) skips re-encoding what it already converted; Step 5.2 never reads them. **Step 6 deletes them** once the import ends — do not treat them as a deliverable, and do not expect them to survive to the next import.
 
 ## Remote images (ONLY when the parent passes a second list)
 

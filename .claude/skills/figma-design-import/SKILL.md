@@ -517,8 +517,8 @@ If the previous subagent failed, surface the error in the same checkpoint:
 
 **Edge cases — handle automatically, do not ask:**
 
-- **Screen with desktop only (no mobile pair found)** → pass only the desktop URL and tell `figma-design-screen` to apply best-effort responsive defaults (mobile-first Tailwind, stacked layout below `md:`). Mention this in the checkpoint message so the user knows.
-- **Screen with mobile only** → same in reverse: pass mobile URL and ask the agent to extrapolate desktop from the project's container/breakpoint conventions.
+- **Screen with desktop only (no mobile pair found)** → pass the desktop URL and the literal `"no mobile variant"` in the `Mobile URL:` field (the agent STOPs `INVALID_INPUT` on an ABSENT field — the placeholder is what satisfies it), and tell `figma-design-screen` to apply best-effort responsive defaults (mobile-first Tailwind, stacked layout below `md:`). Mention this in the checkpoint message so the user knows.
+- **Screen with mobile only** → same in reverse: pass the mobile URL and `"no desktop variant"` in the `Desktop URL:` field, and ask the agent to extrapolate desktop from the project's container/breakpoint conventions.
 - **Subagent failure** → checkpoint with the error and ask whether to retry, skip, or stop. Do NOT silently move on after a failure.
 
 **Cumulative final report.** When the batch ends (all screens done or user halted), post:

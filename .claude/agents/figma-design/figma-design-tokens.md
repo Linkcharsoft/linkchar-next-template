@@ -24,7 +24,7 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 - Optional: existing token state (the parent already audited `tailwind.config.js`).
 - Optional override flag: `confirmOverride: true` — only present if the user has explicitly approved overriding an existing token in a previous run.
 
-If the list is missing, ask before editing.
+If the list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**.
 
 **Example input** (illustrative — the orchestrator typically passes a structured list like this):
 
