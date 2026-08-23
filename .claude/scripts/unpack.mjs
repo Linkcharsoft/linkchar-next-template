@@ -609,7 +609,7 @@ function ingestArchive(dir) {
   if (!found) die(`archive has no README.md — not a recognized Claude Design "Project archive". Point at the unzipped handoff (Export → .zip → "Project archive"/"Send to coding agent"), whose README names the primary design.`)
   if (!found.entryRel) die(`archive README (${found.readmePath}) has no "**Read \`…\` in full**" line — cannot identify the primary design. Entry-detection-without-README is not wired yet.`)
 
-  // entryRel is relative to the ZIP ROOT and prefixed with the project slug (`givxo/project/x.html`), but the
+  // entryRel is relative to the ZIP ROOT and prefixed with the project slug (`{slug}/project/x.html`), but the
   // unzipped dir is routinely NOT named after the slug — `unzip -d <scratch>/archive` alone breaks the assumption.
   // So try the slug-relative path, then the same path with its slug segment dropped, then a basename search.
   const readmeDir = dirname(found.readmePath)
