@@ -76,8 +76,8 @@ importers:
         specifier: 9.39.5
         version: 9.39.5
       '@figma/code-connect':
-        specifier: 1.5.3
-        version: 1.5.3(supports-color@8.1.1)
+        specifier: 2.0.0
+        version: 2.0.0(supports-color@8.1.1)
       '@next/eslint-plugin-next':
         specifier: 16.3.4
         version: 16.3.4(eslint@9.39.5(jiti@1.21.7)(supports-color@8.1.1))
@@ -380,8 +380,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@figma/code-connect@1.5.3':
-    resolution: {integrity: sha512-rQ3cBKVK0z5n8oNW0ypojcLm0rrmTm1y8W0IUHQdlhyf/STnz7eCsIdCRZ6k5iXRW4D6PF0IHPKK7V+6bTa7RQ==}
+  '@figma/code-connect@2.0.0':
+    resolution: {integrity: sha512-FNpemwBciNCpskBZ8TK0iRa+oZR5H6+NP8XVDawww8Vz1bFoIrPu0y3NvPR0xnjtrOhAu+3DXqZmSR4cb0V+2w==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4671,7 +4671,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@figma/code-connect@1.5.3(supports-color@8.1.1)':
+  '@figma/code-connect@2.0.0(supports-color@8.1.1)':
     dependencies:
       boxen: 5.1.1
       chalk: 4.1.2
