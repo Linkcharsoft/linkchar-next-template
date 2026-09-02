@@ -22,7 +22,12 @@ export async function GET () {
         status: 200
       })
     } else {
-      throw new Error(AUTH_ERRORS['user-not-found'])
+      // Propagate the backend status: customFetch's client-side refresh only triggers on 401.
+      const status = response?.response?.status ?? 400
+      return NextResponse.json(
+        { message: AUTH_ERRORS['user-not-found'] },
+        { status }
+      )
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : AUTH_ERRORS['user-not-found']
