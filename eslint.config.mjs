@@ -18,7 +18,7 @@ import sonarjs from 'eslint-plugin-sonarjs'
 import tailwind from 'eslint-plugin-tailwindcss'
 import unicorn from 'eslint-plugin-unicorn'
 import globals from 'globals'
-import jsoncParser from 'jsonc-eslint-parser'
+import * as jsoncParser from 'jsonc-eslint-parser'
 
 const ESLintConfig = [
   // --- Ignores ---
