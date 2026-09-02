@@ -57,15 +57,22 @@ const SignupConfirmationPage = ({ token }: Props) => {
     })
 
     const verifyToken = async () => {
-      const { ok } = await emailConfirmation({ key: token })
+      try {
+        const { ok } = await emailConfirmation({ key: token })
 
-      if (ok) {
-        setTokenStatus('valid')
-      } else {
+        setTokenStatus(ok ? 'valid' : 'invalid')
+      } catch (error) {
         setTokenStatus('invalid')
+        setNotification({
+          severity: 'error',
+          summary: 'Error verifying link, please try again later',
+          life: 5000
+        })
+        const message = error instanceof Error ? error.message : error
+        console.error(`Error: ${message}`)
+      } finally {
+        closeModal('loadingModal')
       }
-
-      closeModal('loadingModal')
     }
 
     verifyToken()

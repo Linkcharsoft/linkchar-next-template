@@ -49,18 +49,25 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
     })
 
     const checkUrlToken = async () => {
-      const { ok } = await checkPasswordToken({
-        email,
-        token
-      })
+      try {
+        const { ok } = await checkPasswordToken({
+          email,
+          token
+        })
 
-      if (ok) {
-        setTokenStatus('valid')
-      } else {
+        setTokenStatus(ok ? 'valid' : 'invalid')
+      } catch (error) {
         setTokenStatus('invalid')
+        setNotification({
+          severity: 'error',
+          summary: 'Error verifying link, please try again later',
+          life: 5000
+        })
+        const message = error instanceof Error ? error.message : error
+        console.error(`Error: ${message}`)
+      } finally {
+        closeModal('loadingModal')
       }
-
-      closeModal('loadingModal')
     }
 
     checkUrlToken()
