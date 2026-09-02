@@ -28,6 +28,8 @@ const values = {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
+  enabled: values.enabled,
+
   // Session Replay is added lazily below to keep its chunk off the critical bundle
   integrations: [],
 
