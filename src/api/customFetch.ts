@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { AUTH_ERRORS } from '@/constants/auth'
 import { API_URL } from '@/constants/env'
 
@@ -170,6 +169,8 @@ const handleUnauthorizedLogout = async () => {
   } catch (error) {
     console.error('Logout request failed:', error)
   } finally {
-    redirect('/login')
+    // redirect() throws NEXT_REDIRECT (unhandled outside render) and hooks aren't available here.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload on forced logout intentionally resets client state
+    globalThis.location.assign('/login')
   }
 }
