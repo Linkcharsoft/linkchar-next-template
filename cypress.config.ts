@@ -1,8 +1,8 @@
 import { defineConfig } from 'cypress'
 import dotenv from 'dotenv'
 
-// Load environment variables from the .env file
-dotenv.config()
+// Same precedence as Next.js: .env.local wins over .env
+dotenv.config({ path: ['.env.local', '.env'] })
 
 export default defineConfig({
   video: false,
