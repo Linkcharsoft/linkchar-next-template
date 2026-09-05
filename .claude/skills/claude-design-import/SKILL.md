@@ -610,7 +610,7 @@ Branch on the reply exactly like the figma flow (empty/"siguiente"→next; free 
 
 1. `pnpm run lint-check --fix` → expect **0 errors**. Warnings are OK if they're the mandated `// TODO: openapi-import` markers (`sonarjs/todo-tag`); flag anything else.
 2. `pnpm run type-check` → expect clean.
-3. `pnpm run build` → catches what lint/tsc can't (SASS compile, `theme()` resolution, static generation). If it fails on a missing `.env.local`, that's the pre-`/init-project` state, NOT your bug — say so and move on. Then `node .claude/scripts/primereact-theme.mjs --check` → exit `0` (`1` = the vendored PrimeReact theme snapshot is stale — Step 7 regenerates it; `2` = the script cannot map the installed themes — manual).
+3. `pnpm run build` → catches what lint/tsc can't (SASS compile, `theme()` resolution, static generation). If it fails on a missing `.env.local`, that's the pre-`/init-project` state, NOT your bug — say so and move on.
 4. Convention greps over the scope list only (`$F` = the accumulated paths):
 
 ```bash
