@@ -98,6 +98,29 @@ Both screens keep the template's **structure** — a full-height `<main id='main
 - **`container-custom` inside a flex column needs `width: 100%`** ([CONVENTIONS](../../CONVENTIONS.md#-container-custom-inside-a-flex-parent-needs-width-100)) — both the header and the body.
 - Copy in `detectedLanguage`. `es`: `Error 404` / `Página no encontrada` / `Volver al inicio`; global-error: `Error del sistema` / `Algo salió mal` / `Volver al inicio` + `Contactar soporte` or `Reintentar`. `en`: the template's own strings.
 - **Keep every behaviour the template's `GlobalErrorPage` carries** — the Sentry `captureException`, the feedback-widget probe, the `mailto` fallback and its `SUPPORT_EMAIL_ADDRESS`. You restyle; you do not remove error reporting. (Two projects removed Sentry earlier as a separate decision — if the project has no `@sentry/nextjs` left, there is nothing to keep.) Showing `error.digest` as a muted `Referencia: {digest}` line is a good addition: it is what a user pastes into a support message.
+- **Localize the Sentry feedback widget — it ships English-only, and it is the one set of strings on this screen the copy above does not cover** (measured: had to be done by hand on every Spanish project). `GlobalErrorPage.tsx` builds it with `feedbackSyncIntegration({ autoInject: false, … })`; when `detectedLanguage` is `es`, add the text options to that same object — they are the optional `FeedbackTextConfiguration` fields of `@sentry/core` (`build/types/types/feedback/config.d.ts`; each falls back to its English default when omitted):
+
+  ```ts
+  formTitle: 'Reportar un error',
+  submitButtonLabel: 'Enviar reporte',
+  cancelButtonLabel: 'Cancelar',
+  confirmButtonLabel: 'Confirmar',
+  nameLabel: 'Nombre',
+  namePlaceholder: 'Tu nombre',
+  emailLabel: 'Email',
+  emailPlaceholder: 'tu.email@ejemplo.com',
+  messageLabel: 'Descripción',
+  messagePlaceholder: '¿Qué pasó? ¿Qué esperabas que pasara?',
+  isRequiredLabel: '(obligatorio)',
+  successMessageText: '¡Gracias por tu reporte!',
+  errorEmptyMessageText: 'No se puede enviar un reporte sin descripción',
+  errorGenericText: 'No pudimos enviar el reporte. Probá de nuevo.',
+  errorTimeoutText: 'No pudimos confirmar que el reporte se haya enviado.',
+  errorForbiddenText: 'No tenés permiso para enviar reportes.',
+  errorNoClientText: 'Sentry no está configurado, no se puede enviar el reporte.'
+  ```
+
+  `triggerLabel` / `triggerAriaLabel` only render with `autoInject: true` (the template opens the form itself) and `addScreenshotButtonLabel` / `removeScreenshotButtonLabel` / `highlightToolText` / `hideToolText` / `removeHighlightText` only with `enableScreenshot: true` — add them only if you turn those on. `en` → leave the defaults. If the project's Sentry major differs from the template's, re-check the field names in that `config.d.ts` before writing them.
 - **`<Waves/>` stays.** It is the template's signature on the error pages and the one thing that must survive an import. You recolour it (A3); you never replace it with the design's own footer art, and never delete it.
 
 #### A2. The two route files
@@ -208,7 +231,7 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 
 ### Error screens
 - src/screens/NotFoundPage/NotFoundPage.tsx + .sass — {bg}/{text}, h1 `{display|body}` font, buttons {primary}+{secondary}, lang {es|en}
-- src/screens/GlobalErrorPage/GlobalErrorPage.tsx + .sass — same skin; Sentry wiring kept: {yes|n/a}; digest line: {yes|no}
+- src/screens/GlobalErrorPage/GlobalErrorPage.tsx + .sass — same skin; Sentry wiring kept: {yes|n/a}; feedback widget: {localized (es) | English defaults (en) | n/a}; digest line: {yes|no}
 - src/app/not-found.tsx — title localized, robots noindex
 - src/app/global-error.tsx — index.sass ✅ · lang ✅ · <title> ✅ · fonts: {Google <link> {families} | system fallback (font not on Google Fonts)}
 - src/components/Waves/Waves.sass — crests → {t1, t2, t3, t4} over {background}; component kept, 0 hex left

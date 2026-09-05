@@ -664,7 +664,7 @@ node .claude/scripts/primereact-theme.mjs --check
 ```
 ✅ Chrome del template brandeado (Step 7)
    404 + global-error: src/screens/NotFoundPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
-   global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)}
+   global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)} · widget de feedback de Sentry: {traducido (es) | inglés (en) | n/a}
    PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
    PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado} · snapshot del theme: {al día | regenerado desde primereact@X | no mapeable → manual}
    Validation: lint=✅ type-check=✅ build=✅
