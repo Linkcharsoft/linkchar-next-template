@@ -1,6 +1,6 @@
 ---
 name: figma-design-import
-description: Orchestrates the bottom-up import of a full Figma design file into this codebase — inventory → tokens → assets → components → layouts → screens → validation. Delegates each step to a dedicated sub-agent in `.claude/agents/figma-design/` so each task runs in the right model (Haiku for mechanical, Sonnet for moderate, Opus for architectural). Invoke when starting to translate a complete Figma design to code, NOT for one-off component tweaks. For a single screen/component, prefer `/figma:figma-implement-design`.
+description: Orchestrates the bottom-up import of a full Figma design file into this codebase — inventory → tokens → assets → components → layouts → screens → validation → template chrome (404 / global-error / PoweredBy / PrimeReact theme, branded from the imported system). Delegates each step to a dedicated sub-agent in `.claude/agents/figma-design/` so each task runs in the right model (Haiku for mechanical, Sonnet for moderate, Opus for architectural). Invoke when starting to translate a complete Figma design to code, NOT for one-off component tweaks. For a single screen/component, prefer `/figma:figma-implement-design`.
 ---
 
 Import a Figma design end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
@@ -120,7 +120,7 @@ The check is two seconds: `git status --porcelain <path>` (untracked/modified me
 
 > Both of these generalize past their own step: the rule is that an agent's claims about **things outside its own turn** — what existed before, what another step did, whether something is related — carry no evidence and must be checked. Its claims about **what it just did** are merely unreliable (see the counts rule above).
 
-**Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens` sum and the per-model breakdown:
+**Show the ledger at every checkpoint** (end of Step 0, end of Step 5.1, between each Step 5.2 screen, end of Step 6, end of Step 7) so the user can see cost-per-step accumulating in real time and decide whether to keep going. At the end of the batch, also show the cumulative `Tokens` sum and the per-model breakdown:
 
 ```
 Cumulative tokens 420k
@@ -161,6 +161,7 @@ You (the parent agent, typically Opus) act as the **orchestrator**. You do Step 
 | 5.2 | `figma-design-screen` | Opus | Pixel-perfect fidelity, heaviest token user |
 | 5.2b | `general-purpose` (fidelity diff) | Sonnet | Diffs each implemented screen against its frame — the twin of 0.55, on the output side. Builtin agent, no file under `.claude/agents/` |
 | 6 | `design-validation` | Haiku | Run commands + report findings (shared agent). Its runtime half is a deterministic script, so no model measures anything |
+| 7 | `design-post-import` | Sonnet | Brands the template's own 404 / global-error / `PoweredBy` / PrimeReact theme from the brand system Steps 1–3 produced — no design source to read, moderate judgment (shared agent) |
 
 **Always pass enough context** in each delegation prompt — sub-agents start fresh, they don't see your conversation. Include relevant gap-analysis data, file paths, and decisions already made.
 
@@ -240,10 +241,16 @@ Read the Figma source AND the relevant codebase before touching any file.
    - `{N} screens · Step 5.2 is the bulk of the cost`. Do NOT quote a per-screen constant from another import — cost varies by screen density. Offer to run the first 2–3 screens, then **recalibrate from the ledger's measured `<usage>` figures** and re-quote the remainder.
    - Past ~10 screens, offer **batching by flow** (auth → marketing → dashboard → …) with a real stop between batches, not just the per-screen checkpoint. A long import is easier to abandon at a batch boundary than at screen 19. This is an offer, not a gate.
 
-   ## PrimeReact accent (app-wide input fidelity)
-   The template ships the `lara-light-blue` PrimeReact theme (`src/app/layout.tsx`), so **every** input's focus border and focus ring render blue regardless of the brand you just tokenized. The import produces correct brand tokens and still leaves every form off-brand, app-wide — a fidelity gap no per-screen work can close and no check reports.
-   - If the design's accent is not blue, propose the override at the checkpoint: focus/hover border + the focus `box-shadow` ring → the brand accent, **preserving `.p-invalid`'s red**. Step 1 applies it in `general.sass` (it already owns that file).
+   ## PrimeReact accent (app-wide component fidelity)
+   The template ships the `lara-light-blue` PrimeReact theme (`src/app/layout.tsx`), so **every** PrimeReact component — input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, table selection, calendar — renders blue regardless of the brand you just tokenized. The compiled theme hardcodes its palette (its `--primary-color` custom properties are read by no rule), so there is no variable to override; the fix is `.claude/scripts/primereact-theme.mjs`, which re-colours the whole theme from ONE accent token ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked)).
+   - If the design's accent is not blue, propose it at the checkpoint: `node .claude/scripts/primereact-theme.mjs --primary {accent token}` → `src/styles/primereact-theme.css`, wired into `layout.tsx`; `.p-invalid`'s red is untouched by construction. Step 1 runs it (it already owns `layout.tsx`); Step 7 re-offers it if it is declined here.
    - **Offer it; do not apply it silently.** It is a global visual change to a template default, and a project may deliberately keep the PrimeReact look.
+
+   ## Template chrome to brand at Step 7 (404 · global-error · PoweredBy)
+   The design never draws these; `design-post-import` derives them from the brand system. Decide the inputs now, so Step 7 needs no second checkpoint:
+   - Error screens: background `{token}` · text `{token}` · muted `{token}` · accent `{token}` · logo → {the shared brand mark Step 2 will produce} · buttons → `CustomButton` `{primary}` + `{secondary}` · copy in `{detectedLanguage}`
+   - Waves gradients: `[{4 tokens, light → dark}]` fading into the background — **the wave component stays** (it is the template's mark); only its colours change
+   - PoweredBy: mount in `{the Footer component this import will create | the public layout}` · tone `{dark|light}` · copy `Desarrollado por` (es) / `Powered by` (en) — or `none` for a product that carries no credit
 
    ## Detected language
    - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
@@ -349,7 +356,7 @@ Read the Figma source AND the relevant codebase before touching any file.
 
 Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
 
-**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--apply-it-only-when-asked-and-write-it-with-apply), which carries the edit spec (the `@apply border-… ring-…` form, the `:not(.p-invalid)` guards, no `!important`, no invented CSS vars). **Omit the item entirely if the user declined** — the agent applies this only when the brief passes a token, so silence is the off switch. Naming the token is not enough on its own: measured twice, a brief that said `→ {ns}-accent` and nothing else produced raw hex both times.
+**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked): it runs `node .claude/scripts/primereact-theme.mjs --primary {token}`, which writes `src/styles/primereact-theme.css` and rewires the theme import in `layout.tsx` — one command, every component, no hand-mapped selectors. **Omit the item entirely if the user declined** — the agent runs the script only when the brief passes a token, so silence is the off switch. Record the outcome in the ledger (`applied` / `declined`): Step 7 reads it as `primereactAccent`.
 
 > **The accent block is deliberately duplicated in both `SKILL.md` files** — the Step 0 report item and this paragraph, same convention as [§ Workload tracking](#workload-tracking-cost-telemetry-across-the-flow). It is orchestrator instruction, and the orchestrator's only mandatory pre-flight read is `CONVENTIONS.md`, not `design-import-shared.md`. § B11 there owns the mechanism; these two spots own the decision. Edit both skills or they drift.
 
@@ -590,7 +597,7 @@ Exit `0` = clean · `1` = findings (a result, not a crash) · `2` = the sweep di
 
 Report findings in a categorized `path:line` shape. **Don't auto-fix** — surface and offer to delegate to the relevant agent.
 
-**Then clean up the import's scratch state.** The `.hash.txt` siblings are import-scoped: Step 2 writes them so it can dedup across screen folders, and Step 5.2 reads them to skip a re-download from the Figma MCP. Once validation has run, nothing else consumes them — they are not source, and they are ~100 bytes of noise per image. Delete them as the last action of the flow:
+**Then clean up the import's scratch state.** The `.hash.txt` siblings are import-scoped: Step 2 writes them so it can dedup across screen folders, and Step 5.2 reads them to skip a re-download from the Figma MCP. Once validation has run, nothing else consumes them — they are not source, and they are ~100 bytes of noise per image. Delete them as the last action of this step (Step 7 does not read them):
 
 ```bash
 find src/assets/images -name '*.hash.txt' -delete
@@ -606,6 +613,64 @@ Say how many you removed. The `.webp` files are the deliverable and stay. A futu
 So a clean Step 6 means *nothing violated a known invariant*, never *the design was reproduced*. Visual review against Figma is still the developer's job via the per-screen checkpoint in Step 5.2. (Measured on a real import: five defects shipped after Step 6 reported clean on every static check — which is why the runtime half exists.)
 
 You receive: a categorized report (passing / warnings / failing) with `path:line` references. Don't auto-fix violations — surface them to the user and offer to delegate the fix to the relevant agent (`figma-design-tokens` for hex, `figma-design-components` for a11y, etc).
+
+---
+
+## Step 7 — Brand the template's own chrome (404 · global-error · PoweredBy · PrimeReact theme)
+
+> **Delegate to**: `Agent({ subagent_type: 'design-post-import' })` — **Sonnet**. The **shared** post-import agent (also used by `claude-design-import`); its full spec is [`.claude/agents/shared/design-post-import.md`](../../agents/shared/design-post-import.md). Runs AFTER Step 6 so the validation report stays attributable to the import; the step closes with its own lint + type-check + build.
+>
+> **Fallback — ONLY if `design-post-import` is not an available `subagent_type`** (the same silent load failure as Step 6 — [`agent-loading-troubleshooting.md`](../../docs/agent-loading-troubleshooting.md)): follow the agent file inline and say so in the checkpoint.
+
+**Why a separate step.** The design never draws a 404, a crash page or a "Powered by" strip, and every step agent is told to touch nothing its brief does not name ([§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name)). So after Step 6 the app is on-brand everywhere except the two screens a user meets when something breaks — still the template's black-and-purple Waves layout, in English — plus the credit strip in template grey and, unless the accent was applied at Step 1, every PrimeReact component still blue. Nothing reports it: all of it lints, type-checks and builds. Measured on two real projects (anodal, tercer-milenium): both needed exactly this pass, by hand, after their import.
+
+**What you pass** — the brief shape is in the agent file; fill it from Step 0's `## Template chrome to brand at Step 7` item and the ledger:
+
+```
+importFlow: figma-design-import
+detectedLanguage: {es|en}                                  # Step 0
+brand: { background, text, muted, accent, waves: [4] }     # token names — Step 0 decided them, Step 1 created them
+fonts: { body: '--font-x', display: '--font-y' | none, google: 'Family:wght@400;600' | none }   # read src/app/layout.tsx after Step 1
+logo: { path, kind: raster|icon, alt }                     # the shared brand mark from Step 2
+buttons: { primary, secondary | none }                     # CustomButton variants that exist after Step 3
+poweredBy: { mount: {Footer component path | public layout path | none}, tone: dark|light }
+primereactAccent: {token} | applied | declined             # the Step 0 decision + whether Step 1 ran the script
+```
+
+Three things NOT to ask of it, because the agent refuses them anyway and asking wastes a turn: replace or drop `Waves`; put `next/font` in `global-error.tsx` (breaks every route in dev under `reactCompiler` — measured, see [CONVENTIONS > Font Loading](../../CONVENTIONS.md#font-loading)); create a second credit component.
+
+**Verify the deliverable on disk** (the ledger rule applies here too):
+
+```bash
+# POSIX
+grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the mounts the report claims (usually 1)
+grep -rn "next/font" src/app/global-error.tsx src/styles/          # expect nothing
+grep -c "stopColor=.currentColor" src/components/Waves/Waves.tsx   # expect 8
+grep -n "primereact-theme.css\|resources/themes" src/app/layout.tsx  # ONE import: the vendored theme if applied, node_modules otherwise
+```
+
+```powershell
+# Windows
+(Select-String -Path src -Pattern '<PoweredBy' -Recurse).Count
+Select-String -Path src/app/global-error.tsx, src/styles/* -Pattern 'next/font'
+(Select-String -Path src/components/Waves/Waves.tsx -Pattern 'stopColor=.currentColor').Count
+Select-String -Path src/app/layout.tsx -Pattern 'primereact-theme.css|resources/themes'
+```
+
+**Checkpoint message:**
+
+```
+✅ Chrome del template brandeado (Step 7)
+   404 + global-error: src/screens/NotFoundPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
+   global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)}
+   PoweredBy: montado en {path} ("{Desarrollado por|Powered by}")
+   PrimeReact theme: {aplicado ahora con {token} | ya aplicado en Step 1 | no solicitado}
+   Validation: lint=✅ type-check=✅ build=✅
+
+Probá: pnpm start → /una-ruta-inexistente (404). global-error no se ve en dev (lo tapa el overlay): pnpm serve y /sentry-example-page → botón que lanza el error.
+```
+
+Commit it — `[ STYLE ] Brand error pages and PoweredBy credit` — plus `[ ADD ] PrimeReact brand theme` as its own commit if the script ran here (a 220 KB generated file deserves its own diff).
 
 ---
 
@@ -687,6 +752,10 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
   - **Per-screen raster images** (hero photos, screen-specific illustrations) → nested at `src/assets/images/{screenSlug}/{name}.webp`. The orchestrator passes `screenSlug` to the asset agent when the image belongs to one screen.
   - **Shared raster assets** (logos, repeated brand graphics) → flat at `src/assets/images/{name}.webp` (no `screenSlug` passed).
   Don't invent further subfolders like `src/assets/images/shared/patterns/` — the two-level structure (`{screenSlug}/` OR flat) is it. Sub-agents that pick the wrong bucket are getting it wrong; the orchestrator decides the bucket via the `screenSlug` parameter, not the agent.
+- ❌ Skip Step 7 because "the design has no 404 / no footer credit" — that is exactly why the step exists: nothing else in the flow touches the template's own screens, and they ship in template colours and English otherwise
+- ❌ Put `next/font` in `src/app/global-error.tsx` or in any module it imports — breaks every route in dev under `reactCompiler` (measured); the Google Fonts `<link>` exception in [CONVENTIONS > Font Loading](../../CONVENTIONS.md#font-loading) is the way
+- ❌ Replace or delete `Waves` on the error screens — recolour its stops with the brand tokens; the component is the template's mark
+- ❌ Hand-map `.p-*` selectors in `general.sass` to re-colour PrimeReact — run `.claude/scripts/primereact-theme.mjs` ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked)); the compiled theme has no variable to override
 
 ---
 
@@ -704,3 +773,4 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 | 5.2 | Per-screen implementation (sequential auto + post-screen checkpoint) | `figma-design-screen` | Opus | Per-screen: name, **screenType**, **screenSlug**, desktop/mobile URLs, **detectedLanguage**, expected reusable components (from Step 3 registry) |
 | 5.2b | Gate the implementation against the design | `general-purpose` | Sonnet | That screen's desktop nodeId (ONE `get_design_context` pull) + the emitted `.tsx`/`.sass` |
 | 6 | Validation | `design-validation` | Haiku | Scope (or empty for full sweep) + `importFlow: 'figma-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |
+| 7 | Brand the template chrome (404 · global-error · PoweredBy · PrimeReact theme) | `design-post-import` | Sonnet | `importFlow` + `detectedLanguage` + brand tokens (bg / text / muted / accent / waves) + font vars & Google family + logo asset + `CustomButton` variants + PoweredBy mount/tone + `primereactAccent` (token / applied / declined) |
