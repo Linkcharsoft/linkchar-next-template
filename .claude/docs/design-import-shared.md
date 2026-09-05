@@ -347,40 +347,49 @@ same hash function and the same number of initials. A different hash over the sa
 colours, which is a different design, not an implementation detail. If the shared component's derivation
 differs from the source's, that is a missing variant, per the rule above.
 
-## B11. The PrimeReact accent override — apply it only when asked, and write it with `@apply`
+## B11. The PrimeReact accent override — run the script, only when asked
 
-The template ships PrimeReact's `lara-light-blue` theme (`src/app/layout.tsx`), so every input's focus border
-and focus ring render **blue** no matter what accent the import just tokenised. Whether to repaint them is the
-orchestrator's call at its checkpoint (both `SKILL.md` files carry that decision); this section is only the
-**edit spec** for the tokens agent that carries it out.
+The template ships PrimeReact's `lara-light-blue` theme (`src/app/layout.tsx`), so every PrimeReact component —
+input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, datatable selection,
+calendar — renders **blue** no matter what accent the import just tokenised. Whether to repaint is the
+orchestrator's call at its checkpoint (both `SKILL.md` files carry that decision); this section is the
+**mechanism** for the agent that carries it out (the tokens agent at Step 1, or `design-post-import` at Step 7).
 
 **Apply it ONLY if the parent's brief passes the accent token.** No token in the brief means the user declined
 or the design's accent is already blue — leave the theme alone. Never infer it from the palette you just added.
 
-**Write it with `@apply`, never a raw hex and never `theme()` in plain CSS.** A brief that names a token
-(`→ {ns}-accent`) is naming the *class*, not a colour to look up — measured across two independent runs, an
-agent given exactly that brief translated it to hex both times, and nothing in lint or type-check catches it.
-The canonical form, verified to compile through this project's SASS → Tailwind pipeline:
+**There is no variable to override, so do not try.** The compiled theme hardcodes its palette in ~350
+declarations; the `--primary-color` / `--primary-*` custom properties in its `:root` are read by no rule
+(`grep 'var(--primary' theme.css` → 0 hits). Overriding them changes nothing, and hand-mapping
+`.p-inputtext:focus`, `.p-dropdown.p-focus`, `.p-highlight`, `.p-checkbox-box.p-highlight`… in `general.sass`
+is the open-ended chore this script replaces — every `lara-light-*` theme is the SAME file with 16 hex + 3
+rgba slots swapped (verified: masking colours makes blue and green byte-identical), and the script swaps them
+deterministically:
 
-```sass
-.p-inputtext:not(.p-invalid):focus, .p-dropdown:not(.p-disabled):not(.p-invalid).p-focus, .p-inputtextarea:not(.p-invalid):focus
-  @apply border-{ns}-accent ring-[0.2rem] ring-{ns}-accent/25
+```bash
+node .claude/scripts/primereact-theme.mjs --primary {ns}-accent          # a token name from tailwind.config.js, or a hex
+node .claude/scripts/primereact-theme.mjs --primary brand-500 --dry-run  # print the resolved palette first
 ```
 
-`ring-*` carries the colour into the ring's `box-shadow` without you writing one — which is why `@apply` is
-sufficient here and `theme()` is not needed. Plain CSS would also break
-[CONVENTIONS § Inside `.sass` files](../CONVENTIONS.md#inside-sass-files), which requires an overridable
-property to go through `@apply`.
+- It writes `src/styles/primereact-theme.css` (a re-coloured snapshot of the installed `primereact` version —
+  the header names it) and rewires `src/app/layout.tsx` from `primereact/resources/themes/…/theme.css` to
+  `@/styles/primereact-theme.css`. Idempotent — re-running with the same token is a no-op diff.
+- **Pass the token name** (`--primary {ns}-accent`), not a hex you looked up: the script resolves it from
+  `tailwind.config.js`, so the generated file always matches the token. When the token belongs to a `50…900`
+  scale (`brand-500`), the sibling shades fill hover / active / ring / highlight; otherwise they are derived.
+  `--dark` / `--darker` / `--light` / `--highlight-bg` override a derived slot when the brand has its own values.
+- It also points the theme's `--font-family` at `tailwind.config.js`'s `fontFamily.sans` and drops the bundled
+  Inter `@font-face` — the stock theme renders every PrimeReact component in Inter regardless of the brand
+  font. So run it AFTER the font is in `tailwind.config.js` (Step 1: font first, then the script).
+- `.p-invalid`'s red is not a slot — the error state stays a state signal, untouched by construction.
+- Paste the script's `Palette` table into your report. Exit `2` means the installed `primereact` no longer
+  matches the slot map (an upgrade reshuffled the palette): report it, do not hand-patch the CSS.
+- **Re-run after every `primereact` upgrade** — the file is a snapshot, not a live import.
 
-**Leave the error state alone, with `:not(.p-invalid)` guards — not `!important`.** `.p-invalid`'s red is a
-state signal, not brand chrome, and repainting it hides validation. Guard the accent rules rather than trying
-to out-specify them afterwards: `@apply !border-x` **does not compile** in SASS's indented syntax (`expected
-newline` at the `!`), so an agent that reaches for `!important` ends up in hand-written CSS and, measured,
-invents a design-system-looking CSS variable that nothing defines. Guarding is also the smaller diff.
-
-**Do not invent CSS custom properties.** If a value needs to vary, it is a token in `tailwind.config.js`. A
+**Do not write `.p-*` colour overrides in `general.sass`**, and do not invent CSS custom properties — a
 `var(--something, #hex)` fallback chain in a file where `--something` is never defined is dead syntax that
-reads as a design system.
+reads as a design system. A per-instance `pt` on one component is still fine: that is component styling, not
+the theme.
 
 ---
 
