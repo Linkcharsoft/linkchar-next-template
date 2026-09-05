@@ -39,7 +39,7 @@ JSX tags in this codebase routinely span multiple lines. A single-line regex mis
 
 ## Scope (read once, applies to every step)
 
-The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.tsx`, `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` is a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
+The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.tsx` carries hex by design until Step 7's `design-post-import` recolours it; `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` is a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
 
 **The rule: `scope` NEVER narrows what you RUN — it partitions what you REPORT.** Run every check over the paths written in its own step, exactly as today. Then split the findings into two labelled lists:
 

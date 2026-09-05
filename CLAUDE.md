@@ -53,14 +53,14 @@ Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all at ONE level, ne
 
 ### Keep `figma-design-import` and `claude-design-import` in sync
 
-These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
+These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation → template chrome), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
 
 **The shared substance lives in ONE place, so it can't drift — there is no manual "mirror it to the twin in the same commit" step.** Two single sources of truth, both `Read` at pre-flight by every step agent of both flows:
 
 - **Code conventions** — what valid *output* looks like (tokens, typography, color/no-hex, a11y, `container-custom`, SASS) → [`.claude/CONVENTIONS.md`](./.claude/CONVENTIONS.md).
 - **Import-translation rules** — how to translate a design into that code (color clustering, typography snapping, radius, brand gradients, mock-data, forms) — **plus the agent protocol** (delegation contract, STOP emission, workload footer, report shape) → [`.claude/docs/design-import-shared.md`](./.claude/docs/design-import-shared.md).
 
-Edit either file **once** and both flows inherit automatically; `design-validation` is likewise one shared agent, and **`.claude/scripts/` holds EVERY executable of the import flows**, whether shared or single-owner: `render-audit.mjs` (the runtime invariant sweep `design-validation` runs at its step 15, called by both flows) and `unpack.mjs` (the Claude Design extractor, called only by `claude-design-import`). The folder is organised by KIND, not by ownership — a script lives here even when one flow owns it, so there is one place to look for "what code, as opposed to prose, does this pipeline run". A script is the right home for anything that must be *measured* rather than judged: it is deterministic across runs, it costs no tokens beyond its own output, and — unlike an agent — it cannot report a check as passing without having performed it. **Each agent's own `.md` holds ONLY its source-ingestion mechanics** — which diverge *by design* and are never synced to the twin.
+Edit either file **once** and both flows inherit automatically; `design-validation` (Step 6) and `design-post-import` (Step 7 — brands the template's own 404 / global-error / `PoweredBy` / PrimeReact theme from the imported system, since no design draws those) are likewise shared agents, and **`.claude/scripts/` holds EVERY executable of the import flows**, whether shared or single-owner: `render-audit.mjs` (the runtime invariant sweep `design-validation` runs at its step 15, called by both flows), `primereact-theme.mjs` (re-colours the compiled PrimeReact theme from one accent token — run by the tokens agent at Step 1 or by `design-post-import` at Step 7, either flow) and `unpack.mjs` (the Claude Design extractor, called only by `claude-design-import`). The folder is organised by KIND, not by ownership — a script lives here even when one flow owns it, so there is one place to look for "what code, as opposed to prose, does this pipeline run". A script is the right home for anything that must be *measured* rather than judged: it is deterministic across runs, it costs no tokens beyond its own output, and — unlike an agent — it cannot report a check as passing without having performed it. **Each agent's own `.md` holds ONLY its source-ingestion mechanics** — which diverge *by design* and are never synced to the twin.
 
 **Decision test when you change something:**
 
@@ -83,7 +83,7 @@ The old rigid 1:1 map is now just a **navigation aid** (find your twin to compar
 | `agents/figma-design/figma-design-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
 | `agents/figma-design/figma-design-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
 | `agents/figma-design/figma-design-screen.md` | `agents/claude-design/claude-design-screen.md` |
-| `agents/shared/design-validation.md` + `docs/design-import-shared.md` | *(same files — already shared; a change benefits both automatically)* |
+| `agents/shared/design-validation.md` + `agents/shared/design-post-import.md` + `docs/design-import-shared.md` | *(same files — already shared; a change benefits both automatically)* |
 
 > **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
 
