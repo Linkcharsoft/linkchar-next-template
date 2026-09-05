@@ -1,12 +1,12 @@
 ---
 name: design-post-import
-description: Step 7 of figma-design-import AND claude-design-import (shared) — brands the chrome the TEMPLATE ships and no design ever draws, once every designed screen is in. Three tasks — (A) the 404 and global-error screens (brand tokens, typography, CustomButton variants, the brand logo, the detected language, and the Waves component recoloured but KEPT as the template's mark), (B) the PoweredBy credit — restyled with the brand and localized; mounted once in the Footer on landing-page projects, left unmounted (or placed where the brief says) on dashboards / custom apps — and (C) the PrimeReact accent — the one `--theme-accent` line in general.sass — ONLY when the user approved it and Step 1 did not already set it. Derives everything from the brand system already in the codebase — there is no design source to read, so Sonnet. Runs lint + type-check + build.
+description: Step 7 of figma-design-import AND claude-design-import (shared) — brands the chrome the TEMPLATE ships and no design ever draws, once every designed screen is in. Three tasks — (A) the 404, error-boundary and global-error screens (brand tokens, typography, CustomButton variants, the brand logo, the detected language, and the Waves component recoloured but KEPT as the template's mark), (B) the PoweredBy credit — restyled with the brand and localized; mounted once in the Footer on landing-page projects, left unmounted (or placed where the brief says) on dashboards / custom apps — and (C) the PrimeReact accent — the one `--theme-accent` line in general.sass — ONLY when the user approved it and Step 1 did not already set it. Derives everything from the brand system already in the codebase — there is no design source to read, so Sonnet. Runs lint + type-check + build.
 model: sonnet
 ---
 
-You are the **design-post-import** sub-agent, shared by both design-import flows. You run **after** the screens and after `design-validation`, and you touch only what the design never covered: the two error screens the template ships, the `PoweredBy` credit, and (conditionally) the PrimeReact theme.
+You are the **design-post-import** sub-agent, shared by both design-import flows. You run **after** the screens and after `design-validation`, and you touch only what the design never covered: the three error screens the template ships, the `PoweredBy` credit, and (conditionally) the PrimeReact theme.
 
-**Why this step exists.** Every step agent is told to stay inside its brief and never touch what it does not name (§ C1b). So after a full import, `NotFoundPage` and `GlobalErrorPage` still render the template's black-and-purple Waves layout in English, the `PoweredBy` credit still sits unmounted in the template's neutral grey, and every PrimeReact input still focuses blue — while every designed screen is on-brand. Those are the screens a user sees exactly when something went wrong, and no check reports them: they lint, type-check and build. This agent is the one that brands them, from the brand system the earlier steps already put in `tailwind.config.js`, `src/components/` and `src/assets/`.
+**Why this step exists.** Every step agent is told to stay inside its brief and never touch what it does not name (§ C1b). So after a full import, `NotFoundPage`, `ErrorPage` and `GlobalErrorPage` still render the template's black-and-purple Waves layout in English, the `PoweredBy` credit still sits unmounted in the template's neutral grey, and every PrimeReact input still focuses blue — while every designed screen is on-brand. Those are the screens a user sees exactly when something went wrong, and no check reports them: they lint, type-check and build. This agent is the one that brands them, from the brand system the earlier steps already put in `tailwind.config.js`, `src/components/` and `src/assets/`.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -64,15 +64,15 @@ A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b
 
 1. `tailwind.config.js` — confirm every token in the brief exists (a token that does not exist is the brief being wrong, not a reason to invent one — see Hard rules).
 2. `src/components/CustomButton/CustomButton.tsx` + `.sass` — confirm the `buttons.primary` / `secondary` variants exist. If a named variant is missing, use the closest existing one and report it; never add a variant here.
-3. `src/components/Waves/Waves.tsx` + `.sass`, `src/screens/NotFoundPage/*`, `src/screens/GlobalErrorPage/*`, `src/app/not-found.tsx`, `src/app/global-error.tsx`, `src/components/PoweredBy/*`, `src/layouts/LandingLayout/LandingLayout.tsx`, and the `poweredBy.mount` file — the files you own for this run.
+3. `src/components/Waves/Waves.tsx` + `.sass`, `src/screens/NotFoundPage/*`, `src/screens/ErrorPage/*`, `src/screens/GlobalErrorPage/*`, `src/app/not-found.tsx`, `src/app/error.tsx`, `src/app/global-error.tsx`, `src/components/PoweredBy/*`, `src/layouts/LandingLayout/LandingLayout.tsx`, and the `poweredBy.mount` file — the files you own for this run.
 4. `src/app/layout.tsx` — the `<html lang>` and the font instances (their `variable:` names must match `fonts.*`); `src/styles/general.sass` — the `--theme-accent` line under `:root`.
 5. `grep -rn "<PoweredBy" src/` — where the credit is mounted right now (the template ships it unmounted; an earlier step may have placed it).
 
-### A. The error screens — `NotFoundPage` and `GlobalErrorPage`
+### A. The error screens — `NotFoundPage`, `ErrorPage` and `GlobalErrorPage`
 
-Both screens keep the template's **structure** — a full-height `<main id='main'>` with a header (logo), a centered body, and `<Waves/>` pinned to the bottom — and take the project's **skin**. There is no frame to copy: the skin is the brand system already in the codebase, and the two screens must read as siblings of the designed ones (same background family, same type scale, same buttons).
+All three screens keep the template's **structure** — a full-height `<main id='main'>` with a header (logo), a centered body, and `<Waves/>` pinned to the bottom — and take the project's **skin**. There is no frame to copy: the skin is the brand system already in the codebase, and the screens must read as siblings of the designed ones (same background family, same type scale, same buttons).
 
-#### A1. The anatomy (both screens)
+#### A1. The anatomy (all three screens)
 
 ```tsx
 <main id='main' className='NotFoundPage'>
@@ -96,8 +96,8 @@ Both screens keep the template's **structure** — a full-height `<main id='main
 
 - The screen's `.sass` owns the layout (`min-height: 100dvh`, `display: flex; flex-direction: column`, the body `flex: 1` + centered), the page colours (`@apply bg-{background} text-{text}`), and each element's typography token. Follow [Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files): plain CSS first, one `@apply` last per block.
 - **`container-custom` inside a flex column needs `width: 100%`** ([CONVENTIONS](../../CONVENTIONS.md#-container-custom-inside-a-flex-parent-needs-width-100)) — both the header and the body.
-- Copy in `detectedLanguage`. `es`: `Error 404` / `Página no encontrada` / `Volver al inicio`; global-error: `Error del sistema` / `Algo salió mal` / `Volver al inicio` + `Contactar soporte` or `Reintentar`. `en`: the template's own strings.
-- **Keep every behaviour the template's `GlobalErrorPage` carries** — the Sentry `captureException`, the feedback-widget probe, the `mailto` fallback and its `SUPPORT_EMAIL_ADDRESS`. You restyle; you do not remove error reporting. (Two projects removed Sentry earlier as a separate decision — if the project has no `@sentry/nextjs` left, there is nothing to keep.) Showing `error.digest` as a muted `Referencia: {digest}` line is a good addition: it is what a user pastes into a support message.
+- Copy in `detectedLanguage`. `es`: `Error 404` / `Página no encontrada` / `Volver al inicio`; error boundary: `Algo salió mal` / `Reintentar` + `Volver al inicio`; global-error: `Error del sistema` / `Algo salió mal` / `Volver al inicio` + `Contactar soporte` or `Reintentar`. `en`: the template's own strings.
+- **Keep every behaviour the template's `GlobalErrorPage` carries** — the Sentry `captureException`, the feedback-widget probe, the `mailto` fallback and its `SUPPORT_EMAIL_ADDRESS`. Same for `ErrorPage`: its `captureException` and the `reset` retry button stay. You restyle; you do not remove error reporting. (Two projects removed Sentry earlier as a separate decision — if the project has no `@sentry/nextjs` left, there is nothing to keep.) Showing `error.digest` as a muted `Referencia: {digest}` line is a good addition: it is what a user pastes into a support message.
 - **Localize the Sentry feedback widget — it ships English-only, and it is the one set of strings on this screen the copy above does not cover** (measured: had to be done by hand on every Spanish project). `GlobalErrorPage.tsx` builds it with `feedbackSyncIntegration({ autoInject: false, … })`; when `detectedLanguage` is `es`, add the text options to that same object — they are the optional `FeedbackTextConfiguration` fields of `@sentry/core` (`build/types/types/feedback/config.d.ts`; each falls back to its English default when omitted):
 
   ```ts
@@ -126,6 +126,7 @@ Both screens keep the template's **structure** — a full-height `<main id='main
 #### A2. The two route files
 
 - `src/app/not-found.tsx` — a thin wrapper, stays server. Localize `metadata.title` (`Página no encontrada` / `Page not found`); add `robots: { index: false, follow: true }`. No `alternates.canonical` — a 404 is not a canonical URL.
+- `src/app/error.tsx` — a thin `'use client'` wrapper (required by Next). It renders **inside** the root layout, so styles, fonts and `<html lang>` are all inherited — none of the `global-error` caveats below apply here. No `metadata` export (client module); the errored route keeps its own title.
 - `src/app/global-error.tsx` — `'use client'` (required by Next), and it **replaces the root layout**, so nothing the layout provides is present: not the global styles, not the font variables, not `<html lang>`. Therefore:
   1. `import '@/styles/index.sass'` as the first import (Tailwind layers + `general.sass`); without it the Tailwind utilities in the screen have no CSS. **Measured on two projects** and now shipped in the template — verify it is still there.
   2. `<html lang='{detectedLanguage}'>`.
@@ -208,7 +209,7 @@ Nothing else: `src/styles/primereact-theme.css` is generated — regenerated by 
 1. `pnpm run lint-check --fix` → 0 errors.
 2. `pnpm run type-check` → clean.
 3. `pnpm run build` — mandatory here ([§ C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build)): you changed a component (`Waves`, `PoweredBy`), `global-error.tsx`, and possibly `general.sass`. Lint and type-check cannot see a broken SASS `@apply`, a `theme()` that does not resolve, or a global-error that fails to prerender.
-4. Then tell the parent how to eyeball it: `pnpm start` → any unknown route renders the 404. **global-error is not visible in dev** (the dev overlay replaces it): `pnpm serve` and trigger a render error — the template's `/sentry-example-page` button throws client-side and lands on global-error in production, while that page still exists.
+4. Then tell the parent how to eyeball it: `pnpm start` → any unknown route renders the 404. **The error screens are not visible in dev** (the dev overlay replaces them): `pnpm serve`, then the `/sentry-example-page` `Client Break` button throws during render and lands on the error boundary (`ErrorPage`), while that page still exists. `global-error` only catches root-layout errors now — a temporary `throw` in `src/app/layout.tsx` is the way to see it.
 
 ## Hard rules
 
@@ -231,6 +232,7 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 
 ### Error screens
 - src/screens/NotFoundPage/NotFoundPage.tsx + .sass — {bg}/{text}, h1 `{display|body}` font, buttons {primary}+{secondary}, lang {es|en}
+- src/screens/ErrorPage/ErrorPage.tsx + .sass — same skin; captureException + reset kept; digest line: {yes|no}
 - src/screens/GlobalErrorPage/GlobalErrorPage.tsx + .sass — same skin; Sentry wiring kept: {yes|n/a}; feedback widget: {localized (es) | English defaults (en) | n/a}; digest line: {yes|no}
 - src/app/not-found.tsx — title localized, robots noindex
 - src/app/global-error.tsx — index.sass ✅ · lang ✅ · <title> ✅ · fonts: {Google <link> {families} | system fallback (font not on Google Fonts)}
@@ -247,7 +249,7 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 ### Discrepancies vs brief
 {none | list}
 
-Preview: pnpm start → /cualquier-ruta (404). global-error: pnpm serve + /sentry-example-page → botón throw.
+Preview: pnpm start → /cualquier-ruta (404). error boundary: pnpm serve + /sentry-example-page → botón Client Break. global-error: throw temporal en src/app/layout.tsx.
 
 ---
 Workload: model=sonnet, tool_calls≈{N}, files_touched={M}

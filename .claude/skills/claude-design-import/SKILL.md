@@ -1,6 +1,6 @@
 ---
 name: claude-design-import
-description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation → template chrome (404 / global-error / PoweredBy / PrimeReact accent, branded from the imported system). Ingests either a Project archive (.zip, unzipped — RECOMMENDED) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
+description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation → template chrome (404 / error / global-error / PoweredBy / PrimeReact accent, branded from the imported system). Ingests either a Project archive (.zip, unzipped — RECOMMENDED) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
 ---
 
 Import a Claude Design prototype end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
@@ -162,7 +162,7 @@ You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0
 | 5.2 | `claude-design-screen` | Opus | Highest-fidelity re-styling + responsive |
 | 5.2b | `general-purpose` (fidelity diff) | Sonnet | Diffs each implemented screen against its source — the twin of 0.55, on the output side |
 | 6 | `design-validation` | Haiku | Run commands + report (shared agent). Its runtime half is a deterministic script, so no model measures anything |
-| 7 | `design-post-import` | Sonnet | Brands the template's own 404 / global-error / `PoweredBy` / PrimeReact accent from the brand system Steps 1–3 produced — no design source to read, moderate judgment (shared agent) |
+| 7 | `design-post-import` | Sonnet | Brands the template's own 404 / error / global-error / `PoweredBy` / PrimeReact accent from the brand system Steps 1–3 produced — no design source to read, moderate judgment (shared agent) |
 
 **Always pass enough context** in each delegation — sub-agents start fresh. Above all, pass the **path to the unpacked working tree** and the **specific extracted file(s)** each agent needs (its source of truth), plus decisions already made.
 
@@ -359,7 +359,7 @@ The template's PrimeReact theme is vendored (`src/styles/primereact-theme.css`) 
 - If the design's accent is not blue, propose it at the checkpoint: `--theme-accent: theme('colors.{accent token}')`; `.p-invalid`'s red is untouched by construction. Step 1 sets it (it already owns `general.sass`); Step 7 re-offers it if it is declined here.
 - **Offer it; do not apply it silently.** It is a global visual change to a template default, and a project may deliberately keep the PrimeReact look.
 
-## Template chrome to brand at Step 7 (404 · global-error · PoweredBy)
+## Template chrome to brand at Step 7 (404 · error · global-error · PoweredBy)
 The design never draws these; `design-post-import` derives them from the brand system. Decide the inputs now, so Step 7 needs no second checkpoint:
 - Error screens: background `{token}` · text `{token}` · muted `{token}` · accent `{token}` · logo → {the shared brand mark Step 2 will produce} · buttons → `CustomButton` `{primary}` + `{secondary}` · copy in `{detectedLanguage}`
 - Waves gradients: `[{4 tokens, light → dark}]` fading into the background — **the wave component stays** (it is the template's mark); only its colours change
@@ -657,7 +657,7 @@ So a clean Step 6 means *nothing violated a known invariant*, never *the design 
 
 ---
 
-## Step 7 — Brand the template's own chrome (404 · global-error · PoweredBy · PrimeReact accent)
+## Step 7 — Brand the template's own chrome (404 · error · global-error · PoweredBy · PrimeReact accent)
 
 > **Delegate to**: `Agent({ subagent_type: 'design-post-import' })` — **Sonnet**. The **shared** post-import agent (also used by `figma-design-import`); its full spec is [`.claude/agents/shared/design-post-import.md`](../../agents/shared/design-post-import.md). Runs AFTER Step 6 so the validation report stays attributable to the import; the step closes with its own lint + type-check + build.
 >
@@ -704,13 +704,13 @@ node .claude/scripts/primereact-theme.mjs --check
 
 ```
 ✅ Chrome del template brandeado (Step 7)
-   404 + global-error: src/screens/NotFoundPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
+   404 + error + global-error: src/screens/NotFoundPage/, src/screens/ErrorPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
    global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)} · widget de feedback de Sentry: {traducido (es) | inglés (en) | n/a}
    PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
    PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado} · snapshot del theme: {al día | regenerado desde primereact@X | no mapeable → manual}
    Validation: lint=✅ type-check=✅ build=✅
 
-Probá: pnpm start → /una-ruta-inexistente (404). global-error no se ve en dev (lo tapa el overlay): pnpm serve y /sentry-example-page → botón que lanza el error.
+Probá: pnpm start → /una-ruta-inexistente (404). Las pantallas de error no se ven en dev (las tapa el overlay): pnpm serve y /sentry-example-page → el botón Client Break aterriza en el error boundary; global-error solo con un throw temporal en src/app/layout.tsx.
 ```
 
 Commit it — `[ STYLE ] Brand error pages and PoweredBy credit` — plus `[ CHORE ] Regenerate PrimeReact theme snapshot` as its own commit if C0 regenerated it (a 227 KB generated diff should not hide inside a styling commit).
@@ -775,4 +775,4 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX + component**, absorbed steps, modals, target, language, reuse list, store spec |
 | 5.2b | Gate the implementation against the source | `general-purpose` | Sonnet | That screen's source region + the emitted `.tsx`/`.sass` + the target |
 | 6 | Validation | `design-validation` | Haiku | The accumulated touched-file list + `importFlow: 'claude-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |
-| 7 | Brand the template chrome (404 · global-error · PoweredBy · PrimeReact accent) | `design-post-import` | Sonnet | `importFlow` + `detectedLanguage` + brand tokens (bg / text / muted / accent / waves) + font vars & Google family + logo asset + `CustomButton` variants + PoweredBy mount/tone + `primereactAccent` (token / applied / declined) |
+| 7 | Brand the template chrome (404 · error · global-error · PoweredBy · PrimeReact accent) | `design-post-import` | Sonnet | `importFlow` + `detectedLanguage` + brand tokens (bg / text / muted / accent / waves) + font vars & Google family + logo asset + `CustomButton` variants + PoweredBy mount/tone + `primereactAccent` (token / applied / declined) |

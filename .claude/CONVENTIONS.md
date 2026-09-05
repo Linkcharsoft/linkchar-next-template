@@ -113,7 +113,7 @@ const { user } = useUserStore()
 | `PasswordValidator` | `components/PasswordValidator/PasswordValidator.tsx` | Real-time password strength indicator |
 | `Loader` | `components/Loader/Loader.tsx` | CSS spinner loader |
 | `SkeletonBlock` | `components/SkeletonBlock/SkeletonBlock.tsx` | Shimmering placeholder rectangle used as the primitive for skeleton loaders. Pass `dark` for use on dark backgrounds. Size and shape via a BEM class passed in `className`. |
-| `Waves` | `components/Waves/Waves.tsx` | Decorative SVG wave animation (the template's mark on the 404 / global-error screens — recolour it per project, never replace it) |
+| `Waves` | `components/Waves/Waves.tsx` | Decorative SVG wave animation (the template's mark on the 404 / error / global-error screens — recolour it per project, never replace it) |
 | `PoweredBy` | `components/PoweredBy/PoweredBy.tsx` | "Powered by Inferencia AI Solutions" credit strip (external link with `rel`). Ships UNMOUNTED: landing-page projects mount it once, as the Footer's last strip; dashboards / custom apps place it (or not) case by case at build time. Restyle / localize it per project instead of writing a new credit. Optional `className`. |
 | `LoadingModal` | `components/modals/LoadingModal/LoadingModal.tsx` | Full-screen loading overlay with message |
 | `StateModal` | `components/modals/StateModal/StateModal.tsx` | State-based modal (success, error, warn, info) |
