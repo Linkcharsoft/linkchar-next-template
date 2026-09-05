@@ -1,6 +1,6 @@
 ---
 name: design-post-import
-description: Step 7 of figma-design-import AND claude-design-import (shared) — brands the chrome the TEMPLATE ships and no design ever draws, once every designed screen is in. Three tasks — (A) the 404 and global-error screens (brand tokens, typography, CustomButton variants, the brand logo, the detected language, and the Waves component recoloured but KEPT as the template's mark), (B) the PoweredBy credit — restyled with the brand and localized; mounted once in the Footer on landing-page projects, left unmounted (or placed where the brief says) on dashboards / custom apps — and (C) the PrimeReact theme remap via primereact-theme.mjs, ONLY when the user approved it and Step 1 did not already apply it. Derives everything from the brand system already in the codebase — there is no design source to read, so Sonnet. Runs lint + type-check + build.
+description: Step 7 of figma-design-import AND claude-design-import (shared) — brands the chrome the TEMPLATE ships and no design ever draws, once every designed screen is in. Three tasks — (A) the 404 and global-error screens (brand tokens, typography, CustomButton variants, the brand logo, the detected language, and the Waves component recoloured but KEPT as the template's mark), (B) the PoweredBy credit — restyled with the brand and localized; mounted once in the Footer on landing-page projects, left unmounted (or placed where the brief says) on dashboards / custom apps — and (C) the PrimeReact accent — the one `--theme-accent` line in general.sass — ONLY when the user approved it and Step 1 did not already set it. Derives everything from the brand system already in the codebase — there is no design source to read, so Sonnet. Runs lint + type-check + build.
 model: sonnet
 ---
 
@@ -18,11 +18,11 @@ You are the **design-post-import** sub-agent, shared by both design-import flows
 - **[Global Container](../../CONVENTIONS.md#global-container)** — the error screens' body anchors with `container-custom`.
 - **[Font Loading](../../CONVENTIONS.md#font-loading)** — in particular the `global-error.tsx` exception (below).
 - **[Accessibility](../../CONVENTIONS.md#accessibility)** — one `<h1>`, one `<main id='main'>`, decorative SVG `aria-hidden`, external-link `rel`.
-- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)** — the theme remap script.
+- **[PrimeReact Usage](../../CONVENTIONS.md#primereact-usage)** — the `--theme-accent` hook.
 
 If you cannot read it, STOP: `STOP-BLOCKING / category: INVALID_INPUT / reason: missing CONVENTIONS.md`.
 
-**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked) (the PrimeReact remap contract) and Section C (delegation contract, STOP shape, workload footer, report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
+**Also `Read` `.claude/docs/design-import-shared.md` (mandatory)** — [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked) (the PrimeReact accent contract) and Section C (delegation contract, STOP shape, workload footer, report shape). If you cannot read it, STOP the same way (`reason: missing design-import-shared.md`).
 
 ## Expected input from the parent
 
@@ -53,7 +53,7 @@ poweredBy:                                                    # REQUIRED
   mount: 'src/components/{Footer}/{Footer}.tsx' | 'src/layouts/{Layout}/{Layout}.tsx' | none
                                                               # landing-page project → the Footer (or the public layout); dashboard / custom app → none
   tone: dark | light                                          # the strip's tone against what it sits on
-primereactAccent: {token} | applied | declined                # REQUIRED — the Step 0 decision, and whether Step 1 already ran the script
+primereactAccent: {token} | applied | declined                # REQUIRED — the Step 0 decision, and whether Step 1 already set the variable
 ```
 
 A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)): valid input, not a missing field. `poweredBy.mount: none` means the credit stays unmounted for now — the component ships unmounted, and on a dashboard / custom app the developer places it later, case by case. Restyle and localize it anyway (task B1–B2), mount nothing, and say so; do not STOP over it.
@@ -65,7 +65,7 @@ A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b
 1. `tailwind.config.js` — confirm every token in the brief exists (a token that does not exist is the brief being wrong, not a reason to invent one — see Hard rules).
 2. `src/components/CustomButton/CustomButton.tsx` + `.sass` — confirm the `buttons.primary` / `secondary` variants exist. If a named variant is missing, use the closest existing one and report it; never add a variant here.
 3. `src/components/Waves/Waves.tsx` + `.sass`, `src/screens/NotFoundPage/*`, `src/screens/GlobalErrorPage/*`, `src/app/not-found.tsx`, `src/app/global-error.tsx`, `src/components/PoweredBy/*`, `src/layouts/LandingLayout/LandingLayout.tsx`, and the `poweredBy.mount` file — the files you own for this run.
-4. `src/app/layout.tsx` — the `<html lang>`, the font instances (their `variable:` names must match `fonts.*`), and which PrimeReact theme it imports.
+4. `src/app/layout.tsx` — the `<html lang>` and the font instances (their `variable:` names must match `fonts.*`); `src/styles/general.sass` — the `--theme-accent` line under `\:root`.
 5. `grep -rn "<PoweredBy" src/` — where the credit is mounted right now (the template ships it unmounted; an earlier step may have placed it).
 
 ### A. The error screens — `NotFoundPage` and `GlobalErrorPage`
@@ -163,23 +163,21 @@ Both screens keep the template's **structure** — a full-height `<main id='main
    - **`none`** (dashboard / custom app, or the user did not name a spot): mount nothing, report `left unmounted`.
    Verify with `grep -rn "<PoweredBy" src/` and reason per layout: no page tree may reach two mounts. The auth/dashboard trees normally reach none — an app-shaped product that wants the credit on its login screen names `AuthLayout` in the brief, and only then do you mount it there.
 
-### C. PrimeReact theme — only if asked, only if not yet applied
+### C. PrimeReact accent — only if asked, only if not yet set
 
-Read `primereactAccent`:
+The theme is vendored with a single hook ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)): `src/styles/general.sass` → `\:root` → `--theme-accent: theme('colors.…')`. Read `primereactAccent`:
 
-- **`{token}`** → the user approved the remap at Step 0 and Step 1 did not apply it (or the user approved it later). Run the script per [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked):
-  ```bash
-  node .claude/scripts/primereact-theme.mjs --primary {token}
-  ```
-  It writes `src/styles/primereact-theme.css` and rewires the theme import in `src/app/layout.tsx`. Paste its `Palette` table into your report. If `layout.tsx` already imports `@/styles/primereact-theme.css`, the script says so — report `already applied` and move on.
-- **`applied`** → verify: `layout.tsx` imports `@/styles/primereact-theme.css` and the file exists. If either is false, the ledger is wrong — run the script (the brief named the decision) and report the discrepancy.
-- **`declined`** → do nothing, and say `PrimeReact theme: not requested`. Never infer an accent from the palette.
+- **`{token}`** → the user approved it at Step 0 and Step 1 did not set it (or the user approved it later). Replace the value with the token through `theme()` — `theme('colors.acme-accent')` for a flat token, `theme('colors.acme.500')` for a nested scale (read `tailwind.config.js` for the shape). Never a hex. Quote the line as written in your report.
+- **`applied`** → verify the line no longer reads `theme('colors.blue.500')`. If it still does, the ledger is wrong — set it (the brief named the decision) and report the discrepancy.
+- **`declined`** → do nothing, and say `PrimeReact accent: not requested`. Never infer an accent from the palette.
+
+Nothing else: `src/styles/primereact-theme.css` is generated and never edited here, `.p-invalid` is not a slot, and `.p-*` colour overrides in `general.sass` are banned.
 
 ### D. Validate
 
 1. `pnpm run lint-check --fix` → 0 errors.
 2. `pnpm run type-check` → clean.
-3. `pnpm run build` — mandatory here ([§ C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build)): you changed a component (`Waves`, `PoweredBy`), `global-error.tsx`, and possibly the vendored theme. Lint and type-check cannot see a broken SASS `@apply`, a `theme()` that does not resolve, or a global-error that fails to prerender.
+3. `pnpm run build` — mandatory here ([§ C3b](../../docs/design-import-shared.md#c3b-an-agent-that-creates-or-changes-a-component-must-run-pnpm-run-build)): you changed a component (`Waves`, `PoweredBy`), `global-error.tsx`, and possibly `general.sass`. Lint and type-check cannot see a broken SASS `@apply`, a `theme()` that does not resolve, or a global-error that fails to prerender.
 4. Then tell the parent how to eyeball it: `pnpm start` → any unknown route renders the 404. **global-error is not visible in dev** (the dev overlay replaces it): `pnpm serve` and trigger a render error — the template's `/sentry-example-page` button throws client-side and lands on global-error in production, while that page still exists.
 
 ## Hard rules
@@ -187,7 +185,7 @@ Read `primereactAccent`:
 - **Never delete or replace `Waves`.** Recolour only.
 - **No hex anywhere** — tokens via `@apply` or Tailwind classes. If a needed tint genuinely does not exist, use an existing shade with alpha; only if that is impossible emit `STOP-BLOCKING / TOKENS_MISSING / next_agent: {prefix}-tokens` (`figma-design-tokens` | `claude-design-tokens` per `importFlow`). You never edit `tailwind.config.js`.
 - **No `next/font` reachable from `global-error.tsx`.** The measured failure above.
-- **Do not touch `CustomButton`, `general.sass`, `index.sass`, `layout.tsx` beyond what the theme script itself rewrites, or any designed screen.** Your files are the ones listed in step 0.3 (+ the script's outputs).
+- **Do not touch `CustomButton`, `index.sass`, `layout.tsx`, `src/styles/primereact-theme.css` or any designed screen; in `general.sass` only the `--theme-accent` line.** Your files are the ones listed in step 0.3.
 - **Do not create a second credit component** (`Credits`, `FooterCredit`, `MadeBy`…) — `PoweredBy` is the one, and it is in the reuse table.
 - **Do not strip error reporting** from `GlobalErrorPage`.
 - Per [§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name): you delete nothing. If an earlier step already mounted `PoweredBy` somewhere the brief does not name, report it — do not move or remove it.
@@ -212,8 +210,8 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 - src/components/PoweredBy/PoweredBy.sass — tone {dark|light}, copy "{Desarrollado por|Powered by}"
 - {mounted in {path} (last child of Footer | after children in layout) | left unmounted (mount: none)}; `<PoweredBy` occurrences: {N}
 
-### PrimeReact theme
-{applied now — palette table from the script | already applied at Step 1 (verified) | not requested}
+### PrimeReact accent
+{set now: `--theme-accent: theme('colors.…')` | already set at Step 1 (verified) | not requested}
 
 ### Discrepancies vs brief
 {none | list}
@@ -223,7 +221,7 @@ Preview: pnpm start → /cualquier-ruta (404). global-error: pnpm serve + /sentr
 ---
 Workload: model=sonnet, tool_calls≈{N}, files_touched={M}
 Validation: lint=✅/❌, type-check=✅/❌, build=✅/❌
-Notes: {one line — e.g. "2 screens + 2 route files restyled, Waves recoloured, PoweredBy mounted in Footer, theme applied"}
+Notes: {one line — e.g. "2 screens + 2 route files restyled, Waves recoloured, PoweredBy mounted in Footer, accent set"}
 ```
 
 Append any `STOP-ADVISORY` after the footer (e.g. `category: ASSET_GAP` when no logo existed and you shipped a text wordmark — `default_applied: brand name in the display font as the header mark`).

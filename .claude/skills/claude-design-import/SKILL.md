@@ -1,6 +1,6 @@
 ---
 name: claude-design-import
-description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation → template chrome (404 / global-error / PoweredBy / PrimeReact theme, branded from the imported system). Ingests either a Project archive (.zip, unzipped — RECOMMENDED) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
+description: Orchestrates the bottom-up import of a full Claude Design prototype into this codebase — unpack → inventory → tokens → assets → components → layouts → screens → validation → template chrome (404 / global-error / PoweredBy / PrimeReact accent, branded from the imported system). Ingests either a Project archive (.zip, unzipped — RECOMMENDED) or a Standalone HTML export; a local deterministic extractor (unpack.mjs) auto-detects which and replaces Figma's MCP calls, so the design context is read from disk for free. Delegates each step to a dedicated sub-agent in `.claude/agents/claude-design/` at the right model tier. Invoke when translating a whole Claude Design prototype to code, NOT for one-off tweaks.
 ---
 
 Import a Claude Design prototype end-to-end following the project's bottom-up workflow. Arguments: **$ARGUMENTS**
@@ -162,7 +162,7 @@ You (the parent, typically Opus) are the **orchestrator**. You run Steps 0 and 0
 | 5.2 | `claude-design-screen` | Opus | Highest-fidelity re-styling + responsive |
 | 5.2b | `general-purpose` (fidelity diff) | Sonnet | Diffs each implemented screen against its source — the twin of 0.55, on the output side |
 | 6 | `design-validation` | Haiku | Run commands + report (shared agent). Its runtime half is a deterministic script, so no model measures anything |
-| 7 | `design-post-import` | Sonnet | Brands the template's own 404 / global-error / `PoweredBy` / PrimeReact theme from the brand system Steps 1–3 produced — no design source to read, moderate judgment (shared agent) |
+| 7 | `design-post-import` | Sonnet | Brands the template's own 404 / global-error / `PoweredBy` / PrimeReact accent from the brand system Steps 1–3 produced — no design source to read, moderate judgment (shared agent) |
 
 **Always pass enough context** in each delegation — sub-agents start fresh. Above all, pass the **path to the unpacked working tree** and the **specific extracted file(s)** each agent needs (its source of truth), plus decisions already made.
 
@@ -355,8 +355,8 @@ Screens are the Opus-heavy step and the only one that scales with the design. Be
 - This is an offer, not a gate — if the user wants the whole list in one run, run it.
 
 ## PrimeReact accent (app-wide component fidelity)
-The template ships the `lara-light-blue` PrimeReact theme (`src/app/layout.tsx`), so **every** PrimeReact component — input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, table selection, calendar — renders blue regardless of the brand you just tokenized. The compiled theme hardcodes its palette (its `--primary-color` custom properties are read by no rule), so there is no variable to override; the fix is `.claude/scripts/primereact-theme.mjs`, which re-colours the whole theme from ONE accent token ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked)).
-- If the design's accent is not blue, propose it at the checkpoint: `node .claude/scripts/primereact-theme.mjs --primary {accent token}` → `src/styles/primereact-theme.css`, wired into `layout.tsx`; `.p-invalid`'s red is untouched by construction. Step 1 runs it (it already owns `layout.tsx`); Step 7 re-offers it if it is declined here.
+The template's PrimeReact theme is vendored (`src/styles/primereact-theme.css`) with its accent slots turned into `var(--theme-accent…)`, so **every** component — input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, table selection, calendar — follows ONE line in `src/styles/general.sass`: `--theme-accent: theme('colors.blue.500')`. Until that line changes, every form stays blue regardless of the brand you just tokenized — a gap no per-screen work closes and no check reports ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)).
+- If the design's accent is not blue, propose it at the checkpoint: `--theme-accent: theme('colors.{accent token}')`; `.p-invalid`'s red is untouched by construction. Step 1 sets it (it already owns `general.sass`); Step 7 re-offers it if it is declined here.
 - **Offer it; do not apply it silently.** It is a global visual change to a template default, and a project may deliberately keep the PrimeReact look.
 
 ## Template chrome to brand at Step 7 (404 · global-error · PoweredBy)
@@ -452,7 +452,7 @@ Also pass: the pre-rounded off-scale **integer** typography sizes (see Step 0.5 
 
 The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` in `layout.tsx`, updates `general.sass`, runs `type-check`.
 
-**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked): it runs `node .claude/scripts/primereact-theme.mjs --primary {token}`, which writes `src/styles/primereact-theme.css` and rewires the theme import in `layout.tsx` — one command, every component, no hand-mapped selectors. **Omit the item entirely if the user declined** — the agent runs the script only when the brief passes a token, so silence is the off switch. Record the outcome in the ledger (`applied` / `declined`): Step 7 reads it as `primereactAccent`.
+**If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked): it replaces the `--theme-accent` value in `general.sass` with the token through `theme()` — one line, every component, no hand-mapped selectors. **Omit the item entirely if the user declined** — the agent touches that line only when the brief passes a token, so silence is the off switch. Record the outcome in the ledger (`applied` / `declined`): Step 7 reads it as `primereactAccent`.
 
 ---
 
@@ -657,7 +657,7 @@ So a clean Step 6 means *nothing violated a known invariant*, never *the design 
 
 ---
 
-## Step 7 — Brand the template's own chrome (404 · global-error · PoweredBy · PrimeReact theme)
+## Step 7 — Brand the template's own chrome (404 · global-error · PoweredBy · PrimeReact accent)
 
 > **Delegate to**: `Agent({ subagent_type: 'design-post-import' })` — **Sonnet**. The **shared** post-import agent (also used by `figma-design-import`); its full spec is [`.claude/agents/shared/design-post-import.md`](../../agents/shared/design-post-import.md). Runs AFTER Step 6 so the validation report stays attributable to the import; the step closes with its own lint + type-check + build.
 >
@@ -675,7 +675,7 @@ fonts: { body: '--font-x', display: '--font-y' | none, google: 'Family:wght@400;
 logo: { path, kind: raster|icon, alt }                     # the shared brand mark from Step 2
 buttons: { primary, secondary | none }                     # CustomButton variants that exist after Step 3
 poweredBy: { mount: {Footer component path | public layout path | none}, tone: dark|light }
-primereactAccent: {token} | applied | declined             # the Step 0.5 decision + whether Step 1 ran the script
+primereactAccent: {token} | applied | declined             # the Step 0.5 decision + whether Step 1 set the variable
 ```
 
 Three things NOT to ask of it, because the agent refuses them anyway and asking wastes a turn: replace or drop `Waves`; put `next/font` in `global-error.tsx` (breaks every route in dev under `reactCompiler` — measured, see [CONVENTIONS > Font Loading](../../CONVENTIONS.md#font-loading)); create a second credit component.
@@ -687,7 +687,7 @@ Three things NOT to ask of it, because the agent refuses them anyway and asking 
 grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the mounts the report claims (1 on a landing, 0 when `none`)
 grep -rn "next/font" src/app/global-error.tsx src/styles/          # expect nothing
 grep -c "#[0-9a-fA-F]" src/components/Waves/Waves.sass                # expect 0 — the crests are tokens now
-grep -n "primereact-theme.css\|resources/themes" src/app/layout.tsx  # ONE import: the vendored theme if applied, node_modules otherwise
+grep -n "theme-accent" src/styles/general.sass                    # the approved token through theme(), or theme('colors.blue.500') if declined
 ```
 
 ```powershell
@@ -695,7 +695,7 @@ grep -n "primereact-theme.css\|resources/themes" src/app/layout.tsx  # ONE impor
 (Select-String -Path src -Pattern '<PoweredBy' -Recurse).Count
 Select-String -Path src/app/global-error.tsx, src/styles/* -Pattern 'next/font'
 (Select-String -Path src/components/Waves/Waves.sass -Pattern '#[0-9a-fA-F]').Count   # expect 0
-Select-String -Path src/app/layout.tsx -Pattern 'primereact-theme.css|resources/themes'
+Select-String -Path src/styles/general.sass -Pattern 'theme-accent'
 ```
 
 **Checkpoint message:**
@@ -705,13 +705,13 @@ Select-String -Path src/app/layout.tsx -Pattern 'primereact-theme.css|resources/
    404 + global-error: src/screens/NotFoundPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
    global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)}
    PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
-   PrimeReact theme: {aplicado ahora con {token} | ya aplicado en Step 1 | no solicitado}
+   PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado}
    Validation: lint=✅ type-check=✅ build=✅
 
 Probá: pnpm start → /una-ruta-inexistente (404). global-error no se ve en dev (lo tapa el overlay): pnpm serve y /sentry-example-page → botón que lanza el error.
 ```
 
-Commit it — `[ STYLE ] Brand error pages and PoweredBy credit` — plus `[ ADD ] PrimeReact brand theme` as its own commit if the script ran here (a 220 KB generated file deserves its own diff).
+Commit it — `[ STYLE ] Brand error pages and PoweredBy credit`.
 
 ---
 
@@ -754,7 +754,7 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 - ❌ Skip Step 7 because "the design has no 404 / no footer credit" — that is exactly why the step exists: nothing else in the flow touches the template's own screens, and they ship in template colours and English otherwise
 - ❌ Put `next/font` in `src/app/global-error.tsx` or in any module it imports — breaks every route in dev under `reactCompiler` (measured); the Google Fonts `<link>` exception in [CONVENTIONS > Font Loading](../../CONVENTIONS.md#font-loading) is the way
 - ❌ Replace or delete `Waves` on the error screens — recolour its stops with the brand tokens; the component is the template's mark
-- ❌ Hand-map `.p-*` selectors in `general.sass` to re-colour PrimeReact — run `.claude/scripts/primereact-theme.mjs` ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--run-the-script-only-when-asked)); the compiled theme has no variable to override
+- ❌ Hand-map `.p-*` selectors in `general.sass` to re-colour PrimeReact, or edit `src/styles/primereact-theme.css` — set `--theme-accent` ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)); the vendored theme derives every shade from it
 
 ---
 
@@ -773,4 +773,4 @@ Malformed STOP → treat as `STOP-BLOCKING / INVALID_INPUT` and surface; never s
 | 5.2 | Per-screen (sequential + checkpoint) | `claude-design-screen` | Opus | Per-screen: name, type, slug, **source JSX + component**, absorbed steps, modals, target, language, reuse list, store spec |
 | 5.2b | Gate the implementation against the source | `general-purpose` | Sonnet | That screen's source region + the emitted `.tsx`/`.sass` + the target |
 | 6 | Validation | `design-validation` | Haiku | The accumulated touched-file list + `importFlow: 'claude-design-import'` + the **route list with a value for every dynamic segment** (for the runtime sweep) |
-| 7 | Brand the template chrome (404 · global-error · PoweredBy · PrimeReact theme) | `design-post-import` | Sonnet | `importFlow` + `detectedLanguage` + brand tokens (bg / text / muted / accent / waves) + font vars & Google family + logo asset + `CustomButton` variants + PoweredBy mount/tone + `primereactAccent` (token / applied / declined) |
+| 7 | Brand the template chrome (404 · global-error · PoweredBy · PrimeReact accent) | `design-post-import` | Sonnet | `importFlow` + `detectedLanguage` + brand tokens (bg / text / muted / accent / waves) + font vars & Google family + logo asset + `CustomButton` variants + PoweredBy mount/tone + `primereactAccent` (token / applied / declined) |

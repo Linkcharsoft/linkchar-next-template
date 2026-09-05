@@ -347,49 +347,45 @@ same hash function and the same number of initials. A different hash over the sa
 colours, which is a different design, not an implementation detail. If the shared component's derivation
 differs from the source's, that is a missing variant, per the rule above.
 
-## B11. The PrimeReact accent override — run the script, only when asked
+## B11. The PrimeReact accent override — one variable in `general.sass`, only when asked
 
-The template ships PrimeReact's `lara-light-blue` theme (`src/app/layout.tsx`), so every PrimeReact component —
-input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, datatable selection,
-calendar — renders **blue** no matter what accent the import just tokenised. Whether to repaint is the
-orchestrator's call at its checkpoint (both `SKILL.md` files carry that decision); this section is the
-**mechanism** for the agent that carries it out (the tokens agent at Step 1, or `design-post-import` at Step 7).
+The template ships PrimeReact's `lara-light-blue` theme **vendored** as `src/styles/primereact-theme.css`
+(imported by `src/app/layout.tsx`) with every accent hardcode replaced by `var(--theme-accent…)`. So re-skinning
+EVERY component — input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator,
+datatable selection, calendar — is one declaration in `src/styles/general.sass`:
 
-**Apply it ONLY if the parent's brief passes the accent token.** No token in the brief means the user declined
-or the design's accent is already blue — leave the theme alone. Never infer it from the palette you just added.
-
-**There is no variable to override, so do not try.** The compiled theme hardcodes its palette in ~350
-declarations; the `--primary-color` / `--primary-*` custom properties in its `:root` are read by no rule
-(`grep 'var(--primary' theme.css` → 0 hits). Overriding them changes nothing, and hand-mapping
-`.p-inputtext:focus`, `.p-dropdown.p-focus`, `.p-highlight`, `.p-checkbox-box.p-highlight`… in `general.sass`
-is the open-ended chore this script replaces — every `lara-light-*` theme is the SAME file with 16 hex + 3
-rgba slots swapped (verified: masking colours makes blue and green byte-identical), and the script swaps them
-deterministically:
-
-```bash
-node .claude/scripts/primereact-theme.mjs --primary {ns}-accent          # a token name from tailwind.config.js, or a hex
-node .claude/scripts/primereact-theme.mjs --primary brand-500 --dry-run  # print the resolved palette first
+```sass
+\:root
+  --theme-accent: theme('colors.acme.accent')      // template default: theme('colors.blue.500')
 ```
 
-- It writes `src/styles/primereact-theme.css` (a re-coloured snapshot of the installed `primereact` version —
-  the header names it) and rewires `src/app/layout.tsx` from `primereact/resources/themes/…/theme.css` to
-  `@/styles/primereact-theme.css`. Idempotent — re-running with the same token is a no-op diff.
-- **Pass the token name** (`--primary {ns}-accent`), not a hex you looked up: the script resolves it from
-  `tailwind.config.js`, so the generated file always matches the token. When the token belongs to a `50…900`
-  scale (`brand-500`), the sibling shades fill hover / active / ring / highlight; otherwise they are derived.
-  `--dark` / `--darker` / `--light` / `--highlight-bg` override a derived slot when the brand has its own values.
-- It also points the theme's `--font-family` at `tailwind.config.js`'s `fontFamily.sans` and drops the bundled
-  Inter `@font-face` — the stock theme renders every PrimeReact component in Inter regardless of the brand
-  font. So run it AFTER the font is in `tailwind.config.js` (Step 1: font first, then the script).
-- `.p-invalid`'s red is not a slot — the error state stays a state signal, untouched by construction.
-- Paste the script's `Palette` table into your report. Exit `2` means the installed `primereact` no longer
-  matches the slot map (an upgrade reshuffled the palette): report it, do not hand-patch the CSS.
-- **Re-run after every `primereact` upgrade** — the file is a snapshot, not a live import.
+Whether to repaint is the orchestrator's call at its checkpoint (both `SKILL.md` files carry that decision);
+this section is the **mechanism** for the agent that carries it out (the tokens agent at Step 1, or
+`design-post-import` at Step 7).
 
-**Do not write `.p-*` colour overrides in `general.sass`**, and do not invent CSS custom properties — a
-`var(--something, #hex)` fallback chain in a file where `--something` is never defined is dead syntax that
-reads as a design system. A per-instance `pt` on one component is still fine: that is component styling, not
-the theme.
+**Apply it ONLY if the parent's brief passes the accent token.** No token in the brief means the user declined
+or the design's accent is already blue — leave the line alone. Never infer it from the palette you just added.
+
+- **Write the token through `theme()`**, never a hex: `theme('colors.brand-primary')` for a flat token,
+  `theme('colors.brand.500')` for a nested scale — read `tailwind.config.js` for the shape. A hex there is the
+  same violation as anywhere else, and lint does not catch it.
+- Hover / active / focus ring / highlight and the `50…900` scale **derive from the hook** via `color-mix()`,
+  declared under `:where(:root)` in the vendored file so your `:root` always wins. A brand with its own exact
+  shades may pin any of them in the same block — `--theme-accent-hover`, `--theme-accent-active`,
+  `--theme-accent-ring`, `--theme-accent-highlight`, `--theme-accent-{50…900}` — again through `theme()`.
+- `.p-invalid`'s red is not a slot: the error state stays a state signal, untouched by construction.
+- The vendored file carries **no `font-family`** — PrimeReact components inherit the page font. Do not add one.
+- **Never edit `src/styles/primereact-theme.css`, never write `.p-*` colour overrides in `general.sass`, never
+  override PrimeReact's own `--primary-color`.** The file is generated by `.claude/scripts/primereact-theme.mjs`
+  from the installed `primereact` (its header names the version) and is re-run only after a `primereact`
+  upgrade; `--check` says whether the snapshot is stale, exit `2` means the upgrade reshuffled the palette —
+  report, do not hand-patch. The import flows never run it.
+
+Why a variable had to be manufactured: the compiled theme hardcodes its palette in ~350 declarations, and the
+`--primary-color` / `--primary-*` custom properties in its `:root` are read by no rule (`grep 'var(--primary'`
+→ 0 hits). Every `lara-light-*` theme is the SAME file with 16 hex + 3 rgba slots swapped (verified: masking
+colours makes blue and green byte-identical) — which is exactly what makes a one-time deterministic
+variable-ization safe.
 
 ---
 
