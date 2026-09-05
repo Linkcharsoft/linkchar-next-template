@@ -60,6 +60,7 @@ The parent may pass a `scope`: the files this import created or modified. Withou
 ### 1. Commands
 1. `pnpm run lint-check --fix` — capture output, list errors.
 2. `pnpm run type-check` — capture output, list errors.
+3. `node .claude/scripts/primereact-theme.mjs --check` — the vendored PrimeReact theme (`src/styles/primereact-theme.css`) is a snapshot of one `primereact` version. Exit `0` = fresh. Exit `1` = STALE (the installed `primereact` moved past the snapshot — new component styles are missing until it is regenerated): report it under Commands with the two versions the script prints; the fixer is `design-post-import` (Step 7 regenerates it). Exit `2` = the script can no longer map the installed themes: report it as manual. Never run the script without `--check` yourself — you report, Step 7 writes.
 
 ### 2. SEO completeness
 3. **`alternates.canonical` per page**: every `src/app/**/page.tsx` must export `metadata`/`generateMetadata` including `alternates.canonical`. List missing.
@@ -196,6 +197,7 @@ Single structured report grouped by category. Map each violation to the fixer. *
 | Violation kind | Fixer role |
 | -------------- | ---------- |
 | raw hex / missing token / leaked theme var | **tokens** (add token) or **screen** (translate the value) |
+| stale PrimeReact theme snapshot (`--check` exit 1) | **post-import** (`design-post-import`, Step 7, regenerates it); exit 2 → manual |
 | untranslated inline style / stack-router remnant / container-custom / vertical padding / mock-data | **screen** (the offending screen) |
 | runtime `BACKGROUND_CLIPPED` / `HORIZONTAL_OVERFLOW` / `FLUSH_HEADING` | **screen** (the screen the route belongs to) |
 | runtime `HOVER_COLOR_INHERIT` / `CONTAINER_SHRINK` on a component | **components** |
@@ -213,7 +215,7 @@ Single structured report grouped by category. Map each violation to the fixer. *
 Scope: {N files supplied by the parent | none supplied — findings are NOT attributed to this import}
 
 ### Commands
-✅ Lint, type-check
+✅ Lint, type-check · PrimeReact theme snapshot: {fresh | STALE — generated from primereact@X, Y installed → Step 7 regenerates | cannot map (exit 2) → manual}
 
 ### {each category}   — IN SCOPE (introduced by this import)
 ✅ {clean checks}

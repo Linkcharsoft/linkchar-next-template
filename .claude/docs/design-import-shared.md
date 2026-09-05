@@ -382,7 +382,8 @@ or the design's accent is already blue — leave the line alone. Never infer it 
   from the installed `primereact` (its header names the version) and is re-run only after a `primereact`
   upgrade; `--check` says whether the snapshot is stale, exit `2` means the upgrade changed the themes in a way
   the script cannot map (a new accent shade, or the two reference themes no longer line up) — report, do not
-  hand-patch. The import flows never run it.
+  hand-patch. The import flows run only its `--check`: `design-validation` reports a stale snapshot at Step 6
+  and `design-post-import` regenerates it at Step 7, so nobody has to remember the upgrade by hand.
 
 Why a variable had to be manufactured, and how the script knows which colours are "the accent": the compiled
 theme hardcodes its palette in ~350 declarations, and the `--primary-color` / `--primary-*` custom properties in

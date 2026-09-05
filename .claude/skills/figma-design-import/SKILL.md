@@ -569,7 +569,7 @@ Pass any provided fields to `figma-design-screen`; fall back to the registry for
 
 1. `pnpm run lint-check --fix` → expect **0 errors**. Warnings are OK if they're the mandated `// TODO: openapi-import` markers (`sonarjs/todo-tag`); flag anything else.
 2. `pnpm run type-check` → expect clean.
-3. `pnpm run build` → catches what lint/tsc can't (SASS compile, `theme()` resolution, static generation). If it fails on a missing `.env.local`, that's the pre-`/init-project` state, NOT your bug — say so and move on.
+3. `pnpm run build` → catches what lint/tsc can't (SASS compile, `theme()` resolution, static generation). If it fails on a missing `.env.local`, that's the pre-`/init-project` state, NOT your bug — say so and move on. Then `node .claude/scripts/primereact-theme.mjs --check` → exit `0` (`1` = the vendored PrimeReact theme snapshot is stale — Step 7 regenerates it; `2` = the script cannot map the installed themes — manual).
 4. Convention greps over the scope list only (`$F` = the accumulated paths):
 
 ```bash
@@ -647,6 +647,7 @@ grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the
 grep -rn "next/font" src/app/global-error.tsx src/styles/          # expect nothing
 grep -c "#[0-9a-fA-F]" src/components/Waves/Waves.sass                # expect 0 — the crests are tokens now
 grep -n "theme-accent" src/styles/general.sass                    # the approved token through theme(), or theme('colors.blue.500') if declined
+node .claude/scripts/primereact-theme.mjs --check                  # exit 0 = the vendored theme snapshot matches the installed primereact
 ```
 
 ```powershell
@@ -655,6 +656,7 @@ grep -n "theme-accent" src/styles/general.sass                    # the approved
 Select-String -Path src/app/global-error.tsx, src/styles/* -Pattern 'next/font'
 (Select-String -Path src/components/Waves/Waves.sass -Pattern '#[0-9a-fA-F]').Count   # expect 0
 Select-String -Path src/styles/general.sass -Pattern 'theme-accent'
+node .claude/scripts/primereact-theme.mjs --check
 ```
 
 **Checkpoint message:**
@@ -664,13 +666,13 @@ Select-String -Path src/styles/general.sass -Pattern 'theme-accent'
    404 + global-error: src/screens/NotFoundPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
    global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)}
    PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
-   PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado}
+   PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado} · snapshot del theme: {al día | regenerado desde primereact@X | no mapeable → manual}
    Validation: lint=✅ type-check=✅ build=✅
 
 Probá: pnpm start → /una-ruta-inexistente (404). global-error no se ve en dev (lo tapa el overlay): pnpm serve y /sentry-example-page → botón que lanza el error.
 ```
 
-Commit it — `[ STYLE ] Brand error pages and PoweredBy credit`.
+Commit it — `[ STYLE ] Brand error pages and PoweredBy credit` — plus `[ CHORE ] Regenerate PrimeReact theme snapshot` as its own commit if C0 regenerated it (a 227 KB generated diff should not hide inside a styling commit).
 
 ---
 
