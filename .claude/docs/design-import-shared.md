@@ -355,7 +355,7 @@ EVERY component — input focus ring, dropdown/listbox highlight, checkbox, radi
 datatable selection, calendar — is one declaration in `src/styles/general.sass`:
 
 ```sass
-\:root
+:root
   --theme-accent: theme('colors.acme.accent')      // template default: theme('colors.blue.500')
 ```
 

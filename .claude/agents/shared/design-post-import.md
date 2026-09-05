@@ -65,7 +65,7 @@ A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b
 1. `tailwind.config.js` — confirm every token in the brief exists (a token that does not exist is the brief being wrong, not a reason to invent one — see Hard rules).
 2. `src/components/CustomButton/CustomButton.tsx` + `.sass` — confirm the `buttons.primary` / `secondary` variants exist. If a named variant is missing, use the closest existing one and report it; never add a variant here.
 3. `src/components/Waves/Waves.tsx` + `.sass`, `src/screens/NotFoundPage/*`, `src/screens/GlobalErrorPage/*`, `src/app/not-found.tsx`, `src/app/global-error.tsx`, `src/components/PoweredBy/*`, `src/layouts/LandingLayout/LandingLayout.tsx`, and the `poweredBy.mount` file — the files you own for this run.
-4. `src/app/layout.tsx` — the `<html lang>` and the font instances (their `variable:` names must match `fonts.*`); `src/styles/general.sass` — the `--theme-accent` line under `\:root`.
+4. `src/app/layout.tsx` — the `<html lang>` and the font instances (their `variable:` names must match `fonts.*`); `src/styles/general.sass` — the `--theme-accent` line under `:root`.
 5. `grep -rn "<PoweredBy" src/` — where the credit is mounted right now (the template ships it unmounted; an earlier step may have placed it).
 
 ### A. The error screens — `NotFoundPage` and `GlobalErrorPage`
@@ -165,7 +165,7 @@ Both screens keep the template's **structure** — a full-height `<main id='main
 
 ### C. PrimeReact accent — only if asked, only if not yet set
 
-The theme is vendored with a single hook ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)): `src/styles/general.sass` → `\:root` → `--theme-accent: theme('colors.…')`. Read `primereactAccent`:
+The theme is vendored with a single hook ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)): `src/styles/general.sass` → `:root` → `--theme-accent: theme('colors.…')`. Read `primereactAccent`:
 
 - **`{token}`** → the user approved it at Step 0 and Step 1 did not set it (or the user approved it later). Replace the value with the token through `theme()` — `theme('colors.acme-accent')` for a flat token, `theme('colors.acme.500')` for a nested scale (read `tailwind.config.js` for the shape). Never a hex. Quote the line as written in your report.
 - **`applied`** → verify the line no longer reads `theme('colors.blue.500')`. If it still does, the ledger is wrong — set it (the brief named the decision) and report the discrepancy.
