@@ -15,23 +15,23 @@ const Waves = () => {
           <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
 
           <linearGradient id="grad-1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8348F4" />
-            <stop offset="30%" stopColor="#000" />
+            <stop offset="0%" className="Waves__Stop Waves__Stop--Crest1" />
+            <stop offset="30%" className="Waves__Stop Waves__Stop--Base" />
           </linearGradient>
 
           <linearGradient id="grad-2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#53008f" />
-            <stop offset="30%" stopColor="#000" />
+            <stop offset="0%" className="Waves__Stop Waves__Stop--Crest2" />
+            <stop offset="30%" className="Waves__Stop Waves__Stop--Base" />
           </linearGradient>
 
           <linearGradient id="grad-3" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FE00FE" />
-            <stop offset="30%" stopColor="#000" />
+            <stop offset="0%" className="Waves__Stop Waves__Stop--Crest3" />
+            <stop offset="30%" className="Waves__Stop Waves__Stop--Base" />
           </linearGradient>
 
           <linearGradient id="grad-4" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#880088" />
-            <stop offset="30%" stopColor="#000" />
+            <stop offset="0%" className="Waves__Stop Waves__Stop--Crest4" />
+            <stop offset="30%" className="Waves__Stop Waves__Stop--Base" />
           </linearGradient>
         </defs>
         <g className="Waves__Parallax">

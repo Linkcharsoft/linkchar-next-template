@@ -563,7 +563,7 @@ Pass any provided fields to `figma-design-screen`; fall back to the registry for
 >
 > **Fallback — ONLY if `design-validation` is not an available `subagent_type`.** A project agent can silently fail to load ([#14018](https://github.com/anthropics/claude-code/issues/14018)) — see [`agent-loading-troubleshooting.md`](../../docs/agent-loading-troubleshooting.md). Then run the sweep inline (below) rather than hard-failing or skipping validation, and **say in the report that validation ran inline (fallback) and is a reduced check set** — the inline sweep is a strict subset of the agent's, so a clean inline run proves less.
 
-**Scope — pass it to the agent, or apply it inline.** Hand over the list of files this import created/modified so findings can be ATTRIBUTED; without it you'll read pre-existing template violations as import defects (`Waves.tsx`, `Filters.sass`, `mixins.sass` legitimately carry hex; `sentry-example-page/` is a documented throwaway). **It does NOT narrow what gets checked** — the agent still runs every check over its own paths and splits the OUTPUT into `IN SCOPE` / `PRE-EXISTING`. That is deliberate: several checks assert repo-wide invariants an import can break in a file it never wrote (a global-only modal newly mounted in an existing component, a `'use client'` pushed onto an existing layout), and this list is assembled from the step agents' self-reported `files_touched` — the very thing the ledger rules above tell you to distrust. Partitioning makes an incomplete list *mislabel* a finding; filtering would make it *vanish*. **Build the file list as you go** — every step agent's report names the files it touched; accumulate them in the workload ledger and hand that list over. Do not reconstruct it from `git status` (the worktree may hold unrelated work) and do not default to `src/`.
+**Scope — pass it to the agent, or apply it inline.** Hand over the list of files this import created/modified so findings can be ATTRIBUTED; without it you'll read pre-existing template violations as import defects (`Waves.sass` — until Step 7 recolours it —, `Filters.sass` and `mixins.sass` legitimately carry hex; `sentry-example-page/` is a documented throwaway). **It does NOT narrow what gets checked** — the agent still runs every check over its own paths and splits the OUTPUT into `IN SCOPE` / `PRE-EXISTING`. That is deliberate: several checks assert repo-wide invariants an import can break in a file it never wrote (a global-only modal newly mounted in an existing component, a `'use client'` pushed onto an existing layout), and this list is assembled from the step agents' self-reported `files_touched` — the very thing the ledger rules above tell you to distrust. Partitioning makes an incomplete list *mislabel* a finding; filtering would make it *vanish*. **Build the file list as you go** — every step agent's report names the files it touched; accumulate them in the workload ledger and hand that list over. Do not reconstruct it from `git status` (the worktree may hold unrelated work) and do not default to `src/`.
 
 **The inline sweep** (fallback only):
 
@@ -645,7 +645,7 @@ Three things NOT to ask of it, because the agent refuses them anyway and asking 
 # POSIX
 grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the mounts the report claims (usually 1)
 grep -rn "next/font" src/app/global-error.tsx src/styles/          # expect nothing
-grep -c "stopColor=.currentColor" src/components/Waves/Waves.tsx   # expect 8
+grep -c "#[0-9a-fA-F]" src/components/Waves/Waves.sass                # expect 0 — the crests are tokens now
 grep -n "primereact-theme.css\|resources/themes" src/app/layout.tsx  # ONE import: the vendored theme if applied, node_modules otherwise
 ```
 
@@ -653,7 +653,7 @@ grep -n "primereact-theme.css\|resources/themes" src/app/layout.tsx  # ONE impor
 # Windows
 (Select-String -Path src -Pattern '<PoweredBy' -Recurse).Count
 Select-String -Path src/app/global-error.tsx, src/styles/* -Pattern 'next/font'
-(Select-String -Path src/components/Waves/Waves.tsx -Pattern 'stopColor=.currentColor').Count
+(Select-String -Path src/components/Waves/Waves.sass -Pattern '#[0-9a-fA-F]').Count   # expect 0
 Select-String -Path src/app/layout.tsx -Pattern 'primereact-theme.css|resources/themes'
 ```
 

@@ -125,20 +125,29 @@ Both screens keep the template's **structure** — a full-height `<main id='main
      - Never `@import url(...)` a font from a stylesheet ([Font Loading](../../CONVENTIONS.md#font-loading)), and never move the font declaration out of `layout.tsx` to "share" it — see the measured failure above.
   5. PrimeReact's CSS is not loaded in global-error either. `CustomButton` with `href` renders a plain `<Link>` and looks right from its own `.sass`; a `CustomButton onClick={reset}` renders PrimeReact's `Button` without the theme — `CustomButton.sass` carries enough (padding, background, radius) that it still reads correctly. Prefer `href` actions; if you add `reset`, eyeball it.
 
-#### A3. Recolour `Waves` — keep the component, swap the stops
+#### A3. Recolour `Waves` — keep the component, swap the stop colours in its `.sass`
 
-`Waves.tsx` ships 4 `<linearGradient>`s, each a brand tint at `0%` fading to the page colour at `30%`, drawn 4× with parallax. Replace every hardcoded `stopColor` with `currentColor` and put the token on the `<stop>` as a Tailwind text class — no hex, no SASS `theme()` needed:
+`Waves.tsx` ships 4 `<linearGradient>`s, each a crest tint at `0%` fading to the page colour at `30%`, drawn 4× with parallax. The JSX carries **no colour**: every `<stop>` has a BEM class and `Waves.sass` owns the colours through `stop-color: currentColor` + `color`. The template ships its own brand there as hex (the documented pre-existing exception); you replace each crest block with a token:
 
-```tsx
-<linearGradient id='grad-1' x1='0' y1='0' x2='0' y2='1'>
-  <stop offset='0%' stopColor='currentColor' className='text-acme-300'/>
-  <stop offset='30%' stopColor='currentColor' className='text-black'/>   {/* = brand.background */}
-</linearGradient>
+```sass
+&__Stop
+  stop-color: currentColor
+  &--Base                        // the 30% stop of every gradient = brand.background
+    @apply text-black
+  &--Crest1
+    @apply text-acme-200
+  &--Crest2
+    @apply text-acme-400
+  &--Crest3
+    @apply text-acme-500
+  &--Crest4
+    @apply text-acme-700
 ```
 
-- The `30%` stop of every gradient is **`brand.background`** — the waves must dissolve into the page, or they read as a banner.
-- The `0%` stops are `brand.waves` when given; otherwise derive four steps from `brand.accent`'s namespace, light → dark (`{ns}-200 / 400 / 500 / 700`), or, when the namespace has fewer shades, the accent at descending alpha (`text-{accent}/40`, `/60`, `/80`, `text-{accent}`). `currentColor` honours the alpha.
-- Keep `Waves.sass` untouched (the animation is the point), keep `aria-hidden='true'` on the root, keep the `viewBox` and the four `<use>` opacities.
+- `--Base` is **`brand.background`** — the waves must dissolve into the page, or they read as a banner.
+- `--Crest1…4` are `brand.waves` when given; otherwise derive four steps from `brand.accent`'s namespace, light → dark (`{ns}-200 / 400 / 500 / 700`), or, when the namespace has fewer shades, the accent at descending alpha (`text-{accent}/40`, `/60`, `/80`, `text-{accent}`). `currentColor` honours the alpha.
+- Touch ONLY the `&__Stop` block of `Waves.sass` — the animation, sizes and `@media` blocks stay. `Waves.tsx` stays as is (`aria-hidden='true'`, the `viewBox`, the four `<use>` opacities, the class names).
+- No hex may remain in `Waves.sass` when you are done (`grep -c '#[0-9a-fA-F]' src/components/Waves/Waves.sass` → 0).
 - Do NOT make the waves the design's palette if the design has none: a monochrome brand gets monochrome waves (the greys of its namespace). Anodal shipped exactly that.
 
 ### B. `PoweredBy` — restyle, localize, mount once
@@ -196,7 +205,7 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 - src/screens/GlobalErrorPage/GlobalErrorPage.tsx + .sass — same skin; Sentry wiring kept: {yes|n/a}; digest line: {yes|no}
 - src/app/not-found.tsx — title localized, robots noindex
 - src/app/global-error.tsx — index.sass ✅ · lang ✅ · <title> ✅ · fonts: {Google <link> {families} | system fallback (font not on Google Fonts)}
-- src/components/Waves/Waves.tsx — stops → {t1, t2, t3, t4} over {background}; component kept
+- src/components/Waves/Waves.sass — crests → {t1, t2, t3, t4} over {background}; component kept, 0 hex left
 
 ### PoweredBy
 - src/components/PoweredBy/PoweredBy.sass — tone {dark|light}, copy "{Desarrollado por|Powered by}"
