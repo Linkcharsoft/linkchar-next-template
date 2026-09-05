@@ -363,7 +363,7 @@ The template ships the `lara-light-blue` PrimeReact theme (`src/app/layout.tsx`)
 The design never draws these; `design-post-import` derives them from the brand system. Decide the inputs now, so Step 7 needs no second checkpoint:
 - Error screens: background `{token}` · text `{token}` · muted `{token}` · accent `{token}` · logo → {the shared brand mark Step 2 will produce} · buttons → `CustomButton` `{primary}` + `{secondary}` · copy in `{detectedLanguage}`
 - Waves gradients: `[{4 tokens, light → dark}]` fading into the background — **the wave component stays** (it is the template's mark); only its colours change
-- PoweredBy: mount in `{the Footer component this import will create | the public layout}` · tone `{dark|light}` · copy `Desarrollado por` (es) / `Powered by` (en) — or `none` for a product that carries no credit
+- PoweredBy: **landing-page project** → mount in `{the Footer component this import will create | the public layout}` · tone `{dark|light}` · copy `Desarrollado por` (es) / `Powered by` (en). **Dashboard / custom app** → `none` — the component ships unmounted and the developer places it later, case by case — unless the user names a spot here
 
 ## Detected language
 - Sample the VISIBLE strings of the source (babel: JSX text nodes; dclogic: the text between tags in `{screen}.markup.html`, plus `<option>` labels and `placeholder=` — NOT `{{holes}}`, class names, or `data-*`). Decision `en`|`es` + reasoning.
@@ -663,7 +663,7 @@ So a clean Step 6 means *nothing violated a known invariant*, never *the design 
 >
 > **Fallback — ONLY if `design-post-import` is not an available `subagent_type`** (the same silent load failure as Step 6 — [`agent-loading-troubleshooting.md`](../../docs/agent-loading-troubleshooting.md)): follow the agent file inline and say so in the checkpoint.
 
-**Why a separate step.** The design never draws a 404, a crash page or a "Powered by" strip, and every step agent is told to touch nothing its brief does not name ([§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name)). So after Step 6 the app is on-brand everywhere except the two screens a user meets when something breaks — still the template's black-and-purple Waves layout, in English — plus the credit strip in template grey and, unless the accent was applied at Step 1, every PrimeReact component still blue. Nothing reports it: all of it lints, type-checks and builds. Measured on two real projects (anodal, tercer-milenium): both needed exactly this pass, by hand, after their import.
+**Why a separate step.** The design never draws a 404, a crash page or a "Powered by" strip, and every step agent is told to touch nothing its brief does not name ([§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name)). So after Step 6 the app is on-brand everywhere except the two screens a user meets when something breaks — still the template's black-and-purple Waves layout, in English — plus the `PoweredBy` credit still unmounted and in template grey and, unless the accent was applied at Step 1, every PrimeReact component still blue. Nothing reports it: all of it lints, type-checks and builds. Measured on two real projects (anodal, tercer-milenium): both needed exactly this pass, by hand, after their import.
 
 **What you pass** — the brief shape is in the agent file; fill it from Step 0.5's `## Template chrome to brand at Step 7` item and the ledger:
 
@@ -684,7 +684,7 @@ Three things NOT to ask of it, because the agent refuses them anyway and asking 
 
 ```bash
 # POSIX
-grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the mounts the report claims (usually 1)
+grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the mounts the report claims (1 on a landing, 0 when `none`)
 grep -rn "next/font" src/app/global-error.tsx src/styles/          # expect nothing
 grep -c "#[0-9a-fA-F]" src/components/Waves/Waves.sass                # expect 0 — the crests are tokens now
 grep -n "primereact-theme.css\|resources/themes" src/app/layout.tsx  # ONE import: the vendored theme if applied, node_modules otherwise
@@ -704,7 +704,7 @@ Select-String -Path src/app/layout.tsx -Pattern 'primereact-theme.css|resources/
 ✅ Chrome del template brandeado (Step 7)
    404 + global-error: src/screens/NotFoundPage/, src/screens/GlobalErrorPage/ — Waves recoloreadas con {tokens}
    global-error fonts: {Google <link> {familias} | fallback de sistema (la fuente no está en Google Fonts)}
-   PoweredBy: montado en {path} ("{Desarrollado por|Powered by}")
+   PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
    PrimeReact theme: {aplicado ahora con {token} | ya aplicado en Step 1 | no solicitado}
    Validation: lint=✅ type-check=✅ build=✅
 

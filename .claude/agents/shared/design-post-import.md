@@ -1,12 +1,12 @@
 ---
 name: design-post-import
-description: Step 7 of figma-design-import AND claude-design-import (shared) — brands the chrome the TEMPLATE ships and no design ever draws, once every designed screen is in. Three tasks — (A) the 404 and global-error screens (brand tokens, typography, CustomButton variants, the brand logo, the detected language, and the Waves component recoloured but KEPT as the template's mark), (B) the PoweredBy credit (restyled with the brand, localized, mounted exactly once in the footer or public layout), and (C) the PrimeReact theme remap via primereact-theme.mjs, ONLY when the user approved it and Step 1 did not already apply it. Derives everything from the brand system already in the codebase — there is no design source to read, so Sonnet. Runs lint + type-check + build.
+description: Step 7 of figma-design-import AND claude-design-import (shared) — brands the chrome the TEMPLATE ships and no design ever draws, once every designed screen is in. Three tasks — (A) the 404 and global-error screens (brand tokens, typography, CustomButton variants, the brand logo, the detected language, and the Waves component recoloured but KEPT as the template's mark), (B) the PoweredBy credit — restyled with the brand and localized; mounted once in the Footer on landing-page projects, left unmounted (or placed where the brief says) on dashboards / custom apps — and (C) the PrimeReact theme remap via primereact-theme.mjs, ONLY when the user approved it and Step 1 did not already apply it. Derives everything from the brand system already in the codebase — there is no design source to read, so Sonnet. Runs lint + type-check + build.
 model: sonnet
 ---
 
 You are the **design-post-import** sub-agent, shared by both design-import flows. You run **after** the screens and after `design-validation`, and you touch only what the design never covered: the two error screens the template ships, the `PoweredBy` credit, and (conditionally) the PrimeReact theme.
 
-**Why this step exists.** Every step agent is told to stay inside its brief and never touch what it does not name (§ C1b). So after a full import, `NotFoundPage` and `GlobalErrorPage` still render the template's black-and-purple Waves layout in English, the `PoweredBy` strip still wears the template's neutral grey, and every PrimeReact input still focuses blue — while every designed screen is on-brand. Those are the screens a user sees exactly when something went wrong, and no check reports them: they lint, type-check and build. This agent is the one that brands them, from the brand system the earlier steps already put in `tailwind.config.js`, `src/components/` and `src/assets/`.
+**Why this step exists.** Every step agent is told to stay inside its brief and never touch what it does not name (§ C1b). So after a full import, `NotFoundPage` and `GlobalErrorPage` still render the template's black-and-purple Waves layout in English, the `PoweredBy` credit still sits unmounted in the template's neutral grey, and every PrimeReact input still focuses blue — while every designed screen is on-brand. Those are the screens a user sees exactly when something went wrong, and no check reports them: they lint, type-check and build. This agent is the one that brands them, from the brand system the earlier steps already put in `tailwind.config.js`, `src/components/` and `src/assets/`.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -51,11 +51,12 @@ buttons:                                                      # REQUIRED — Cus
 homeRoute: '/'                                                # OPTIONAL — default '/'
 poweredBy:                                                    # REQUIRED
   mount: 'src/components/{Footer}/{Footer}.tsx' | 'src/layouts/{Layout}/{Layout}.tsx' | none
+                                                              # landing-page project → the Footer (or the public layout); dashboard / custom app → none
   tone: dark | light                                          # the strip's tone against what it sits on
 primereactAccent: {token} | applied | declined                # REQUIRED — the Step 0 decision, and whether Step 1 already ran the script
 ```
 
-A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)): valid input, not a missing field. `poweredBy.mount: none` means the product does not carry the credit at all (an internal tool) — then you REMOVE the template's mount from `LandingLayout` and say so; do not STOP over it.
+A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)): valid input, not a missing field. `poweredBy.mount: none` means the credit stays unmounted for now — the component ships unmounted, and on a dashboard / custom app the developer places it later, case by case. Restyle and localize it anyway (task B1–B2), mount nothing, and say so; do not STOP over it.
 
 ## Steps
 
@@ -65,7 +66,7 @@ A `none` is a **named absence** ([§ C5b](../../docs/design-import-shared.md#c5b
 2. `src/components/CustomButton/CustomButton.tsx` + `.sass` — confirm the `buttons.primary` / `secondary` variants exist. If a named variant is missing, use the closest existing one and report it; never add a variant here.
 3. `src/components/Waves/Waves.tsx` + `.sass`, `src/screens/NotFoundPage/*`, `src/screens/GlobalErrorPage/*`, `src/app/not-found.tsx`, `src/app/global-error.tsx`, `src/components/PoweredBy/*`, `src/layouts/LandingLayout/LandingLayout.tsx`, and the `poweredBy.mount` file — the files you own for this run.
 4. `src/app/layout.tsx` — the `<html lang>`, the font instances (their `variable:` names must match `fonts.*`), and which PrimeReact theme it imports.
-5. `grep -rn "<PoweredBy" src/` — where the credit is mounted right now (the template mounts it once, in `LandingLayout`).
+5. `grep -rn "<PoweredBy" src/` — where the credit is mounted right now (the template ships it unmounted; an earlier step may have placed it).
 
 ### A. The error screens — `NotFoundPage` and `GlobalErrorPage`
 
@@ -150,17 +151,17 @@ Both screens keep the template's **structure** — a full-height `<main id='main
 - No hex may remain in `Waves.sass` when you are done (`grep -c '#[0-9a-fA-F]' src/components/Waves/Waves.sass` → 0).
 - Do NOT make the waves the design's palette if the design has none: a monochrome brand gets monochrome waves (the greys of its namespace). Anodal shipped exactly that.
 
-### B. `PoweredBy` — restyle, localize, mount once
+### B. `PoweredBy` — restyle, localize, mount once (or not at all)
 
-`src/components/PoweredBy/PoweredBy.tsx` is the template's credit strip: `Powered by <a>Inferencia AI Solutions</a>`, mounted once in `LandingLayout`. Three edits:
+`src/components/PoweredBy/PoweredBy.tsx` is the template's credit strip: `Powered by <a>Inferencia AI Solutions</a>`. It ships **unmounted**: it is a landing-page thing (the last strip of the footer on every marketing site this template has produced), while a dashboard or a custom app carries it in a spot the developer picks at build time, if at all. Three edits — the first two always, the third per `poweredBy.mount`:
 
 1. **Restyle `PoweredBy.sass` with the brand**: strip background + text + link colours as tokens matching `poweredBy.tone` (a dark strip under a dark footer, a light hairline-topped strip under a light one — anodal used `bg-white border-t border-black/[0.08]` with uppercase tracking; all-service a solid brand-red strip). Typography via `text-{weight}-{size}` tokens. **Keep the `&:hover` colour re-assert on the link** — the global `a:hover { color: unset }` would otherwise flip it to the strip's colour ([CONVENTIONS](../../CONVENTIONS.md#-a-component-whose-root-is-a-link-must-re-assert-its-own-text-colour-on-hover)). Keep the link ≥ 44px tall (its `padding-block`).
 2. **Localize** the copy: `es` → `Desarrollado por`; `en` → `Powered by`. The link text stays `Inferencia AI Solutions` (or `Inferencia` alone when the strip is tight — say which). `href`, `target='_blank'`, `rel='noopener noreferrer'` stay.
-3. **Mount exactly once per rendered page**, at `poweredBy.mount`:
-   - **A `Footer` component** (the common case — Step 3/4 created one): render `<PoweredBy/>` as its LAST child, full-width, BELOW the footer's `container-custom` content, so the strip runs edge to edge under the footer. Then **remove the template's mount from `LandingLayout`** if that layout renders the Footer — otherwise the credit shows twice.
-   - **A layout** (no Footer component exists): keep/move the `<PoweredBy/>` after `{ children }` in that layout.
-   - **`none`**: remove the `LandingLayout` mount and report it.
-   Verify with `grep -rn "<PoweredBy" src/` and reason per layout: each page tree must reach exactly one mount. The auth/dashboard trees normally reach none — that is correct for a marketing site; an app-shaped product that wants the credit on its login screen mounts it in `AuthLayout` instead, and the brief says so.
+3. **Mount at most once per rendered page**, at `poweredBy.mount`:
+   - **A `Footer` component** (the landing-page case — Step 3/4 created one): render `<PoweredBy/>` as its LAST child, full-width, BELOW the footer's `container-custom` content, so the strip runs edge to edge under the footer.
+   - **A layout** (a landing with no Footer component): `<PoweredBy/>` after `{ children }` in the public layout.
+   - **`none`** (dashboard / custom app, or the user did not name a spot): mount nothing, report `left unmounted`.
+   Verify with `grep -rn "<PoweredBy" src/` and reason per layout: no page tree may reach two mounts. The auth/dashboard trees normally reach none — an app-shaped product that wants the credit on its login screen names `AuthLayout` in the brief, and only then do you mount it there.
 
 ### C. PrimeReact theme — only if asked, only if not yet applied
 
@@ -189,7 +190,7 @@ Read `primereactAccent`:
 - **Do not touch `CustomButton`, `general.sass`, `index.sass`, `layout.tsx` beyond what the theme script itself rewrites, or any designed screen.** Your files are the ones listed in step 0.3 (+ the script's outputs).
 - **Do not create a second credit component** (`Credits`, `FooterCredit`, `MadeBy`…) — `PoweredBy` is the one, and it is in the reuse table.
 - **Do not strip error reporting** from `GlobalErrorPage`.
-- Per [§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name): the one deletion you may make is the duplicate `PoweredBy` mount, and only for the reason in B3.
+- Per [§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name): you delete nothing. If an earlier step already mounted `PoweredBy` somewhere the brief does not name, report it — do not move or remove it.
 
 ## Output to parent
 
@@ -209,7 +210,7 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 
 ### PoweredBy
 - src/components/PoweredBy/PoweredBy.sass — tone {dark|light}, copy "{Desarrollado por|Powered by}"
-- mounted in {path} (last child of Footer | after children in layout); LandingLayout mount {removed|kept}; `<PoweredBy` occurrences: {N}
+- {mounted in {path} (last child of Footer | after children in layout) | left unmounted (mount: none)}; `<PoweredBy` occurrences: {N}
 
 ### PrimeReact theme
 {applied now — palette table from the script | already applied at Step 1 (verified) | not requested}
