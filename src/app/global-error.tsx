@@ -1,4 +1,5 @@
 'use client'
+import '@/styles/index.sass'
 import GlobalErrorPage from '@/screens/GlobalErrorPage/GlobalErrorPage'
 import type { Metadata } from 'next'
 
