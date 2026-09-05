@@ -15,7 +15,8 @@ export const theme = {
       'surface-600': '#757575',
       'surface-700': '#616161',
       'surface-800': '#424242',
-      'surface-900': '#212121'
+      'surface-900': '#212121',
+      'inferencia-magenta': '#FE00FE'
     },
     fontFamily: {
       sans: ['var(--font-merriweather-sans)', 'sans-serif']

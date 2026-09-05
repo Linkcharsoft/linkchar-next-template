@@ -356,7 +356,7 @@ datatable selection, calendar — is one declaration in `src/styles/general.sass
 
 ```sass
 :root
-  --theme-accent: theme('colors.acme.accent')      // template default: theme('colors.blue.500')
+  --theme-accent: theme('colors.acme.accent')      // template default: theme('colors.inferencia-magenta')
 ```
 
 Whether to repaint is the orchestrator's call at its checkpoint (both `SKILL.md` files carry that decision);

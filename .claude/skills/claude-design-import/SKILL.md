@@ -355,7 +355,7 @@ Screens are the Opus-heavy step and the only one that scales with the design. Be
 - This is an offer, not a gate — if the user wants the whole list in one run, run it.
 
 ## PrimeReact accent (app-wide component fidelity)
-The template's PrimeReact theme is vendored (`src/styles/primereact-theme.css`) with its accent slots turned into `var(--theme-accent…)`, so **every** component — input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, table selection, calendar — follows ONE line in `src/styles/general.sass`: `--theme-accent: theme('colors.blue.500')`. Until that line changes, every form stays blue regardless of the brand you just tokenized — a gap no per-screen work closes and no check reports ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)).
+The template's PrimeReact theme is vendored (`src/styles/primereact-theme.css`) with its accent slots turned into `var(--theme-accent…)`, so **every** component — input focus ring, dropdown/listbox highlight, checkbox, radio, slider, tabs, paginator, table selection, calendar — follows ONE line in `src/styles/general.sass`: `--theme-accent: theme('colors.inferencia-magenta')`. Until that line changes, every form stays blue regardless of the brand you just tokenized — a gap no per-screen work closes and no check reports ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)).
 - If the design's accent is not blue, propose it at the checkpoint: `--theme-accent: theme('colors.{accent token}')`; `.p-invalid`'s red is untouched by construction. Step 1 sets it (it already owns `general.sass`); Step 7 re-offers it if it is declined here.
 - **Offer it; do not apply it silently.** It is a global visual change to a template default, and a project may deliberately keep the PrimeReact look.
 
@@ -687,7 +687,7 @@ Three things NOT to ask of it, because the agent refuses them anyway and asking 
 grep -rn "<PoweredBy" src/ | wc -l                                 # exactly the mounts the report claims (1 on a landing, 0 when `none`)
 grep -rn "next/font" src/app/global-error.tsx src/styles/          # expect nothing
 grep -c "#[0-9a-fA-F]" src/components/Waves/Waves.sass                # expect 0 — the crests are tokens now
-grep -n "theme-accent" src/styles/general.sass                    # the approved token through theme(), or theme('colors.blue.500') if declined
+grep -n "theme-accent" src/styles/general.sass                    # the approved token through theme(), or theme('colors.inferencia-magenta') if declined
 node .claude/scripts/primereact-theme.mjs --check                  # exit 0 = the vendored theme snapshot matches the installed primereact
 ```
 
