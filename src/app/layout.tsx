@@ -1,7 +1,7 @@
 import '@/styles/index.sass'
 import 'primeicons/primeicons.css'
 import 'primereact/resources/primereact.min.css'
-import 'primereact/resources/themes/lara-light-blue/theme.css'
+import '@/styles/primereact-theme.css'
 import { Merriweather_Sans } from 'next/font/google'
 import localFont from 'next/font/local'
 import Script from 'next/script'
