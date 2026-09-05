@@ -2,7 +2,7 @@ import './Waves.sass'
 
 const Waves = () => {
   return (
-    <div className="Waves">
+    <div className="Waves" aria-hidden="true">
       <svg
         className='Waves__SVG'
         xmlns="http://www.w3.org/2000/svg"
