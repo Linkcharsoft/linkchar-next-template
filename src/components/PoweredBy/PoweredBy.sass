@@ -1,0 +1,18 @@
+.PoweredBy
+  width: 100%
+  text-align: center
+  @apply bg-surface-900 text-surface-400
+
+  &__Text
+    margin: 0
+    padding: 2px 16px
+    @apply text-regular-14
+
+  &__Link
+    display: inline-block
+    padding: 12px 4px
+    @apply text-bold-14 text-white
+
+    &:hover        // else the global `a:hover { color: unset }` inherits the strip's colour
+      text-decoration: underline
+      @apply text-white

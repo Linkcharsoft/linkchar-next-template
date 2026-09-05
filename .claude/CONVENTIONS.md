@@ -113,7 +113,8 @@ const { user } = useUserStore()
 | `PasswordValidator` | `components/PasswordValidator/PasswordValidator.tsx` | Real-time password strength indicator |
 | `Loader` | `components/Loader/Loader.tsx` | CSS spinner loader |
 | `SkeletonBlock` | `components/SkeletonBlock/SkeletonBlock.tsx` | Shimmering placeholder rectangle used as the primitive for skeleton loaders. Pass `dark` for use on dark backgrounds. Size and shape via a BEM class passed in `className`. |
-| `Waves` | `components/Waves/Waves.tsx` | Decorative SVG wave animation |
+| `Waves` | `components/Waves/Waves.tsx` | Decorative SVG wave animation (the template's mark on the 404 / global-error screens — recolour it per project, never replace it) |
+| `PoweredBy` | `components/PoweredBy/PoweredBy.tsx` | "Powered by Inferencia AI Solutions" credit strip (external link with `rel`). Mounted once in `LandingLayout`; restyle / localize / move it per project instead of writing a new credit. Optional `className`. |
 | `LoadingModal` | `components/modals/LoadingModal/LoadingModal.tsx` | Full-screen loading overlay with message |
 | `StateModal` | `components/modals/StateModal/StateModal.tsx` | State-based modal (success, error, warn, info) |
 | `ToastNotifications` | `components/modals/ToastNotifications/ToastNotifications.tsx` | Toast notification display |
@@ -508,7 +509,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 
 ### Component & Reuse Rules
 
-- **MANDATORY**: Before generating ANY new component, check `src/components/` and the [Existing Reusable Components](#existing-reusable-components) table. Reuse `CustomButton`, `InputContainer`, `Label`, `InputError`, `SearchInput`, `Filters`, `PasswordValidator`, `Loader`, `Waves`, `LoadingModal`, `StateModal`, `ToastNotifications` whenever the Figma node maps to one of them.
+- **MANDATORY**: Before generating ANY new component, check `src/components/` and the [Existing Reusable Components](#existing-reusable-components) table. Reuse `CustomButton`, `InputContainer`, `Label`, `InputError`, `SearchInput`, `Filters`, `PasswordValidator`, `Loader`, `Waves`, `PoweredBy`, `LoadingModal`, `StateModal`, `ToastNotifications` whenever the Figma node maps to one of them.
 - **Buttons**: Always `CustomButton`. NEVER render a raw `<button>` or another button library.
 - **Inputs**: ALWAYS PrimeReact wrapped in `InputContainer`. NEVER native HTML inputs.
 - **Icons**: ALWAYS PrimeIcons (`<i className="pi pi-{name}" />`) when the icon exists in the PrimeIcons set. Only fall back to a custom SVG component if PrimeIcons doesn't have it. **Design-import exception**: this section is the from-scratch rule; when translating a design, brand marks and members of a coherent stroke-matched icon set keep the source glyph even if PrimeIcons ships that name — see [`design-import-shared.md` § B8](docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph).
