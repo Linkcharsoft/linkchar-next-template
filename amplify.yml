@@ -7,7 +7,7 @@ frontend:
         - nvm use 24
         - corepack enable
         - pnpm install --frozen-lockfile
-        - env | grep -E "^(AUTH_|MAILSLURP_)" >> .env.production
+        - env | grep "^AUTH_SECRET=" > .env.production
     build:
       commands:
         - pnpm run build
