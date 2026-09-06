@@ -14,7 +14,7 @@ Production-ready Next.js starter template by **Linkchar**, pre-configured with a
 | Animations | Framer Motion (`LazyMotion` + `m`) |
 | 3D | Three.js |
 | Data Fetching | SWR + custom `customFetch` wrapper |
-| Auth | JWT sessions encrypted with AES-GCM via `jose` + Web Crypto API |
+| Auth | JWT sessions encrypted with AES-GCM via the Web Crypto API |
 | Error Tracking | Sentry (session replays, performance monitoring, source maps) |
 | Analytics | Microsoft Clarity |
 | Testing | Cypress 15 (E2E) |
