@@ -228,27 +228,6 @@ Two consequences, both mandatory:
 
 **This is a documented constraint, not a STOP.** An agent that hits it applies the pattern above and mentions it in its report; it does NOT emit a STOP. There is deliberately no [STOP Protocol](#stop-protocol) category for it — the first agent to meet it had nothing that fit and filed it as `COMPONENT_GAP` (which means "a primitive is used N×", something else entirely), so it reached the next agent by luck. Now that the rule is written down, every agent knows it up front and the handoff is a normal report line.
 
-### ⚠️ A component whose ROOT is a link must re-assert its own text colour on `:hover`
-
-[`src/styles/general.sass`](../src/styles/general.sass) ships a global `a:hover { color: unset }`. Two things make it a trap:
-
-- **It outranks your component's colour.** `a:hover` is specificity `0,1,1`; `.ObraCard` (or whatever your root class is) is `0,1,0`. The global rule wins on hover.
-- **`unset` on an inherited property means `inherit`, not "keep what it was".** `color` is inherited, so on hover the element takes its **parent's** colour — not its own.
-
-The result: any card/hero whose root element is an `<a>`/`<Link>` **and** which sets its own colour (typically `text-white` over a photo scrim) has its text flip to the surrounding section's colour on hover. Over a dark photo on a light section, the text turns black and effectively disappears. It renders fine until the pointer touches it, so it survives lint, type-check, `pnpm build` and every `design-validation` grep — this was found by a human hovering, after a full import had passed all gates.
-
-**So: if a component's root is a link and it declares its own `color`/`text-*`, pin the colour again under `&:hover`.** `.ObraCard:hover` is `0,2,0` and wins:
-
-```sass
-.ObraCard
-  @apply text-white
-
-  &:hover        // else the global `a:hover { color: unset }` inherits the parent's colour
-    @apply text-white
-```
-
-Only link-*rooted* components need this. A link nested **inside** a coloured container is fine: `unset` inherits from that container, which already has the right colour. And when the design genuinely does change colour on hover, write that colour here — the point is that the hover state must be stated, never left to the global reset.
-
 ---
 
 ## Typography System

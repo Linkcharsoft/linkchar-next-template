@@ -13,7 +13,7 @@ You are the **design-post-import** sub-agent, shared by both design-import flows
 `Read` `.claude/CONVENTIONS.md` before touching any file. The sections that govern this agent:
 
 - **[Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components)** — `CustomButton` variants, `Waves`, `PoweredBy` are all there; you extend nothing and create nothing.
-- **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — plain CSS first, `@apply` LAST; the link-rooted `:hover` colour rule.
+- **[Inside `.sass` files](../../CONVENTIONS.md#inside-sass-files)** — plain CSS first, `@apply` LAST.
 - **[Typography System](../../CONVENTIONS.md#typography-system)** / **[Color System](../../CONVENTIONS.md#color-system)** — tokens only, never hex.
 - **[Global Container](../../CONVENTIONS.md#global-container)** — the error screens' body anchors with `container-custom`.
 - **[Font Loading](../../CONVENTIONS.md#font-loading)** — in particular the `global-error.tsx` exception (below).
@@ -179,7 +179,7 @@ All three screens keep the template's **structure** — a full-height `<main id=
 
 `src/components/PoweredBy/PoweredBy.tsx` is the template's credit strip: `Powered by <a>Inferencia AI Solutions</a>`. It ships **unmounted**: it is a landing-page thing (the last strip of the footer on every marketing site this template has produced), while a dashboard or a custom app carries it in a spot the developer picks at build time, if at all. Three edits — the first two always, the third per `poweredBy.mount`:
 
-1. **Restyle `PoweredBy.sass` with the brand**: strip background + text + link colours as tokens matching `poweredBy.tone` (a dark strip under a dark footer, a light hairline-topped strip under a light one — anodal used `bg-white border-t border-black/[0.08]` with uppercase tracking; all-service a solid brand-red strip). Typography via `text-{weight}-{size}` tokens. **Keep the `&:hover` colour re-assert on the link** — the global `a:hover { color: unset }` would otherwise flip it to the strip's colour ([CONVENTIONS](../../CONVENTIONS.md#-a-component-whose-root-is-a-link-must-re-assert-its-own-text-colour-on-hover)). Keep the link ≥ 44px tall (its `padding-block`).
+1. **Restyle `PoweredBy.sass` with the brand**: strip background + text + link colours as tokens matching `poweredBy.tone` (a dark strip under a dark footer, a light hairline-topped strip under a light one — anodal used `bg-white border-t border-black/[0.08]` with uppercase tracking; all-service a solid brand-red strip). Typography via `text-{weight}-{size}` tokens. State the link's hover style explicitly (the template underlines it). Keep the link ≥ 44px tall (its `padding-block`).
 2. **Localize** the copy: `es` → `Desarrollado por`; `en` → `Powered by`. The link text stays `Inferencia AI Solutions` (or `Inferencia` alone when the strip is tight — say which). `href`, `target='_blank'`, `rel='noopener noreferrer'` stay.
 3. **Mount at most once per rendered page**, at `poweredBy.mount`:
    - **A `Footer` component** (the landing-page case — Step 3/4 created one): render `<PoweredBy/>` as its LAST child, full-width, BELOW the footer's `container-custom` content, so the strip runs edge to edge under the footer.
