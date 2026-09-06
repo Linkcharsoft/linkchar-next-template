@@ -13,10 +13,17 @@ export async function POST (req: NextRequest) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
   }
 
-  try {
-    const body = await req.json()
+  const body = await req.json().catch(() => null)
+  const { email, password } = body ?? {}
+  if (
+    typeof email !== 'string' || !email || email.length > 320 ||
+    typeof password !== 'string' || !password || password.length > 1024
+  ) {
+    return NextResponse.json({ message: AUTH_ERRORS.login }, { status: 400 })
+  }
 
-    const response = await login(body)
+  try {
+    const response = await login({ email, password })
 
     if(response.ok) {
       const session: SessionType = {
@@ -52,10 +59,11 @@ export async function POST (req: NextRequest) {
       })
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : AUTH_ERRORS.login
+    // Log the real failure server-side; the client gets a generic message, never internals.
+    console.error('Login route error:', error)
     return NextResponse.json(
-      { message },
-      { status: 400 }
+      { message: AUTH_ERRORS.login },
+      { status: 502 }
     )
   }
 }
