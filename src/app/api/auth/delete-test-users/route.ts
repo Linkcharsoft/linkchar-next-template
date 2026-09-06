@@ -4,9 +4,9 @@ import { API_URL, APP_ENV } from '@/constants/env'
 import { isValidOrigin } from '@/utils/validateOrigin'
 import type { NextRequest } from 'next/server'
 
-// E2E-only endpoint — 404 in production.
+// E2E-only endpoint — exists only in development, 404 everywhere else.
 export async function DELETE (req: NextRequest) {
-  if (APP_ENV === 'production') {
+  if (APP_ENV !== 'development') {
     return NextResponse.json({ message: 'Not Found' }, { status: 404 })
   }
 
