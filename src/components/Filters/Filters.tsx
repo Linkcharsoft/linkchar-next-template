@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 import { m, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { classNames } from 'primereact/utils'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useMediaQuery } from 'usehooks-ts'
 import CustomButton from '../CustomButton/CustomButton'
 import Label from '../Label/Label'
@@ -225,35 +225,37 @@ const PillControl = ({ filter, index }: { filter: PillFilter, index: number }) =
 
   return (
     <>
-      {filter.options.map((option, optionIndex) => (
-        <button
-          id={`filter-${index}`}
-          type='button'
-          key={`FilterItem-${index}-${optionIndex}`}
-          className={classNames('Filters__Item', {
-            'Disabled': filter.multiple ? !filter.selected.includes(option.value) : filter.selected !== option.value,
-            'Selected': filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
-          })}
-          onClick={() => togglePillOption(option.value)}
-        >
-          {option.color && (
-            <div
-              className="Filters__Circle"
-              style={{ backgroundColor: option.color }}
-            />
-          )}
-          <span className="text-regular-14">{option.label}</span>
-        </button>
-      ))}
+      {filter.options.map((option, optionIndex) => {
+        const isSelected = filter.multiple ? filter.selected.includes(option.value) : filter.selected === option.value
+
+        return (
+          <button
+            type='button'
+            key={`FilterItem-${index}-${optionIndex}`}
+            className={classNames('Filters__Item', { 'Selected': isSelected })}
+            aria-pressed={isSelected}
+            onClick={() => togglePillOption(option.value)}
+          >
+            {option.color && (
+              <div
+                className="Filters__Circle"
+                style={{ backgroundColor: option.color }}
+              />
+            )}
+            <span className="text-regular-14">{option.label}</span>
+          </button>
+        )
+      })}
     </>
   )
 }
 
 // Dropdown — single value via Dropdown, multiple via MultiSelect.
-const DropdownControl = ({ filter, index }: { filter: DropdownFilter, index: number }) => (
+const DropdownControl = ({ filter, fieldId }: { filter: DropdownFilter, fieldId: string }) => (
   <>
     {filter.multiple ? (
       <MultiSelect
+        inputId={fieldId}
         placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
         value={filter.selected}
         onChange={(e) => filter.onChange(e.value)}
@@ -262,15 +264,11 @@ const DropdownControl = ({ filter, index }: { filter: DropdownFilter, index: num
         filter
         showClear={filter.selected.length > 0}
         disabled={filter.disabled || filter.loading}
-        pt={{
-          ...MULTISELECT_PT,
-          input: {
-            id: `filter-${index}`
-          }
-        }}
+        pt={MULTISELECT_PT}
       />
     ) : (
       <Dropdown
+        inputId={fieldId}
         className='w-full'
         placeholder={filter.loading ? 'Loading...' : filter.placeholder || 'Select an option'}
         value={filter.selected}
@@ -280,22 +278,18 @@ const DropdownControl = ({ filter, index }: { filter: DropdownFilter, index: num
         filter
         showClear={Boolean(filter.selected)}
         disabled={filter.disabled || filter.loading}
-        pt={{
-          ...DROPDOWN_PT,
-          input: {
-            id: `filter-${index}`
-          }
-        }}
+        pt={DROPDOWN_PT}
       />
     )}
   </>
 )
 
 // Single/multiple date selection.
-const DateControl = ({ filter, locale }: { filter: DateFilter, locale: 'en' | 'es' }) => (
+const DateControl = ({ filter, fieldId, locale }: { filter: DateFilter, fieldId: string, locale: 'en' | 'es' }) => (
   <Calendar
+    inputId={fieldId}
     className='w-full'
-    placeholder={filter.placeholder || filter.multiple ? 'Select dates' : 'Select a date'}
+    placeholder={filter.placeholder || (filter.multiple ? 'Select dates' : 'Select a date')}
     value={filter.multiple
       ? filter.selected.map(s => dayjs(s).toDate())
       : (filter.selected
@@ -316,17 +310,13 @@ const DateControl = ({ filter, locale }: { filter: DateFilter, locale: 'en' | 'e
     selectionMode={filter.multiple ? 'multiple' : 'single'}
     dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
     locale={locale}
-    // pt={{
-    //   input: {
-    //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
-    //   }
-    // }}
   />
 )
 
 // From/to date-range selection.
-const DateRangeControl = ({ filter, locale }: { filter: DateRangeFilter, locale: 'en' | 'es' }) => (
+const DateRangeControl = ({ filter, fieldId, locale }: { filter: DateRangeFilter, fieldId: string, locale: 'en' | 'es' }) => (
   <Calendar
+    inputId={fieldId}
     className='w-full'
     placeholder={filter.placeholder || 'Select a date range'}
     value={filter.selected.from || filter.selected.to
@@ -353,38 +343,44 @@ const DateRangeControl = ({ filter, locale }: { filter: DateRangeFilter, locale:
     selectionMode='range'
     dateFormat={locale === 'en' ? 'mm/dd/yy' : 'dd/mm/yy'}
     locale={locale}
-    // pt={{
-    //   input: {
-    //     id: `filter-${index}` //! For now, this isn't working.. PrimeReact bug
-    //   }
-    // }}
   />
 )
 
 // Dispatches the body control by filter type (narrowing preserved per branch).
-const FilterControl = ({ filter, index, locale }: { filter: Filter, index: number, locale: 'en' | 'es' }) => {
+const FilterControl = ({ filter, index, fieldId, locale }: { filter: Filter, index: number, fieldId: string, locale: 'en' | 'es' }) => {
   if (filter.type === 'pill') return <PillControl filter={filter} index={index} />
-  if (filter.type === 'dropdown') return <DropdownControl filter={filter} index={index} />
-  if (filter.type === 'date') return <DateControl filter={filter} locale={locale} />
-  return <DateRangeControl filter={filter} locale={locale} />
+  if (filter.type === 'dropdown') return <DropdownControl filter={filter} fieldId={fieldId} />
+  if (filter.type === 'date') return <DateControl filter={filter} fieldId={fieldId} locale={locale} />
+  return <DateRangeControl filter={filter} fieldId={fieldId} locale={locale} />
 }
 
 // One filter row: label + header clear button + body control.
-const FilterField = ({ filter, index, disabled, locale }: { filter: Filter, index: number, disabled: boolean, locale: 'en' | 'es' }) => (
-  <div className="flex w-full flex-col items-start gap-2">
-    <div className="flex w-full items-center justify-between gap-2">
-      <Label htmlFor={`filter-${index}`}>
-        { filter.title }
-      </Label>
+// Pills are a button group (no labelable input), so the row labels the group instead of an id.
+const FilterField = ({ filter, index, fieldId, disabled, locale }: { filter: Filter, index: number, fieldId: string, disabled: boolean, locale: 'en' | 'es' }) => {
+  const isPillGroup = filter.type === 'pill'
 
-      <FilterClearButton filter={filter} disabled={disabled} />
-    </div>
+  return (
+    <div className="flex w-full flex-col items-start gap-2">
+      <div className="flex w-full items-center justify-between gap-2">
+        <Label htmlFor={isPillGroup ? undefined : fieldId}>
+          { filter.title }
+        </Label>
 
-    <div className="align-center flex w-full flex-wrap gap-2">
-      <FilterControl filter={filter} index={index} locale={locale} />
+        <FilterClearButton filter={filter} disabled={disabled} />
+      </div>
+
+      <div
+        className="align-center flex w-full flex-wrap gap-2"
+        role={isPillGroup ? 'group' : undefined}
+        aria-label={isPillGroup ? filter.title : undefined}
+      >
+        <FilterControl filter={filter} index={index} fieldId={fieldId} locale={locale} />
+      </div>
     </div>
-  </div>
-)
+  )
+}
+
+const FOCUSABLE_SELECTOR = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
 
 const Filters = ({
   filters,
@@ -392,7 +388,9 @@ const Filters = ({
   locale = 'en',
   disabled = false
 }: FilterItem) => {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const baseId = useId()
+  const panelRef = useRef<HTMLDivElement>(null)
+  const lastFocusedRef = useRef<HTMLElement | null>(null)
   const [showFilters, setShowFilters] = useState<boolean>(false)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
@@ -400,8 +398,42 @@ const Filters = ({
 
   const MOTION_PROPS = isMobile ? MOBILE_MOTION_PROPS : DESKTOP_MOTION_PROPS
 
+  const openFilters = () => {
+    lastFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    setShowFilters(true)
+  }
+  const closeFilters = () => {
+    setShowFilters(false)
+    lastFocusedRef.current?.focus()
+  }
+
+  useEffect(() => {
+    if (showFilters) panelRef.current?.focus()
+  }, [showFilters])
+
+  const handlePanelKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      closeFilters()
+      return
+    }
+    if (e.key !== 'Tab' || !panelRef.current) return
+
+    const focusables = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)]
+    const first = focusables[0]
+    const last = focusables.at(-1)
+    if (!first || !last) return
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
   return (
-    <div ref={containerRef} className="Filters">
+    <div className="Filters">
       <CustomButton
         onClick={cleanFilters}
         disabled={disabled}
@@ -411,8 +443,9 @@ const Filters = ({
       </CustomButton>
       <CustomButton
         variant='transparent'
-        onClick={() => setShowFilters(!showFilters)}
+        onClick={() => showFilters ? closeFilters() : openFilters()}
         disabled={disabled}
+        aria-expanded={showFilters}
       >
         <i className="pi pi-filter text-regular-14" aria-hidden="true"></i>
         <span className='text-regular-14 hidden 2xl:inline'>
@@ -423,19 +456,20 @@ const Filters = ({
       <AnimatePresence>
         {showFilters && (
           <>
+            { }
             <div
               className="Filters__Bg"
-              onClick={() => setShowFilters(false)}
-              onKeyDown={(e) => {
-                if(e.key === 'Escape') {
-                  setShowFilters(false)
-                }
-              }}
-              role="button"
-              tabIndex={0}
+              aria-hidden="true"
+              onClick={closeFilters}
             ></div>
             <m.div
+              ref={panelRef}
               className="Filters__Container"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Filters"
+              tabIndex={-1}
+              onKeyDown={handlePanelKeyDown}
               {...MOTION_PROPS}
               transition={{ duration: 0.15 }}
             >
@@ -458,7 +492,7 @@ const Filters = ({
                     variant='transparent'
                     size='detail'
                     aria-label='Close filters'
-                    onClick={() => setShowFilters(false)}
+                    onClick={closeFilters}
                     disabled={disabled}
                   >
                     <i className="pi pi-times text-regular-14" aria-hidden="true" />
@@ -471,6 +505,7 @@ const Filters = ({
                   key={`Filter-${index}`}
                   filter={filter}
                   index={index}
+                  fieldId={`${baseId}-${index}`}
                   disabled={disabled}
                   locale={locale}
                 />
