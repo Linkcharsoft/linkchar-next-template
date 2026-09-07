@@ -25,7 +25,8 @@ const buildCspReportOnly = (): string => {
 
   let reportUri: string | undefined
   try {
-    const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN
+    // Browser-posted CSP reports count against the Sentry error quota — collect them only on staging.
+    const dsn = process.env.NEXT_PUBLIC_APP_ENV === 'staging' ? process.env.NEXT_PUBLIC_SENTRY_DSN : undefined
     if (dsn) {
       const { host, pathname, username } = new URL(dsn)
       reportUri = `https://${host}/api${pathname}/security/?sentry_key=${username}`
