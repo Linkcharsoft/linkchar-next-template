@@ -100,7 +100,7 @@ const nextConfig: NextConfig = {
 
   images: {
     minimumCacheTTL: 31_536_000,
-    formats: ['image/avif', 'image/webp']
+    formats: ['image/webp']
     // Add per-project when loading images from external origins (CDN, CMS, S3, etc.):
     // remotePatterns: [
     //   { protocol: 'https', hostname: new URL(process.env.NEXT_PUBLIC_MEDIA_URL).host, pathname: '/**' }
