@@ -7,6 +7,17 @@ const toOrigin = (value?: string): string | undefined => {
   try { return value ? new URL(value).origin : undefined } catch { return undefined }
 }
 
+// Add per-project third-party origins here when the product adopts a new tool (same idea as images.remotePatterns).
+// A Report-Only violation in Sentry/console tells you the exact origin and directive to add.
+const PROJECT_CSP_SOURCES = {
+  script: [] as string[],
+  style: [] as string[],
+  img: [] as string[],
+  font: [] as string[],
+  connect: [] as string[],
+  frame: [] as string[]
+}
+
 const buildCspReportOnly = (): string => {
   const isDev = process.env.NODE_ENV !== 'production'
   const apiOrigin = toOrigin(process.env.NEXT_PUBLIC_API_URL)
@@ -21,22 +32,31 @@ const buildCspReportOnly = (): string => {
     }
   } catch { /* malformed DSN — report endpoint skipped, policy still emitted */ }
 
-  const scriptSrc = ['\'self\'', '\'unsafe-inline\'', 'https://browser.sentry-cdn.com']
-  if (clarity) scriptSrc.push('https://www.clarity.ms')
-  if (isDev) scriptSrc.push('https://unpkg.com')
-
-  const connectSrc = ['\'self\'', 'https://*.ingest.sentry.io', 'https://*.ingest.us.sentry.io']
-  if (apiOrigin) connectSrc.push(apiOrigin)
-  if (clarity) connectSrc.push('https://*.clarity.ms')
-  if (isDev) connectSrc.push('ws:')
+  const src = {
+    script: ['\'self\'', '\'unsafe-inline\'', 'https://browser.sentry-cdn.com', ...PROJECT_CSP_SOURCES.script],
+    style: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com', ...PROJECT_CSP_SOURCES.style],
+    img: ['\'self\'', 'data:', 'blob:', ...PROJECT_CSP_SOURCES.img],
+    font: ['\'self\'', 'data:', 'https://fonts.gstatic.com', ...PROJECT_CSP_SOURCES.font],
+    connect: ['\'self\'', 'https://*.ingest.sentry.io', 'https://*.ingest.us.sentry.io', ...PROJECT_CSP_SOURCES.connect]
+  }
+  if (clarity) {
+    src.script.push('https://www.clarity.ms')
+    src.connect.push('https://*.clarity.ms')
+  }
+  if (isDev) {
+    src.script.push('https://unpkg.com')
+    src.connect.push('ws:')
+  }
+  if (apiOrigin) src.connect.push(apiOrigin)
 
   return [
     'default-src \'self\'',
-    `script-src ${scriptSrc.join(' ')}`,
-    'style-src \'self\' \'unsafe-inline\' https://fonts.googleapis.com',
-    'img-src \'self\' data: blob:',
-    'font-src \'self\' data: https://fonts.gstatic.com',
-    `connect-src ${connectSrc.join(' ')}`,
+    `script-src ${src.script.join(' ')}`,
+    `style-src ${src.style.join(' ')}`,
+    `img-src ${src.img.join(' ')}`,
+    `font-src ${src.font.join(' ')}`,
+    `connect-src ${src.connect.join(' ')}`,
+    ...(PROJECT_CSP_SOURCES.frame.length > 0 ? [`frame-src ${['\'self\'', ...PROJECT_CSP_SOURCES.frame].join(' ')}`] : []),
     'worker-src \'self\' blob:',
     'object-src \'none\'',
     'base-uri \'self\'',
