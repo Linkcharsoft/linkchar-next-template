@@ -1,4 +1,5 @@
 import 'server-only'
+import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
 import { unstable_rethrow } from 'next/navigation'
 import { getMyUser } from '@/api/auth'
@@ -18,7 +19,7 @@ export const getServerSession = async (): Promise<SessionType | null> => {
     return session
   } catch (error) {
     unstable_rethrow(error)
-    console.error('getServerSession failed:', error)
+    Sentry.captureException(error)
     return null
   }
 }
@@ -37,7 +38,7 @@ export const getServerUser = async (): Promise<UserType | null> => {
     return ok ? data : null
   } catch (error) {
     unstable_rethrow(error)
-    console.error('getServerUser failed:', error)
+    Sentry.captureException(error)
     return null
   }
 }

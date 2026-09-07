@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { NextResponse } from 'next/server'
 import { AUTH_ERRORS, AUTHENTICATED_HOME_PATH, SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { API_URL } from '@/constants/env'
@@ -71,7 +72,7 @@ async function refreshAccessToken (session: SessionType): Promise<SessionType | 
     setTimeout(() => refreshCache.delete(session.refresh), REFRESH_CACHE_TTL_MS)
     return result
   } catch (error) {
-    console.error('Proxy refresh network error:', error)
+    Sentry.captureException(error)
     return null
   } finally {
     refreshInFlight.delete(session.refresh)
@@ -107,14 +108,14 @@ async function resolveActiveSession (session: SessionType): Promise<ResolvedSess
     if (secondsLeft < REFRESH_THRESHOLD_SECONDS) {
       const refreshed = await refreshAccessToken(session)
       if (!refreshed) {
-        // Refresh failed — refresh token expired or revoked. Kill the session.
-        console.error(AUTH_ERRORS['refresh-token'])
+        // Expected on normal expiry — a log, not an error, so it doesn't eat the Sentry quota.
+        Sentry.logger.info(AUTH_ERRORS['refresh-token'])
         return { kill: true }
       }
       return { kill: false, session: refreshed, refreshed: true }
     }
   } catch (error) {
-    console.error('Proxy refresh check failed:', error)
+    Sentry.captureException(error)
   }
 
   return { kill: false, session, refreshed: false }
@@ -146,7 +147,8 @@ export async function proxy (req: NextRequest) {
   try {
     session = await decryptSession(authCookie.value)
   } catch (error) {
-    console.error('Proxy session decryption failed:', error)
+    // Rotated AUTH_SECRET or a tampered cookie — worth seeing, but the user just gets logged out.
+    Sentry.captureException(error, { level: 'warning' })
   }
 
   if (!session) {

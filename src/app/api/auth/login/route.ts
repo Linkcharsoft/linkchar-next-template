@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -59,8 +60,8 @@ export async function POST (req: NextRequest) {
       })
     }
   } catch (error) {
-    // Log the real failure server-side; the client gets a generic message, never internals.
-    console.error('Login route error:', error)
+    // Report the real failure to Sentry; the client gets a generic message, never internals.
+    Sentry.captureException(error)
     return NextResponse.json(
       { message: AUTH_ERRORS.login },
       { status: 502 }
