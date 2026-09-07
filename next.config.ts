@@ -67,6 +67,8 @@ const buildCspReportOnly = (): string => {
   ].join('; ')
 }
 
+const isProduction = process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production'
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   reactStrictMode: true,
@@ -79,14 +81,11 @@ const nextConfig: NextConfig = {
     '@opentelemetry/instrumentation'
   ],
   compiler: {
-    // Keep error/warn in production.
-    removeConsole: (process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production')
-      ? { exclude: ['error', 'warn'] }
-      : false
+    removeConsole: isProduction
   },
   logging: {
     fetches: {
-      fullUrl: true
+      fullUrl: !isProduction
     }
   },
   sassOptions: {
@@ -119,8 +118,11 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
           // Disable sensitive APIs by default; re-enable per feature (e.g. `geolocation=(self)`)
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=()' },
-          // Observe-first CSP — switch the key to Content-Security-Policy once reports come back clean
-          { key: 'Content-Security-Policy-Report-Only', value: buildCspReportOnly() }
+          // Observe-first CSP — switch the key to Content-Security-Policy once reports come back clean.
+          // Off in production: report-uri is staging-only there, so it would only spam the browser console.
+          ...(isProduction
+            ? []
+            : [{ key: 'Content-Security-Policy-Report-Only', value: buildCspReportOnly() }])
         ]
       },
       {
