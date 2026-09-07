@@ -1,6 +1,5 @@
 'use client'
 import './ChangePasswordPage.sass'
-import * as Sentry from '@sentry/nextjs'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -14,6 +13,7 @@ import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
 import useUserStore from '@/stores/userStore'
+import { captureError } from '@/utils/captureError'
 
 
 const ChangePasswordPage = () => {
@@ -69,7 +69,7 @@ const ChangePasswordPage = () => {
         summary: 'Error sending email, please try again later',
         life: 5000
       })
-      Sentry.captureException(error)
+      captureError('password-recovery-change', error)
     } finally {
       closeModal('loadingModal')
       setButtonDisabled(false)

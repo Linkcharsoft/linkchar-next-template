@@ -1,6 +1,5 @@
 'use client'
 import './EmailValidationPage.sass'
-import * as Sentry from '@sentry/nextjs'
 import Link from 'next/link'
 import { useIsClient } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/auth'
@@ -9,6 +8,7 @@ import OutlookIcon from '@/assets/icons/OutlookIcon'
 import CustomButton from '@/components/CustomButton/CustomButton'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
 import useModalStore from '@/stores/modalStore'
+import { captureError } from '@/utils/captureError'
 
 
 type Props = {
@@ -61,7 +61,7 @@ const EmailValidationPage = ({ email }: Props) => {
         summary: 'Error sending email, please try again later',
         life: 5000
       })
-      Sentry.captureException(error)
+      captureError('resend-email-confirmation', error)
     } finally {
       closeModal('loadingModal')
     }

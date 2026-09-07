@@ -1,6 +1,5 @@
 'use client'
 import './PasswordRecoveryPage.sass'
-import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
@@ -17,6 +16,7 @@ import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePersistentTimer from '@/hooks/usePersistentTimer'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
+import { captureError } from '@/utils/captureError'
 
 
 type PasswordRecoveryFormikType = {
@@ -81,7 +81,7 @@ const PasswordRecoveryPage = () => {
           summary: 'Error sending email, please try again later',
           life: 5000
         })
-        Sentry.captureException(error)
+        captureError('password-recovery-request', error)
       } finally {
         closeModal('loadingModal')
       }

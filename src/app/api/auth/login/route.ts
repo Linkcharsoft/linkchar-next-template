@@ -1,9 +1,10 @@
-import * as Sentry from '@sentry/nextjs'
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { login } from '@/api/auth'
 import { AUTH_ERRORS } from '@/constants/auth'
+import { captureError } from '@/utils/captureError'
+
 import { setSessionCookies } from '@/utils/sessionCookies'
 import { isValidOrigin } from '@/utils/validateOrigin'
 import type { SessionType } from '@/types/auth'
@@ -60,8 +61,8 @@ export async function POST (req: NextRequest) {
       })
     }
   } catch (error) {
-    // Report the real failure to Sentry; the client gets a generic message, never internals.
-    Sentry.captureException(error)
+    // Report the real failure; the client gets a generic message, never internals.
+    captureError('login-route', error)
     return NextResponse.json(
       { message: AUTH_ERRORS.login },
       { status: 502 }

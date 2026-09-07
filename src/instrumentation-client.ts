@@ -4,6 +4,7 @@
 
 import * as Sentry from '@sentry/nextjs'
 import { APP_ENV } from './constants/env'
+import { captureError } from './utils/captureError'
 
 const isDev = APP_ENV === 'development'
 const isStaging = APP_ENV === 'staging'
@@ -56,7 +57,7 @@ if (!isDev) {
       }))
     })
     .catch((error) => {
-      Sentry.captureException(error, { tags: { scope: 'replay-lazy-load' } })
+      captureError('replay-lazy-load', error)
     })
 }
 

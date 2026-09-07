@@ -1,6 +1,5 @@
 'use client'
 import './SignupPage.sass'
-import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
@@ -16,6 +15,7 @@ import PasswordValidation from '@/components/PasswordValidator/PasswordValidator
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
+import { captureError } from '@/utils/captureError'
 import validatePassword from '@/utils/validatePassword'
 
 
@@ -98,7 +98,7 @@ const SignupPage = () => {
         }
       } catch (error) {
         setGeneralError('An error occurred. Please try again.')
-        Sentry.captureException(error)
+        captureError('signup-submit', error)
       } finally {
         closeModal('loadingModal')
       }

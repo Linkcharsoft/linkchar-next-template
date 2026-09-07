@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react'
 import { LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { CLARITY_ID } from '@/constants/env'
 import useUserStore from '@/stores/userStore'
+import { captureError } from '@/utils/captureError'
 import ModalsProvider from './ModalsProvider'
 import type { ReactNode } from 'react'
 
@@ -19,7 +20,7 @@ interface Props {
 if (globalThis.window !== undefined) {
   import('primelocale/es.json')
     .then(({ es }) => addLocale('es', es))
-    .catch((error) => Sentry.captureException(error, { tags: { scope: 'primereact-locale' } }))
+    .catch((error) => captureError('primereact-locale', error))
 }
 
 const ProvidersContainer = ({ children }: Props) => {

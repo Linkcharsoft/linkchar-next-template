@@ -1,6 +1,5 @@
 'use client'
 import './LoginPage.sass'
-import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
@@ -13,6 +12,7 @@ import InputContainer from '@/components/inputs/InputContainer/InputContainer'
 import { AUTH_INPUT_ERRORS } from '@/constants/auth'
 import usePressKey from '@/hooks/usePressKey'
 import useModalStore from '@/stores/modalStore'
+import { captureError } from '@/utils/captureError'
 
 
 type LoginFormikType = {
@@ -96,7 +96,7 @@ const LoginPage = () => {
           email: AUTH_INPUT_ERRORS.general,
           password: AUTH_INPUT_ERRORS.general
         })
-        Sentry.captureException(error)
+        captureError('login-submit', error)
         closeModal('loadingModal')
       }
     }
