@@ -127,6 +127,7 @@ src/
   - `AUTH_PATHS`: routes for unauthenticated users only (login, signup, password recovery).
   - `PUBLIC_PATHS`: routes accessible to everyone (must be added explicitly).
   - Anything else is protected and redirects to `/login` without a valid session.
+  - `SENTRY_TUNNEL_PATH` (`/monitoring`) is exempted in `shouldBypassProxy` and must stay in sync with `tunnelRoute` in `next.config.ts` — without the exemption, error reporting from logged-out users silently dies (envelopes get 307'd to `/login`).
 
 ### Route Groups & Layouts
 
@@ -135,6 +136,12 @@ src/
 - Layouts in `src/app/` are **thin wrappers** that delegate to layout components in `src/layouts/`.
 - Layout components live in `src/layouts/LayoutName/LayoutName.tsx` with colocated styles.
 - `GeneralLayout` handles auth token/user fetching and wraps with `ProvidersContainer`.
+
+### Error Boundaries
+
+- **ONE root boundary, deliberately**: `src/app/error.tsx` → `src/screens/ErrorPage/` (Sentry `captureException` on mount + `reset` retry). It renders inside the root layout, so the shell and providers survive. Per-segment `error.tsx` / `loading.tsx` files are per-project decisions — the template ships none.
+- `src/app/global-error.tsx` catches ONLY root-layout failures and **replaces the entire root layout**, so nothing the layout provides exists there: it must import `@/styles/index.sass`, set its title via `<head><title>` (a `metadata` export is inert in a `'use client'` file), and **never load `next/font`** — not even through a shared module (breaks every route in dev under `reactCompiler`; the Google `<link>` + inline CSS variable pattern is the way — see [`.claude/CONVENTIONS.md > Font Loading`](./.claude/CONVENTIONS.md#font-loading)).
+- Neither screen is visible in dev (the overlay covers them). Production preview: `pnpm run serve`, then `/sentry-example-page` → "Client Break" throws during render and lands on `ErrorPage`; global-error requires a temporary `throw` in `src/app/layout.tsx`.
 
 ## Design Tokens (Figma & Claude Design imports)
 
@@ -202,6 +209,14 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 - Public vars use `NEXT_PUBLIC_` prefix.
 - See `.env.example` for the full list of required variables.
 - `APP_ENV` is validated in `constants/env.ts` to be one of `production`, `staging`, or `development`.
+
+## Security
+
+- **Headers** live in `next.config.ts`, each with a why-comment. The CSP ships in **Report-Only** mode: nothing is blocked; violations log to the browser console and, on staging only, POST to Sentry (`report-uri` derived from the DSN — gated to staging so browser-generated reports don't eat the error quota). Hardening path once reports come back clean: per-request nonces, then switch the header key to `Content-Security-Policy`.
+- **Per-project CSP origins**: when a product adopts a new third-party tool, add its origins to `PROJECT_CSP_SOURCES` in `next.config.ts` (same idiom as `images.remotePatterns`). The Report-Only violation report names the exact origin and directive to add; nothing breaks in the meantime.
+- **CSRF**: `isValidOrigin` (`src/utils/validateOrigin.ts`) guards the state-changing auth route handlers (POST/DELETE). GET handlers like `/api/auth/me` skip it on purpose. Origins are compared normalized (`new URL(x).origin`), and `localhost`/`127.0.0.1` pass in development.
+- **`/api/auth/delete-test-users`** responds only when `APP_ENV === 'development'` — 404 everywhere else.
+- **Amplify runtime env**: `amplify.yml` writes ONLY `AUTH_SECRET` into `.env.production`; test credentials (`MAILSLURP_API_KEY`, `AUTH_DEFAULT_*`) never reach the deployed bundle.
 
 ## Swagger/OpenAPI-to-Code Workflow
 
@@ -285,6 +300,8 @@ The template ships with `src/app/sentry-example-page/page.tsx` + `src/app/api/se
 - Config: `cypress.config.ts` at the repo root — `specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}'`, `baseUrl: http://localhost:3000` (so the app must be running).
 - Commands: `pnpm run test-open` (interactive) · `pnpm run test-run` (headless).
 - **Specs DO exist** — 8 of them, under **`src/cypress/e2e/`** (**not** a root `cypress/`; looking for one is what hides them): the auth flow (`Login`, `SignUp`, `EmailValidation`, `PasswordRecovery`, `ChangePassword`, `Flow`, `DeleteTestUser`) plus `NavigationProtection.cy.ts`. Alongside them: `src/cypress/support/` (`commands.ts`, `e2e.ts`), `src/cypress/utils/` (shared helpers), and its own `tsconfig.json`.
+
+- `DeleteTestUser.cy.ts` calls `/api/auth/delete-test-users`, which only exists when `APP_ENV === 'development'` — an e2e run against a staging build fails that spec by design.
 
 **`src/cypress/utils/` encodes live DOM contracts — components must not break them.** `checkInputError.ts` selects `.parents('.InputContainer').find('.InputError')`, `checkPasswordErrors.ts` likewise leans on `PasswordValidator`'s markup. Changing or extending those components means keeping the root class and the error element's descendant relationship intact, or the auth specs go red.
 
