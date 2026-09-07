@@ -1,5 +1,6 @@
 'use client'
 import './EmailValidationPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import Link from 'next/link'
 import { useIsClient } from 'usehooks-ts'
 import { resendEmailConfirmation } from '@/api/auth'
@@ -60,9 +61,7 @@ const EmailValidationPage = ({ email }: Props) => {
         summary: 'Error sending email, please try again later',
         life: 5000
       })
-      // ! Sentry
-      const message = error instanceof Error ? error.message : error
-      console.error(`Error: ${message}`)
+      Sentry.captureException(error)
     } finally {
       closeModal('loadingModal')
     }

@@ -19,7 +19,7 @@ interface Props {
 if (globalThis.window !== undefined) {
   import('primelocale/es.json')
     .then(({ es }) => addLocale('es', es))
-    .catch((error) => console.error('Failed to load PrimeReact ES locale', error))
+    .catch((error) => Sentry.captureException(error, { tags: { scope: 'primereact-locale' } }))
 }
 
 const ProvidersContainer = ({ children }: Props) => {

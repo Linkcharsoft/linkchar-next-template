@@ -1,5 +1,6 @@
 'use client'
 import './LoginPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
@@ -95,9 +96,7 @@ const LoginPage = () => {
           email: AUTH_INPUT_ERRORS.general,
           password: AUTH_INPUT_ERRORS.general
         })
-        // ! Sentry
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        Sentry.captureException(error)
         closeModal('loadingModal')
       }
     }

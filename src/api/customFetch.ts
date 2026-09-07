@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { AUTH_ERRORS } from '@/constants/auth'
 import { API_URL } from '@/constants/env'
 
@@ -61,7 +62,7 @@ const parseResponseData = async <T extends object>(response: Response): Promise<
     }
     return {} as T
   } catch (error) {
-    console.error(error)
+    Sentry.captureException(error)
     throw new Error('The response was not a JSON')
   }
 }
@@ -129,7 +130,7 @@ export const customFetch = async <T extends object>({
         _retryCount: _retryCount + 1
       })
     } catch (error) {
-      console.error(error)
+      Sentry.captureException(error)
       await handleUnauthorizedLogout()
     }
   }
@@ -167,7 +168,7 @@ const handleUnauthorizedLogout = async () => {
   try {
     await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
   } catch (error) {
-    console.error('Logout request failed:', error)
+    Sentry.captureException(error, { tags: { scope: 'forced-logout' } })
   } finally {
     // redirect() throws NEXT_REDIRECT (unhandled outside render) and hooks aren't available here.
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload on forced logout intentionally resets client state

@@ -1,5 +1,6 @@
 'use client'
 import './PasswordRecoveryConfirmationPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { Password } from 'primereact/password'
@@ -63,8 +64,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
           summary: 'Error verifying link, please try again later',
           life: 5000
         })
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        Sentry.captureException(error)
       } finally {
         closeModal('loadingModal')
       }
@@ -141,9 +141,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
           summary: 'Error changing password, please try again later',
           life: 5000
         })
-        // ! Sentry
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        Sentry.captureException(error)
       } finally {
         closeModal('loadingModal')
       }

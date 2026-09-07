@@ -56,7 +56,7 @@ if (!isDev) {
       }))
     })
     .catch((error) => {
-      console.error('Failed to lazy-load Sentry replayIntegration', error)
+      Sentry.captureException(error, { tags: { scope: 'replay-lazy-load' } })
     })
 }
 

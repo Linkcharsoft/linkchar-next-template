@@ -1,5 +1,6 @@
 'use client'
 import './SignupPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { InputText } from 'primereact/inputtext'
@@ -97,9 +98,7 @@ const SignupPage = () => {
         }
       } catch (error) {
         setGeneralError('An error occurred. Please try again.')
-        // ! Sentry
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        Sentry.captureException(error)
       } finally {
         closeModal('loadingModal')
       }

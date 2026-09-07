@@ -1,5 +1,6 @@
 'use client'
 import './ChangePasswordPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -68,9 +69,7 @@ const ChangePasswordPage = () => {
         summary: 'Error sending email, please try again later',
         life: 5000
       })
-      // ! Sentry
-      const message = error instanceof Error ? error.message : error
-      console.error(`Error: ${message}`)
+      Sentry.captureException(error)
     } finally {
       closeModal('loadingModal')
       setButtonDisabled(false)

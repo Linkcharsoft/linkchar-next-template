@@ -1,5 +1,6 @@
 'use client'
 import './PasswordRecoveryPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
@@ -80,9 +81,7 @@ const PasswordRecoveryPage = () => {
           summary: 'Error sending email, please try again later',
           life: 5000
         })
-        // ! Sentry
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        Sentry.captureException(error)
       } finally {
         closeModal('loadingModal')
       }

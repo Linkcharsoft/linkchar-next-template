@@ -1,5 +1,6 @@
 'use client'
 import './ChangePasswordConfirmationPage.sass'
+import * as Sentry from '@sentry/nextjs'
 import { useFormik } from 'formik'
 import { useRouter } from 'next/navigation'
 import { Password } from 'primereact/password'
@@ -85,8 +86,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
           summary: 'Error verifying link, please try again later',
           life: 5000
         })
-        const message = error instanceof Error ? error.message : error
-        console.error(`Error: ${message}`)
+        Sentry.captureException(error)
       } finally {
         closeModal('loadingModal')
       }
@@ -147,7 +147,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
           try {
             await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' })
           } catch (logoutError) {
-            console.error('Logout after password change failed:', logoutError)
+            Sentry.captureException(logoutError, { tags: { scope: 'logout-after-password-change' } })
           }
 
           setNotification({
@@ -170,8 +170,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
           summary: 'Error changing password, please try again later',
           life: 5000
         })
-        // ! Sentry
-        console.error(`Error: ${error}`)
+        Sentry.captureException(error)
       } finally {
         closeModal('loadingModal')
       }
