@@ -168,18 +168,6 @@ interface Props {
 const Layout = async ({ children }: Props) => (
   <html lang="en" className={`${merriweatherSans.variable} ${primeIcons.variable}`}>
     <head>
-      {/* Tailwind */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-              const style = document.createElement('style')
-              style.innerHTML = '@layer tailwind-base, primereact, tailwind-utilities;'
-              style.setAttribute('type', 'text/css')
-              document.querySelector('head').prepend(style)
-            `
-        }}
-      />
-
       {APP_ENV === 'development' && (
         <Script
           src="//unpkg.com/react-scan/dist/auto.global.js"
