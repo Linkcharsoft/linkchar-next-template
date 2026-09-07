@@ -67,7 +67,11 @@ const buildCspReportOnly = (): string => {
   ].join('; ')
 }
 
-const isProduction = process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production'
+// A staging build runs with NODE_ENV=production, so it must be excluded explicitly:
+// it is the environment that still needs console output and CSP reports.
+const isStaging = process.env.NEXT_PUBLIC_APP_ENV === 'staging'
+const isProduction = !isStaging &&
+  (process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production')
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
