@@ -3,7 +3,7 @@ import './ChangePasswordPage.sass'
 import { AnimatePresence, m } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useIsClient } from 'usehooks-ts'
 import { passwordRecoveryChange } from '@/api/auth'
 import GmailIcon from '@/assets/icons/GmailIcon'
@@ -25,6 +25,7 @@ const ChangePasswordPage = () => {
   const router = useRouter()
   const [buttonDisabled, setButtonDisabled] = useState<boolean>(false)
   const [showEmails, setShowEmails] = useState<boolean>(false)
+  const [userMissing, setUserMissing] = useState<boolean>(false)
   const {
     timer,
     startTimer,
@@ -35,17 +36,28 @@ const ChangePasswordPage = () => {
   })
 
 
+  // Hydration lands in an effect, so give the user a moment before treating "no user" as a failure.
+  useEffect(() => {
+    if (user) return
+
+    const timeout = setTimeout(() => setUserMissing(true), 3000)
+    return () => clearTimeout(timeout)
+  }, [user])
+
+
   const handleGetEmail = async () => {
+    if (!user) return
+
     openModal('loadingModal', {
       title: 'Sending email',
-      content: 'Plase wait...'
+      content: 'Please wait...'
     })
     setButtonDisabled(true)
 
     try {
       const { ok } = await passwordRecoveryChange({
         request_type: 'change',
-        email: user?.email as string
+        email: user.email
       })
 
       if (ok) {
@@ -82,7 +94,44 @@ const ChangePasswordPage = () => {
   })
 
 
-  if (!isClient || !user) return null
+  if (!isClient) return null
+
+  if (!user) {
+    if (!userMissing) return null
+
+    return (
+      <main id="main" className="AuthLayout">
+        <section className="AuthLayout__Section">
+          <h1 className="AuthLayout__Title">
+            Change password
+          </h1>
+
+          <i className="pi pi-exclamation-triangle text-regular-48 text-center text-orange-600" aria-hidden="true"/>
+
+          <p className="text-regular-16 text-center text-surface-800">
+            We couldn&apos;t load your account, please try again
+          </p>
+
+          <div className="flex w-full flex-col gap-4">
+            <CustomButton
+              className="w-full"
+              onClick={() => router.refresh()}
+            >
+              Try again
+            </CustomButton>
+
+            <CustomButton
+              variant='transparent'
+              className='w-full'
+              onClick={() => router.back()}
+            >
+              Go back
+            </CustomButton>
+          </div>
+        </section>
+      </main>
+    )
+  }
 
   return (
     <main id="main" className="AuthLayout">
@@ -99,7 +148,7 @@ const ChangePasswordPage = () => {
 
         <div className="flex flex-col gap-4">
           <p className="text-regular-16 text-center text-surface-800">
-            We will send you an email to <span className="text-semibold-16">{ user?.email }</span> with a link to change your password
+            We will send you an email to <span className="text-semibold-16">{ user.email }</span> with a link to change your password
           </p>
           <p className="text-regular-16 text-center text-surface-800">
             Make sure to check the spam folder
@@ -149,7 +198,7 @@ const ChangePasswordPage = () => {
 
           <CustomButton
             variant='transparent'
-            onClick={router.back}
+            onClick={() => router.back()}
             className='w-full'
             type='button'
             disabled={buttonDisabled}
