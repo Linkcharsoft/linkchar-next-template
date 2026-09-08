@@ -2,8 +2,8 @@
 
 // Fonts load via next/font in src/app/layout.tsx — don't @import from fonts.googleapis.com (render-blocking).
 
-// Taildwind
-@layer tailwind-base, primereact, tailwind-utilities
+// `general` sits between PrimeReact and the utilities: it overrides the theme, but any Tailwind utility overrides it.
+@layer tailwind-base, primereact, general, tailwind-utilities
 
 @layer tailwind-base
   @tailwind base
@@ -12,12 +12,9 @@
   @tailwind components
   @tailwind utilities
 
-// PrimeIcons FOIT fix — override the library's `font-family: 'primeicons'` (loaded
-// with `font-display: block`) to use the swap-display variable from next/font/local
-// declared in src/app/layout.tsx. Without this, icons remain invisible until the
-// font finishes loading, failing Lighthouse "Ensure text remains visible".
+// PrimeIcons ships `font-display: block` (FOIT) — force the swap-display variable from next/font/local in layout.tsx.
 .pi
   font-family: var(--font-primeicons) !important
 
-// Resources
-@include meta.load-css('./general')
+@layer general
+  @include meta.load-css('./general')
