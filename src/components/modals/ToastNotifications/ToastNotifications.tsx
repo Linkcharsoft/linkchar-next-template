@@ -18,21 +18,19 @@ const STATE_ICONS: {
 
 const ToastNotifications = () => {
   const toastRef = useRef<Toast>(null)
-  const notification = useModalStore((s) => s.notification)
-  const setNotification = useModalStore((s) => s.setNotification)
+  const notifications = useModalStore((s) => s.notifications)
+  const clearNotifications = useModalStore((s) => s.clearNotifications)
   const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {
-    if (notification.summary) {
-      toastRef.current?.show({
-        ...notification,
-        icon: `${STATE_ICONS[notification.severity!]} ${isMobile ? 'text-regular-24' : 'text-regular-28'}`
-      })
+    if (notifications.length === 0) return
 
-      // Reset state
-      setNotification({ severity: undefined, summary: '' })
-    }
-  }, [notification])
+    toastRef.current?.show(notifications.map((notification) => ({
+      ...notification,
+      icon: `${STATE_ICONS[notification.severity]} ${isMobile ? 'text-regular-24' : 'text-regular-28'}`
+    })))
+    clearNotifications()
+  }, [notifications])
 
   return (
     <Toast

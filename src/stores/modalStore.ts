@@ -2,12 +2,10 @@ import { create } from 'zustand'
 import type { StateTypes } from '@/types/general'
 import type { ToastMessage } from 'primereact/toast'
 
-// * Base Type
 type ModalStateBase<T> = T & {
   show: boolean
 }
 
-// * Modal Types
 type LoadingModal = {
   title: string
   subtitle?: string
@@ -24,15 +22,21 @@ type StateModal = {
   }
 }
 
-// * Modal payloads
 type ModalPayloads = {
   loadingModal: LoadingModal
   stateModal: StateModal
 }
 
-// * Modal map
 type ModalStateMap = {
   [key in keyof ModalPayloads]: ModalStateBase<ModalPayloads[key]>
+}
+
+type NotificationType = {
+  severity: StateTypes
+  summary: ToastMessage['summary']
+  detail?: ToastMessage['detail']
+  life?: number
+  sticky?: boolean
 }
 
 interface ModalStore {
@@ -41,16 +45,10 @@ interface ModalStore {
   closeModal: <K extends keyof ModalPayloads>(key: K) => void
   closeAllModals: () => void
 
-  notification: Omit<ToastMessage, 'severity'> & {
-    severity: Exclude<ToastMessage['severity'], 'secondary' | 'contrast'>
-  }
-  setNotification: (notification: {
-    severity: Exclude<ToastMessage['severity'], 'secondary' | 'contrast'>
-    summary: ToastMessage['summary']
-    detail?: ToastMessage['detail']
-    life?: number
-    sticky?: boolean
-  }) => void
+  // A queue, not a slot: two notifications fired in the same tick must both reach the toast.
+  notifications: NotificationType[]
+  setNotification: (notification: NotificationType) => void
+  clearNotifications: () => void
 }
 
 const initialModals: ModalStateMap = {
@@ -105,17 +103,12 @@ const useModalStore = create<ModalStore>((set) => ({
     }))
   },
 
-  notification: {
-    severity: undefined,
-    summary: ''
-  },
+  notifications: [],
   setNotification: (notification) =>
-    set(() => ({
-      notification: {
-        ...notification,
-        life: notification.life ?? 5000
-      }
-    }))
+    set((state) => ({
+      notifications: [...state.notifications, { ...notification, life: notification.life ?? 5000 }]
+    })),
+  clearNotifications: () => set({ notifications: [] })
 }))
 
 export default useModalStore
