@@ -1,14 +1,12 @@
 'use client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useSessionStorage } from 'usehooks-ts'
 
 /**
  * @hook
  * @name usePersistentTimer
- * @description Custom hook that implements a persistent countdown timer.
- * The timer's value is saved and retrieved from Session Storage, allowing the
- * countdown to continue even after refreshing the page or navigating to other tabs
- * (as long as the session remains active).
+ * @description Persistent countdown timer. Session Storage holds the deadline (epoch ms), not the
+ * remaining seconds, so time keeps elapsing across refreshes and while the tab is in the background.
  *
  * @example
  * ```tsx
@@ -25,6 +23,8 @@ import { useSessionStorage } from 'usehooks-ts'
  * ```
  */
 
+const secondsLeft = (deadline: number, now: number): number => Math.max(0, Math.ceil((deadline - now) / 1000))
+
 const usePersistentTimer = ({
   storageKey,
   time,
@@ -39,35 +39,35 @@ const usePersistentTimer = ({
   stopTimer: () => void
   timerIsRunning: boolean
 } => {
-  const [timer, setTimer] = useSessionStorage<number>(storageKey, initialTime)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // null = never started in this session; the initial countdown is persisted on mount so a reload continues it.
+  const [deadline, setDeadline] = useSessionStorage<number | null>(storageKey, null)
+  const [now, setNow] = useState(() => Date.now())
+  const timer = secondsLeft(deadline ?? 0, now)
   const isRunning = timer > 0
 
   useEffect(() => {
-    if (!isRunning) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-      return
-    }
+    if (deadline === null && initialTime > 0) setDeadline(Date.now() + initialTime * 1000)
+  }, [deadline, initialTime, setDeadline])
 
-    if (intervalRef.current) return
+  useEffect(() => {
+    if (!isRunning) return
 
-    intervalRef.current = setInterval(() => {
-      setTimer(prev => Math.max(0, prev - 1))
-    }, 1000)
-
+    const tick = () => setNow(Date.now())
+    // Immediate tick: the deadline may have been written after `now` was captured on first render.
+    const firstTick = setTimeout(tick, 0)
+    const interval = setInterval(tick, 1000)
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
+      clearTimeout(firstTick)
+      clearInterval(interval)
     }
-  }, [isRunning, setTimer])
+  }, [isRunning])
 
-  const startTimer = () => setTimer(time)
-  const stopTimer = () => setTimer(0)
+  const startTimer = () => {
+    const startedAt = Date.now()
+    setNow(startedAt)
+    setDeadline(startedAt + time * 1000)
+  }
+  const stopTimer = () => setDeadline(0)
 
   return {
     timer,
