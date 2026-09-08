@@ -171,7 +171,7 @@ Post a short summary of what changed (the slug/displayName used, files renamed, 
 - [ ] **Brand assets** in `public/seo/` (favicons, `social-banner.webp`, `splash.webp`) still carry Inferencia/Linkchar branding — regenerate for the new product.
 - [ ] **HomePage demo**: remove the Three.js shader content (and the "Coming Soon" / "Powered by Inferencia" markup) in `src/screens/HomePage/HomePage.tsx` and run `pnpm remove three @types/three` once you build the real landing.
 - [ ] **Metadata**: fill `description`, `keywords`, and the OpenGraph/Twitter descriptions once the product is defined.
-- [ ] **Sentry cleanup before prod**: delete `src/app/sentry-example-page/` + `src/app/api/sentry-example-api/route.ts` and the `/sentry-example-page` line in `src/proxy.ts` (see CLAUDE.md "Cleanup before production").
+- [ ] **Sentry cleanup before prod**: delete `src/app/sentry-example-page/`, `src/screens/SentryExamplePage/` + `src/app/api/sentry-example-api/route.ts` and the `/sentry-example-page` line in `src/proxy.ts` (see CLAUDE.md "Cleanup before production").
 
 ---
 

@@ -39,7 +39,7 @@ JSX tags in this codebase routinely span multiple lines. A single-line regex mis
 
 ## Scope (read once, applies to every step)
 
-The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.sass` carries hex by design until Step 7's `design-post-import` recolours it; `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` is a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
+The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.sass` carries hex by design until Step 7's `design-post-import` recolours it; `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` + `src/screens/SentryExamplePage/` are a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
 
 **The rule: `scope` NEVER narrows what you RUN — it partitions what you REPORT.** Run every check over the paths written in its own step, exactly as today. Then split the findings into two labelled lists:
 
@@ -116,7 +116,7 @@ The parent may pass a `scope`: the files this import created or modified. Withou
 32. **Forbidden typography utilities** in `src/screens/`, `src/components/`, `src/layouts/`:
     - Tailwind default sizes: `text-xs`…`text-9xl`.
     - Tailwind default weights: `font-thin`…`font-black`.
-    - Project sizes used WITHOUT a weight prefix (regex, not enumerated): `rg -nU --type-add 'styles:*.{tsx,ts,sass}' --type styles '\btext-\d+\b' src/screens src/components src/layouts` — `\b` avoids false positives on `text-bold-24` etc. Fix = add explicit weight. Optionally cross-check against `tailwind.config.js` `fontSize` keys. Exclude `src/app/sentry-example-page/page.tsx` ONLY if it still exists.
+    - Project sizes used WITHOUT a weight prefix (regex, not enumerated): `rg -nU --type-add 'styles:*.{tsx,ts,sass}' --type styles '\btext-\d+\b' src/screens src/components src/layouts` — `\b` avoids false positives on `text-bold-24` etc. Fix = add explicit weight. Optionally cross-check against `tailwind.config.js` `fontSize` keys. Exclude `src/screens/SentryExamplePage/SentryExamplePage.tsx` ONLY if it still exists.
 
 ### 10. Design tokens map sync
 33. **`design-tokens-map.md` consistency with `tailwind.config.js`**: this shared map is maintained by the tokens agent (`figma-design-tokens` / `claude-design-tokens`) and documents the source-variable → Tailwind-token mapping.
