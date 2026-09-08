@@ -224,8 +224,6 @@ Two consequences, both mandatory:
 
 `!important` utilities (`!rounded-[13px]`) also work but are noisier and harder to trace — prefer the chained selector.
 
-**The same trap ships globally in `general.sass`: `h1, h2, h3, h4, h5, h6 { margin: unset }` is unlayered, so an `mt-*` / `mb-*` utility on a heading never applies** — `render-audit.mjs` reports it as `FLUSH_HEADING` (measured: six headings on one page, every `mb-4` silently dead). Space a heading from its parent (`flex flex-col gap-*` on the section) or in the screen's own `.sass`, never with a margin utility on the heading itself.
-
 **This is a documented constraint, not a STOP.** An agent that hits it applies the pattern above and mentions it in its report; it does NOT emit a STOP. There is deliberately no [STOP Protocol](#stop-protocol) category for it — the first agent to meet it had nothing that fit and filed it as `COMPONENT_GAP` (which means "a primitive is used N×", something else entirely), so it reached the next agent by luck. Now that the rule is written down, every agent knows it up front and the handoff is a normal report line.
 
 ---
