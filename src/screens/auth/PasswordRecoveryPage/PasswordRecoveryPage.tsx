@@ -51,7 +51,7 @@ const PasswordRecoveryPage = () => {
     onSubmit: async ({ email }) => {
       openModal('loadingModal', {
         title: 'Sending email',
-        content: 'Plase wait...'
+        content: 'Please wait...'
       })
 
       try {
