@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { AUTH_ERRORS, AUTHENTICATED_HOME_PATH, SESSION_COOKIE_NAME, LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { API_URL } from '@/constants/env'
 import { captureError, captureInfo } from '@/utils/captureError'
-
 import { decryptSession } from '@/utils/crypto'
 import { clearSessionCookies, setSessionCookies } from '@/utils/sessionCookies'
 import type { SessionType } from '@/types/auth'
@@ -37,11 +36,20 @@ const refreshInFlight = new Map<string, Promise<SessionType | null>>()
 const refreshCache = new Map<string, { result: SessionType | null, timestamp: number }>()
 const REFRESH_CACHE_TTL_MS = 10_000
 
-async function refreshAccessToken (session: SessionType): Promise<SessionType | null> {
-  const cached = refreshCache.get(session.refresh)
-  if (cached && Date.now() - cached.timestamp < REFRESH_CACHE_TTL_MS) {
-    return cached.result
+// Pruned on use rather than by timer: a setTimeout may never fire in a frozen serverless worker.
+const pruneRefreshCache = () => {
+  const now = Date.now()
+  for (const [key, entry] of refreshCache) {
+    if (now - entry.timestamp >= REFRESH_CACHE_TTL_MS) refreshCache.delete(key)
   }
+}
+
+// Resolves null when the backend rejects the refresh token; throws when the backend is unreachable or 5xx.
+async function refreshAccessToken (session: SessionType): Promise<SessionType | null> {
+  pruneRefreshCache()
+
+  const cached = refreshCache.get(session.refresh)
+  if (cached) return cached.result
 
   const inFlight = refreshInFlight.get(session.refresh)
   if (inFlight) return inFlight
@@ -54,6 +62,7 @@ async function refreshAccessToken (session: SessionType): Promise<SessionType | 
       cache: 'no-store'
     })
 
+    if (res.status >= 500) throw new Error(`Refresh endpoint unavailable (${res.status})`)
     if (!res.ok) return null
 
     const data = await res.json()
@@ -70,15 +79,14 @@ async function refreshAccessToken (session: SessionType): Promise<SessionType | 
   try {
     const result = await promise
     refreshCache.set(session.refresh, { result, timestamp: Date.now() })
-    setTimeout(() => refreshCache.delete(session.refresh), REFRESH_CACHE_TTL_MS)
     return result
-  } catch (error) {
-    captureError('proxy-refresh-network', error)
-    return null
   } finally {
     refreshInFlight.delete(session.refresh)
   }
 }
+
+const isAuthPath = (pathname: string): boolean =>
+  AUTH_PATHS.has(pathname) || AUTH_PATH_PREFIXES.some(prefix => pathname.startsWith(prefix))
 
 // Static resources, API routes, Next.js chunks, and public paths skip auth entirely.
 const shouldBypassProxy = (pathname: string): boolean =>
@@ -88,9 +96,19 @@ const shouldBypassProxy = (pathname: string): boolean =>
   pathname === SENTRY_TUNNEL_PATH ||
   PUBLIC_PATHS.has(pathname)
 
-// Redirect to /login, optionally purging the session cookies on the way out.
+// Only same-site relative paths, never an auth page (would bounce forever) — anything else falls back to home.
+const safeNextPath = (value: string | null): string | null => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return null
+  return isAuthPath(value.split('?', 1)[0]) ? null : value
+}
+
+// Redirect to /login remembering where the user was going; optionally purging the session cookies on the way out.
 function redirectToLogin (req: NextRequest, clearCookies = false): NextResponse {
-  const response = NextResponse.redirect(new URL('/login', req.url))
+  const loginUrl = new URL('/login', req.url)
+  const { pathname, search } = req.nextUrl
+  if (pathname !== '/') loginUrl.searchParams.set('next', `${pathname}${search}`)
+
+  const response = NextResponse.redirect(loginUrl)
   if (clearCookies) clearSessionCookies(response.cookies)
   return response
 }
@@ -116,7 +134,8 @@ async function resolveActiveSession (session: SessionType): Promise<ResolvedSess
       return { kill: false, session: refreshed, refreshed: true }
     }
   } catch (error) {
-    captureError('proxy-refresh-check', error)
+    // Backend down or network error: keep the current (still valid) session instead of logging the user out.
+    captureError('proxy-refresh-unavailable', error, 'warning')
   }
 
   return { kill: false, session, refreshed: false }
@@ -128,7 +147,7 @@ export async function proxy (req: NextRequest) {
   // ⛔ Skip static resources, API routes, Next.js chunks, and public paths
   if (shouldBypassProxy(pathname)) return NextResponse.next()
 
-  const isAuthFlow = AUTH_PATHS.has(pathname) || AUTH_PATH_PREFIXES.some(prefix => pathname.startsWith(prefix))
+  const isAuthFlow = isAuthPath(pathname)
 
   const authCookie = req.cookies.get(SESSION_COOKIE_NAME)
   const listenerCookie = req.cookies.get(LISTENER_COOKIE_NAME)
@@ -165,14 +184,16 @@ export async function proxy (req: NextRequest) {
   const resolved = await resolveActiveSession(session)
   if (resolved.kill) return redirectToLogin(req, true)
 
-  // ✅ Authenticated: auth-flow paths bounce home, protected routes proceed
+  // ✅ Authenticated: auth-flow paths bounce to where the user was going (or home), protected routes proceed
+  const nextPath = safeNextPath(req.nextUrl.searchParams.get('next'))
   const response = isAuthFlow
-    ? NextResponse.redirect(new URL(AUTHENTICATED_HOME_PATH, req.url))
+    ? NextResponse.redirect(new URL(nextPath ?? AUTHENTICATED_HOME_PATH, req.url))
     : NextResponse.next()
   if (resolved.refreshed) await setSessionCookies(response.cookies, resolved.session)
   return response
 }
 
 export const config = {
-  matcher: '/:path*'
+  // Never invoked for static files, Next internals, API routes or the Sentry tunnel — none of them needs auth.
+  matcher: [String.raw`/((?!api|_next|monitoring|.*\.(?:png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|xml|pdf|zip|map)$).*)`]
 }

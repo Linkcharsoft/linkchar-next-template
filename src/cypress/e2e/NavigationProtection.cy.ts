@@ -10,7 +10,7 @@ describe('Navigation Protection: Unauthenticated 🔒', () => {
   it('Protected route redirects to login', () => {
     cy.visit('/dashboard', { failOnStatusCode: false })
 
-    cy.url().should('equal', `${baseURL}/login`)
+    cy.url().should('equal', `${baseURL}/login?next=%2Fdashboard`)
     cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
     cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
   })
@@ -60,7 +60,7 @@ describe('Navigation Protection: Corrupt Cookies 🧹', () => {
 
     cy.visit('/dashboard', { failOnStatusCode: false })
 
-    cy.url().should('equal', `${baseURL}/login`)
+    cy.url().should('equal', `${baseURL}/login?next=%2Fdashboard`)
     cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
     cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
   })
@@ -70,7 +70,7 @@ describe('Navigation Protection: Corrupt Cookies 🧹', () => {
 
     cy.visit('/dashboard', { failOnStatusCode: false })
 
-    cy.url().should('equal', `${baseURL}/login`)
+    cy.url().should('equal', `${baseURL}/login?next=%2Fdashboard`)
     cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
     cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
   })
@@ -81,7 +81,7 @@ describe('Navigation Protection: Corrupt Cookies 🧹', () => {
 
     cy.visit('/dashboard', { failOnStatusCode: false })
 
-    cy.url().should('equal', `${baseURL}/login`)
+    cy.url().should('equal', `${baseURL}/login?next=%2Fdashboard`)
     cy.getCookie(SESSION_COOKIE_NAME).should('not.exist')
     cy.getCookie(LISTENER_COOKIE_NAME).should('not.exist')
   })
