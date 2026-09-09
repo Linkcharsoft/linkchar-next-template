@@ -321,7 +321,8 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
 
    Do NOT translate every micro-interaction — only the ones Figma explicitly designed. If unsure, leave the component static; gratuitous animation is worse than none.
 
-10. **Validate**:
+10. **Skeleton + `loading.tsx`** — per [§ B12](../../docs/design-import-shared.md#b12-loading-state--every-screen-ships-its-own-skeleton): `/new-skeleton {ScreenName}` + a thin `src/app/{route}/loading.tsx`; skip (and say so) only when the screen has no async data.
+11. **Validate**:
     - `pnpm run lint-check --fix`
     - `pnpm run lint-check` (no `--fix`) — not redundant: several of this project's rules are `fixable: "code"`,
       so `--fix` REWRITES your source and a bad rewrite lands silently; re-running without `--fix` is what proves

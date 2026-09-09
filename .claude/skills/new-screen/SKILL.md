@@ -417,7 +417,11 @@ Then post a short summary:
 
 ---
 
-## Step 8 — Validate
+## Step 8 — Skeleton loading state
+
+For a screen that loads async data (everything but static content and auth forms): invoke `/new-skeleton {ScreenName}` to generate `{ScreenName}Skeleton`, then create `src/app/{route}/loading.tsx` as a thin wrapper rendering it. The template ships no `loading.tsx` on purpose — the skeleton must mirror this screen.
+
+## Step 9 — Validate
 
 Run these commands and fix any errors before finishing:
 
