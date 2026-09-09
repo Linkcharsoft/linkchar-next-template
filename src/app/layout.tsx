@@ -43,13 +43,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   // General
   metadataBase: SITE_URL,
-  applicationName: 'Inferencia Next.js Template',
+  applicationName: 'Inferencia AI Solutions - Next.js Template',
   generator: 'Next.js',
   title: {
     default: 'Linkchar',
     template: '%s | Linkchar'
   },
-  description: 'Inferencia Next.js Template - Created by Inferencia AI Solutions',
+  description: 'Inferencia AI Solutions - Next.js Template',
   referrer: 'origin-when-cross-origin',
   category: 'Software Development',
 
@@ -63,44 +63,36 @@ export const metadata: Metadata = {
     { name: 'Mariana Sofía Ulloque', url: 'https://www.linkedin.com/in/mariana-sof%C3%ADa-ulloque-6129bb13a/' }
   ],
   creator: 'Inferencia AI Solutions',
-  publisher: 'Inferencia - Next.js Template',
+  publisher: 'Inferencia AI Solutions - Next.js Template',
 
-  // URLs & alternates
+  // URLs
   manifest: '/manifest.json',
-  alternates: {
-    canonical: '/'
-    // languages: {
-    //   'en-US': '/en/',
-    //   'es-AR': '/es/
-    // }
-  },
 
   // SEO
-  keywords: ['Inferencia'],
+  keywords: ['Inferencia AI Solutions'],
   openGraph: {
-    title: 'Inferencia AI Solutions',
-    description: 'Next.js Template',
-    url: '/',
+    title: 'Inferencia AI Solutions - Next.js Template',
+    description: 'Inferencia AI Solutions - Next.js Template',
     type: 'website',
-    siteName: 'Inferencia AI Solutions',
+    siteName: 'Inferencia AI Solutions - Next.js Template',
     images: [
       {
         url: '/seo/social-banner.webp',
         width: 1200,
         height: 630,
-        alt: 'Inferencia AI Solutions'
+        alt: 'Inferencia AI Solutions - Next.js Template'
       }
     ],
     locale: 'en_US'
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Inferencia AI Solutions',
-    description: 'Next.js Template',
+    title: 'Inferencia AI Solutions - Next.js Template',
+    description: 'Inferencia AI Solutions - Next.js Template',
     creator: '@linkchar',
     images: {
       url: '/seo/social-banner.webp',
-      alt: 'Inferencia AI Solutions'
+      alt: 'Inferencia AI Solutions - Next.js Template'
     }
   },
   robots: {
@@ -118,7 +110,7 @@ export const metadata: Metadata = {
   // Icons
   icons: {
     icon: [
-      { url: '/seo/favicon.ico', sizes: 'any', type: 'image/x-ico' }, // https://convertico.com/
+      { url: '/seo/favicon.ico', sizes: 'any', type: 'image/x-icon' }, // https://convertico.com/
       { url: '/seo/favicon16.png', sizes: '16x16', type: 'image/png' },
       { url: '/seo/favicon32.png', sizes: '32x32', type: 'image/png' },
       { url: '/seo/favicon48.png', sizes: '48x48', type: 'image/png' },
@@ -153,7 +145,7 @@ export const metadata: Metadata = {
   },
   // Apple
   appleWebApp: {
-    title: 'Inferencia - Next.js Template',
+    title: 'Inferencia AI Solutions - Next.js Template',
     statusBarStyle: 'black-translucent',
     startupImage: ['/seo/splash.webp']
   },

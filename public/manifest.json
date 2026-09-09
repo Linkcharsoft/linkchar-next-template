@@ -1,11 +1,11 @@
 {
-  "name": "Inferencia Next Template",
-  "short_name": "Inferencia Next Template",
-  "description": "Inferencia Next Template",
+  "name": "Inferencia AI Solutions - Next.js Template",
+  "short_name": "Inferencia AI Solutions - Next.js Template",
+  "description": "Inferencia AI Solutions - Next.js Template",
   "icons": [
     {
       "src": "/seo/favicon.ico",
-      "type": "image/x-ico"
+      "type": "image/x-icon"
     },
     {
       "src": "/seo/favicon16.png",
