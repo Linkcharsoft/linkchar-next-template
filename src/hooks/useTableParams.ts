@@ -1,6 +1,6 @@
 'use client'
 import { usePathname, useRouter } from 'next/navigation'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { Route } from 'next'
 import type { DataTableStateEvent, SortOrder } from 'primereact/datatable'
 
@@ -290,6 +290,7 @@ function useTableParams<DefaultParams extends ParamsMap> ({
       type: 'number'
     },
     ...defaultParams
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- memoized by serialized content: callers pass a fresh object literal every render
   }), [defaultParamsKey])
 
   // 3. Current params: (URL search params + Default params + Auto-Parsing)
@@ -303,10 +304,15 @@ function useTableParams<DefaultParams extends ParamsMap> ({
     return currentParams as ReturnedParams<DefaultParams>
   }, [urlParams, DEFAULT_PARAMS])
 
-  // 4. Update params
+  // 4. Update params — same-tick calls build on the last pushed params, not on a URL snapshot they would overwrite.
+  const pendingParamsRef = useRef<URLSearchParams | null>(null)
+  useEffect(() => {
+    pendingParamsRef.current = null
+  }, [urlParams])
+
   const setParams = useCallback(
     (newParams: Partial<ReturnedParams<DefaultParams>>) => {
-      const params = new URLSearchParams(urlParams.toString())
+      const params = new URLSearchParams((pendingParamsRef.current ?? urlParams).toString())
 
       const isOnlyPageChange = Object.keys(newParams).length === 1 && 'page' in newParams
       if (!isOnlyPageChange && !newParams.page) {
@@ -319,9 +325,10 @@ function useTableParams<DefaultParams extends ParamsMap> ({
         applyParamToSearch(params, key, value, DEFAULT_PARAMS[key])
       }
 
+      pendingParamsRef.current = params
       replace(`${pathname}?${params.toString()}` as Route, { scroll: false })
     },
-    [urlParams, pathname, replace]
+    [urlParams, pathname, replace, DEFAULT_PARAMS]
   )
 
   // Function helpers
@@ -384,7 +391,7 @@ function useTableParams<DefaultParams extends ParamsMap> ({
         setParam(key, newValue as ReturnedParams<DefaultParams>[typeof key])
       }
     }
-  }, [PARAMS.ordering, DEFAULT_PARAMS.ordering, setParam])
+  }, [PARAMS.ordering, DEFAULT_PARAMS, setParam])
 
   return {
     params: PARAMS,
