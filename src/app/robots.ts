@@ -13,7 +13,9 @@ const robots = (): MetadataRoute.Robots => {
         '/login',
         '/signup',
         '/password-recovery',
-        '/change-password'
+        '/change-password',
+        '/sentry-example-page',
+        '/monitoring'
       ]
     },
     sitemap: `${DOMAIN}/sitemap.xml`
