@@ -127,7 +127,8 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
    **Language switch in `src/app/layout.tsx`** (only if `detectedLanguage !== currentHtmlLang`):
    1. Edit `<html lang="{currentHtmlLang}"` → `<html lang="{detectedLanguage}"`. The match should be exact on the literal attribute (preserve whatever className expression follows it).
    2. Find the `locale:` key inside the `openGraph` object — it lives as `locale: '{currentLocale}'` (NOT prefixed with `openGraph.` because it's nested inside the object literal). Edit it to the matching new locale: `en` → `'en_US'`, `es` → `'es_AR'`. The current template defaults to `'en_US'`; if the project uses a different Spanish variant (`es_ES`, `es_MX`), the user can correct it after — default to `es_AR` since this template's primary audience is Argentina.
-   3. Report the switch in your output as `LANG SWITCH: {old} → {new} based on Figma content`.
+   3. PrimeReact locale in `src/providers/ProvidersContainer.tsx`: the template ships only PrimeReact's built-in `en`. For `es`, add `import('primelocale/es.json').then(({ es }) => addLocale('es', es))` (guarded by `globalThis.window !== undefined`) and pass `locale='es'` to every `Filters` / `Calendar` usage; for `en`, nothing to add.
+   4. Report the switch in your output as `LANG SWITCH: {old} → {new} based on Figma content`.
 
    **Idempotence — re-runs on the same project**: if `detectedLanguage === currentHtmlLang`, leave `src/app/layout.tsx` alone, skip the edit, and report `LANG: {current} (no change)` instead of `LANG SWITCH:`. This matters across multiple Figma imports into the same project — a Spanish-first project that already lives at `<html lang='es'>` from a prior import must NOT trigger a no-op "switch" line on the next import. The report line distinguishes the actual switch from the steady state so the user can scan the log for real changes.
 

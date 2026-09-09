@@ -106,7 +106,8 @@ If the screen list is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / n
 5. **Language switch in `src/app/layout.tsx`** (ONLY if `detectedLanguage !== currentHtmlLang`):
    1. `<html lang="{currentHtmlLang}"` → `<html lang="{detectedLanguage}"` (exact literal match; preserve the className expression that follows).
    2. `openGraph.locale`: `en` → `'en_US'`, `es` → `'es_AR'` (default Spanish variant for this template's audience).
-   3. Report `LANG SWITCH: {old} → {new}`.
+   3. PrimeReact locale in `src/providers/ProvidersContainer.tsx`: the template ships only PrimeReact's built-in `en`. For `es`, add `import('primelocale/es.json').then(({ es }) => addLocale('es', es))` (guarded by `globalThis.window !== undefined`) and pass `locale='es'` to every `Filters` / `Calendar` usage; for `en`, nothing to add.
+   4. Report `LANG SWITCH: {old} → {new}`.
    If `detectedLanguage === currentHtmlLang`, leave the file alone and report `LANG: {current} (no change)`. Never mix languages across `<html lang>`, `openGraph.locale`, and placeholder copy.
 
 6. **Verify routes reachable** — read `src/proxy.ts`, confirm every public route landed in `PUBLIC_PATHS` (`/new-screen` adds them; if one is missing, add it and report the discrepancy). Confirm auth routes are in `AUTH_PATHS` unless covered by an existing `includes(...)`. Match route-group URLs WITHOUT the parentheses (`(host-layout)/gifts` → `/gifts`).

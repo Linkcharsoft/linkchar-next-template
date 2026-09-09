@@ -2,13 +2,12 @@
 import * as Sentry from '@sentry/nextjs'
 import { domAnimation, LazyMotion, MotionConfig } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { addLocale, PrimeReactProvider } from 'primereact/api'
+import { PrimeReactProvider } from 'primereact/api'
 import Tailwind from 'primereact/passthrough/tailwind'
 import { useEffect, useRef } from 'react'
 import { LISTENER_COOKIE_NAME } from '@/constants/auth'
 import { CLARITY_ID } from '@/constants/env'
 import useUserStore from '@/stores/userStore'
-import { captureError } from '@/utils/captureError'
 import ModalsProvider from './ModalsProvider'
 import type { ReactNode } from 'react'
 
@@ -16,12 +15,7 @@ interface Props {
   children: ReactNode
 }
 
-// PrimeReact ES locale setup
-if (globalThis.window !== undefined) {
-  import('primelocale/es.json')
-    .then(({ es }) => addLocale('es', es))
-    .catch((error) => captureError('primereact-locale', error))
-}
+// PrimeReact ships en; other languages: import primelocale/{lang}.json + addLocale here, pass it to Calendar/Filters.
 
 const ProvidersContainer = ({ children }: Props) => {
   const removeToken = useUserStore((s) => s.removeToken)
