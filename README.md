@@ -34,12 +34,22 @@ Production-ready Next.js starter template by **Linkchar**, pre-configured with a
 pnpm install
 ```
 
+### Initialize the project (once)
+
+A fresh clone is a **template**, not a product: two guards (the Husky `pre-commit` hook and a Claude `PreToolUse` hook) block commits and edits until the project is initialized. Run the skill once, from Claude Code, with the product display name:
+
+```text
+/init-project Acme Dashboard
+```
+
+It renames every product-identity reference, generates `.env.local` with a fresh `AUTH_SECRET`, resets the version, disarms both guards and creates the first commit. Template maintainers bypass the guards with `LINKCHAR_TEMPLATE_DEV` (see `CLAUDE.md`).
+
 ### Environment Variables
 
 Copy the example file and fill in the required values:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env.local   # `.env` also works — `.env.local` wins on conflict, in Next and in Cypress
 ```
 
 | Variable | Side | Description |
@@ -96,6 +106,9 @@ pnpm run test-run   # Cypress headless mode
 | `pnpm run check` | Run ESLint + TypeScript type check |
 | `pnpm run lint-check` | ESLint only |
 | `pnpm run type-check` | TypeScript type check only |
+| `pnpm run type-check:test` | TypeScript type check of the Cypress specs (not part of `check`) |
+| `pnpm run analyze` | Bundle analysis (`next experimental-analyze`) — output in `.next/diagnostics/analyze/` |
+| `pnpm run prepare` | Installs the Husky hooks (runs automatically after `pnpm install`) |
 | `pnpm run test-open` | Cypress interactive mode |
 | `pnpm run test-run` | Cypress headless mode |
 | `pnpm run clean` | Remove `.next`, `node_modules`, and lockfile |
@@ -177,7 +190,7 @@ Sentry is fully integrated with environment-aware configuration:
 
 | Hook | Action |
 | --- | --- |
-| `pre-commit` | Runs `pnpm run lint-check` — blocks commit on lint errors |
+| `pre-commit` | Refuses to commit until `/init-project` has run, then `lint-staged` (ESLint on staged files) + `pnpm run type-check` — blocks on errors, never on warnings |
 | `pre-push` | Runs `pnpm build` — blocks push if build fails |
 
 ## Claude Code Skills
@@ -186,6 +199,7 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 
 | Skill | Purpose |
 | --- | --- |
+| `/init-project` | Initialize a fresh clone into a product (rename, `.env.local` + `AUTH_SECRET`, first commit) — run once, before anything else |
 | `/new-screen` | Generate a Screen component + colocated `.sass` + page wrapper, updating `src/proxy.ts` when needed |
 | `/new-table` | Scaffold a full paginated DataTable screen (types + API client + screen with `useTableParams` + filters + page wrapper) |
 | `/new-component` | Generate a reusable component folder (`.tsx` + `.sass`) following project conventions |
@@ -195,7 +209,8 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 | `/new-skeleton` | Create a skeleton loader sibling for an existing component or screen using `SkeletonBlock` |
 | `/new-api-resource` | Manually scaffold a single API resource (`src/api/{resource}.ts`) — types interleaved with `customFetch`-based handlers, token-last for authenticated endpoints. Use when there is NO OpenAPI spec |
 | `/openapi-import` | Orchestrate the API + hooks layer from a full OpenAPI 3.x YAML spec: spec validation → handlers per tag → SWR hooks for GETs → code validation. Use AFTER `/figma-design-import` |
-| `/figma-design-import` | Orchestrate a full Figma-to-code import: tokens → assets → components → layouts → screens → validation |
+| `/figma-design-import` | Orchestrate a full Figma-to-code import: tokens → assets → components → layouts → screens → validation → template chrome |
+| `/claude-design-import` | Same pipeline from a Claude Design prototype (project archive or standalone HTML), extracted locally by `unpack.mjs` |
 
 All conventions enforced by these skills are documented in `CLAUDE.md` — the canonical project guide for any AI-assisted contribution.
 
