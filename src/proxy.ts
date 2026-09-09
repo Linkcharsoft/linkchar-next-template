@@ -195,5 +195,6 @@ export async function proxy (req: NextRequest) {
 
 export const config = {
   // Never invoked for static files, Next internals, API routes or the Sentry tunnel — none of them needs auth.
-  matcher: [String.raw`/((?!api|_next|monitoring|.*\.(?:png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|xml|pdf|zip|map)$).*)`]
+  // eslint-disable-next-line unicorn/prefer-string-raw -- Next parses this export statically: it must stay a plain string literal
+  matcher: ['/((?!api|_next|monitoring|.*\\.(?:png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|xml|pdf|zip|map)$).*)']
 }
