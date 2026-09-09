@@ -509,7 +509,6 @@ const ExamplePage = ({ searchParams }: Props) => {
             <Filters
               filters={FILTERS}
               cleanFilters={resetParams}
-              locale='es'
               disabled={employeesIsLoading}
             />
           </header>
@@ -524,7 +523,6 @@ const ExamplePage = ({ searchParams }: Props) => {
               <Filters
                 filters={FILTERS}
                 cleanFilters={resetParams}
-                locale='es'
                 disabled={employeesIsLoading}
               />
             </div>
@@ -532,7 +530,7 @@ const ExamplePage = ({ searchParams }: Props) => {
             <div className="flex flex-col items-center gap-2">
               <div className="flex items-center gap-2" role="status" aria-live="polite">
                 <span className="text-bold-14">{employeesData?.data.count || 0}</span>
-                <span>Resultados</span>
+                <span>Results</span>
               </div>
             </div>
           </header>
@@ -542,19 +540,19 @@ const ExamplePage = ({ searchParams }: Props) => {
             dataKey="id"
             scrollable
             scrollHeight='100%'
-            pt={{ table: { 'aria-label': 'Trabajadores' } }}
+            pt={{ table: { 'aria-label': 'Workers' } }}
             value={employeesData?.data?.results}
             rows={params.page_size}
             emptyMessage={
               <div role="status" aria-live="polite" className='flex size-full flex-col items-center justify-center gap-4'>
                 <i className="pi pi-search text-regular-28" aria-hidden="true"></i>
-                <span className='text-bold-16'>No se encontraron trabajadores</span>
+                <span className='text-bold-16'>No workers found</span>
                 <CustomButton
                   variant='primary'
                   onClick={resetParams}
                 >
                   <i className="pi pi-trash text-regular-14" aria-hidden="true" />
-                  <span className="text-regular-14">Limpiar filtros</span>
+                  <span className="text-regular-14">Clean filters</span>
                 </CustomButton>
               </div>
             }
@@ -612,18 +610,18 @@ const ExamplePage = ({ searchParams }: Props) => {
                   root: {
                     className: '!w-[80px]'
                   },
-                  select: { 'aria-label': 'Filas por página' }
+                  select: { 'aria-label': 'Rows per page' }
                 },
-                firstPageButton: { 'aria-label': 'Primera página' },
-                prevPageButton: { 'aria-label': 'Página anterior' },
-                nextPageButton: { 'aria-label': 'Página siguiente' },
-                lastPageButton: { 'aria-label': 'Última página' }
+                firstPageButton: { 'aria-label': 'First page' },
+                prevPageButton: { 'aria-label': 'Previous page' },
+                nextPageButton: { 'aria-label': 'Next page' },
+                lastPageButton: { 'aria-label': 'Last page' }
               }}
               template={isMobile
                 ? 'PrevPageLink CurrentPageReport NextPageLink RowsPerPageDropdown'
                 : 'FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown'
               }
-              currentPageReportTemplate={'{currentPage} de {totalPages}'}
+              currentPageReportTemplate={'{currentPage} of {totalPages}'}
             />
           )}
         </section>
