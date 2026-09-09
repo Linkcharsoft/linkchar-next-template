@@ -20,6 +20,15 @@ import unicorn from 'eslint-plugin-unicorn'
 import globals from 'globals'
 import * as jsoncParser from 'jsonc-eslint-parser'
 
+const ZUSTAND_ATOMIC_SELECTOR = {
+  selector: 'CallExpression[callee.name=/^use.*Store$/][arguments.length=0]',
+  message: 'Consume Zustand stores with an atomic selector: useXxxStore((s) => s.field). Calling the hook with no arguments re-renders on every state change.'
+}
+const NO_PROCESS_ENV = {
+  selector: 'MemberExpression[object.name="process"][property.name="env"]',
+  message: 'Do not read process.env directly — import the value from @/constants/env.'
+}
+
 const ESLintConfig = [
   // --- Ignores ---
   {
@@ -142,7 +151,7 @@ const ESLintConfig = [
 
       // React Hooks + React Compiler rules (v7 flat recommended)
       ...reactHooks.configs['recommended-latest'].rules,
-      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
 
       // Next
       ...nextPlugin.configs.recommended.rules,
@@ -255,17 +264,7 @@ const ESLintConfig = [
 
       // Zustand — atomic selectors only
       'granular-selectors/granular-selectors': ['error', { include: ['use.*Store'] }],
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: 'CallExpression[callee.name=/^use.*Store$/][arguments.length=0]',
-          message: 'Consume Zustand stores with an atomic selector: useXxxStore((s) => s.field). Calling the hook with no arguments re-renders on every state change.'
-        },
-        {
-          selector: 'MemberExpression[object.name="process"][property.name="env"]',
-          message: 'Do not read process.env directly — import the value from @/constants/env.'
-        }
-      ],
+      'no-restricted-syntax': ['error', ZUSTAND_ATOMIC_SELECTOR, NO_PROCESS_ENV],
 
       // Framer motion
       'no-restricted-imports': [
@@ -303,7 +302,7 @@ const ESLintConfig = [
   {
     files: ['src/constants/env.ts', 'src/instrumentation.ts', 'src/instrumentation-client.ts', '*.config.{ts,js,mjs}', 'next.config.ts'],
     rules: {
-      'no-restricted-syntax': 'off'
+      'no-restricted-syntax': ['error', ZUSTAND_ATOMIC_SELECTOR]
     }
   },
   // --- SVG path data / test fixtures trip the entropy detector ---
