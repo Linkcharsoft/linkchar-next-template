@@ -171,7 +171,7 @@ For each operation in `paths.*.*`:
 - Tag = `operation.tags[0]`. If absent or empty → group under `"default"`.
 - If `--tags=a,b,c` was passed → discard all operations whose tag is not in the list.
 - Classify each operation:
-  - `list` — GET with no path `{id}` param whose response matches `PaginatedResponse` shape (`count`, `next`, `previous`, `results`)
+  - `list` — GET with no path `{id}` param whose response matches `PaginatedResponseType` shape (`count`, `next`, `previous`, `results`)
   - `detail` — GET with a path `{id}` or `{slug}` param
   - `mutation` — POST / PUT / PATCH / DELETE
   - `action` — any method on a non-CRUD subpath (e.g. `POST /users/{id}/activate/`)
@@ -216,7 +216,7 @@ Spec: {source} — OpenAPI {version}, {N} tags, {M} endpoints
 | ... | ... | ... | ... | ... |
 
 ### Pagination
-- users → PaginatedResponse<Array<UserType>> (DRF standard shape)
+- users → PaginatedResponseType<UserType> (DRF standard shape)
 - products → {Tag}PageType (non-standard shape — will emit local type + flag)
 
 ### Flags
@@ -260,7 +260,7 @@ When inserting the "Spec quality" section, paste the **Security audit per tag** 
 
 > **Delegate to**: `Agent({ subagent_type: 'openapi-handlers' })` — runs in **Sonnet**.
 
-Run one invocation per tag (not parallel — each invocation may modify the same shared type `PaginatedResponse` import and must complete before the next to avoid write conflicts).
+Run one invocation per tag (not parallel — each invocation may modify the same shared type `PaginatedResponseType` import and must complete before the next to avoid write conflicts).
 
 **Pass to the agent per tag:**
 - `tagName` — the tag string (used for file naming and BASE_PATH)
@@ -301,7 +301,7 @@ For each function derived from the spec, the agent:
 - `BASE_PATH` = the most common path prefix for this tag (typically `/{tag}/`).
 - List endpoints: signature `(path: string = BASE_PATH, token: string)` — the query string comes pre-built in `path` via `useTableParams.stringParams`.
 - Non-list GET with declared query params: add optional `params?: { ... }` typed from the spec.
-- DRF pagination match (`count`, `next`, `previous`, `results`) → reuse `PaginatedResponse<Array<T>>` from `@/types/general`.
+- DRF pagination match (`count`, `next`, `previous`, `results`) → reuse `PaginatedResponseType<T>` from `@/types/general`.
 - Any other paginated shape → emit local `{Tag}PageType` and flag as `non-standard-pagination`.
 - No marker comments (`// @openapi-generated`, `// @generated`, etc.) anywhere in the file (Q2).
 - Single quotes, no semicolons, 2-space indentation.
@@ -314,7 +314,7 @@ For each function derived from the spec, the agent:
 
 ```ts
 import { customFetch } from './customFetch'
-import type { PaginatedResponse } from '@/types/general'
+import type { PaginatedResponseType } from '@/types/general'
 
 const BASE_PATH = '/users/'
 
@@ -326,7 +326,7 @@ export interface UserType {
   updated_at: string
 }
 export const getUsers = async (path: string = BASE_PATH, token: string) => {
-  return await customFetch<PaginatedResponse<Array<UserType>>>({
+  return await customFetch<PaginatedResponseType<UserType>>({
     path,
     method: 'GET',
     token
@@ -501,7 +501,7 @@ Generated:
   src/hooks/use{Resource}.ts ............... {N} GET hooks
 
 Reused:
-  PaginatedResponse<T> ..................... {N} endpoints
+  PaginatedResponseType<T> ..................... {N} endpoints
   customFetch .............................. all handlers
 
 Merge results:

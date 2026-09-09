@@ -104,12 +104,12 @@ If the file does NOT exist, create it with at minimum the list function (require
 ```ts
 import { customFetch } from './customFetch'
 import type { ResourceType } from '@/types/api/{resource}'
-import type { PaginatedResponse } from '@/types/general'
+import type { PaginatedResponseType } from '@/types/general'
 
 const BASE_PATH = '/{resource}/'
 
 export const getResourcesName = async (path: string = BASE_PATH, token: string) => {
-  return await customFetch<PaginatedResponse<Array<ResourceType>>>({
+  return await customFetch<PaginatedResponseType<ResourceType>>({
     path,
     method: 'GET',
     token
@@ -146,7 +146,7 @@ import { get{ResourcesName} } from '@/api/{resource}'
 import CustomButton from '@/components/CustomButton/CustomButton'
 import Filters from '@/components/Filters/Filters'
 import SearchInput from '@/components/SearchInput/SearchInput'
-import { useTableParams } from '@/hooks/useTableParams'
+import useTableParams from '@/hooks/useTableParams'
 import useUserStore from '@/stores/userStore'
 import type { FilterItem } from '@/components/Filters/Filters'
 
@@ -478,7 +478,11 @@ Keep the summary under 30 lines. Do not dump file contents — the user can open
 
 ---
 
-## Step 8 — Validate
+## Step 8 — Skeleton loading state
+
+For a screen that loads async data (everything but static content and auth forms): invoke `/new-skeleton {ScreenName}` to generate `{ScreenName}Skeleton`, then create `src/app/{route}/loading.tsx` as a thin wrapper rendering it. The template ships no `loading.tsx` on purpose — the skeleton must mirror this screen.
+
+## Step 9 — Validate
 
 After all files are written, run:
 

@@ -7,7 +7,7 @@ Manually scaffold an API resource file. Arguments: **$ARGUMENTS**
 
 Single-resource, no-spec, no-merge, no-validation-pass companion to `/openapi-import`. Emits one file at `src/api/{resource}.ts` following the interleaved layout (each handler preceded by its own type block under a `// ── {functionName} ──` header). Token is the LAST positional argument when present, OMITTED entirely when the `no-auth` flag is passed.
 
-> **When to use which skill** — `/new-api-resource` is for the manual case: you know the resource name, you want a clean CRUD scaffold, you'll fill in the field types by hand. `/openapi-import` is for the spec case: you have a YAML file with many tags, it parses schemas + responses + path/query params, infers function names from `operationId`, reuses `PaginatedResponse<T>`, and intelligently merges with existing API files. Do not invoke both — they target different inputs.
+> **When to use which skill** — `/new-api-resource` is for the manual case: you know the resource name, you want a clean CRUD scaffold, you'll fill in the field types by hand. `/openapi-import` is for the spec case: you have a YAML file with many tags, it parses schemas + responses + path/query params, infers function names from `operationId`, reuses `PaginatedResponseType<T>`, and intelligently merges with existing API files. Do not invoke both — they target different inputs.
 
 ---
 
@@ -72,7 +72,7 @@ Generate ONLY the operations requested in the 2nd positional argument. The full 
 
 ```ts
 import { customFetch } from './customFetch'
-import type { PaginatedResponse } from '@/types/general'
+import type { PaginatedResponseType } from '@/types/general'
 
 const BASE_PATH = '/{resource}/'
 
@@ -84,7 +84,7 @@ export interface {ResourceType} {
   updated_at: string
 }
 export const get{ResourcesName} = async (path: string = BASE_PATH, token: string) => {
-  return await customFetch<PaginatedResponse<Array<{ResourceType}>>>({
+  return await customFetch<PaginatedResponseType<{ResourceType}>>({
     path,
     method: 'GET',
     token
@@ -140,7 +140,7 @@ export const delete{ResourceName} = async (id: number | string, token: string) =
 - **`detail` only** → `{ResourceType}` lives under the `get{ResourceName}` header.
 - **`create` only** → keep `{ResourceType}` (it's the response type) and `Create{ResourceName}PayloadType` under `create{ResourceName}`.
 - **`update` requested without `create`** → declare `Update{ResourceName}PayloadType` directly (do NOT `extends Partial<Create…>` if `Create…` was not emitted). Use an explicit body shape with all fields optional.
-- **`delete` only** → no payload types; just `{ResourceType}` is not needed either (the DELETE response is untyped). Drop the `import type { PaginatedResponse }` since nothing uses it.
+- **`delete` only** → no payload types; just `{ResourceType}` is not needed either (the DELETE response is untyped). Drop the `import type { PaginatedResponseType }` since nothing uses it.
 
 ### `no-auth` rules
 
@@ -160,7 +160,7 @@ Before saving, verify every item:
 - [ ] **Interleaved layout** — every handler is preceded by a `// ── {functionName} ──` header; types live directly above the handler that uses them, NOT in a separate `// ── Types ──` block.
 - [ ] `{ResourceType}` (the shared entity interface) sits above the FIRST handler that consumes it (typically `get{ResourcesName}`).
 - [ ] Types use `interface` (not `type`) for object shapes; every model carries the `Type` suffix.
-- [ ] `customFetch` imported from `./customFetch` (relative); `PaginatedResponse` from `@/types/general` (alias).
+- [ ] `customFetch` imported from `./customFetch` (relative); `PaginatedResponseType` from `@/types/general` (alias).
 - [ ] `import type { X }` for type-only imports.
 - [ ] **Token is the LAST positional argument** when present (e.g. `update{ResourceName}(id, body, token)`), or **omitted entirely** when `no-auth` was passed.
 - [ ] No `/api` prefix in any `path` value — `customFetch` prepends it.

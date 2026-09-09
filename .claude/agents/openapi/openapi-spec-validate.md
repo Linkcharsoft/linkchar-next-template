@@ -294,7 +294,7 @@ For every GET list operation (path has no `{id}`-style params), inspect the 2xx 
 Emit when the trigger condition holds and the conformance check fails:
 
 ```
-NON_DRF_PAGINATION: paths.{path}.{method} response has a `results` array (paginated) but the wrapper shape diverges from the project's strict DRF contract. Observed properties: [{property names found}]. Missing: [{DRF properties absent}]. Extra: [{non-DRF properties present}]. Handlers will emit a local {Tag}PageType instead of reusing PaginatedResponse<T> — useTableParams compatibility is not guaranteed.
+NON_DRF_PAGINATION: paths.{path}.{method} response has a `results` array (paginated) but the wrapper shape diverges from the project's strict DRF contract. Observed properties: [{property names found}]. Missing: [{DRF properties absent}]. Extra: [{non-DRF properties present}]. Handlers will emit a local {Tag}PageType instead of reusing PaginatedResponseType<T> — useTableParams compatibility is not guaranteed.
 ```
 
 ### Step 4 — INFO checks (diagnostic only)

@@ -66,7 +66,7 @@ type ReturnedParams<Param extends ParamsMap> = {
   page_size: number
 }
 
-type useTableParamsReturn<Param extends ParamsMap> = {
+type UseTableParamsReturnType<Param extends ParamsMap> = {
   params: ReturnedParams<Param>
   stringParams: string
   first: number
@@ -153,7 +153,7 @@ const appendDefaultParam = (params: URLSearchParams, key: string, defaultValue: 
  * @param {DefaultParams & Partial<PaginationConfig>} config.defaultParams - Default values for filters and pagination.
  * Values are auto-parsed to string, number or boolean based on filter types.
  *
- * @returns {useTableParamsReturn<DefaultParams>} An object containing the following properties and methods:
+ * @returns {UseTableParamsReturnType<DefaultParams>} An object containing the following properties and methods:
  * - `params`: Object combining `page`, `page_size`, and custom filters with preserved types (merges URLSearchParams and DefaultParams).
  * - `stringParams`: Current query string (e.g., "page=1&search=hello"), ready for API requests (fetch/SWR).
  * - `first`: Reactive zero-based index of the first row to be displayed. (Required for PrimeReact's Paginator).
@@ -251,13 +251,13 @@ const appendDefaultParam = (params: URLSearchParams, key: string, defaultValue: 
  * />
  **/
 
-export function useTableParams<DefaultParams extends ParamsMap> ({
+function useTableParams<DefaultParams extends ParamsMap> ({
   searchParams,
   defaultParams
 }: {
   searchParams: SearchParams,
   defaultParams: DefaultParams & Partial<PaginationConfig>
-}): useTableParamsReturn<DefaultParams> {
+}): UseTableParamsReturnType<DefaultParams> {
   const pathname = usePathname()
   const { replace } = useRouter()
 
@@ -398,3 +398,4 @@ export function useTableParams<DefaultParams extends ParamsMap> ({
     clearParams
   }
 }
+export default useTableParams

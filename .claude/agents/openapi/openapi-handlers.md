@@ -149,18 +149,18 @@ Rule 1 trumps rule 2: a `oneOf: [{ type: string }, { type: object, ... }]` falls
 
 For each GET list endpoint response, inspect the resolved schema:
 
-- **Strict DRF match** — schema is `{ count: integer, next: string|null, previous: string|null, results: array<T> }` → reuse `PaginatedResponse<Array<T>>` from `@/types/general`. Do NOT redeclare this wrapper.
+- **Strict DRF match** — schema is `{ count: integer, next: string|null, previous: string|null, results: array<T> }` → reuse `PaginatedResponseType<T>` from `@/types/general`. Do NOT redeclare this wrapper.
 - **Any other paginated shape** — emit a local `interface {Tag}PageType { ... }` and add `flag: non-standard-pagination` to the output report with the schema shape so the caller can decide whether to adapt it.
 
-**Double-pagination edge case (detect before emitting).** When the DRF outer matches but the `results` array's item type is ITSELF a page-shaped object (has `page`, `page_size`, `total`, `total_pages`, `items` properties, or similar pagination metadata), the spec is using DRF pagination wrapped around an already-paginated payload. This is structurally suspicious — emitting `PaginatedResponse<Array<{page, page_size, items: ...}>>` is type-correct but produces an unusable handler return (each `results[i]` is a full page envelope, not a row).
+**Double-pagination edge case (detect before emitting).** When the DRF outer matches but the `results` array's item type is ITSELF a page-shaped object (has `page`, `page_size`, `total`, `total_pages`, `items` properties, or similar pagination metadata), the spec is using DRF pagination wrapped around an already-paginated payload. This is structurally suspicious — emitting `PaginatedResponseType<{page, page_size, items: ...}>` is type-correct but produces an unusable handler return (each `results[i]` is a full page envelope, not a row).
 
 Detection: an item schema is "page-shaped" when its property set contains AT LEAST 3 of: `page`, `page_size`, `total`, `total_pages`, `items`, `count`, `next`, `previous`, `results`.
 
 When detected:
-1. Still emit `customFetch<PaginatedResponse<Array<TItem>>>` for the handler return (faithfully reflects the spec).
+1. Still emit `customFetch<PaginatedResponseType<TItem>>` for the handler return (faithfully reflects the spec).
 2. Add `flag: double-pagination` to the output report with both the outer wrapper name and the inner page-shaped type name and the property set you saw on the inner. Example:
    ```
-   flag: double-pagination: handler {functionName} returns PaginatedResponse<Array<{InnerType}>>, but {InnerType} is itself page-shaped (properties: page, page_size, total, total_pages, items). Spec quirk — verify the backend actually returns this double-nested shape, or refactor the spec to flatten one layer.
+   flag: double-pagination: handler {functionName} returns PaginatedResponseType<{InnerType}>, but {InnerType} is itself page-shaped (properties: page, page_size, total, total_pages, items). Spec quirk — verify the backend actually returns this double-nested shape, or refactor the spec to flatten one layer.
    ```
 3. Do NOT auto-flatten or invent a different return type — the spec is authoritative even when weird. Surface for human review.
 
@@ -182,12 +182,12 @@ Past runs against DRF specs that wrap custom paginators (e.g. admin endpoints li
 
 ```ts
 import { customFetch } from './customFetch'
-import type { PaginatedResponse } from '@/types/general'
+import type { PaginatedResponseType } from '@/types/general'
 
 const BASE_PATH = '/{tag}/'
 ```
 
-Only include `import type { PaginatedResponse }` if at least one handler uses it. Drop unused imports.
+Only include `import type { PaginatedResponseType }` if at least one handler uses it. Drop unused imports.
 
 **Handler shape — authenticated endpoint:**
 
@@ -200,7 +200,7 @@ export interface UserType {
   updated_at: string
 }
 export const getUsers = async (path: string = BASE_PATH, token: string) => {
-  return await customFetch<PaginatedResponse<Array<UserType>>>({
+  return await customFetch<PaginatedResponseType<UserType>>({
     path,
     method: 'GET',
     token
@@ -315,7 +315,7 @@ When `existingFilePath` is not null, the file already exists and contains user c
 - Never emit a `useSWR` import or hook function in `src/api/`. Hooks belong in `src/hooks/` and are `openapi-hooks` agent's responsibility.
 - `BASE_PATH` must have a trailing slash and must be placed immediately after the import block, before the first `// ── functionName ──` header.
 - No `/api` prefix in any path value — `customFetch` prepends `/api` internally via `new URL(\`/api${path}\`, API_URL)`.
-- `PaginatedResponse<Array<T>>` must be reused (not redeclared) whenever the response matches the strict DRF shape. Import it as `import type { PaginatedResponse } from '@/types/general'`.
+- `PaginatedResponseType<T>` must be reused (not redeclared) whenever the response matches the strict DRF shape. Import it as `import type { PaginatedResponseType } from '@/types/general'`.
 - Types use `interface` (not `type alias`) for object shapes. Every model has the `Type` suffix (`UserType`, `CreateUserPayloadType`).
 - `UpdateXPayloadType` is a `type` alias `= Partial<CreateXPayloadType>` when the PATCH schema is a subset of POST. Do NOT write `interface UpdateXPayloadType extends Partial<CreateXPayloadType> {}` — the empty interface body trips the project's `no-empty-object-type` ESLint rule (enabled in this template). Redeclare independently when the schemas diverge.
 
