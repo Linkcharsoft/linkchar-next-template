@@ -30,7 +30,7 @@ const ToastNotifications = () => {
       icon: `${STATE_ICONS[notification.severity]} ${isMobile ? 'text-regular-24' : 'text-regular-28'}`
     })))
     clearNotifications()
-  }, [notifications])
+  }, [notifications, clearNotifications, isMobile])
 
   return (
     <Toast

@@ -76,7 +76,7 @@ const SignupConfirmationPage = ({ token }: Props) => {
     }
 
     verifyToken()
-  }, [])
+  }, [token, openModal, closeModal, setNotification])
 
 
   const invalidTokenFormik = useFormik<SignupConfirmationFormikType>({

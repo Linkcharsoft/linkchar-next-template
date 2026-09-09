@@ -71,7 +71,7 @@ const PasswordRecoveryConfirmationPage = ({ token, email }: Props) => {
     }
 
     checkUrlToken()
-  }, [])
+  }, [token, email, openModal, closeModal, setNotification])
 
 
   useEffect(() => {

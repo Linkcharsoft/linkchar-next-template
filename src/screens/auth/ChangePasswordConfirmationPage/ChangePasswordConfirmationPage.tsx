@@ -93,7 +93,7 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
     }
 
     checkUrlToken()
-  }, [user, tokenStatus])
+  }, [user, tokenStatus, token, openModal, closeModal, setNotification])
 
 
   useEffect(() => {

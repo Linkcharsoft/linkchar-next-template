@@ -14,7 +14,7 @@ const LoadingModal = () => {
   // Auto-dismiss on route change (covers the polling-driven login redirect delay).
   useEffect(() => {
     closeModal('loadingModal')
-  }, [pathname])
+  }, [pathname, closeModal])
 
   return (
     <AnimatePresence>

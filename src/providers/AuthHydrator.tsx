@@ -35,7 +35,7 @@ const AuthHydrator = ({ token, user }: Props) => {
       removeUser()
       Sentry.setUser(null)
     }
-  }, [token, user])
+  }, [token, user, setToken, setUser, removeToken, removeUser])
 
   return null
 }

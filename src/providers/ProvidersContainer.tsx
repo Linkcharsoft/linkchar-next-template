@@ -54,7 +54,7 @@ const ProvidersContainer = ({ children }: Props) => {
     }, 2000)
 
     return () => clearInterval(intervalId)
-  }, [])
+  }, [removeToken, removeUser, router])
 
   // Clarity setup
   useEffect(() => {
