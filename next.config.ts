@@ -74,6 +74,8 @@ const isProduction = !isStaging &&
   (process.env.NEXT_PUBLIC_APP_ENV === 'production' || process.env.NODE_ENV === 'production')
 
 const nextConfig: NextConfig = {
+  // `next dev` would otherwise append its own agent-rules block to CLAUDE.md on every run.
+  agentRules: false,
   reactCompiler: true,
   reactStrictMode: true,
   typedRoutes: true,
