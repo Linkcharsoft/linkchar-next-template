@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { defineConfig } from 'cypress'
 import dotenv from 'dotenv'
 
@@ -22,7 +23,16 @@ export default defineConfig({
     testIsolation: false,
     // chromeWebSecurity: false,
     waitForAnimations: true,
-    experimentalWebKitSupport: true // Enable WebKit support
+    experimentalWebKitSupport: true, // Enable WebKit support
+
+    setupNodeEvents (on) {
+      on('task', {
+        // cy.readFile fails on a missing file; the gitignored MailSlurp fixture is legitimately absent on a fresh clone.
+        readFileMaybe (path: string) {
+          return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null
+        }
+      })
+    }
   },
   fixturesFolder: 'src/cypress/fixtures',
   expose: {

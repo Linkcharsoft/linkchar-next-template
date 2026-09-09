@@ -87,8 +87,8 @@ Cypress.Commands.add('logout', () => {
 Cypress.Commands.add('createInbox', () => {
   const FILE_NAME = 'src/cypress/fixtures/auth-user.json'
 
-  cy.readFile(FILE_NAME, { log: false })
-    .then((data: InboxType) => {
+  cy.task<InboxType | null>('readFileMaybe', FILE_NAME, { log: false })
+    .then((data) => {
       let newUser = false
 
       const createAndSaveInbox = () => {
