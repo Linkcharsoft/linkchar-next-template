@@ -69,6 +69,9 @@ Replace `<slug>` with the derived slug. The string `"linkchar-next-template"` ap
 **`src/screens/HomePage/HomePage.tsx`**
 - `const PRODUCT_NAME = 'Linkchar'` → `displayName`
 
+**`src/constants/auth.ts`**
+- `AUTH_EMAIL_SUBJECTS['verify-email']`: `'Confirma tu e-mail en Django Base'` → `'Confirma tu e-mail en ' + displayName` — a contract with the backend template, whose own init renames "Django Base" the same way; `src/cypress/utils/extractValidationCodeFromEmail.ts` asserts this subject.
+
 > Do NOT touch the Three.js shader, the "Coming Soon" text, the `logo.svg`, the "Powered by Inferencia" link, or `HomePage.sass`. The demo HomePage stays (with the new product name) until the developer manually removes it and uninstalls `three`.
 
 ---
