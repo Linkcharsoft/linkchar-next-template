@@ -300,7 +300,7 @@ The template ships with `src/app/sentry-example-page/`, `src/screens/SentryExamp
 
 **The only test runner installed is Cypress (E2E). There is no unit-testing setup** — no `vitest`, no `@testing-library/*`, no `__tests__/` folders, and neither `pnpm test` nor `pnpm test-unit` exists. Verify against `package.json` before assuming any other runner is available.
 
-- `cypress` + helpers (`cypress-dotenv`, `cypress-file-upload`, `cypress-mailslurp`), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
+- `cypress` + `cypress-mailslurp` (inbox helpers), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
 - Config: `cypress.config.ts` at the repo root — `specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}'`, `baseUrl: http://localhost:3000` (so the app must be running).
 - Commands: `pnpm run test-open` (interactive) · `pnpm run test-run` (headless).
 - **Specs DO exist** — 8 of them, under **`src/cypress/e2e/`** (**not** a root `cypress/`; looking for one is what hides them): the auth flow (`Login`, `SignUp`, `EmailValidation`, `PasswordRecovery`, `ChangePassword`, `Flow`, `DeleteTestUser`) plus `NavigationProtection.cy.ts`. Alongside them: `src/cypress/support/` (`commands.ts`, `e2e.ts`), `src/cypress/utils/` (shared helpers), and its own `tsconfig.json`.
