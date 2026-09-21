@@ -10,6 +10,8 @@ export const CONTACT_FROM = process.env.CONTACT_FROM
 export const CONTACT_TO = process.env.CONTACT_TO
 export const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY
 export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+export const STORYBLOK_TOKEN = process.env.STORYBLOK_TOKEN
+export const STORYBLOK_REGION = process.env.STORYBLOK_REGION || 'eu'
 
 if(!DOMAIN || !API_URL) {
   throw new Error('Missing environment variables')
