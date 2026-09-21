@@ -100,11 +100,12 @@ the decisions taken (fields shaped, mount point, language), and the developer ch
 not an essay.
 
 STOPs follow [CONVENTIONS > STOP Protocol](../CONVENTIONS.md#stop-protocol) (same fenced format and
-severities). The init flows add one category to that table:
+severities). The init flows add two categories to that table:
 
 | Category | Severity | When | Next agent |
 | -------- | -------- | ---- | ---------- |
 | `MODULE_BASE_MISSING` | BLOCKING | A file the module's base inventory lists is not on disk (the project deleted or moved it) | `user_decision` |
+| `MOUNT_DEFERRED` | ADVISORY | The brief names a mount target that is not real yet (the template's demo `HomePage`); the module is adapted but left unmounted | `user_decision` (mount it when the real screen exists) |
 
 End with this exact footer:
 

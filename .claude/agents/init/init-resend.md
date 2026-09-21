@@ -117,6 +117,14 @@ exist → implement `mount.screen: none` and report it).
 
 ### 6. Mount
 
+- **First check what the screen is.** If `mount.screen` is still the template's demo `HomePage` (the
+  Three.js "Coming Soon" hero: `height: 100vh` + `overflow: hidden`, `PRODUCT_NAME` heading), there is no
+  real landing to mount into — a section appended there is clipped, and restructuring a screen the design
+  import is about to replace is wasted work. Treat it as `mount.screen: none`, and emit
+  `STOP-ADVISORY / category: MOUNT_DEFERRED / default_applied: ContactForm left unmounted` naming the file so the landing
+  build (design import or hand-written) mounts `<ContactForm/>` itself. Measured on the first test run: the
+  agent split the hero into `HomePage__Hero` + `HomePage__Contact` to make the section visible — correct
+  work on the wrong target.
 - `placement: section` → in `src/screens/{screen}/{screen}.tsx`, add a `<section>` with an `<h2>` in
   `language` and `<ContactForm/>` inside; keep the screen's own `container-custom` rhythm. Do not restructure
   the screen.
