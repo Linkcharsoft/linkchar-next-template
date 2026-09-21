@@ -39,7 +39,8 @@ Verify every path exists before changing anything. A missing one is
 Also part of the base and NOT yours to change: `next.config.ts` (`a.storyblok.com` in `remotePatterns`;
 `frame-ancestors` admits `app.storyblok.com` whenever `STORYBLOK_TOKEN` is set), `amplify.yml` (the runtime
 env allowlist already carries both variables), `package.json` `start:https` (the Visual Editor iframes the
-site and refuses HTTP).
+site and refuses HTTP), and `src/proxy.ts`'s `PUBLIC_PATH_PREFIXES` (a public parent path already makes
+its `[slug]` children public — `/new-screen public` is the only edit that file needs).
 
 ## Expected input from the invoker
 
@@ -105,7 +106,14 @@ brief has no `collection`. Otherwise:
 - Rename both files to `collection.name` when it is not `blog`; set `BLOG_FOLDER`, `DEFAULT_AUTHOR` (in
   `language`) and the content type fields to the brief's.
 - Scaffold the two screens with `/new-screen`, **one at a time** ([`design-import-shared.md` § C7](../../docs/design-import-shared.md#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-and-you-do-the-writing)):
-  `{Name}Page public {routeBase}` (listing) and `{Name}PostPage public {routeBase}/[slug]` (detail). Then:
+  `{Name}Page public {routeBase}` (listing) and `{Name}PostPage public {routeBase}/[slug]` (detail). **The two
+  `page.tsx` files live inside the landing's route group** — `/new-screen` writes `src/app/{routeBase}/…`;
+  move each `page.tsx` to `src/app/(landing-layout)/{routeBase}/…` (the URL does not change) — so
+  they inherit its header and footer; a collection at `src/app/{routeBase}/` renders outside the site's
+  chrome (measured on the first test run). Both screens are **Server Components** (no `'use client'`):
+  the detail one renders `StoryblokServerRichText` from `@storyblok/react/rsc`, and neither needs hooks.
+  `/new-screen public` adds `{routeBase}` to `PUBLIC_PATHS` in `src/proxy.ts`; the base's
+  `PUBLIC_PATH_PREFIXES` then covers every `{routeBase}/[slug]` — add nothing else there. Then:
   - **Listing `page.tsx`**: `export const revalidate = false`, static `metadata` with `alternates.canonical`,
     `const preview = await isPreview()`, `{preview && <StoryblokBridge/>}`, and the screen receives
     `posts = await getBlogPosts(preview)` as a prop. Screens never import Storyblok.
@@ -128,8 +136,11 @@ For every editable page, in its `src/app/…/page.tsx`: `export const revalidate
 await isPreview()`, `{preview && <StoryblokBridge/>}`, and the screen receives `content =
 await get{Page}Content(preview)` (and `config = await getSiteConfig(preview)` when it renders contact data) as
 props. Then replace the screen's hardcoded strings/images with `content.*`. Do not restructure the screen;
-do not move sections. If the page is still the template's demo `HomePage`, wire the props and stop —
-emit `STOP-ADVISORY / MOUNT_DEFERRED / default_applied: getter wired, demo hero untouched`.
+do not move sections. **If the page is still the template's demo `HomePage`** (the Three.js "Coming Soon"
+hero), leave both its `page.tsx` and the screen untouched: the getter, the types and the fallback from
+step 2 are the deliverable, and the landing build wires them when the real screen exists. Emit
+`STOP-ADVISORY / MOUNT_DEFERRED / default_applied: getter + fallback ready, demo HomePage untouched`. A
+prop the screen cannot consume yet is a lint warning, not a wiring (measured on the first test run).
 
 A layout that renders site-wide contact data (footer, header) gets `getSiteConfig(await isPreview())` in
 its `src/app/…/layout.tsx` and passes `config` down. Never call Storyblok from a client component.
