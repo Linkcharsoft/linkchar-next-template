@@ -21,6 +21,8 @@ const PUBLIC_PATHS = new Set([
   '/',
   '/sentry-example-page' // Delete
 ])
+// A public parent path also makes its children public ('/blog' → '/blog/my-post'). The root is excluded or everything would be.
+const PUBLIC_PATH_PREFIXES = [...PUBLIC_PATHS].filter(p => p !== '/').map(p => `${p}/`)
 
 // eslint-disable-next-line sonarjs/regex-complexity -- flat extension allowlist; readability beats micro-optimizing the alternation count
 const STATIC_RESOURCES_REGEX = /\.(png|jpg|jpeg|svg|webp|ico|gif|mp4|webm|mov|woff2?|ttf|otf|eot|json|txt|xml|pdf|zip|map)$/i
@@ -94,7 +96,8 @@ const shouldBypassProxy = (pathname: string): boolean =>
   pathname.startsWith('/api') ||
   pathname.startsWith('/_next') ||
   pathname === SENTRY_TUNNEL_PATH ||
-  PUBLIC_PATHS.has(pathname)
+  PUBLIC_PATHS.has(pathname) ||
+  PUBLIC_PATH_PREFIXES.some(prefix => pathname.startsWith(prefix))
 
 // Only same-site relative paths, never an auth page (would bounce forever) — anything else falls back to home.
 const safeNextPath = (value: string | null): string | null => {
