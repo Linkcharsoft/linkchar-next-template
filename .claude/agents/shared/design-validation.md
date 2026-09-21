@@ -39,7 +39,7 @@ JSX tags in this codebase routinely span multiple lines. A single-line regex mis
 
 ## Scope (read once, applies to every step)
 
-The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.sass` carries hex by design until Step 7's `design-post-import` recolours it; `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` + `src/screens/SentryExamplePage/` are a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
+The parent may pass a `scope`: the files this import created or modified. Without it, a clean template's own legitimate violations get reported as if the import caused them (`Waves.sass` carries hex by design and `ToastNotifications.sass` keeps the template's white card until Step 7's `design-post-import` re-skins them; `Filters.sass` and `mixins.sass` carry hex by design; `src/app/sentry-example-page/` + `src/screens/SentryExamplePage/` are a documented throwaway that ships with hardcoded hex on purpose), which buries the real findings in noise.
 
 **The rule: `scope` NEVER narrows what you RUN — it partitions what you REPORT.** Run every check over the paths written in its own step, exactly as today. Then split the findings into two labelled lists:
 
@@ -136,6 +136,7 @@ The parent may pass a `scope`: the files this import created or modified. Withou
 37. **Per-section vertical padding**: each top-level `<section>` (or its first child) must have `py-`/`pt-`/`pb-`. Flag those without → "no vertical rhythm".
 38. **Global-only modals mounted inside components**: grep `src/components/` (excluding `modals/`) and `src/screens/` for `<LoadingModal`/`<StateModal`/`<ToastNotifications`. Flag each (LoadingModal belongs in layouts; StateModal/ToastNotifications only in `ModalsProvider`).
 39. **Informative icon override without accessible name**: `*Icon` elements with `aria-hidden={false}`/`aria-hidden='false'` must have their own `aria-label` or an adjacent visible text describing them. (Distinct from Step 12, which fires on the parent button.)
+46. **Toast surface still the template's** (`TOAST_TEMPLATE_SURFACE`): read `src/components/modals/ToastNotifications/ToastNotifications.sass`. The template ships it as three rules — `width`, `margin`, and a `.p-toast-message-content` block with `border-radius: 0 6px 6px 0` + `@apply bg-white` — and nothing in the flow before Step 7 touches it, so on an imported project it silently stays the template's white card. Fire ONLY when the file is still that untouched shape: `@apply bg-white` present AND none of `max-width`, `.p-toast-summary`, `.p-toast-detail`, `.p-toast-icon-close`, a `text-{weight}-{size}` token, or a `bg-{token}` other than `bg-white`. **`bg-white` on its own is NOT the finding** — a white card is a valid decision on a light-surfaced project, and a file that carries any of those additions was reworked on purpose: report it clean even if the surface stayed white. What the check catches is the *untouched* file, not the colour. Its fixer is `design-post-import` (Step 7, task D), not a screen agent. At Step 6 the file is never in `scope` (Step 7 has not run yet), so it lands under **Pre-existing** — that is the expected place, like `Waves.sass`'s hex; it is a headline finding only on a sweep run after Step 7, or standalone on a finished project.
 
 ### 12. Mock data convention
 40. **Mock data marker**: in `src/screens/**/*.tsx`, top-level `const \w+ = \[` (column-0, module scope) must either match `MOCK_[A-Z_]+` OR be consumed via `useSWR`/`customFetch`/`@/api/*`. Unmarked → `MOCK_CONVENTION_VIOLATION`. Each `MOCK_*` must have a `// TODO` within 3 preceding lines mentioning `openapi-import`/`API call`/`endpoint`; missing → `MOCK_MISSING_TODO`. **Also** scan `src/stores/**/*.ts`: the claude-design flow SEEDS shared state in the store with literal demo data (an array/object literal as a state field's initial value), so any such seeded initial state must carry a `// TODO: openapi-import` marker — unmarked seeded store state → `MOCK_MISSING_TODO` (store variant). (Figma flow: stores are rarely seeded, so this usually reports clean there.)
@@ -200,6 +201,7 @@ Single structured report grouped by category. Map each violation to the fixer. *
 | runtime `CONTAINER_SHRINK` / `MOBILE_NAV_DID_NOT_OPEN` on the chrome | **layouts** |
 | icon-only button a11y / component issues | **components** |
 | `'use client'` layout / global modal in component / chrome | **layouts** |
+| `TOAST_TEMPLATE_SURFACE` / template chrome left unbranded | **post-import** (Step 7 — `design-post-import`, shared) |
 | page metadata | **scaffold** or manual |
 | server `fetch` cache policy | manual |
 
