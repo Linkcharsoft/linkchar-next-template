@@ -79,6 +79,19 @@ removals delete routes. Per [`design-import-shared.md` § C3b/C3c](./design-impo
 
 A gate failure is yours to fix before returning, not the invoker's problem later.
 
+**One failure that is not yours: `Missing environment variables` from `src/constants/env.ts`.** Right after
+`/init-project`, `.env.local` carries an empty `NEXT_PUBLIC_API_URL` (no backend is defined yet), and `next
+build` throws while collecting page data — on every route, before your changes matter. Measured on the first
+full run. Do not write the variable into any file (that is the developer's value); re-run the gate with it
+supplied inline for that one command, from the Bash tool:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000 pnpm run build
+```
+
+Then report `build=✅` and add `(NEXT_PUBLIC_API_URL supplied inline: .env.local has none yet)` to the
+`Notes:` line. Any other build error is yours.
+
 ## F. Commit — the invoker commits, one commit per module
 
 You do **not** commit. Return your report; the invoker (the `/init-project` orchestrator or the main

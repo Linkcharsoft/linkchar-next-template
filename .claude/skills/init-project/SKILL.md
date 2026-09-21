@@ -175,8 +175,9 @@ The template ships some features as inert bases that a dedicated agent completes
 
 1. **Ask once, with `AskUserQuestion`** (multi-select, header `Modules`): *"Which optional modules do you want to set up now?"* Options, in this order:
    - **Contact form (Resend)** — a `/api/contact` route + `ContactForm` wired to Resend, with honeypot and optional Turnstile.
+   - **None for now** — always the LAST option. The harness rejects a question with fewer than two options, so this one is what makes the question valid while the module list is short; it is also the real "skip" choice.
 
-   Default is **none**: an empty answer means skip to Step 10. In a **non-interactive session** (no way to ask), skip the whole step and say so in the summary — every module can be added later by running its agent by name, so nothing is lost.
+   Default is **none**: an empty answer or "None for now" means skip to Step 10. In a **non-interactive session** (no way to ask), skip the whole step and say so in the summary — every module can be added later by running its agent by name, so nothing is lost.
 
 2. **For each module selected, gather its brief BEFORE delegating** — the agent has no user to ask ([`init-modules-shared.md` § B](../../docs/init-modules-shared.md#b-two-ways-to-be-invoked--same-brief-either-way)). The fields are listed under *Expected input from the invoker* in the agent's `.md`; ask them in one `AskUserQuestion` round per module where possible, and fill the rest from what you already know (`brand` = `displayName`; `language` = the language the user is writing in unless they say otherwise). For `init-resend`, right after this init the only screen is the demo `HomePage`, so do not offer it as a mount target: pass `mount.screen: none` unless the user names a screen that already exists, and tell them the landing build mounts `<ContactForm/>` later.
 
@@ -186,7 +187,7 @@ The template ships some features as inert bases that a dedicated agent completes
    | ------ | --------------- | -------------- |
    | Contact form (Resend) | `init-resend` | `[ FEATURE ] Add contact form with Resend` |
 
-4. **Verify before committing.** The agent's report is a claim, not a measurement: check its `Validation:` footer reads `lint=✅, type-check=✅, build=✅`, `ls` at least one file it says it changed, and surface every STOP it emitted. A `STOP-BLOCKING` stops the flow here — resolve it (usually a user decision) and re-delegate; do not commit a half-applied module.
+4. **Verify before committing.** The agent's report is a claim, not a measurement: check its `Validation:` footer reads `lint=✅, type-check=✅, build=✅`, `ls` at least one file it says it changed, and surface every STOP it emitted. Right after this init `.env.local` has an empty `NEXT_PUBLIC_API_URL`, so a bare `pnpm run build` fails with `Missing environment variables`; the agent is expected to have run its build gate with that variable supplied inline (see [`init-modules-shared.md` § E](../../docs/init-modules-shared.md#e-validation-gate--three-commands-always)) and to say so in the footer — that is a pass, not a caveat to chase. A `STOP-BLOCKING` stops the flow here — resolve it (usually a user decision) and re-delegate; do not commit a half-applied module.
 
 5. **Commit the module** (Bash tool, single line, no body, no attribution trailer) with the message from the table, then move to the next selected module. Do NOT push.
 
