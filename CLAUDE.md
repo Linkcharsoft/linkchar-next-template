@@ -49,6 +49,16 @@ Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all at ONE level, ne
 >
 > **Agents, in the same `.claude/` tree, DO recurse** (`.claude/agents/figma-design/*.md`, `.claude/agents/claude-design/*.md` all load from subfolders). That asymmetry is the trap — it makes it natural to assume skills behave the same. They do not: **agents may nest, skills may not.**
 
+### Optional modules
+
+Some features are not wanted by every product. The template ships each one as a **working, inert base** in `src/` — it lints, type-checks and builds on every template change, so it cannot drift, but it does nothing until its env vars are set and nothing mounts it. A dedicated agent under `.claude/agents/init/` then **completes** that base for one project (or, for features the template ships by default, **removes** them). Agents are named after the provider or feature they touch (`init-{provider}` completes a base, `init-remove-{feature}` strips a default), so the name says which vendor a project depends on.
+
+| Agent | Kind | What it does |
+| ----- | ---- | ------------ |
+| `init-resend` | add | Completes the contact-form module (Resend): brand, language, fields, attachments, mount point, env. Base: `src/app/api/contact/route.ts`, `src/constants/contactForms.ts`, `src/utils/contactEmail.ts`, `src/hooks/useContactForm.ts`, `ContactForm` + `HoneypotField` + `TurnstileWidget`. |
+
+Two ways to run one, same result: `/init-project` asks which modules to set up (its Step 9) and delegates; or, any time later, ask Claude to *run the `init-resend` agent* — the main session gathers the brief the agent's `.md` lists and delegates the same way. There is deliberately no wrapper skill per agent: that would be two files to keep in sync for one task. The shared protocol (brief, file boundary, three-gate validation, "the invoker commits, one commit per module", report shape) lives in [`.claude/docs/init-modules-shared.md`](./.claude/docs/init-modules-shared.md); each agent's `.md` holds only its own mechanics. Planned next, in this order: `init-storyblok`, `init-remove-sentry`, `init-remove-auth`.
+
 **A sub-agent can also silently fail to load** — no error, it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. Symptom check, remedy, and the causes already ruled out: [`.claude/docs/agent-loading-troubleshooting.md`](./.claude/docs/agent-loading-troubleshooting.md). After adding or renaming an agent, **restart and verify it appears** before relying on it.
 
 ### Keep `figma-design-import` and `claude-design-import` in sync
@@ -220,6 +230,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 - **Per-project CSP origins**: when a product adopts a new third-party tool, add its origins to `PROJECT_CSP_SOURCES` in `next.config.ts` (same idiom as `images.remotePatterns`). The Report-Only violation report names the exact origin and directive to add; nothing breaks in the meantime.
 - **CSRF**: `isValidOrigin` (`src/utils/validateOrigin.ts`) guards the state-changing auth route handlers (POST/DELETE). GET handlers like `/api/auth/me` skip it on purpose. Origins are compared normalized (`new URL(x).origin`), and `localhost`/`127.0.0.1` pass in development.
 - **`/api/auth/delete-test-users`** responds only when `APP_ENV === 'development'` — 404 everywhere else.
+- **`/api/contact`** (the Resend contact-form module, see [Optional modules](#optional-modules)) is a public POST, so it stacks every cheap guard: `isValidOrigin`, a honeypot field that fakes success, Cloudflare Turnstile when `TURNSTILE_SECRET_KEY` is set, a per-instance rate limit, server-side re-validation of every field, and attachment caps by size and extension. It refuses with 500 until `RESEND_API_KEY` and `CONTACT_TO` exist. With `CONTACT_FROM` empty it sends from Resend's sandbox address, which Resend documents as test-only and which delivers **solely** to the account owner's inbox — verify the client's domain and set `CONTACT_FROM` as the normal path.
 - **Amplify runtime env**: `amplify.yml` writes ONLY `AUTH_SECRET` into `.env.production`; test credentials (`MAILSLURP_API_KEY`, `AUTH_DEFAULT_*`) never reach the deployed bundle.
 
 ## Swagger/OpenAPI-to-Code Workflow

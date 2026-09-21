@@ -22,6 +22,7 @@ const buildCspReportOnly = (): string => {
   const isDev = process.env.NODE_ENV !== 'production'
   const apiOrigin = toOrigin(process.env.NEXT_PUBLIC_API_URL)
   const clarity = Boolean(process.env.NEXT_PUBLIC_CLARITY_ID)
+  const turnstile = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
 
   let reportUri: string | undefined
   try {
@@ -38,11 +39,16 @@ const buildCspReportOnly = (): string => {
     style: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com', ...PROJECT_CSP_SOURCES.style],
     img: ['\'self\'', 'data:', 'blob:', ...PROJECT_CSP_SOURCES.img],
     font: ['\'self\'', 'data:', 'https://fonts.gstatic.com', ...PROJECT_CSP_SOURCES.font],
-    connect: ['\'self\'', 'https://*.ingest.sentry.io', 'https://*.ingest.us.sentry.io', ...PROJECT_CSP_SOURCES.connect]
+    connect: ['\'self\'', 'https://*.ingest.sentry.io', 'https://*.ingest.us.sentry.io', ...PROJECT_CSP_SOURCES.connect],
+    frame: [...PROJECT_CSP_SOURCES.frame]
   }
   if (clarity) {
     src.script.push('https://www.clarity.ms')
     src.connect.push('https://*.clarity.ms')
+  }
+  if (turnstile) {
+    src.script.push('https://challenges.cloudflare.com')
+    src.frame.push('https://challenges.cloudflare.com')
   }
   if (isDev) {
     src.script.push('https://unpkg.com')
@@ -57,7 +63,7 @@ const buildCspReportOnly = (): string => {
     `img-src ${src.img.join(' ')}`,
     `font-src ${src.font.join(' ')}`,
     `connect-src ${src.connect.join(' ')}`,
-    ...(PROJECT_CSP_SOURCES.frame.length > 0 ? [`frame-src ${['\'self\'', ...PROJECT_CSP_SOURCES.frame].join(' ')}`] : []),
+    ...(src.frame.length > 0 ? [`frame-src ${['\'self\'', ...src.frame].join(' ')}`] : []),
     'worker-src \'self\' blob:',
     'object-src \'none\'',
     'base-uri \'self\'',

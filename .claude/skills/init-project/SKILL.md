@@ -1,6 +1,6 @@
 ---
 name: init-project
-description: Initialize a fresh clone of the Linkchar Next template into a new product. Takes a single display name, renames every product-identity reference (package.json, app metadata, manifest, HomePage), empties not-yet-defined SEO fields, generates `.env.local` with a fresh `AUTH_SECRET`, resets the version, self-removes the bootstrap enforcement, and creates the project's first commit. Leaves company/template infrastructure (default domain, `linkchar-*` cookies, backend email, authors) untouched. Run this ONCE, before any other work on a new project — the Husky pre-commit guard and the Claude PreToolUse hook both block edits/commits until it has run.
+description: Initialize a fresh clone of the Linkchar Next template into a new product. Takes a single display name, renames every product-identity reference (package.json, app metadata, manifest, HomePage), empties not-yet-defined SEO fields, generates `.env.local` with a fresh `AUTH_SECRET`, resets the version, self-removes the bootstrap enforcement, creates the project's first commit, then asks which optional modules to set up (contact form via Resend, …) and delegates each to its `.claude/agents/init/` agent with one commit per module. Leaves company/template infrastructure (default domain, `linkchar-*` cookies, backend email, authors) untouched. Run this ONCE, before any other work on a new project — the Husky pre-commit guard and the Claude PreToolUse hook both block edits/commits until it has run.
 ---
 
 Initialize a new product from this template. Arguments: **$ARGUMENTS**
@@ -68,6 +68,9 @@ Replace `<slug>` with the derived slug. The string `"linkchar-next-template"` ap
 
 **`src/screens/HomePage/HomePage.tsx`**
 - `const PRODUCT_NAME = 'Linkchar'` → `displayName`
+
+**`src/constants/contactForms.ts`**
+- `export const CONTACT_BRAND = 'Linkchar'` → `displayName` — the contact-form module's email header and sandbox sender name. Renamed here even when the module is not set up in Step 9, so a later `init-resend` run starts from the right brand.
 
 **`src/constants/auth.ts`**
 - `AUTH_EMAIL_SUBJECTS['verify-email']`: `'Confirma tu e-mail en Django Base'` → `'Confirma tu e-mail en ' + displayName` — a contract with the backend template, whose own init renames "Django Base" the same way; `src/cypress/utils/extractValidationCodeFromEmail.ts` asserts this subject.
@@ -166,15 +169,41 @@ If the pre-commit check fails, fix the reported errors and retry — but **prefe
 
 ---
 
-## Step 9 — Summary + manual TODO checklist
+## Step 9 — Optional modules (questionnaire → one agent per module)
 
-Post a short summary of what changed (the slug/displayName used, files renamed, the generated `AUTH_SECRET` in `.env.local`, that the bootstrap enforcement was removed, and the first commit's hash), then this checklist of things the skill cannot automate:
+The template ships some features as inert bases that a dedicated agent completes per project (see [CLAUDE.md § Optional modules](../../../CLAUDE.md#optional-modules)). Now that the project has its identity and its first commit, ask which ones this product wants.
+
+1. **Ask once, with `AskUserQuestion`** (multi-select, header `Modules`): *"Which optional modules do you want to set up now?"* Options, in this order:
+   - **Contact form (Resend)** — a `/api/contact` route + `ContactForm` wired to Resend, with honeypot and optional Turnstile.
+   - **None for now** — always the LAST option. The harness rejects a question with fewer than two options, so this one is what makes the question valid while the module list is short; it is also the real "skip" choice.
+
+   Default is **none**: an empty answer or "None for now" means skip to Step 10. In a **non-interactive session** (no way to ask), skip the whole step and say so in the summary — every module can be added later by running its agent by name, so nothing is lost.
+
+2. **For each module selected, gather its brief BEFORE delegating** — the agent has no user to ask ([`init-modules-shared.md` § B](../../docs/init-modules-shared.md#b-two-ways-to-be-invoked--same-brief-either-way)). The fields are listed under *Expected input from the invoker* in the agent's `.md`; ask them in one `AskUserQuestion` round per module where possible, and fill the rest from what you already know (`brand` = `displayName`; `language` = the language the user is writing in unless they say otherwise). For `init-resend`, right after this init the only screen is the demo `HomePage`, so do not offer it as a mount target: pass `mount.screen: none` unless the user names a screen that already exists, and tell them the landing build mounts `<ContactForm/>` later.
+
+3. **Delegate with the `Agent` tool, one module at a time, sequentially** — never fan out. Pass the brief verbatim plus the two pre-flight paths. Order when more than one module is selected: `init-remove-*` agents first, then the `init-{provider}` agents, so an addition lands on the project's final shape.
+
+   | Module | `subagent_type` | Commit message |
+   | ------ | --------------- | -------------- |
+   | Contact form (Resend) | `init-resend` | `[ FEATURE ] Add contact form with Resend` |
+
+4. **Verify before committing.** The agent's report is a claim, not a measurement: check its `Validation:` footer reads `lint=✅, type-check=✅, build=✅`, `ls` at least one file it says it changed, and surface every STOP it emitted. Right after this init `.env.local` has an empty `NEXT_PUBLIC_API_URL`, so a bare `pnpm run build` fails with `Missing environment variables`; the agent is expected to have run its build gate with that variable supplied inline (see [`init-modules-shared.md` § E](../../docs/init-modules-shared.md#e-validation-gate--three-commands-always)) and to say so in the footer — that is a pass, not a caveat to chase. A `STOP-BLOCKING` stops the flow here — resolve it (usually a user decision) and re-delegate; do not commit a half-applied module.
+
+5. **Commit the module** (Bash tool, single line, no body, no attribution trailer) with the message from the table, then move to the next selected module. Do NOT push.
+
+---
+
+## Step 10 — Summary + manual TODO checklist
+
+Post a short summary of what changed (the slug/displayName used, files renamed, the generated `AUTH_SECRET` in `.env.local`, that the bootstrap enforcement was removed, the first commit's hash, and which optional modules were set up — with their commit hashes — or that the questionnaire was skipped), then this checklist of things the skill cannot automate:
 
 - [ ] **Environment (blocking)**: the app will NOT start until `NEXT_PUBLIC_API_URL` is set in `.env.local` (`env.ts` throws on missing `DOMAIN`/`API_URL`/`APP_ENV`; `DOMAIN` is seeded to `localhost` and `APP_ENV` falls back to `NODE_ENV`). Fill Sentry/Clarity vars too when you wire those up.
 - [ ] **Brand assets** in `public/seo/` (favicons, `social-banner.webp`, `splash.webp`) still carry Inferencia/Linkchar branding — regenerate for the new product.
 - [ ] **HomePage demo**: remove the Three.js shader content (and the "Coming Soon" / "Powered by Inferencia" markup) in `src/screens/HomePage/HomePage.tsx` and run `pnpm remove three @types/three` once you build the real landing.
 - [ ] **Metadata**: fill `description`, `keywords`, and the OpenGraph/Twitter descriptions once the product is defined.
 - [ ] **Sentry cleanup before prod**: delete `src/app/sentry-example-page/`, `src/screens/SentryExamplePage/` + `src/app/api/sentry-example-api/route.ts` and the `/sentry-example-page` line in `src/proxy.ts` (see CLAUDE.md "Cleanup before production").
+- [ ] **Contact form (only if set up in Step 9)**: relay the developer checklist from the `init-resend` report — client-owned Resend account, sending-only API key, verified domain + `CONTACT_FROM`, `CONTACT_TO`, Turnstile keys, and the same variables in the Amplify environment.
+- [ ] **Modules skipped in Step 9** can be added at any time: ask Claude to run the module's agent by name (e.g. *"run the `init-resend` agent"*).
 
 ---
 
@@ -183,3 +212,4 @@ Post a short summary of what changed (the slug/displayName used, files renamed, 
 - This skill is **idempotent-guarded**, not idempotent: the Step 0 check prevents accidental re-runs, and Step 7 removes the enforcement so the guards never fire again in the initialized product.
 - The renaming of `package.json` `name` (Step 1, via Bash) is the single mechanism that disarms both enforcement layers — the PreToolUse hook (Layer 2) and the Husky `pre-commit` guard (Layer 1) both key off that name. Step 7 then deletes them outright. Until the rename, `Read` is always allowed (it isn't in the hook matcher), so Step 0's `Read` and the pre-flight work fine.
 - Template maintainers working on the template ITSELF (not a product) never run this skill; they bypass both layers by setting `LINKCHAR_TEMPLATE_DEV` in `.claude/settings.local.json` (`"env"` key) or the shell.
+- Step 9 runs AFTER the first commit on purpose: the init commit stays a pure rename, and every module lands as its own commit, so a module can be reverted without touching the project's identity. The module agents never commit themselves — this skill (or the main session, on a standalone run) is the single place the commit convention is enforced.

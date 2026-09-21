@@ -108,6 +108,8 @@ const { user } = useUserStore()
 | `InputContainer` | `components/inputs/InputContainer/InputContainer.tsx` | Wraps an input with `Label` + `InputError` |
 | `Label` | `components/Label/Label.tsx` | Styled `<label>` element |
 | `InputError` | `components/inputs/InputError/InputError.tsx` | Animated error message with icon |
+| `HoneypotField` | `components/inputs/HoneypotField/HoneypotField.tsx` | Off-screen spam-trap input for public forms. Spread `honeypotProps` from `useContactForm`; unique `id` per form. |
+| `TurnstileWidget` | `components/inputs/TurnstileWidget/TurnstileWidget.tsx` | Cloudflare Turnstile challenge. Renders nothing until `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set. Spread `turnstileProps` from `useContactForm`; remount with a `key` after a failed submit (tokens are single-use). |
 | `SearchInput` | `components/SearchInput/SearchInput.tsx` | Debounced search input with clear button |
 | `Filters` | `components/Filters/Filters.tsx` | Filter panel with pill, dropdown, date, and date-range filters |
 | `PasswordValidator` | `components/PasswordValidator/PasswordValidator.tsx` | Real-time password strength indicator |
@@ -115,6 +117,7 @@ const { user } = useUserStore()
 | `SkeletonBlock` | `components/SkeletonBlock/SkeletonBlock.tsx` | Shimmering placeholder rectangle used as the primitive for skeleton loaders. Pass `dark` for use on dark backgrounds. Size and shape via a BEM class passed in `className`. |
 | `Waves` | `components/Waves/Waves.tsx` | Decorative SVG wave animation (the template's mark on the 404 / error / global-error screens — recolour it per project, never replace it) |
 | `PoweredBy` | `components/PoweredBy/PoweredBy.tsx` | "Powered by Inferencia AI Solutions" credit strip (external link with `rel`). Ships UNMOUNTED: landing-page projects mount it once, as the Footer's last strip; dashboards / custom apps place it (or not) case by case at build time. Restyle / localize it per project instead of writing a new credit. Optional `className`. |
+| `ContactForm` | `components/ContactForm/ContactForm.tsx` | Reference contact form wired to `/api/contact` (Resend): Formik + Yup, `InputContainer` fields, honeypot, optional Turnstile, optional attachments driven by `CONTACT_FORMS`. Ships UNMOUNTED — the `init-resend` agent adapts fields / copy / language and mounts it. Optional `className`. |
 | `LoadingModal` | `components/modals/LoadingModal/LoadingModal.tsx` | Full-screen loading overlay with message |
 | `StateModal` | `components/modals/StateModal/StateModal.tsx` | State-based modal (success, error, warn, info) |
 | `ToastNotifications` | `components/modals/ToastNotifications/ToastNotifications.tsx` | Toast notification display |
