@@ -1,0 +1,44 @@
+.ContactForm
+  display: flex
+  flex-direction: column
+  gap: 24px
+  width: 100%
+
+  &__Fields
+    display: flex
+    flex-direction: column
+    gap: 16px
+
+  &__Pair
+    display: grid
+    gap: 16px
+    @apply md:grid-cols-2
+
+  &__Required
+    @apply text-red-600
+
+  &__Error
+    @apply text-medium-14 text-red-600
+
+  &__Actions
+    display: flex
+    flex-direction: column
+    align-items: center
+    gap: 12px
+    @apply md:flex-row md:justify-between
+
+  &__Mail
+    text-decoration: underline
+    @apply text-regular-14 text-surface-700 hover:text-surface-900
+
+  &__Done
+    display: flex
+    flex-direction: column
+    gap: 12px
+    text-align: center
+
+  &__DoneTitle
+    @apply text-bold-18 text-surface-900
+
+  &__DoneText
+    @apply text-regular-16 text-surface-700

@@ -35,6 +35,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-tooltip": "6.0.8",
+    "resend": "6.28.1",
     "server-only": "0.0.1",
     "sharp": "0.35.4",
     "swr": "2.5.1",
