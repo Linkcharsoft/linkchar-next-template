@@ -70,7 +70,7 @@ Replace `<slug>` with the derived slug. The string `"linkchar-next-template"` ap
 - `const PRODUCT_NAME = 'Linkchar'` → `displayName`
 
 **`src/constants/contactForms.ts`**
-- `export const CONTACT_BRAND = 'Linkchar'` → `displayName` — the contact-form module's email header and sandbox sender name. Renamed here even when the module is not set up in Step 9, so a later `init-add-resend` run starts from the right brand.
+- `export const CONTACT_BRAND = 'Linkchar'` → `displayName` — the contact-form module's email header and sandbox sender name. Renamed here even when the module is not set up in Step 9, so a later `init-resend` run starts from the right brand.
 
 **`src/constants/auth.ts`**
 - `AUTH_EMAIL_SUBJECTS['verify-email']`: `'Confirma tu e-mail en Django Base'` → `'Confirma tu e-mail en ' + displayName` — a contract with the backend template, whose own init renames "Django Base" the same way; `src/cypress/utils/extractValidationCodeFromEmail.ts` asserts this subject.
@@ -180,11 +180,11 @@ The template ships some features as inert bases that a dedicated agent completes
 
 2. **For each module selected, gather its brief BEFORE delegating** — the agent has no user to ask ([`init-modules-shared.md` § B](../../docs/init-modules-shared.md#b-two-ways-to-be-invoked--same-brief-either-way)). The fields are listed under *Expected input from the invoker* in the agent's `.md`; ask them in one `AskUserQuestion` round per module where possible, and fill the rest from what you already know (`brand` = `displayName`; `language` = the language the user is writing in unless they say otherwise).
 
-3. **Delegate with the `Agent` tool, one module at a time, sequentially** — never fan out. Pass the brief verbatim plus the two pre-flight paths. Order when more than one module is selected: `init-remove-*` agents first, then `init-add-*` agents, so an addition lands on the project's final shape.
+3. **Delegate with the `Agent` tool, one module at a time, sequentially** — never fan out. Pass the brief verbatim plus the two pre-flight paths. Order when more than one module is selected: `init-remove-*` agents first, then the `init-{provider}` agents, so an addition lands on the project's final shape.
 
    | Module | `subagent_type` | Commit message |
    | ------ | --------------- | -------------- |
-   | Contact form (Resend) | `init-add-resend` | `[ FEATURE ] Add contact form with Resend` |
+   | Contact form (Resend) | `init-resend` | `[ FEATURE ] Add contact form with Resend` |
 
 4. **Verify before committing.** The agent's report is a claim, not a measurement: check its `Validation:` footer reads `lint=✅, type-check=✅, build=✅`, `ls` at least one file it says it changed, and surface every STOP it emitted. A `STOP-BLOCKING` stops the flow here — resolve it (usually a user decision) and re-delegate; do not commit a half-applied module.
 
@@ -201,8 +201,8 @@ Post a short summary of what changed (the slug/displayName used, files renamed, 
 - [ ] **HomePage demo**: remove the Three.js shader content (and the "Coming Soon" / "Powered by Inferencia" markup) in `src/screens/HomePage/HomePage.tsx` and run `pnpm remove three @types/three` once you build the real landing.
 - [ ] **Metadata**: fill `description`, `keywords`, and the OpenGraph/Twitter descriptions once the product is defined.
 - [ ] **Sentry cleanup before prod**: delete `src/app/sentry-example-page/`, `src/screens/SentryExamplePage/` + `src/app/api/sentry-example-api/route.ts` and the `/sentry-example-page` line in `src/proxy.ts` (see CLAUDE.md "Cleanup before production").
-- [ ] **Contact form (only if set up in Step 9)**: relay the developer checklist from the `init-add-resend` report — client-owned Resend account, sending-only API key, verified domain + `CONTACT_FROM`, `CONTACT_TO`, Turnstile keys, and the same variables in the Amplify environment.
-- [ ] **Modules skipped in Step 9** can be added at any time: ask Claude to run the module's agent by name (e.g. *"run the `init-add-resend` agent"*).
+- [ ] **Contact form (only if set up in Step 9)**: relay the developer checklist from the `init-resend` report — client-owned Resend account, sending-only API key, verified domain + `CONTACT_FROM`, `CONTACT_TO`, Turnstile keys, and the same variables in the Amplify environment.
+- [ ] **Modules skipped in Step 9** can be added at any time: ask Claude to run the module's agent by name (e.g. *"run the `init-resend` agent"*).
 
 ---
 

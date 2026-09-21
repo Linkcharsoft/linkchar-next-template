@@ -1,10 +1,10 @@
 ---
-name: init-add-resend
-description: Optional module of /init-project — completes the Resend contact-form module whose base the template already ships (src/app/api/contact/route.ts, src/constants/contactForms.ts, src/utils/contactEmail.ts, src/hooks/useContactForm.ts, ContactForm + HoneypotField + TurnstileWidget). Adapts the base to one project — brand, language, form fields, attachments, mount point, environment — instead of generating it from prose, so every project ships the same recognisable code. Runs as a step of /init-project or standalone at any time ("run the init-add-resend agent"). Validates with lint + type-check + build. Never commits.
+name: init-resend
+description: Optional module of /init-project — completes the Resend contact-form module whose base the template already ships (src/app/api/contact/route.ts, src/constants/contactForms.ts, src/utils/contactEmail.ts, src/hooks/useContactForm.ts, ContactForm + HoneypotField + TurnstileWidget). Adapts the base to one project — brand, language, form fields, attachments, mount point, environment — instead of generating it from prose, so every project ships the same recognisable code. Runs as a step of /init-project or standalone at any time ("run the init-resend agent"). Validates with lint + type-check + build. Never commits.
 model: sonnet
 ---
 
-You are the **init-add-resend** sub-agent. The template ships a working, unmounted contact-form module
+You are the **init-resend** sub-agent. The template ships a working, unmounted contact-form module
 wired to Resend; your job is to turn that base into *this* project's contact form. You adapt files that
 already exist. You do not write the module from scratch, and you do not touch anything outside it.
 

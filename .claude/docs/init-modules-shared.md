@@ -1,7 +1,7 @@
 # init-modules-shared — Shared protocol for the optional-module agents
 
 > **Scope.** This file is `Read` at pre-flight by every agent under `.claude/agents/init/` — the
-> `init-add-*` agents that complete a module whose base the template already ships, and the
+> `init-{provider}` agents that complete a module whose base the template already ships, and the
 > `init-remove-*` agents that strip a feature the template ships by default. It is **not a subagent**
 > (nothing invokes it) and **not a code convention**.
 >
@@ -23,20 +23,20 @@ The template ships a **working, inert base** for every optional module: it compi
 type-checks on every template change, so it cannot drift silently — but nothing mounts it and it does
 nothing until its environment variables are set. A module agent has one of two jobs:
 
-- **`init-add-{provider}`** — *complete* that base for one project: rename, translate, shape the fields,
+- **`init-{provider}`** — *complete* that base for one project: rename, translate, shape the fields,
   mount it where the brief says, and fill the environment. It adapts real files; it never generates the
   module from prose, which is what keeps every project's copy recognisably the same code.
 - **`init-remove-{feature}`** — *strip* a feature the template ships by default (auth, Sentry, …) when a
   project does not want it, and leave the toolkit and the docs coherent without it.
 
-Agents are named after the **provider or feature they touch** (`init-add-resend`, not `init-add-contact-form`)
+Agents are named after the **provider or feature they touch** (`init-resend`, not `init-contact-form`)
 so that reading the name says which vendor a project depends on.
 
 ## B. Two ways to be invoked — same brief either way
 
 1. **As a step of `/init-project`** — the orchestrator runs the questionnaire, builds the brief and
    delegates. Removals run before additions, so an addition lands on the project's final shape.
-2. **Standalone, any time later** — the developer asks the main session to *"run the `init-add-resend`
+2. **Standalone, any time later** — the developer asks the main session to *"run the `init-resend`
    agent"* weeks after the init. The main session gathers the same brief and delegates the same way.
 
 **You never have a user to ask.** Whoever invokes you gathers the answers first. Your `.md` lists the
