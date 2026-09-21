@@ -7,7 +7,9 @@ frontend:
         - nvm use 24
         - corepack enable
         - pnpm install --frozen-lockfile
-        - env | grep "^AUTH_SECRET=" > .env.production
+        # Amplify hands env vars to the build shell but not to the SSR runtime; only this allowlist reaches it.
+        # Never the test credentials (MAILSLURP_API_KEY, AUTH_DEFAULT_*) nor a Storyblok management token.
+        - env | grep -E "^(AUTH_SECRET|RESEND_API_KEY|CONTACT_TO|CONTACT_FROM|TURNSTILE_SECRET_KEY|STORYBLOK_TOKEN|STORYBLOK_REGION)=" > .env.production || true
     build:
       commands:
         - pnpm run build
