@@ -175,6 +175,7 @@ The template ships some features as inert bases that a dedicated agent completes
 
 1. **Ask once, with `AskUserQuestion`** (multi-select, header `Modules`): *"Which optional modules do you want to set up now?"* Options, in this order:
    - **Contact form (Resend)** — a `/api/contact` route + `ContactForm` wired to Resend, with honeypot and optional Turnstile.
+   - **CMS (Storyblok)** — editable pages with bundled fallback content and/or a collection (blog), Draft Mode for the Visual Editor.
    - **None for now** — always the LAST option. The harness rejects a question with fewer than two options, so this one is what makes the question valid while the module list is short; it is also the real "skip" choice.
 
    Default is **none**: an empty answer or "None for now" means skip to Step 10. In a **non-interactive session** (no way to ask), skip the whole step and say so in the summary — every module can be added later by running its agent by name, so nothing is lost.
@@ -186,6 +187,9 @@ The template ships some features as inert bases that a dedicated agent completes
    | Module | `subagent_type` | Commit message |
    | ------ | --------------- | -------------- |
    | Contact form (Resend) | `init-resend` | `[ FEATURE ] Add contact form with Resend` |
+   | CMS (Storyblok) | `init-storyblok` | `[ FEATURE ] Add Storyblok CMS layer` |
+
+   For `init-storyblok` right after this init: with no designed screens yet, `pages` is usually `[]` and the useful answers are `siteConfig`, `collection` (blog or none) and `region`; editable pages get wired when the landing exists (a later standalone run).
 
 4. **Verify before committing.** The agent's report is a claim, not a measurement: check its `Validation:` footer reads `lint=✅, type-check=✅, build=✅`, `ls` at least one file it says it changed, and surface every STOP it emitted. Right after this init `.env.local` has an empty `NEXT_PUBLIC_API_URL`, so a bare `pnpm run build` fails with `Missing environment variables`; the agent is expected to have run its build gate with that variable supplied inline (see [`init-modules-shared.md` § E](../../docs/init-modules-shared.md#e-validation-gate--three-commands-always)) and to say so in the footer — that is a pass, not a caveat to chase. A `STOP-BLOCKING` stops the flow here — resolve it (usually a user decision) and re-delegate; do not commit a half-applied module.
 
@@ -203,6 +207,7 @@ Post a short summary of what changed (the slug/displayName used, files renamed, 
 - [ ] **Metadata**: fill `description`, `keywords`, and the OpenGraph/Twitter descriptions once the product is defined.
 - [ ] **Sentry cleanup before prod**: delete `src/app/sentry-example-page/`, `src/screens/SentryExamplePage/` + `src/app/api/sentry-example-api/route.ts` and the `/sentry-example-page` line in `src/proxy.ts` (see CLAUDE.md "Cleanup before production").
 - [ ] **Contact form (only if set up in Step 9)**: relay the developer checklist from the `init-resend` report — client-owned Resend account, sending-only API key, verified domain + `CONTACT_FROM`, `CONTACT_TO`, Turnstile keys, and the same variables in the Amplify environment.
+- [ ] **Storyblok (only if set up in Step 9)**: relay the content-model table and the checklist from the `init-storyblok` report — client-owned space, Preview token + region, publish webhook → Amplify build hook, Visual Editor location + `/api/draft?token=`, and `start:https` for local editing.
 - [ ] **Modules skipped in Step 9** can be added at any time: ask Claude to run the module's agent by name (e.g. *"run the `init-resend` agent"*).
 
 ---
