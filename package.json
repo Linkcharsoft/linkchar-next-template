@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "next dev",
+    "start:https": "next dev --experimental-https",
     "build": "next build",
     "serve": "next build && next start",
     "lint-check": "eslint .",
@@ -25,6 +26,7 @@
   "dependencies": {
     "@microsoft/clarity": "1.0.2",
     "@sentry/nextjs": "10.73.0",
+    "@storyblok/react": "7.3.1",
     "dayjs": "1.11.23",
     "formik": "2.4.9",
     "framer-motion": "13.2.0",

@@ -18,6 +18,11 @@ const PROJECT_CSP_SOURCES = {
   frame: [] as string[]
 }
 
+// The Storyblok Visual Editor iframes every page, and X-Frame-Options has no allowlist form: with a token set the
+// anti-clickjacking guard moves to an enforced `frame-ancestors` that admits the editor.
+const storyblok = Boolean(process.env.STORYBLOK_TOKEN)
+const FRAME_ANCESTORS = storyblok ? '\'self\' https://app.storyblok.com' : '\'self\''
+
 const buildCspReportOnly = (): string => {
   const isDev = process.env.NODE_ENV !== 'production'
   const apiOrigin = toOrigin(process.env.NEXT_PUBLIC_API_URL)
@@ -68,7 +73,7 @@ const buildCspReportOnly = (): string => {
     'object-src \'none\'',
     'base-uri \'self\'',
     'form-action \'self\'',
-    'frame-ancestors \'self\'',
+    `frame-ancestors ${FRAME_ANCESTORS}`,
     ...(reportUri ? [`report-uri ${reportUri}`] : [])
   ].join('; ')
 }
@@ -108,11 +113,12 @@ const nextConfig: NextConfig = {
 
   images: {
     minimumCacheTTL: 31_536_000,
-    formats: ['image/webp']
-    // Add per-project when loading images from external origins (CDN, CMS, S3, etc.):
-    // remotePatterns: [
-    //   { protocol: 'https', hostname: new URL(process.env.NEXT_PUBLIC_MEDIA_URL).host, pathname: '/**' }
-    // ]
+    formats: ['image/webp'],
+    // Per-project external image origins go here (the media bucket, another CDN) — same idiom as PROJECT_CSP_SOURCES.
+    remotePatterns: [
+      // Storyblok asset CDN: every image edited through the CMS is served from here.
+      { protocol: 'https', hostname: 'a.storyblok.com', pathname: '/**' }
+    ]
   },
 
   async headers () {
@@ -124,8 +130,10 @@ const nextConfig: NextConfig = {
           { key: 'Strict-Transport-Security', value: 'max-age=63072000' },
           // Block MIME-sniffing (asset-as-script XSS vector)
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          // Anti-clickjacking: only our own domain may iframe the app
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          // Anti-clickjacking: only our own domain may iframe the app (plus the Storyblok editor when the CMS is on)
+          ...(storyblok
+            ? [{ key: 'Content-Security-Policy', value: `frame-ancestors ${FRAME_ANCESTORS}` }]
+            : [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }]),
           // Cross-domain navigations leak only the origin, not the full path
           { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
           // Disable sensitive APIs by default; re-enable per feature (e.g. `geolocation=(self)`)
