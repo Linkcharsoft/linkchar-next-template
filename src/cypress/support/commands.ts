@@ -16,14 +16,14 @@ declare global {
        * @example
        * cy.login()
        */
-      login(email?: string, password?: string)
+      login(email?: string, password?: string): Chainable<void>
 
       /**
        * Logout user
        * @example
        * cy.logout()
        */
-      logout()
+      logout(): Chainable<void>
 
       /**
        * Create or retrieve a MailSlurp inbox.
@@ -89,14 +89,10 @@ Cypress.Commands.add('createInbox', () => {
 
   cy.task<InboxType | null>('readFileMaybe', FILE_NAME, { log: false })
     .then((data) => {
-      let newUser = false
-
       const createAndSaveInbox = () => {
         return cy.mailslurp()
           .then((ms: MailSlurp) => ms.createInbox())
           .then(inbox => {
-            newUser = true
-
             const userData = { id: inbox.id!, emailAddress: inbox.emailAddress! }
 
             cy.writeFile(FILE_NAME, userData, { log: false })
@@ -115,15 +111,13 @@ Cypress.Commands.add('createInbox', () => {
             const errors = ['Error403Forbidden', 'Error404NotFound']
             const errorClass = (error as { errorClass?: string }).errorClass
 
-            if (errorClass && errors.includes(errorClass)) {
-              return createAndSaveInbox()
-            }
+            if (errorClass && errors.includes(errorClass)) return null
+            throw error
           })
         )
-        .then((inbox: InboxDto) => {
-          // Check inbox expiration
-          if(!newUser && (!inbox.expiresAt || (inbox.expiresAt && new Date(inbox.expiresAt) < new Date()))) {
-            // Expired -> create a new one
+        .then((inbox: InboxDto | null) => {
+          // Cypress commands can't be queued from inside the promise, so a missing or expired inbox is recreated here
+          if (!inbox?.expiresAt || new Date(inbox.expiresAt) < new Date()) {
             return createAndSaveInbox()
           }
 
