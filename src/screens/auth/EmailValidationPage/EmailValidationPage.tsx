@@ -32,6 +32,8 @@ const EmailValidationPage = ({ email }: Props) => {
   })
 
 
+  if (!isClient) return null
+
   const handleResendEmail = async () => {
     openModal('loadingModal', {
       title: 'Resending email',
@@ -66,9 +68,6 @@ const EmailValidationPage = ({ email }: Props) => {
       closeModal('loadingModal')
     }
   }
-
-
-  if (!isClient) return null
 
   return (
     <main id="main" className="AuthLayout">

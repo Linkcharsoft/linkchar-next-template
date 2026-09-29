@@ -107,7 +107,7 @@ export const customFetch = async <T extends object>({
     fetchOptions.cache = cache ?? 'no-store'
   }
 
-  const response = await fetch(urlPath.toString(), fetchOptions)
+  const response = await fetch(urlPath.href, fetchOptions)
 
   // Client-side only; the proxy handles server-side refresh proactively.
   if (

@@ -25,9 +25,8 @@ export async function DELETE (req: NextRequest) {
       }, {
         status: 200
       })
-    } else {
-      throw new Error(AUTH_ERRORS['delete-test-users'])
     }
+    throw new Error(AUTH_ERRORS['delete-test-users'])
   } catch (error) {
     const message = error instanceof Error ? error.message : AUTH_ERRORS['delete-test-users']
     return NextResponse.json(

@@ -46,9 +46,8 @@ export async function POST (req: NextRequest) {
       }, {
         status: 200
       })
-    } else {
-      throw new Error(AUTH_ERRORS['refresh-token'])
     }
+    throw new Error(AUTH_ERRORS['refresh-token'])
   } catch (error) {
     const message = error instanceof Error ? error.message : AUTH_ERRORS['refresh-token']
     return NextResponse.json(

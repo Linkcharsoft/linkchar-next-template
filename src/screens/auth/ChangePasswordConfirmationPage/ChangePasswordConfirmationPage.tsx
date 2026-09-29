@@ -56,10 +56,12 @@ const ChangePasswordConfirmationPage = ({ token }: Props) => {
         })
       }, 3000)
       return () => {
-        if (userMissingTimeoutRef.current) {
-          clearTimeout(userMissingTimeoutRef.current)
-          userMissingTimeoutRef.current = null
+        if (!userMissingTimeoutRef.current) {
+          return
         }
+
+        clearTimeout(userMissingTimeoutRef.current)
+        userMissingTimeoutRef.current = null
       }
     }
 

@@ -79,16 +79,17 @@ const SignupPage = () => {
           router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
         } else {
           const emailError = error as { email?: string[] }
-          const passwordError = error as { password1?: string[] }
-          const unknownError = error as { non_field_errors?: string[] }
-
           if (emailError.email && emailError.email.length > 0) {
             return setErrors({ email: emailError.email[0] })
           }
 
+          const passwordError = error as { password1?: string[] }
+
           if (passwordError.password1 && passwordError.password1.length > 0) {
             return setErrors({ password: passwordError.password1[0] })
           }
+
+          const unknownError = error as { non_field_errors?: string[] }
 
           if (unknownError.non_field_errors && unknownError.non_field_errors.length > 0) {
             return setErrors({ password: unknownError.non_field_errors[0] })

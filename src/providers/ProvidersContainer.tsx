@@ -39,18 +39,20 @@ const ProvidersContainer = ({ children }: Props) => {
     const intervalId = setInterval(() => {
       const currentListener = getCookie(LISTENER_COOKIE_NAME) || null
 
-      if (currentListener !== authListener.current) {
-        authListener.current = currentListener
-
-        // Session ended: clear the store (static routes don't mount AuthHydrator).
-        if (!currentListener) {
-          removeToken()
-          removeUser()
-          Sentry.setUser(null)
-        }
-
-        router.refresh()
+      if (currentListener === authListener.current) {
+        return
       }
+
+      authListener.current = currentListener
+
+      // Session ended: clear the store (static routes don't mount AuthHydrator).
+      if (!currentListener) {
+        removeToken()
+        removeUser()
+        Sentry.setUser(null)
+      }
+
+      router.refresh()
     }, 2000)
 
     return () => clearInterval(intervalId)

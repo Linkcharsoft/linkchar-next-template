@@ -20,14 +20,14 @@ const PROJECT_CSP_SOURCES = {
 
 // The Storyblok Visual Editor iframes every page, and X-Frame-Options has no allowlist form: with a token set the
 // anti-clickjacking guard moves to an enforced `frame-ancestors` that admits the editor.
-const storyblok = Boolean(process.env.STORYBLOK_TOKEN)
-const FRAME_ANCESTORS = storyblok ? '\'self\' https://app.storyblok.com' : '\'self\''
+const isStoryblokEnabled = Boolean(process.env.STORYBLOK_TOKEN)
+const FRAME_ANCESTORS = isStoryblokEnabled ? '\'self\' https://app.storyblok.com' : '\'self\''
 
 const buildCspReportOnly = (): string => {
   const isDev = process.env.NODE_ENV !== 'production'
   const apiOrigin = toOrigin(process.env.NEXT_PUBLIC_API_URL)
-  const clarity = Boolean(process.env.NEXT_PUBLIC_CLARITY_ID)
-  const turnstile = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
+  const isClarityEnabled = Boolean(process.env.NEXT_PUBLIC_CLARITY_ID)
+  const isTurnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)
 
   let reportUri: string | undefined
   try {
@@ -47,11 +47,11 @@ const buildCspReportOnly = (): string => {
     connect: ['\'self\'', 'https://*.ingest.sentry.io', 'https://*.ingest.us.sentry.io', ...PROJECT_CSP_SOURCES.connect],
     frame: [...PROJECT_CSP_SOURCES.frame]
   }
-  if (clarity) {
+  if (isClarityEnabled) {
     src.script.push('https://www.clarity.ms')
     src.connect.push('https://*.clarity.ms')
   }
-  if (turnstile) {
+  if (isTurnstileEnabled) {
     src.script.push('https://challenges.cloudflare.com')
     src.frame.push('https://challenges.cloudflare.com')
   }
@@ -131,9 +131,9 @@ const nextConfig: NextConfig = {
           // Block MIME-sniffing (asset-as-script XSS vector)
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           // Anti-clickjacking: only our own domain may iframe the app (plus the Storyblok editor when the CMS is on)
-          ...(storyblok
-            ? [{ key: 'Content-Security-Policy', value: `frame-ancestors ${FRAME_ANCESTORS}` }]
-            : [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }]),
+          isStoryblokEnabled
+            ? { key: 'Content-Security-Policy', value: `frame-ancestors ${FRAME_ANCESTORS}` }
+            : { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           // Cross-domain navigations leak only the origin, not the full path
           { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
           // Disable sensitive APIs by default; re-enable per feature (e.g. `geolocation=(self)`)

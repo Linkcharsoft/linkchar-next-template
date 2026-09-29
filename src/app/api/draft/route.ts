@@ -26,11 +26,12 @@ export async function GET (request: NextRequest) {
 
   // Light guard: only enable draft for a request carrying the space token.
   const token = searchParams.get('token')
-  const slug = searchParams.get('slug')?.replace(/\/$/, '') ?? ''
 
   if (!STORYBLOK_TOKEN || token !== STORYBLOK_TOKEN) {
     return new Response('Invalid token', { status: 401 })
   }
+
+  const slug = searchParams.get('slug')?.replace(/\/$/, '') ?? ''
 
   const draft = await draftMode()
   draft.enable()

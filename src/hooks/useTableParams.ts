@@ -133,9 +133,7 @@ const appendDefaultParam = (params: URLSearchParams, key: string, defaultValue: 
   if (!isMeaningfulValue(defaultValue)) return
 
   if (Array.isArray(defaultValue)) {
-    if (defaultValue.length > 0) {
-      for (const v of defaultValue) params.append(key, String(v))
-    }
+    for (const v of defaultValue) params.append(key, String(v))
     return
   }
 
@@ -297,8 +295,8 @@ function useTableParams<DefaultParams extends ParamsMap> ({
   const PARAMS: ReturnedParams<DefaultParams> = useMemo(() => {
     const currentParams: Record<string, unknown> = {}
 
-    for (const k of Object.keys(DEFAULT_PARAMS)) {
-      currentParams[k] = parseParamValue(DEFAULT_PARAMS[k], urlParams, k)
+    for (const [k, value] of Object.entries(DEFAULT_PARAMS)) {
+      currentParams[k] = parseParamValue(value, urlParams, k)
     }
 
     return currentParams as ReturnedParams<DefaultParams>
@@ -320,7 +318,7 @@ function useTableParams<DefaultParams extends ParamsMap> ({
       }
 
       for (const [key, value] of Object.entries(newParams)) {
-        if(!(key in DEFAULT_PARAMS)) throw new Error(`[${key}] is not defined in defaultParams`)
+        if(!Object.hasOwn(DEFAULT_PARAMS, key)) throw new Error(`[${key}] is not defined in defaultParams`)
 
         applyParamToSearch(params, key, value, DEFAULT_PARAMS[key])
       }

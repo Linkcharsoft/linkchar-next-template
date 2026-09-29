@@ -104,10 +104,12 @@ const CustomButton = ({
           aria-disabled={disabled}
           data-tooltip-id={tooltipId}
           onClick={(e) => {
-            if (disabled) {
-              e.preventDefault()
-              e.stopPropagation()
+            if (!disabled) {
+              return
             }
+
+            e.preventDefault()
+            e.stopPropagation()
           }}
         >
           { children }

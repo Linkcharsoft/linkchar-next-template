@@ -21,7 +21,7 @@ const isFeedbackTransportReachable = async (): Promise<boolean> => {
 
   let url: string
   if (tunnel) {
-    url = new URL(tunnel, globalThis.location.origin).toString()
+    url = new URL(tunnel, globalThis.location.origin).href
   } else {
     const dsn = client.getDsn()
     if (!dsn) return false
@@ -58,14 +58,14 @@ const GlobalErrorPage = ({
   }, [error])
 
   useEffect(() => {
-    let active = true
+    let isActive = true
 
     isFeedbackTransportReachable().then((reachable) => {
-      if (active) setFeedbackReachable(reachable)
+      if (isActive) setFeedbackReachable(reachable)
     })
 
     return () => {
-      active = false
+      isActive = false
     }
   }, [])
 

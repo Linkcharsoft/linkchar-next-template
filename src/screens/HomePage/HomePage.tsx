@@ -104,10 +104,12 @@ const HomePage = () => {
       }
 
       stop () {
-        if (requestId) {
-          globalThis.cancelAnimationFrame(requestId)
-          requestId = undefined
+        if (!requestId) {
+          return
         }
+
+        globalThis.cancelAnimationFrame(requestId)
+        requestId = undefined
       }
 
       dispose () {
@@ -133,7 +135,7 @@ const HomePage = () => {
     const mousePos = { x: 0, y: 0, px: 0, py: 0 }
     const world = new World(container.offsetWidth, container.offsetHeight)
 
-    const handleWindowResize = () => {
+    const handleResize = () => {
       world.updateSize(container.offsetWidth, container.offsetHeight)
     }
 
@@ -145,14 +147,15 @@ const HomePage = () => {
       world.mouseMove(mousePos)
     }
 
-    window.addEventListener('resize', handleWindowResize)
+    const resizeObserver = new ResizeObserver(handleResize)
+    resizeObserver.observe(container)
     document.addEventListener('mousemove', handleMouseMove)
-    handleWindowResize()
+    handleResize()
     world.loop()
 
     return () => {
       world.dispose()
-      window.removeEventListener('resize', handleWindowResize)
+      resizeObserver.disconnect()
       document.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])

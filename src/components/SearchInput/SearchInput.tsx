@@ -76,10 +76,10 @@ const SearchInput = ({
           aria-label="Clear search"
           onClick={clearSearch}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              clearSearch()
-            }
+            if (e.key !== 'Enter' && e.key !== ' ') return
+
+            e.preventDefault()
+            clearSearch()
           }}
         />
       ) : (

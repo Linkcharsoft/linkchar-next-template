@@ -54,12 +54,12 @@ export async function POST (req: NextRequest) {
       return NextResponse.json(response.data.user, {
         status: 200
       })
-    } else {
-      const status = response?.response?.status ?? 400
-      return NextResponse.json(response.error, {
-        status
-      })
     }
+
+    const status = response?.response?.status ?? 400
+    return NextResponse.json(response.error, {
+      status
+    })
   } catch (error) {
     // Report the real failure; the client gets a generic message, never internals.
     captureError('login-route', error)
