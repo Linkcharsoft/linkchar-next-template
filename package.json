@@ -2,10 +2,10 @@
   "name": "linkchar-next-template",
   "version": "0.12.0",
   "private": true,
-  "packageManager": "pnpm@11.28.2+sha512.755ce2fe3c05bfd7bb412b42aff3c5c55cd38c529c6eca810475497ae36746c571e4b6e1814e6e7e4b97d7ee864b8a0e44673c3b297a50e0ac28771c5ce15d27",
+  "packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec",
   "engines": {
     "node": "^24.0.0",
-    "pnpm": ">=11.0.0"
+    "pnpm": ">=12.0.0"
   },
   "scripts": {
     "start": "next dev",
