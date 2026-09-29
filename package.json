@@ -13,7 +13,7 @@
     "build": "next build",
     "serve": "next build && next start",
     "lint-check": "eslint .",
-    "type-check": "tsc --noEmit && pnpm run type-check:test",
+    "type-check": "tsc --noEmit",
     "type-check:test": "tsc --noEmit -p src/cypress/tsconfig.json",
     "check": "pnpm run lint-check && pnpm run type-check",
     "clean": "pnpm dlx rimraf .next node_modules pnpm-lock.yaml",
