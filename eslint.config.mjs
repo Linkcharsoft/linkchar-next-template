@@ -1,4 +1,5 @@
 import eslintComments from '@eslint-community/eslint-plugin-eslint-comments'
+import { fixupPluginRules } from '@eslint/compat'
 import js from '@eslint/js'
 import nextPlugin from '@next/eslint-plugin-next'
 import stylistic from '@stylistic/eslint-plugin'
@@ -56,13 +57,14 @@ const ESLintConfig = [
     },
     plugins: {
       '@typescript-eslint': typescriptEslint,
-      'jsx-a11y': jsxA11y,
+      // These four still call context/SourceCode APIs that ESLint 10 removed; @eslint/compat shims them back.
+      'jsx-a11y': fixupPluginRules(jsxA11y),
       'react-hooks': reactHooks,
-      import: importPlugin,
+      import: fixupPluginRules(importPlugin),
       '@next/next': nextPlugin,
-      react,
+      react: fixupPluginRules(react),
       stylistic,
-      tailwindcss: tailwind,
+      tailwindcss: fixupPluginRules(tailwind),
       'granular-selectors': granularSelectors,
       '@eslint-community/eslint-comments': eslintComments,
       boundaries,

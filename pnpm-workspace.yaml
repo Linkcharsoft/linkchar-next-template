@@ -7,6 +7,11 @@ allowBuilds:
   sass: true
   sharp: true
   unrs-resolver: true
+peerDependencyRules:
+  allowedVersions:
+    eslint-plugin-import>eslint: '10'
+    eslint-plugin-jsx-a11y>eslint: '10'
+    eslint-plugin-react>eslint: '10'
 minimumReleaseAgeExclude:
   - lint-staged@17.1.1
   - postcss@8.5.22

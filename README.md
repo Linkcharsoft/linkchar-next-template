@@ -18,7 +18,7 @@ Production-ready Next.js starter template by **Linkchar**, pre-configured with a
 | Error Tracking | Sentry (session replays, performance monitoring, source maps) |
 | Analytics | Microsoft Clarity |
 | Testing | Cypress 15 (E2E) |
-| Linting | ESLint 9 (flat config) + Husky git hooks |
+| Linting | ESLint 10 (flat config) + Husky git hooks |
 | Package Manager | pnpm |
 | Node | see `package.json` → `engines` |
 
