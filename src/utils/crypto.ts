@@ -38,7 +38,7 @@ export async function encryptSession (data: object): Promise<string> {
     const result = new Uint8Array([...iv, ...new Uint8Array(encrypted)])
     return Buffer.from(result).toString('base64')
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : CRYPTO_ERRORS['encrypt-failed'])
+    throw new Error(error instanceof Error ? error.message : CRYPTO_ERRORS['encrypt-failed'], { cause: error })
   }
 }
 
@@ -59,6 +59,6 @@ export async function decryptSession (session: string): Promise<SessionType> {
     return JSON.parse(new TextDecoder().decode(decrypted))
   } catch (error) {
     const message = error instanceof Error ? error.message : CRYPTO_ERRORS['decrypt-failed']
-    throw new Error(message)
+    throw new Error(message, { cause: error })
   }
 }

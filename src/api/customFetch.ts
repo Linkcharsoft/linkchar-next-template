@@ -64,7 +64,7 @@ const parseResponseData = async <T extends object>(response: Response): Promise<
     return {} as T
   } catch (error) {
     captureError('parse-response-json', error)
-    throw new Error('The response was not a JSON')
+    throw new Error('The response was not a JSON', { cause: error })
   }
 }
 
