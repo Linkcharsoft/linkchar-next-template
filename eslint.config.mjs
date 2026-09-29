@@ -192,7 +192,7 @@ const ESLintConfig = [
 
       // Unicorn — best practices (opinionated/style rules relaxed for this project)
       ...unicorn.configs['flat/recommended'].rules,
-      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/name-replacements': 'off',
       'unicorn/filename-case': 'off',
       'unicorn/no-null': 'off',
       'unicorn/no-array-reduce': 'off',
@@ -209,6 +209,20 @@ const ESLintConfig = [
       'unicorn/prefer-includes-over-repeated-comparisons': 'off',
       // Rewrites http→https on XML/SVG namespace URIs (immutable identifiers, not navigable URLs).
       'unicorn/prefer-https': 'off',
+      // Forces one-line JSDoc onto three lines, against the one-line comment convention.
+      'unicorn/single-line-block-comment-style': 'off',
+      // Page/component wrappers use `const X = …; export default X`, the shape every skill generates.
+      'unicorn/default-export-style': 'off',
+      // Flags `await res.json().catch(() => null)`, clearer than the try/catch it asks for.
+      'unicorn/prefer-await': 'off',
+      // A bare `location` throws ReferenceError on the server; `globalThis.location` is just undefined.
+      'unicorn/no-unnecessary-global-this': 'off',
+      // Sentry.init / dotenv.config must run at module load.
+      'unicorn/no-top-level-side-effects': 'off',
+      // Lazy singletons (storyblok.ts) assign a module-level cache from inside a getter.
+      'unicorn/no-top-level-assignment-in-function': 'off',
+      // Its "simple first" reordering breaks conditions where the typeof check narrows the rest.
+      'unicorn/prefer-simple-condition-first': 'off',
 
       // eslint-comments — every disable must justify its WHY
       '@eslint-community/eslint-comments/require-description': ['error', { ignore: [] }],
