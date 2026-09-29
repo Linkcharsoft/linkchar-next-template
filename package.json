@@ -29,7 +29,7 @@
     "@storyblok/react": "7.3.1",
     "dayjs": "1.11.23",
     "formik": "2.4.9",
-    "framer-motion": "13.4.5",
+    "framer-motion": "13.4.6",
     "next": "16.3.7",
     "primeicons": "7.0.0",
     "primelocale": "2.5.0",

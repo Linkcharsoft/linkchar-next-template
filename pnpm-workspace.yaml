@@ -34,5 +34,5 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/typescript-estree@8.71.0'
   - '@typescript-eslint/utils@8.71.0'
   - '@typescript-eslint/visitor-keys@8.71.0'
-  - framer-motion@13.4.5
+  - framer-motion@13.4.5 || 13.4.6
   - motion-dom@13.4.5
