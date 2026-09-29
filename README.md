@@ -105,8 +105,8 @@ pnpm run test-run   # Cypress headless mode
 | `pnpm run serve` | Build + start production server |
 | `pnpm run check` | Run ESLint + TypeScript type check |
 | `pnpm run lint-check` | ESLint only |
-| `pnpm run type-check` | TypeScript type check only |
-| `pnpm run type-check:test` | TypeScript type check of the Cypress specs (not part of `check`) |
+| `pnpm run type-check` | TypeScript type check of the app and the Cypress specs |
+| `pnpm run type-check:test` | TypeScript type check of the Cypress specs and `cypress.config.ts` (also run by `type-check`) |
 | `pnpm run analyze` | Bundle analysis (`next experimental-analyze`) — output in `.next/diagnostics/analyze/` |
 | `pnpm run prepare` | Installs the Husky hooks (runs automatically after `pnpm install`) |
 | `pnpm run test-open` | Cypress interactive mode |
