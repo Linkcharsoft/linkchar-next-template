@@ -225,7 +225,7 @@ const ExamplePage = ({ searchParams }: Props) => {
         }
       ],
       selected: params['boolean'],
-      onChange: (value: boolean) => setParam('boolean', value)
+      onChange: (isEnabled: boolean) => setParam('boolean', isEnabled)
     }, {
       type: 'dropdown',
       title: 'Dropdown - Unique Value',

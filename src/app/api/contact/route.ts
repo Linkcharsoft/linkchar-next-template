@@ -20,7 +20,7 @@ import type { EmailRowKindType, EmailRowType } from '@/utils/contactEmail'
 import type { NextRequest } from 'next/server'
 
 // Deliberately loose: only well-formed enough for Resend to accept as the reply-to, stricter rejects valid addresses.
-const IS_EMAIL = /^[^\s@]+@[^\s@.]+\.[^\s@]+$/
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+\.[^\s@]+$/
 
 // The sandbox sender only delivers to the Resend account owner's address — verify a domain and set CONTACT_FROM for anything else.
 const RESEND_FROM = CONTACT_FROM || `${CONTACT_BRAND} <onboarding@resend.dev>`
@@ -85,7 +85,7 @@ const validateFields = (field: FieldReaderType, definition: ContactFormDefinitio
   if (definition.required.some((name) => !field(name))) return 'Required fields are missing.'
 
   // Guards the reply-to: Resend rejects a malformed address and the whole send fails, losing the lead.
-  if (!IS_EMAIL.test(field('email'))) return 'The email address is not valid.'
+  if (!EMAIL_PATTERN.test(field('email'))) return 'The email address is not valid.'
 
   if (definition.fields.some(([name]) => field(name).length > MAX_FIELD_LENGTH)) return 'One of the fields is too long.'
 

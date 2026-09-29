@@ -26,8 +26,8 @@ export const isPreview = async (): Promise<boolean> => {
 }
 
 // Draft outside production so unpublished edits show in dev and in the Visual Editor.
-const resolveVersion = (preview: boolean): 'draft' | 'published' =>
-  preview || APP_ENV !== 'production' ? 'draft' : 'published'
+const resolveVersion = (isDraftMode: boolean): 'draft' | 'published' =>
+  isDraftMode || APP_ENV !== 'production' ? 'draft' : 'published'
 
 // Cache-busts the Storyblok fetch: Amplify restores .next/cache between builds, so without this a publish never reaches the site.
 const BUILD_CV = Date.now()
@@ -40,11 +40,11 @@ const isNotFound = (error: unknown): boolean =>
   typeof error === 'object' && error !== null && (error as { status?: number }).status === 404
 
 // Singleton stories (a page's copy, the site config). Errors are swallowed: every caller in src/api/cms.ts falls back to src/constants/content.
-export const getStoryContent = async <T>(slug: string, preview = false): Promise<T | null> => {
+export const getStoryContent = async <T>(slug: string, isDraftMode = false): Promise<T | null> => {
   if (!STORYBLOK_TOKEN) return null
 
   try {
-    const { data } = await getStoryblokApi().get(`cdn/stories/${slug}`, { version: resolveVersion(preview), cv: BUILD_CV })
+    const { data } = await getStoryblokApi().get(`cdn/stories/${slug}`, { version: resolveVersion(isDraftMode), cv: BUILD_CV })
     return (data.story as ISbStoryData<T> | undefined)?.content ?? null
   } catch (error) {
     captureError(`storyblok-${slug}`, error, 'warning')
@@ -53,11 +53,11 @@ export const getStoryContent = async <T>(slug: string, preview = false): Promise
 }
 
 // A collection under a folder (blog posts, cases). Throws on anything but "no token": the pages are prerendered, so a swallowed error would bake an empty listing into static HTML.
-export const getStories = async <T>(folder: string, preview = false): Promise<ISbStoryData<T>[]> => {
+export const getStories = async <T>(folder: string, isDraftMode = false): Promise<ISbStoryData<T>[]> => {
   if (!STORYBLOK_TOKEN) return []
 
   return await getStoryblokApi().getAll('cdn/stories', {
-    version: resolveVersion(preview),
+    version: resolveVersion(isDraftMode),
     starts_with: `${folder}/`,
     is_startpage: false,
     sort_by: 'first_published_at:desc',
@@ -67,11 +67,11 @@ export const getStories = async <T>(folder: string, preview = false): Promise<IS
 }
 
 // One story of a collection by its full slug ('blog/my-post'). Only a genuine 404 means "no such story"; anything else throws for the same reason as above.
-export const getStory = async <T>(fullSlug: string, preview = false): Promise<ISbStoryData<T> | null> => {
+export const getStory = async <T>(fullSlug: string, isDraftMode = false): Promise<ISbStoryData<T> | null> => {
   if (!STORYBLOK_TOKEN) return null
 
   try {
-    const { data } = await getStoryblokApi().get(`cdn/stories/${fullSlug}`, { version: resolveVersion(preview), cv: BUILD_CV })
+    const { data } = await getStoryblokApi().get(`cdn/stories/${fullSlug}`, { version: resolveVersion(isDraftMode), cv: BUILD_CV })
     return (data.story as ISbStoryData<T> | undefined) ?? null
   } catch (error) {
     if (isNotFound(error)) return null

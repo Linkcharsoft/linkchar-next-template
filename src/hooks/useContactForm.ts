@@ -39,6 +39,7 @@ const useContactForm = (formId: ContactFormIdType) => {
   }
 
   /** Resolves `true` when the message was sent, so the caller can switch to its done state. */
+  // eslint-disable-next-line unicorn/consistent-boolean-name -- an action returning a success flag, not a predicate.
   const submit = async (values: object, files: ContactFileEntryType[] = []): Promise<boolean> => {
     setStatus('submitting')
     setErrorMessage(null)

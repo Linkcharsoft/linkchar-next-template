@@ -106,13 +106,13 @@ const safeNextPath = (value: string | null): string | null => {
 }
 
 // Redirect to /login remembering where the user was going; optionally purging the session cookies on the way out.
-function redirectToLogin (req: NextRequest, clearCookies = false): NextResponse {
+function redirectToLogin (req: NextRequest, shouldClearCookies = false): NextResponse {
   const loginUrl = new URL('/login', req.url)
   const { pathname, search } = req.nextUrl
   if (pathname !== '/') loginUrl.searchParams.set('next', `${pathname}${search}`)
 
   const response = NextResponse.redirect(loginUrl)
-  if (clearCookies) clearSessionCookies(response.cookies)
+  if (shouldClearCookies) clearSessionCookies(response.cookies)
   return response
 }
 

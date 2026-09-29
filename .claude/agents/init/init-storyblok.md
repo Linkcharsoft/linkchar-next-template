@@ -30,7 +30,7 @@ Verify every path exists before changing anything. A missing one is
 | `src/api/cms.ts` | Blok types, `mapText` / `mapPhoto` / `mapPhotos` / `mapImage` / `mapHeading` / `mapBanner`, and the reference `getSiteConfig` | Reshape `getSiteConfig`; add one `get{Page}Content` per editable page, same shape. |
 | `src/constants/content/siteConfig.ts` | `SITE_CONFIG_FALLBACK` | Real values; add one `{page}.ts` fallback per editable page. |
 | `src/api/blog.ts`, `src/types/blog.ts` | Reference collection (folder → bare slugs, 404 vs throw, listing + detail + slugs) | Rename to the brief's collection (`cases.ts`…), fields and folder; DELETE both when the brief has no collection. |
-| `src/components/StoryblokBridge/StoryblokBridge.tsx` | Live refresh inside the Visual Editor | Nothing. Pages mount it behind `preview`. |
+| `src/components/StoryblokBridge/StoryblokBridge.tsx` | Live refresh inside the Visual Editor | Nothing. Pages mount it behind `isDraftMode`. |
 | `src/app/api/draft/route.ts` | Draft Mode entry, token-guarded, `STORY_ROUTES` | `STORY_ROUTES`: every page story → its route, every collection folder (`'blog/'`) → its route base. |
 | `src/app/sitemap.ts` | Static entries | Collection entries from the listing when there is a collection. |
 | `.env.local`, `.env.example` | `STORYBLOK_TOKEN`, `STORYBLOK_REGION` | Fill region; token stays for the developer. Keep the comments true. |
@@ -93,7 +93,7 @@ For every entry of `pages`:
   design import, the fallback is its current hardcoded content moved here, verbatim.
 - `src/api/cms.ts` → `{Page}StoryType` (snake_case, every field optional; single-blok fields typed as
   `HeadingBlokType[]` / `BannerBlokType[]` / `PhotoBlokType[]` because Storyblok sends `maximum: 1` bloks as
-  arrays) and `get{Page}Content = cache(async (preview = false) => …)` following `getSiteConfig`: null story →
+  arrays) and `get{Page}Content = cache(async (isDraftMode = false) => …)` following `getSiteConfig`: null story →
   whole fallback; else each field through `mapText` / `mapHeading` / `mapBanner` / `mapImage` / `mapPhotos` /
   `orFallback(lines(…))`. Wrap the hero banner in `withBlur` — it is the LCP.
 - `src/app/api/draft/route.ts` → add `'{slug}': '{route}'` to `STORY_ROUTES`.
@@ -115,11 +115,11 @@ brief has no `collection`. Otherwise:
   `/new-screen public` adds `{routeBase}` to `PUBLIC_PATHS` in `src/proxy.ts`; the base's
   `PUBLIC_PATH_PREFIXES` then covers every `{routeBase}/[slug]` — add nothing else there. Then:
   - **Listing `page.tsx`**: `export const revalidate = false`, static `metadata` with `alternates.canonical`,
-    `const preview = await isPreview()`, `{preview && <StoryblokBridge/>}`, and the screen receives
-    `posts = await getBlogPosts(preview)` as a prop. Screens never import Storyblok.
+    `const isDraftMode = await isPreview()`, `{isDraftMode && <StoryblokBridge/>}`, and the screen receives
+    `posts = await getBlogPosts(isDraftMode)` as a prop. Screens never import Storyblok.
   - **Detail `page.tsx`**: `revalidate = false`, `generateStaticParams` from `getBlogSlugs()`,
     `generateMetadata` from the post (title, excerpt, canonical, `openGraph.type: 'article'`, cover image;
-    `robots: { index: false }` when not found), `notFound()` on null, bridge behind `preview`.
+    `robots: { index: false }` when not found), `notFound()` on null, bridge behind `isDraftMode`.
   - **Detail screen**: `<article>` with a back link, category, formatted date (`Intl.DateTimeFormat` in
     `collection.language`), author, `<h1>`, the cover through `next/image` (`fill`, `priority`, `sizes`), and the
     body through `StoryblokServerRichText` from `@storyblok/react/rsc` (cast the document to its
@@ -132,9 +132,9 @@ brief has no `collection`. Otherwise:
 
 ### 4. Wire the pages — `page.tsx` only
 
-For every editable page, in its `src/app/…/page.tsx`: `export const revalidate = false`, `const preview =
-await isPreview()`, `{preview && <StoryblokBridge/>}`, and the screen receives `content =
-await get{Page}Content(preview)` (and `config = await getSiteConfig(preview)` when it renders contact data) as
+For every editable page, in its `src/app/…/page.tsx`: `export const revalidate = false`, `const isDraftMode =
+await isPreview()`, `{isDraftMode && <StoryblokBridge/>}`, and the screen receives `content =
+await get{Page}Content(isDraftMode)` (and `config = await getSiteConfig(isDraftMode)` when it renders contact data) as
 props. Then replace the screen's hardcoded strings/images with `content.*`. Do not restructure the screen;
 do not move sections. **If the page is still the template's demo `HomePage`** (the Three.js "Coming Soon"
 hero), leave both its `page.tsx` and the screen untouched: the getter, the types and the fallback from

@@ -50,13 +50,13 @@ const toSummary = (post: BlogPostType): BlogPostSummaryType => ({
   updatedAt: post.updatedAt
 })
 
-export const getBlogPosts = async (preview = false): Promise<BlogPostSummaryType[]> => {
-  const stories = await getStories<BlogPostContentType>(BLOG_FOLDER, preview)
+export const getBlogPosts = async (isDraftMode = false): Promise<BlogPostSummaryType[]> => {
+  const stories = await getStories<BlogPostContentType>(BLOG_FOLDER, isDraftMode)
   return stories.map((story) => toSummary(mapStory(story)))
 }
 
-export const getBlogPost = async (slug: string, preview = false): Promise<BlogPostType | null> => {
-  const story = await getStory<BlogPostContentType>(`${BLOG_FOLDER}/${slug}`, preview)
+export const getBlogPost = async (slug: string, isDraftMode = false): Promise<BlogPostType | null> => {
+  const story = await getStory<BlogPostContentType>(`${BLOG_FOLDER}/${slug}`, isDraftMode)
   return story ? mapStory(story) : null
 }
 

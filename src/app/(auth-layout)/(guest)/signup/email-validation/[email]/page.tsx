@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import EmailValidationPage from '@/screens/auth/EmailValidationPage/EmailValidationPage'
-import validateEmail from '@/utils/validateEmail'
+import isValidEmail from '@/utils/isValidEmail'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ const Page = async ({ params }: Props) => {
   const { email } = await params
 
   const decodedEmail = decodeURIComponent(email)
-  if(!email || !validateEmail(decodedEmail)) redirect('/login')
+  if(!email || !isValidEmail(decodedEmail)) redirect('/login')
 
   return (
     <EmailValidationPage email={decodedEmail} />

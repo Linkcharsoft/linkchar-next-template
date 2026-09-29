@@ -89,8 +89,8 @@ interface ConfigStoryType {
 }
 
 // Reference getter: one singleton story, field-by-field fallback. Every page getter follows this shape.
-export const getSiteConfig = cache(async (preview = false): Promise<SiteConfigType> => {
-  const content = await getStoryContent<ConfigStoryType>('config', preview)
+export const getSiteConfig = cache(async (isDraftMode = false): Promise<SiteConfigType> => {
+  const content = await getStoryContent<ConfigStoryType>('config', isDraftMode)
   if (!content) return SITE_CONFIG_FALLBACK
 
   const fallback = SITE_CONFIG_FALLBACK
