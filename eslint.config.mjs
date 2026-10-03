@@ -191,7 +191,7 @@ const ESLintConfig = [
       'sonarjs/todo-tag': 'warn',
 
       // Unicorn — best practices (opinionated/style rules relaxed for this project)
-      ...unicorn.configs['flat/recommended'].rules,
+      ...unicorn.configs.recommended.rules,
       'unicorn/name-replacements': 'off',
       'unicorn/filename-case': 'off',
       'unicorn/no-null': 'off',
