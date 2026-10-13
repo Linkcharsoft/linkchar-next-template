@@ -14,7 +14,7 @@ peerDependencyRules:
     eslint-plugin-react>eslint: '10'
 minimumReleaseAgeExclude:
   - lint-staged@17.1.1
-  - postcss@8.5.22
+  - postcss@8.5.22 || 8.5.30
   - sass@1.101.5 || 1.103.1
   - globals@17.9.0 || 17.12.0
   - '@next/env@16.3.2 || 16.3.7'
@@ -39,6 +39,7 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/typescript-estree@8.71.0'
   - '@typescript-eslint/utils@8.71.0'
   - '@typescript-eslint/visitor-keys@8.71.0'
-  - framer-motion@13.4.5 || 13.4.6
-  - motion-dom@13.4.5
+  - framer-motion@13.4.5 || 13.4.6 || 14.2.0
+  - motion-dom@13.4.5 || 14.2.0
   - eslint@10.12.0
+  - motion-utils@14.1.1
