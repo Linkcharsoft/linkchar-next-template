@@ -303,7 +303,7 @@ This will auto-fix: import order, formatting, unused imports, type imports, and 
 
 ## CI & Dependency Updates
 
-- **`.github/workflows/ci.yml` is a thin caller.** Its jobs live in [`Linkcharsoft/linkchar-github-workflows`](https://github.com/Linkcharsoft/linkchar-github-workflows) (shared by every frontend project), pinned to a release tag. Change a job there and release it — never inline steps here. Dependabot bumps the tag, so each release reaches every project as a reviewed PR.
+- **`.github/workflows/ci.yml` is a thin caller.** Its jobs live in [`Linkcharsoft/linkchar-frontend-workflows`](https://github.com/Linkcharsoft/linkchar-frontend-workflows) (shared by every frontend project), pinned to a release tag. Change a job there and release it — never inline steps here. Dependabot bumps the tag, so each release reaches every project as a reviewed PR.
 - **CI** = `Lint` (ESLint) + `Build` (type-check + `next build`) with dummy env values. A project whose build needs more variables passes them through the `build-env` input.
 - **Dependabot PRs** are reviewed by Claude (changelog vs. what `src/` actually uses), and the workflow **squash-merges patch/minor bumps** whose verdict is OK and whose CI is green. Majors are only commented. **Merging to `main` deploys to production** — set the repo variable `DEPENDABOT_AUTOMERGE=off` to keep the review but merge by hand.
 - **`.github/dependabot.yml` is per repo** (GitHub cannot share it): weekly, one grouped PR for patch/minor, a 7-day `cooldown`, `next`/`react`/`react-dom` majors grouped into one PR, and hand-migrated libraries ignored (`primereact` entirely; `tailwindcss`, `primeicons`, `@types/node` majors). A project that pins a library of its own adds it to `ignore` there.

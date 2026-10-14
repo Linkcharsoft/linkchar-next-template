@@ -54,7 +54,7 @@ updates:
         patterns:
           - "*"
 
-  # Only the shared workflows are referenced here, so this is how a linkchar-github-workflows release arrives.
+  # Only the shared workflows are referenced here, so this is how a linkchar-frontend-workflows release arrives.
   - package-ecosystem: github-actions
     directory: /
     schedule:

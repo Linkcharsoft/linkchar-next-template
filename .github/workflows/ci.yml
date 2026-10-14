@@ -1,6 +1,6 @@
 name: CI
 
-# The jobs live in Linkcharsoft/linkchar-github-workflows; Dependabot bumps the tag, so update them there, not here.
+# The jobs live in Linkcharsoft/linkchar-frontend-workflows; Dependabot bumps the tag, so update them there, not here.
 
 on:
   push:
@@ -16,12 +16,12 @@ permissions:
 
 jobs:
   ci:
-    uses: Linkcharsoft/linkchar-github-workflows/.github/workflows/next-ci.yml@v1.0.0
+    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/next-ci.yml@v1.0.0
 
   dependabot:
     needs: ci
     if: ${{ !cancelled() && github.actor == 'dependabot[bot]' }}
-    uses: Linkcharsoft/linkchar-github-workflows/.github/workflows/dependabot-review.yml@v1.0.0
+    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/dependabot-review.yml@v1.0.0
     permissions:
       contents: write
       pull-requests: write
