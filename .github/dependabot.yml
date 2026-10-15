@@ -1,0 +1,72 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Argentina/Buenos_Aires
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    # The trailing space stops Dependabot from appending ":" to a prefix that ends in "]".
+    commit-message:
+      prefix: "[ CHORE ] "
+    # Bumps are auto-merged, so a release must survive a week public before it is proposed.
+    cooldown:
+      default-days: 7
+    ignore:
+      # Upgraded by hand as a planned migration: PrimeReact re-skins every component.
+      - dependency-name: primereact
+      - dependency-name: tailwindcss
+        update-types:
+          - version-update:semver-major
+      - dependency-name: primeicons
+        update-types:
+          - version-update:semver-major
+      # Tracks engines.node, not the latest Node release.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
+    groups:
+      # Framework majors arrive together in one PR for a human — the review workflow never merges a major.
+      next-react-major:
+        applies-to: version-updates
+        patterns:
+          - next
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
+          - eslint-config-next
+          - "@next/*"
+        update-types:
+          - major
+      npm-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # Only the shared workflows are referenced here, so this is how a linkchar-frontend-workflows release arrives.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/Argentina/Buenos_Aires
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "[ CHORE ] "
+    groups:
+      actions:
+        patterns:
+          - "*"
