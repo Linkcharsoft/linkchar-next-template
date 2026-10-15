@@ -63,20 +63,13 @@ export const plugins = [
     // Derived from fontSize so text-{weight}-{size} exists for every text-{size}.
     const sizes = Object.keys(theme('fontSize')).map(Number).filter((size) => Number.isSafeInteger(size)).sort((a, b) => a - b)
 
-    const generateStyles = (namePrefix, fontWeight, fontStyle = 'normal', lineHeight = null) => {
+    const generateStyles = (namePrefix, fontWeight) => {
       return Object.fromEntries(
-        sizes.map(size => {
-          const className = `.${namePrefix}-${size}`
-          const style = {
-            fontSize: `${size}px`,
-            fontWeight: fontWeight,
-            fontStyle: fontStyle
-          }
-          if (lineHeight) {
-            style.lineHeight = lineHeight
-          }
-          return [className, style]
-        })
+        sizes.map(size => [`.${namePrefix}-${size}`, {
+          fontSize: `${size}px`,
+          fontWeight: fontWeight,
+          fontStyle: 'normal'
+        }])
       )
     }
 

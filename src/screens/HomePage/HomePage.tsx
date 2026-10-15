@@ -51,7 +51,7 @@ const HomePage = () => {
         container.append(this.renderer.domElement)
         this.scene = new THREE.Scene()
         const fieldOfView = 50
-        const nearPlane = .1
+        const nearPlane = 0.1
         const farPlane = 100
         this.camera = new THREE.PerspectiveCamera(fieldOfView, width / height, nearPlane, farPlane)
         this.camera.position.z = 30
@@ -69,7 +69,7 @@ const HomePage = () => {
           fragmentShader: fragmentRef.current?.textContent,
           uniforms: {
             iTime: { value: 0 },
-            uHue: { value: .5 },
+            uHue: { value: 0.5 },
             uHueVariation: { value: 1 },
             uGradient: { value: 1 },
             uDensity: { value: 1 },
@@ -93,8 +93,8 @@ const HomePage = () => {
       render () {
         this.timer += 0.5
         this.material.uniforms.iTime.value = oscilateTime(this.timer / 300)
-        this.mousePos.x += (this.targetMousePos.x - this.mousePos.x) * .1
-        this.mousePos.y += (this.targetMousePos.y - this.mousePos.y) * .1
+        this.mousePos.x += (this.targetMousePos.x - this.mousePos.x) * 0.1
+        this.mousePos.y += (this.targetMousePos.y - this.mousePos.y) * 0.1
 
         if (this.plane) {
           this.material.uniforms.uMousePosition.value = new THREE.Vector2(this.mousePos.x, this.mousePos.y)
