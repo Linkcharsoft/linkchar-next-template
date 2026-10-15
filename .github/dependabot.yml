@@ -1,6 +1,7 @@
 version: 2
 
 updates:
+  # No `labels:` on purpose: custom labels must already exist, while the defaults are created by Dependabot.
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -9,8 +10,6 @@ updates:
       time: "06:00"
       timezone: America/Argentina/Buenos_Aires
     open-pull-requests-limit: 5
-    labels:
-      - dependencies
     # The trailing space stops Dependabot from appending ":" to a prefix that ends in "]".
     commit-message:
       prefix: "[ CHORE ] "
@@ -24,6 +23,10 @@ updates:
         update-types:
           - version-update:semver-major
       - dependency-name: primeicons
+        update-types:
+          - version-update:semver-major
+      # v11 drops options the Sentry configs use, and Sentry needs the Amplify externalization re-checked: migrate by hand.
+      - dependency-name: "@sentry/*"
         update-types:
           - version-update:semver-major
       # Tracks engines.node, not the latest Node release.
@@ -62,8 +65,6 @@ updates:
       day: monday
       time: "06:00"
       timezone: America/Argentina/Buenos_Aires
-    labels:
-      - dependencies
     commit-message:
       prefix: "[ CHORE ] "
     groups:
