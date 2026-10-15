@@ -25,6 +25,10 @@ updates:
       - dependency-name: primeicons
         update-types:
           - version-update:semver-major
+      # v11 drops options the Sentry configs use, and Sentry needs the Amplify externalization re-checked: migrate by hand.
+      - dependency-name: "@sentry/*"
+        update-types:
+          - version-update:semver-major
       # Tracks engines.node, not the latest Node release.
       - dependency-name: "@types/node"
         update-types:
