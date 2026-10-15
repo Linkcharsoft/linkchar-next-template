@@ -211,6 +211,8 @@ const ESLintConfig = [
       'unicorn/prefer-https': 'off',
       // Forces one-line JSDoc onto three lines, against the one-line comment convention.
       'unicorn/single-line-block-comment-style': 'off',
+      // Strips the ` * ` gutter from JSDoc, the standard shape editors format and every skill generates.
+      'unicorn/no-asterisk-prefix-in-documentation-comments': 'off',
       // Page/component wrappers use `const X = …; export default X`, the shape every skill generates.
       'unicorn/default-export-style': 'off',
       // Flags `await res.json().catch(() => null)`, clearer than the try/catch it asks for.
