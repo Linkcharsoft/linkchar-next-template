@@ -30,7 +30,7 @@ const SignupPage = () => {
   const closeModal = useModalStore((s) => s.closeModal)
   const isClient = useIsClient()
   const router = useRouter()
-  const [generalError, setGeneralError] = useState<string | null>(null)
+  const [generalError, setGeneralError] = useState<string>()
 
 
   const signupFormik = useFormik<SignupFormikType>({
@@ -177,7 +177,7 @@ const SignupPage = () => {
             <PasswordValidation password={signupFormik.values.password}/>
           </div>
 
-          <InputError message={generalError ?? ''} />
+          <InputError message={generalError} />
         </div>
 
         <div className="flex w-full flex-col gap-4">

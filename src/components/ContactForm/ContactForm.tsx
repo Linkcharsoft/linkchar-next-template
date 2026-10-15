@@ -90,7 +90,7 @@ const FieldLabel = ({ children, required }: { children: ReactNode, required?: bo
   </span>
 )
 
-const ContactForm = ({ className }: Props) => {
+const ContactForm = ({ className = '' }: Props) => {
   const [sent, setSent] = useState(false)
   const [files, setFiles] = useState<Partial<Record<AttachmentFieldType, File>>>({})
   const [attempt, setAttempt] = useState(0)
@@ -144,7 +144,7 @@ const ContactForm = ({ className }: Props) => {
 
   if (sent) {
     return (
-      <div className={`ContactForm__Done ${className ?? ''}`} role='status'>
+      <div className={`ContactForm__Done ${className}`} role='status'>
         <p className='ContactForm__DoneTitle'>Thanks for reaching out.</p>
         <p className='ContactForm__DoneText'>We received your message and will get back to you soon.</p>
       </div>
@@ -152,7 +152,7 @@ const ContactForm = ({ className }: Props) => {
   }
 
   return (
-    <form onSubmit={(e) => { void handleSubmit(e) }} noValidate className={`ContactForm ${className ?? ''}`}>
+    <form onSubmit={(e) => { void handleSubmit(e) }} noValidate className={`ContactForm ${className}`}>
       <HoneypotField id='contact-website' {...honeypotProps}/>
 
       <div className='ContactForm__Fields'>

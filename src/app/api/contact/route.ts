@@ -96,7 +96,7 @@ const collectAttachments = (form: FormData, definition: ContactFormDefinitionTyp
   definition.attachments
     ? ATTACHMENT_FIELDS.flatMap(([name, label]) => {
       const file = form.get(name)
-      return file instanceof File && file.size > 0 ? [{ file, label }] : []
+      return file instanceof File && file.size > 0 ? { file, label } : []
     })
     : []
 
