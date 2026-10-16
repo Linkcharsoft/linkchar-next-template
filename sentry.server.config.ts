@@ -10,6 +10,8 @@ Sentry.init({
 
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
+  environment: APP_ENV,
+
   tracesSampleRate: isDev ? 0 : (isStaging ? 1 : 0.1), // Local: 0% | Staging: 100% | Prod: 10%
 
   dataCollection: SENTRY_DATA_COLLECTION
