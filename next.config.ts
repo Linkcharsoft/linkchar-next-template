@@ -93,9 +93,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [
     '@sentry/nextjs',
     '@sentry/node',
-    '@sentry/core',
-    'require-in-the-middle',
-    '@opentelemetry/instrumentation'
+    '@sentry/core'
   ],
   compiler: {
     removeConsole: isProduction
