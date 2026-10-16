@@ -1,9 +1,6 @@
-// This file configures the initialization of Sentry on the client.
-// The added config here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
-
 import * as Sentry from '@sentry/nextjs'
 import { APP_ENV } from './constants/env'
+import { SENTRY_DATA_COLLECTION } from './constants/sentry'
 import { captureError } from './utils/captureError'
 
 const isDev = APP_ENV === 'development'
@@ -11,7 +8,7 @@ const isStaging = APP_ENV === 'staging'
 const isProd = APP_ENV === 'production'
 
 const values = {
-  enabled: !isDev, // Disable Sentry on dev
+  enabled: !isDev,
 
   // Local: 0% | Staging: 100% | Prod: 10%
   traces: isDev ? 0 : (isStaging ? 1 : 0.1),
@@ -35,17 +32,14 @@ Sentry.init({
   integrations: [],
 
   tracesSampleRate: values.traces,
-  enableLogs: !isDev,
   debug: values.debug,
 
   replaysSessionSampleRate: values.replaysSession,
   replaysOnErrorSampleRate: values.replaysError,
 
-  // Send user PII (only on staging here)
-  sendDefaultPii: isStaging
+  dataCollection: SENTRY_DATA_COLLECTION
 })
 
-// Lazy-load Session Replay after init to move its bundle off the critical path.
 if (!isDev) {
   Sentry.lazyLoadIntegration('replayIntegration')
     .then((replayIntegration) => {

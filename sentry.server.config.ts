@@ -1,22 +1,16 @@
-// This file configures the initialization of Sentry on the server.
-// The config you add here will be used whenever the server handles a request.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
-
 import * as Sentry from '@sentry/nextjs'
 import { APP_ENV } from '@/constants/env'
+import { SENTRY_DATA_COLLECTION } from '@/constants/sentry'
 
 const isDev = APP_ENV === 'development'
 const isStaging = APP_ENV === 'staging'
 
 Sentry.init({
-  enabled: !isDev, // Disable Sentry on dev
+  enabled: !isDev,
 
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   tracesSampleRate: isDev ? 0 : (isStaging ? 1 : 0.1), // Local: 0% | Staging: 100% | Prod: 10%
 
-  enableLogs: !isDev,
-
-  // Send user PII (only on staging here)
-  sendDefaultPii: isStaging
+  dataCollection: SENTRY_DATA_COLLECTION
 })
