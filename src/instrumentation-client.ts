@@ -26,6 +26,8 @@ const values = {
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
+  environment: APP_ENV,
+
   enabled: values.enabled,
 
   // Session Replay is added lazily below to keep its chunk off the critical bundle

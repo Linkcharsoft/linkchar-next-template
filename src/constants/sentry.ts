@@ -15,5 +15,6 @@ export const SENTRY_DATA_COLLECTION: Parameters<typeof init>[0]['dataCollection'
     genAI: { inputs: false, outputs: false },
     databaseQueryData: false,
     queues: false,
-    graphQL: { document: false, variables: false }
+    graphQL: { document: false, variables: false },
+    stackFrameVariables: false
   }
