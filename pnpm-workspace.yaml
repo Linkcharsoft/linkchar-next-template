@@ -14,7 +14,7 @@ peerDependencyRules:
     eslint-plugin-react>eslint: '10'
 minimumReleaseAgeExclude:
   - lint-staged@17.1.1
-  - postcss@8.5.22 || 8.5.30
+  - postcss@8.5.22 || 8.5.30 || 8.5.31
   - sass@1.101.5 || 1.103.1
   - globals@17.9.0 || 17.12.0
   - '@next/env@16.3.2 || 16.3.7'
