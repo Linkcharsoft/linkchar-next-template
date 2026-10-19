@@ -22,7 +22,7 @@ const SearchInput = ({
   name = 'search',
   initialValue,
   placeholder = 'Search...',
-  'aria-label': ariaLabel,
+  'aria-label': ariaLabel = placeholder,
   onChange,
   disabled,
   className
@@ -51,7 +51,7 @@ const SearchInput = ({
         id={id ?? generatedId}
         name={name}
         className={className}
-        aria-label={ariaLabel || placeholder}
+        aria-label={ariaLabel}
         value={searchValue}
         placeholder={placeholder}
         onChange={e => {
