@@ -197,6 +197,17 @@ tokens; it changes nothing global.
 - `amplify.yml`: before `pnpm install`, `- echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}" >> ~/.npmrc`
   with a one-line comment; add `SUPABASE_SECRET_KEY|CMS_BUILD_HOOK_URL|CMS_BUILD_WEBHOOK_SECRET` to the
   runtime allowlist (Amplify gives env vars to the build, not to the SSR runtime; `NEXT_PUBLIC_*` are inlined).
+- `.github/workflows/ci.yml`: the `ci` job installs the private package and builds against the project's
+  Supabase. Pin `next-ci.yml` (and `dependabot-review.yml`) to `@v2.1.0` or later, and give the `ci` job:
+
+  ```yaml
+      secrets:
+        PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+      with:
+        build-env: |
+          NEXT_PUBLIC_SUPABASE_URL=${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+  ```
 
 ### 10. Theme, scripts, local database
 
@@ -267,6 +278,9 @@ In `language`, trimmed to what applies:
   `supabase config push` (site URL, redirects, sign-ups off, MFA, email templates), then check
   "Allow new users to sign up" is off. Custom SMTP (Resend) or invitations never reach clients.
   `linkchar-cms admin` with the hosted keys for the first superadmin.
+- **CI** — `PACKAGES_TOKEN` as a repository secret under both *Actions* and *Dependabot*, and the repository
+  variables `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (the hosted project's public values). Until they exist
+  the Build job fails at `/sitemap.xml`.
 - **Amplify** — env vars `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
   `CMS_BUILD_HOOK_URL` (the branch's incoming webhook), `CMS_BUILD_WEBHOOK_SECRET`, `GITHUB_PACKAGES_TOKEN`;
   the EventBridge rule and API destination that report each build (package README, Amplify setup).
