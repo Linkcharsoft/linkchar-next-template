@@ -87,7 +87,8 @@ the build, not by you.
   `additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000"]`, **`enable_signup = false`**
   (Supabase lets anyone sign up by default, and every user gets a panel profile), `minimum_password_length = 10`,
   `password_requirements = "letters_digits"`; under `[auth.mfa.totp]`: `enroll_enabled = true`,
-  `verify_enabled = true`.
+  `verify_enabled = true`; under `[storage.vector]`: `enabled = false` (`supabase init` turns vector buckets on,
+  the CMS does not use them, and a free hosted project rejects `supabase config push` while they are on).
 
 ### 4. Run the package's init
 
@@ -270,14 +271,20 @@ In `language`, trimmed to what applies:
 - **Package token** — `pnpm config set //npm.pkg.github.com/:_authToken <token> --location global` on each
   machine (scope `read:packages` on Linkcharsoft); the same token as `GITHUB_PACKAGES_TOKEN` in Amplify.
 - **Local** — Docker, `pnpm exec supabase start`, `pnpm db:types`, `linkchar-cms admin`, `linkchar-cms doctor`;
-  the panel at `http://localhost:3000/cms`. The welcome tour starts once per user.
+  the panel at `http://localhost:3000/cms`. The welcome tour starts once per user. The template's `pre-push`
+  hook builds, and the build reads Supabase: start it before pushing (or export the hosted project's
+  `NEXT_PUBLIC_SUPABASE_*` in the shell, which win over `.env.local`).
 - **Schema** — `src/cms/schema.ts` is a starter (`settings` and `home`): rewrite it with the real pages and
   collections; `/new-cms-page` adds one with its site screen. The template's demo `HomePage` does not read the
   CMS `home` yet (`MOUNT_DEFERRED`): the landing build wires it.
-- **Supabase project** — created by the client (their account). `supabase link`, `supabase db push`,
-  `supabase config push` (site URL, redirects, sign-ups off, MFA, email templates), then check
-  "Allow new users to sign up" is off. Custom SMTP (Resend) or invitations never reach clients.
-  `linkchar-cms admin` with the hosted keys for the first superadmin.
+- **Supabase project** — created by the client (their account). `supabase db push` (from some networks only
+  the pooler answers: `--db-url` with `aws-1-<region>.pooler.supabase.com:5432`, user `postgres.<ref>`); a
+  `[remotes.hosted]` block in `config.toml` with the project's `project_id` and its `[remotes.hosted.auth]`
+  `site_url` / `additional_redirect_urls` (the public origin); **custom SMTP (Resend) first** — a free project
+  on Supabase's own email service refuses custom email templates, and invitations would never reach clients;
+  then `supabase config push --project-ref <ref>` and check "Allow new users to sign up" is off. The secret key
+  comes from `supabase projects api-keys --reveal` (without it the CLI prints it masked). `linkchar-cms admin`
+  and `doctor` with the hosted keys (`--env-file`).
 - **CI** — `PACKAGES_TOKEN` as a repository secret under both *Actions* and *Dependabot*, and the repository
   variables `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (the hosted project's public values). Until they exist
   the Build job fails at `/sitemap.xml`.
