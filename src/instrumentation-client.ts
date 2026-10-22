@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/nextjs'
 import { APP_ENV } from './constants/env'
 import { SENTRY_DATA_COLLECTION } from './constants/sentry'
-import { captureError } from './utils/captureError'
+import { captureInfo } from './utils/captureError'
 
 const isDev = APP_ENV === 'development'
 const isStaging = APP_ENV === 'staging'
@@ -52,8 +52,9 @@ if (!isDev) {
         blockAllMedia: isProd
       }))
     })
-    .catch((error) => {
-      captureError('replay-lazy-load', error)
+    .catch((error: unknown) => {
+      // Ad blockers block browser.sentry-cdn.com while /monitoring still tunnels events: not a site failure.
+      captureInfo('replay-lazy-load', error instanceof Error ? error.message : String(error))
     })
 }
 
