@@ -28,6 +28,7 @@ This file describes **what** this project is: the tech stack, structure, and hig
 | ---- | ----- | ------------------ |
 | Initialize a fresh template clone into a new product (rename app, gen `.env.local`/`AUTH_SECRET`) — run ONCE first | `/init-project` | `/init-project Acme Dashboard` |
 | Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
+| Add a page or collection to the Linkchar CMS, with its site screen (only after `init-linkchar-cms`) | `/new-cms-page` | `/new-cms-page servicios page /servicios` |
 | Create a paginated DataTable screen (with `useTableParams`, filters, search, sorting) | `/new-table` | `/new-table UsersPage users /dashboard/users` |
 | Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
 | Create a new custom React hook | `/new-hook` | `/new-hook useDebounce` |
