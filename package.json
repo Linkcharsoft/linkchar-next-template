@@ -29,7 +29,7 @@
     "@storyblok/react": "7.3.1",
     "dayjs": "1.11.23",
     "formik": "2.4.9",
-    "framer-motion": "14.5.0",
+    "framer-motion": "14.6.0",
     "next": "16.4.2",
     "primeicons": "7.0.0",
     "primelocale": "2.6.1",
@@ -44,7 +44,7 @@
     "three": "0.186.1",
     "usehooks-ts": "3.1.1",
     "yup": "1.7.1",
-    "zustand": "5.0.15"
+    "zustand": "5.0.16"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",

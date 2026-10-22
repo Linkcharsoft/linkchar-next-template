@@ -39,10 +39,11 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/typescript-estree@8.71.0'
   - '@typescript-eslint/utils@8.71.0'
   - '@typescript-eslint/visitor-keys@8.71.0'
-  - framer-motion@13.4.5 || 13.4.6 || 14.2.0 || 14.4.0 || 14.5.0
-  - motion-dom@13.4.5 || 14.2.0 || 14.4.0 || 14.5.0
+  - framer-motion@13.4.5 || 13.4.6 || 14.2.0 || 14.4.0 || 14.5.0 || 14.6.0
+  - motion-dom@13.4.5 || 14.2.0 || 14.4.0 || 14.5.0 || 14.6.0
   - eslint@10.12.0
-  - motion-utils@14.1.1
+  - motion-utils@14.1.1 || 14.6.0
   - '@boundaries/elements@3.1.2'
   - eslint-plugin-boundaries@7.2.1
   - primelocale@2.6.1
+  - zustand@5.0.16
