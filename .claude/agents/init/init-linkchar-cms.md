@@ -198,7 +198,7 @@ tokens; it changes nothing global.
   with a one-line comment; add `SUPABASE_SECRET_KEY|CMS_BUILD_HOOK_URL|CMS_BUILD_WEBHOOK_SECRET` to the
   runtime allowlist (Amplify gives env vars to the build, not to the SSR runtime; `NEXT_PUBLIC_*` are inlined).
 - `.github/workflows/ci.yml`: the `ci` job installs the private package and builds against the project's
-  Supabase. Pin `next-ci.yml` (and `dependabot-review.yml`) to `@v2.1.0` or later, and give the `ci` job:
+  Supabase. Pin `next-ci.yml` (and `dependabot-review.yml`) to `@v2.2.0` or later, and give the `ci` job:
 
   ```yaml
       secrets:
