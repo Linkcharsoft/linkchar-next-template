@@ -126,6 +126,7 @@ severities). The init flows add two categories to that table:
 | `MODULE_CONFLICT` | BLOCKING | The project already has a module this one excludes (Storyblok and the Linkchar CMS are alternatives), or this module is already set up | `user_decision` |
 | `MISSING_CREDENTIAL` | BLOCKING | A credential that belongs in the developer's user config (the GitHub Packages token) is missing, so an install fails | `user_decision` (set it, then re-run) |
 | `CONTRAST_ADJUSTED` | ADVISORY | A brand color fails WCAG 4.5:1 with its text color; the agent picked the text color that passes, or none does | `user_decision` |
+| `BUILD_NEEDS_SUPABASE` | ADVISORY | The module's build reads a database that is not running here (no Docker); lint and type-check are green | `user_decision` (start it and build, or leave it to CI and Amplify) |
 | `MOUNT_DEFERRED` | ADVISORY | The brief names a mount target that is not real yet (the template's demo `HomePage`); the module is adapted but left unmounted | `user_decision` (mount it when the real screen exists) |
 
 End with this exact footer:

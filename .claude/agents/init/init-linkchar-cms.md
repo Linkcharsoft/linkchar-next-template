@@ -8,7 +8,7 @@ You are the **init-linkchar-cms** sub-agent. Unlike the other modules, the templ
 this one (installing it would need the GitHub Packages token on every clone and in CI). The base comes from
 the package: `linkchar-cms init` writes the files a project owns, and your job is to adapt them and the
 template around them, following the steps below exactly. Every step was measured on a real run of the
-template; do not improvise a different layout.
+template; do not improvise a different layout. Keep each file's own line endings (some are CRLF, some LF).
 
 ## Pre-flight (mandatory)
 
@@ -60,31 +60,34 @@ Then: `pnpm remove @storyblok/react`; in `src/constants/env.ts` drop `STORYBLOK_
 in `.env.example` drop the Storyblok block; in `next.config.ts` drop the `a.storyblok.com` remote pattern and
 the `isStoryblokEnabled` switch (`FRAME_ANCESTORS` becomes `'\'self\''` and the header is always
 `X-Frame-Options: SAMEORIGIN` — the panel preview is same-origin); in `amplify.yml` drop `STORYBLOK_TOKEN` and
-`STORYBLOK_REGION` from the runtime allowlist. `grep -ri storyblok src next.config.ts amplify.yml .env.example`
+`STORYBLOK_REGION` from the runtime allowlist and the words "nor a Storyblok management token" from the comment
+above it. `grep -ri storyblok src next.config.ts amplify.yml .env.example`
 must come back empty (docs are step 11). A stale `.next/types/validator.ts` naming `api/draft` is fixed by
 the build, not by you.
 
 ### 2. Registry and install
 
-- `.npmrc`: **append** `@linkcharsoft:registry=https://npm.pkg.github.com`. The file already exists
-  (`save-prefix=''`, `engine-strict=true`): never overwrite it.
+- `.npmrc`: **append** `@linkcharsoft:registry=https://npm.pkg.github.com` on a line of its own (the file ends
+  without a newline). It already holds `save-prefix=''` and `engine-strict=true`: never overwrite it.
 - `pnpm-workspace.yaml`: add `supabase: true` under `allowBuilds` and `'@linkcharsoft/cms'` under
   `minimumReleaseAgeExclude` (pnpm holds back versions published less than a day ago).
 - The GitHub Packages token is the developer's, in their user config — never in the project. Without it the
   install fails with 401: `STOP-BLOCKING / MISSING_CREDENTIAL` with the one-line fix
   (`pnpm config set //npm.pkg.github.com/:_authToken <token> --location global`, scope `read:packages`).
-- `pnpm add @linkcharsoft/cms@{cmsVersion} @supabase/ssr @supabase/supabase-js` and `pnpm add -D supabase`
-  (`save-prefix=''` pins them exactly). `server-only`, `sass` and `tailwindcss@3` are already there.
+- `pnpm add -E @linkcharsoft/cms@{cmsVersion} @supabase/ssr @supabase/supabase-js` and `pnpm add -E -D supabase`.
+  Keep `-E`: pnpm 12 ignores `save-prefix` in `.npmrc` and would write `^` ranges. `server-only`, `sass` and
+  `tailwindcss@3` are already there.
 
 ### 3. Supabase project files
 
 - `pnpm exec supabase init` when `supabase/` does not exist.
-- `supabase/config.toml`: `project_id` = the package.json name; every `port`, `shadow_port`, `smtp_port`,
-  `pop3_port` from `543xx` to `{supabasePortBase}xx`; under `[auth]`: `site_url = "http://localhost:3000"`,
+- `supabase/config.toml`: `project_id` = the package.json name; every `543xx` port, commented lines included, to
+  `{supabasePortBase}xx` (`inspector_port = 8083` stays); in the `[auth]` section itself (not `[auth.email]`,
+  which has its own `enable_signup`): `site_url = "http://localhost:3000"`,
   `additional_redirect_urls = ["http://localhost:3000", "http://127.0.0.1:3000"]`, **`enable_signup = false`**
   (Supabase lets anyone sign up by default, and every user gets a panel profile), `minimum_password_length = 10`,
   `password_requirements = "letters_digits"`; under `[auth.mfa.totp]`: `enroll_enabled = true`,
-  `verify_enabled = true`. The file uses CRLF on Windows checkouts: keep the line endings.
+  `verify_enabled = true`.
 
 ### 4. Run the package's init
 
@@ -95,18 +98,22 @@ node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js init --name "{brand}" --
 Call the CLI through `node` and pass `--base-path cms` without the slash: Git Bash rewrites a `/cms` argument
 into a Windows path. It writes `cms.config.ts`, `src/cms/{schema,server,client,actions}.ts`,
 `src/types/supabase.ts`, `src/app/(cms)/` (panel, generated), `src/app/(site)/[...notFound]/page.tsx`,
-`src/app/api/cms/*`, the email templates and the package migrations, and keeps every file that exists. Its
-"Left to wire by hand" list is what steps 5–9 do.
+`src/app/api/cms/*`, `src/app/(cms)/theme.css`, the email templates, the package migrations and their pgTAP
+suites (`supabase/tests/cms/`), and keeps every file that exists. Its "Left to wire by hand" list is generic and
+steps 5–9 do it the template's way: where they differ, this file wins — the site URL reads `NEXT_PUBLIC_DOMAIN`
+(not `NEXT_PUBLIC_SITE_URL`), the script is `check:cms` (the template's `check` is lint and types), and the proxy
+is composed (step 6), not replaced, even though `routes` prints "proxy.ts does not match" at this point.
 
 ### 5. Move the site into `(site)` — `src/app/`
 
 The panel renders its own `<html>`, so the template's root layout cannot stay at `src/app/layout.tsx`. With
-`git mv`, move into `src/app/(site)/`: `layout.tsx`, `not-found.tsx`, `error.tsx`, `(landing-layout)/`,
+`git mv`, move into `src/app/(site)/` (step 4 already created it for the catch-all): `layout.tsx`, `not-found.tsx`, `error.tsx`, `(landing-layout)/`,
 `(auth-layout)/`, `dashboard/`, `sentry-example-page/`. **Stay** at `src/app/`: `global-error.tsx`, `api/`,
 `robots.ts`, `sitemap.ts`, `(cms)/`. URLs do not change.
 
 In the moved `src/app/(site)/layout.tsx`:
 
+- `<html lang>` becomes the default locale (`{locales[0]}`), as CONVENTIONS asks of the content language;
 - the PrimeIcons `localFont` `src` gains one level: `'../../../node_modules/primeicons/fonts/primeicons.woff2'`;
 - the layout becomes a block body that reads Draft Mode once and renders the preview listener after
   `<GeneralLayout>`:
@@ -182,9 +189,11 @@ tokens; it changes nothing global.
 - `.env.example`: a block `# Only use these variables if you are using the Linkchar CMS (src/cms/server.ts)`
   with the five variables and a short comment each (the secret key is server only, never `NEXT_PUBLIC_`; an
   empty `CMS_BUILD_HOOK_URL` publishes against the local mock build).
-- `.env.local`: append the same keys. When Docker is running, `pnpm exec supabase start` and fill the three
-  Supabase values from `pnpm exec supabase status -o env` (`API_URL`, `PUBLISHABLE_KEY`, `SECRET_KEY`); else
-  leave them empty for the developer.
+- `.env.local` (gitignored, local only): append the same keys. When Docker is running,
+  `pnpm exec supabase start -x studio,imgproxy,vector,logflare,edge-runtime,realtime,supavisor` and fill the three
+  Supabase values from its output or `pnpm exec supabase status -o env` (`API_URL`, `PUBLISHABLE_KEY`,
+  `SECRET_KEY`); its "no files matched pattern: supabase/seed.sql" warning is harmless. Without Docker, leave
+  them empty for the developer.
 - `amplify.yml`: before `pnpm install`, `- echo "//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}" >> ~/.npmrc`
   with a one-line comment; add `SUPABASE_SECRET_KEY|CMS_BUILD_HOOK_URL|CMS_BUILD_WEBHOOK_SECRET` to the
   runtime allowlist (Amplify gives env vars to the build, not to the SSR runtime; `NEXT_PUBLIC_*` are inlined).
@@ -197,8 +206,10 @@ tokens; it changes nothing global.
   `STOP-ADVISORY / CONTRAST_ADJUSTED / default_applied: on-primary {value}`; if neither passes, keep the color
   and emit the same STOP with `default_applied: none — the brand color fails 4.5:1 with white and black`.
 - `package.json` scripts: `"check:cms": "linkchar-cms routes --check && linkchar-cms migrations sync --check && linkchar-cms templates --check"`
-  and `"db:types": "supabase gen types typescript --local > src/types/supabase.ts"`. Append
-  `pnpm run check:cms || exit 1` to `.husky/pre-commit` (it needs no database).
+  and `"db:types": "supabase gen types typescript --local > src/types/supabase.ts"` (its output replaces the
+  starter `src/types/supabase.ts`; the "unformatted" notice it prints is harmless). Append
+  `pnpm run check:cms || exit 1` on a line of its own to `.husky/pre-commit` (the file ends without a newline;
+  the check needs no database).
 - With Docker running and Supabase started (step 9): `pnpm db:types`, then, when the brief has `admin`,
   `node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js admin --email … --password … --name …`, then
   `node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js doctor` — report its output. Without Docker, say so
@@ -211,8 +222,14 @@ tokens; it changes nothing global.
   generated by `linkchar-cms routes` — never edit a file that starts with its marker line).
 - `CLAUDE.md` § Security: a bullet — the panel at `/cms` has its own Supabase Auth (invited users only,
   sign-ups off, MFA), independent of the template's session cookies; `SUPABASE_SECRET_KEY` is server only.
-- `CLAUDE.md` § Optional modules: the CMS row stays; drop the Storyblok row and Storyblok lines.
+- `CLAUDE.md`: in § Optional modules keep the CMS row and drop the `init-storyblok` row; drop the `/api/draft`
+  Storyblok bullet of § Security (the CMS bullet replaces it), the `constants/content/` line of § Project
+  Structure, the Storyblok variables wherever Amplify is described, and point `src/app/layout.tsx` mentions at
+  `src/app/(site)/layout.tsx`.
 - `CONVENTIONS.md`: drop the `StoryblokBridge` reuse row; the **App root** section already covers `(site)`.
+- **Leave** the template's tooling as it is even where it names Storyblok — `/init-project`, `init-storyblok.md`,
+  `init-modules-shared.md`, the `storyblok.ts` comment in `eslint.config.mjs`: they describe the alternatives and
+  `init-storyblok` refuses to run in a CMS project.
 
 ### 12. Validate
 
@@ -224,7 +241,12 @@ pnpm run build
 
 All three, fixed before returning. Right after `/init-project`, `.env.local` has an empty `NEXT_PUBLIC_API_URL`:
 supply it inline for the build per [`init-modules-shared.md` § E](../../docs/init-modules-shared.md#e-validation-gate--three-commands-always).
-The build must pass **without** Supabase variables: the package reads them on first use.
+
+**The build needs a reachable Supabase.** It bakes published content in (the sitemap and every CMS page
+prerender, and `withCms` reads the redirects past publishes left); publishing triggers a rebuild. Locally that
+is the Supabase started in step 9; without Docker the build fails at `/sitemap.xml` with "Missing the Supabase
+URL" — report it as `STOP-ADVISORY / BUILD_NEEDS_SUPABASE` with lint and type-check green, not as a failure of
+yours. Lint and type-check never need it.
 
 ### 13. Do NOT commit
 
