@@ -104,9 +104,7 @@ const nextConfig: NextConfig = {
     }
   },
   sassOptions: {
-    additionalData: `
-      @use "@/styles/mixins.sass" as mixins;
-    `
+    additionalData: '@use "@/styles/mixins.sass" as mixins\n'
   },
 
   images: {
