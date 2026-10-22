@@ -53,7 +53,7 @@ Before writing anything, in parallel:
    - `src/types/api/{resource}.ts`
    - `src/api/{resource}.ts`
    - `src/screens/{ScreenName}/{ScreenName}.tsx`
-   - `src/app/{route}/page.tsx`
+   - `src/app/{route}/page.tsx` (relative to the app root: `src/app/(site)/` in a project with the Linkchar CMS, see [CONVENTIONS > App root](../../CONVENTIONS.md#app-root))
 4. Read `src/proxy.ts` so you know whether proxy updates are needed (they are NOT for protected routes, which is the default for dashboard screens).
 
 ### Decision rules:

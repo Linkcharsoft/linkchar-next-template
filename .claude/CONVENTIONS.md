@@ -10,6 +10,7 @@ This file is the canonical reference for **how** to write code in this project. 
 
 ## Table of contents
 
+- [App root](#app-root)
 - [Naming Conventions](#naming-conventions)
 - [Component Patterns](#component-patterns)
 - [Zustand selectors](#zustand-selectors)
@@ -37,6 +38,21 @@ This file is the canonical reference for **how** to write code in this project. 
 - [STOP Protocol](#stop-protocol)
 
 When a skill or agent's pre-flight Read says "Read CONVENTIONS.md > {Section name}", search for that exact heading. Use the Read tool's `offset`/`limit` or read the whole file once and keep the relevant section in mind.
+
+---
+
+## App root
+
+Every `src/app/…` path in this file, the skills and the agents is relative to the **app root**:
+
+- `src/app/` — the template as shipped: `src/app/layout.tsx` is the one root layout.
+- `src/app/(site)/` — a project with the Linkchar CMS (`init-linkchar-cms`). The CMS panel renders its own
+  `<html>` under `src/app/(cms)/`, so the template's root layout, its route groups, `dashboard/`, `not-found.tsx`
+  and `error.tsx` live in `src/app/(site)/`. URLs do not change. `global-error.tsx`, `api/`, `robots.ts` and
+  `sitemap.ts` stay at `src/app/`.
+
+Tell them apart by `src/app/(site)/layout.tsx`. A page written at `src/app/{route}/` in a CMS project has no
+root layout and fails the build. Never edit `src/app/(cms)/` by hand: `linkchar-cms routes` generates it.
 
 ---
 
