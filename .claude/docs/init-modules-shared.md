@@ -29,6 +29,11 @@ nothing until its environment variables are set. A module agent has one of two j
 - **`init-remove-{feature}`** — *strip* a feature the template ships by default (auth, Sentry, …) when a
   project does not want it, and leave the toolkit and the docs coherent without it.
 
+**One exception: `init-linkchar-cms`.** The Linkchar CMS is a private package, so the template does not install it
+(every clone and CI run would need the GitHub Packages token). Its base comes from the package itself:
+`linkchar-cms init` writes the project's starting files from versioned templates, and the agent adapts them, which
+keeps the "adapt real files, never generate from prose" rule.
+
 Agents are named after the **provider or feature they touch** (`init-resend`, not `init-contact-form`)
 so that reading the name says which vendor a project depends on.
 
@@ -118,6 +123,9 @@ severities). The init flows add two categories to that table:
 | Category | Severity | When | Next agent |
 | -------- | -------- | ---- | ---------- |
 | `MODULE_BASE_MISSING` | BLOCKING | A file the module's base inventory lists is not on disk (the project deleted or moved it) | `user_decision` |
+| `MODULE_CONFLICT` | BLOCKING | The project already has a module this one excludes (Storyblok and the Linkchar CMS are alternatives), or this module is already set up | `user_decision` |
+| `MISSING_CREDENTIAL` | BLOCKING | A credential that belongs in the developer's user config (the GitHub Packages token) is missing, so an install fails | `user_decision` (set it, then re-run) |
+| `CONTRAST_ADJUSTED` | ADVISORY | A brand color fails WCAG 4.5:1 with its text color; the agent picked the text color that passes, or none does | `user_decision` |
 | `MOUNT_DEFERRED` | ADVISORY | The brief names a mount target that is not real yet (the template's demo `HomePage`); the module is adapted but left unmounted | `user_decision` (mount it when the real screen exists) |
 
 End with this exact footer:
