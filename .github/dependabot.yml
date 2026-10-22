@@ -1,3 +1,5 @@
+# Bumps are reviewed by the `dependabot` job of workflows/ci.yml, which merges patch/minor ones.
+# Majors go to the panel's runner, which tests them and merges them (except next-react-major).
 version: 2
 
 updates:
@@ -30,7 +32,7 @@ updates:
         update-types:
           - version-update:semver-major
     groups:
-      # Framework majors arrive together in one PR for a human — the review workflow never merges a major.
+      # Framework majors arrive together in one PR: the runner tests it and leaves it ready, and a person merges it.
       next-react-major:
         applies-to: version-updates
         patterns:

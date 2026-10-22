@@ -16,12 +16,13 @@ permissions:
 
 jobs:
   ci:
-    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/next-ci.yml@v2.0.0
+    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/next-ci.yml@v2.3.0
 
   dependabot:
     needs: ci
-    if: ${{ !cancelled() && github.actor == 'dependabot[bot]' }}
-    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/dependabot-review.yml@v2.0.0
+    # Dependabot's PRs, whoever pushed last: the called workflow decides which pushers it trusts.
+    if: ${{ !cancelled() && github.event.pull_request.user.login == 'dependabot[bot]' }}
+    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/dependabot-review.yml@v2.3.0
     permissions:
       actions: read
       contents: write
