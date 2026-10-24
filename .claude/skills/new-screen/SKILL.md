@@ -48,7 +48,7 @@ If a matching page already exists, **stop and tell the user** which page they sh
 
 ## Step 2 — Plan: file locations by page type
 
-The page type determines where files go and whether `src/proxy.ts` needs updating:
+The page type determines where files go and whether `src/proxy.ts` needs updating. Every `src/app/` path below is relative to the app root ([CONVENTIONS > App root](../../CONVENTIONS.md#app-root)): in a project with the Linkchar CMS it is `src/app/(site)/`.
 
 ### `protected` (default)
 
