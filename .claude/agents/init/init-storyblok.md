@@ -73,6 +73,12 @@ and no `screen` to create → implement the rest and report it; a page that is s
 
 ## Steps
 
+### 0. Guard — one CMS per project
+
+`STOP-BLOCKING / MODULE_CONFLICT` (next agent `user_decision`) when the project has the Linkchar CMS:
+`cms.config.ts` exists or `@linkcharsoft/cms` is in `package.json`. The two CMS are alternatives, and
+`init-linkchar-cms` already removed this module's base.
+
 ### 1. Site config — `src/types/cms.ts`, `src/api/cms.ts`, `src/constants/content/siteConfig.ts`
 
 - `SiteConfigType` → exactly the brief's `siteConfig` keys (or the shipped set when `[]`).

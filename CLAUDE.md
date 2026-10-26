@@ -28,6 +28,7 @@ This file describes **what** this project is: the tech stack, structure, and hig
 | ---- | ----- | ------------------ |
 | Initialize a fresh template clone into a new product (rename app, gen `.env.local`/`AUTH_SECRET`) — run ONCE first | `/init-project` | `/init-project Acme Dashboard` |
 | Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
+| Add a page or collection to the Linkchar CMS, with its site screen (only after `init-linkchar-cms`) | `/new-cms-page` | `/new-cms-page servicios page /servicios` |
 | Create a paginated DataTable screen (with `useTableParams`, filters, search, sorting) | `/new-table` | `/new-table UsersPage users /dashboard/users` |
 | Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
 | Create a new custom React hook | `/new-hook` | `/new-hook useDebounce` |
@@ -56,6 +57,7 @@ Some features are not wanted by every product. The template ships each one as a 
 | Agent | Kind | What it does |
 | ----- | ---- | ------------ |
 | `init-resend` | add | Completes the contact-form module (Resend): brand, language, fields, attachments, mount point, env. Base: `src/app/api/contact/route.ts`, `src/constants/contactForms.ts`, `src/utils/contactEmail.ts`, `src/hooks/useContactForm.ts`, `ContactForm` + `HoneypotField` + `TurnstileWidget`. |
+| `init-linkchar-cms` | add | Adds Linkchar's CMS (`@linkcharsoft/cms`): schema in `src/cms/schema.ts`, Supabase, the editor panel at `/cms` (its own Supabase Auth, invited users only), site readers and Draft Mode preview. **No base in the template** — the package is private, so its `linkchar-cms init` writes the starting files and the agent adapts them: the site moves into `src/app/(site)/` (see CONVENTIONS > App root), the proxy hands `/cms` to the panel, env constants, CSP, Amplify. Alternative to `init-storyblok`: it removes the Storyblok base. |
 | `init-storyblok` | add | Completes the Storyblok CMS layer: editable pages (one singleton story per page, bundled fallback in `src/constants/content/`, field-by-field override) and/or a collection (folder → listing + `[slug]` detail, e.g. a blog), Draft Mode targets, env. Base: `src/api/storyblok.ts` + `cms.ts` + `blog.ts`, `src/utils/storyblok.ts`, `src/types/cms.ts` + `blog.ts`, `StoryblokBridge`, `src/app/api/draft/route.ts`. Screens never import Storyblok — each `page.tsx` fetches and passes domain objects down. |
 
 Two ways to run one, same result: `/init-project` asks which modules to set up (its Step 9) and delegates; or, any time later, ask Claude to *run the `init-resend` agent* — the main session gathers the brief the agent's `.md` lists and delegates the same way. There is deliberately no wrapper skill per agent: that would be two files to keep in sync for one task. The shared protocol (brief, file boundary, three-gate validation, "the invoker commits, one commit per module", report shape) lives in [`.claude/docs/init-modules-shared.md`](./.claude/docs/init-modules-shared.md); each agent's `.md` holds only its own mechanics. Planned next, in this order: `init-remove-sentry`, `init-remove-auth`.
