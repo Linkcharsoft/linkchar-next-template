@@ -6,9 +6,10 @@ updates:
   # No `labels:` on purpose: custom labels must already exist, while the defaults are created by Dependabot.
   - package-ecosystem: npm
     directory: /
+    # Monthly, not weekly: every bump PR runs CI and the review against the org's Actions minutes.
+    # Security updates ignore this schedule.
     schedule:
-      interval: weekly
-      day: monday
+      interval: monthly
       time: "06:00"
       timezone: America/Argentina/Buenos_Aires
     open-pull-requests-limit: 5

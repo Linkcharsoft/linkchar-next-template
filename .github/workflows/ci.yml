@@ -2,10 +2,18 @@ name: CI
 
 # The jobs live in Linkcharsoft/linkchar-frontend-workflows; Dependabot bumps the tag, so update them there, not here.
 
+# A change that only touches docs runs nothing: there is nothing to lint or build,
+# and on the Free plan every run counts against the org's Actions minutes.
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -16,13 +24,13 @@ permissions:
 
 jobs:
   ci:
-    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/next-ci.yml@v2.3.0
+    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/next-ci.yml@v3.0.0
 
   dependabot:
     needs: ci
     # Dependabot's PRs, whoever pushed last: the called workflow decides which pushers it trusts.
     if: ${{ !cancelled() && github.event.pull_request.user.login == 'dependabot[bot]' }}
-    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/dependabot-review.yml@v2.3.0
+    uses: Linkcharsoft/linkchar-frontend-workflows/.github/workflows/dependabot-review.yml@v3.0.0
     permissions:
       actions: read
       contents: write
