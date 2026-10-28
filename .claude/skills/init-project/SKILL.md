@@ -193,7 +193,7 @@ The template ships some features as inert bases that a dedicated agent completes
    | CMS (Linkchar) | `init-linkchar-cms` | `[ FEATURE ] Add Linkchar CMS` |
    | CMS (Storyblok) | `init-storyblok` | `[ FEATURE ] Add Storyblok CMS layer` |
 
-   For `init-linkchar-cms`: ask `siteUrl` (the production origin), `primaryColor` (the brand's) and `locales`; `language` is the panel's; `cmsVersion` is the latest published `@linkcharsoft/cms` (`pnpm view @linkcharsoft/cms version`); `supabasePortBase` defaults to `446` unless another local project already uses it (each project on the machine needs its own); pass `admin` only if the user gives an email and password for the local panel.
+   For `init-linkchar-cms`: ask `siteUrl` (the production origin) and `locales` (no color: the panel wears Inferencia's brand, and `brand` is the product name it shows); `language` is the panel's; `cmsVersion` is the latest published `@linkcharsoft/cms` (`pnpm view @linkcharsoft/cms version`); `supabasePortBase` defaults to `446` unless another local project already uses it (each project on the machine needs its own); pass `admin` only if the user gives an email and password for the local panel.
 
    For `init-storyblok` right after this init: with no designed screens yet, `pages` is usually `[]` and the useful answers are `siteConfig`, `collection` (blog or none) and `region`; editable pages get wired when the landing exists (a later standalone run).
 

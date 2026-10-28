@@ -24,13 +24,11 @@ template; do not improvise a different layout. Keep each file's own line endings
 ## Expected input from the invoker
 
 ```yaml
-brand: string                  # REQUIRED — the site name in the panel and in page titles
+brand: string                  # REQUIRED — the product name: panel sidebar, sign-in, emails and page titles
 language: es | en              # REQUIRED — the panel's language and the copy you write
 locales: [es]                  # REQUIRED — content locales, the first is the default
-cmsVersion: 0.9.0              # REQUIRED — exact version of @linkcharsoft/cms (a file: tarball path only for a local trial)
+cmsVersion: 0.11.0             # REQUIRED — exact version of @linkcharsoft/cms, 0.11.0 or later (a file: tarball path only for a local trial)
 siteUrl: https://acme.com      # REQUIRED — the production origin
-primaryColor: '#1f5fa8'        # REQUIRED — the panel's primary color (the brand's)
-onPrimaryColor: '#ffffff'      # OPTIONAL — text on the primary; default white
 supabasePortBase: 446          # REQUIRED — three digits; local Supabase ports become {base}20…{base}29.
                                #   Must stay below 49152 (Windows reserves blocks above it) and be unique on the machine.
 admin: { email, password }     # OPTIONAL — first local superadmin, created only when Docker is running
@@ -38,6 +36,10 @@ admin: { email, password }     # OPTIONAL — first local superadmin, created on
 
 `basePath` is `/cms`: the template already owns `/dashboard` and its own auth. A missing REQUIRED field →
 `STOP-BLOCKING / INVALID_INPUT`. The filesystem wins over the brief.
+
+There is no color input: since 0.11.0 the panel wears Inferencia's brand in every project and a project can't
+re-theme it. The project only fills the product slot, `branding.name` (`brand`) and `branding.icon` (step 10).
+A brief that still carries `primaryColor` is from an older `/init-project`: ignore the field, no STOP.
 
 ## Steps
 
@@ -99,7 +101,7 @@ node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js init --name "{brand}" --
 Call the CLI through `node` and pass `--base-path cms` without the slash: Git Bash rewrites a `/cms` argument
 into a Windows path. It writes `cms.config.ts`, `src/cms/{schema,server,client,actions}.ts`,
 `src/types/supabase.ts`, `src/app/(cms)/` (panel, generated), `src/app/(site)/[...notFound]/page.tsx`,
-`src/app/api/cms/*`, `src/app/(cms)/theme.css`, the email templates, the package migrations and their pgTAP
+`src/app/api/cms/*`, the Inferencia-branded email templates, the package migrations and their pgTAP
 suites (`supabase/tests/cms/`), and keeps every file that exists. Its "Left to wire by hand" list is generic and
 steps 5–9 do it the template's way: where they differ, this file wins — the site URL reads `NEXT_PUBLIC_DOMAIN`
 (not `NEXT_PUBLIC_SITE_URL`), the script is `check:cms` (the template's `check` is lint and types), and the proxy
@@ -210,13 +212,12 @@ tokens; it changes nothing global.
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.SUPABASE_PUBLISHABLE_KEY }}
   ```
 
-### 10. Theme, scripts, local database
+### 10. Product icon, scripts, local database
 
-- `src/app/(cms)/theme.css`: `--cms-primary: {primaryColor}` (and `--cms-on-primary` when given). Check it:
-  `node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js contrast {primaryColor} --on {onPrimaryColor ?? #ffffff}`.
-  Exit 1 → try `--on #000000`; set `--cms-on-primary` to the one that passes and emit
-  `STOP-ADVISORY / CONTRAST_ADJUSTED / default_applied: on-primary {value}`; if neither passes, keep the color
-  and emit the same STOP with `default_applied: none — the brand color fails 4.5:1 with white and black`.
+- `cms.config.ts`: `branding: { name: '{brand}', icon: '/seo/favicon512.png' }`. `withCms` finds the favicon on
+  its own only in `app/icon.*` and the root of `public/`, and the template keeps its favicons in `public/seo/`, so
+  the icon goes explicit. The panel shows it on a white tile next to the product name. Write no theme file:
+  `init` no longer creates `src/app/(cms)/theme.css` and the panel ignores a project `:root { --cms-* }`.
 - `package.json` scripts: `"check:cms": "linkchar-cms routes --check && linkchar-cms migrations sync --check && linkchar-cms templates --check"`
   and `"db:types": "supabase gen types typescript --local > src/types/supabase.ts"` (its output replaces the
   starter `src/types/supabase.ts`; the "unformatted" notice it prints is harmless). Append
@@ -224,8 +225,8 @@ tokens; it changes nothing global.
   the check needs no database).
 - With Docker running and Supabase started (step 9): `pnpm db:types`, then, when the brief has `admin`,
   `node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js admin --email … --password … --name …`, then
-  `node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js doctor` — report its output. Without Docker, say so
-  and leave these three for the checklist.
+  `node node_modules/@linkcharsoft/cms/cli/linkchar-cms.js doctor` — report its output; it must say
+  `Panel icon: /seo/favicon512.png (branding.icon)`. Without Docker, say so and leave these three for the checklist.
 
 ### 11. Docs the module owns
 
@@ -274,6 +275,9 @@ In `language`, trimmed to what applies:
   the panel at `http://localhost:3000/cms`. The welcome tour starts once per user. The template's `pre-push`
   hook builds, and the build reads Supabase: start it before pushing (or export the hosted project's
   `NEXT_PUBLIC_SUPABASE_*` in the shell, which win over `.env.local`).
+- **Product icon** — the panel shows `public/seo/favicon512.png` next to the product name, and the template's
+  favicons are still Inferencia's: regenerate them with the product's square icon (the brand-assets item of
+  `/init-project`). The panel itself always carries Inferencia's brand.
 - **Schema** — `src/cms/schema.ts` is a starter (`settings` and `home`): rewrite it with the real pages and
   collections; `/new-cms-page` adds one with its site screen. The template's demo `HomePage` does not read the
   CMS `home` yet (`MOUNT_DEFERRED`): the landing build wires it.
@@ -296,5 +300,5 @@ In `language`, trimmed to what applies:
 ## Output to parent
 
 Per `init-modules-shared.md` § G: files created / modified / `DELETED:`, decisions (locales, panel language,
-ports, contrast result), the `doctor` output when the database ran, the checklist above, any STOP, then the
+ports, panel icon), the `doctor` output when the database ran, the checklist above, any STOP, then the
 footer with `model=sonnet` and the three-gate `Validation:` line.
