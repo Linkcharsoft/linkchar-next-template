@@ -6,8 +6,11 @@
 *
   box-sizing: border-box
 
+// `clip` (not `hidden`): `hidden` on html+body makes body the scroll container, which breaks every position: sticky
 html
-  overflow-x: hidden
+  overflow-x: clip
+  scroll-behavior: smooth
+  @include mixins.scroll()
 
 body
   min-height: 100vh
@@ -17,10 +20,10 @@ body
   font-family: var(--font-merriweather-sans), sans-serif
   font-size: 16px
   font-weight: 400
-  scroll-behavior: smooth
+  -webkit-font-smoothing: antialiased
+  -moz-osx-font-smoothing: grayscale
   position: relative
-  overflow-x: hidden
-  @include mixins.scroll()
+  overflow-x: clip
 
 a
   color: inherit
