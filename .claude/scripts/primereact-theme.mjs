@@ -188,7 +188,8 @@ console.log(`  ${String(fontFaces).padStart(3)}× @font-face "Inter var" removed
 
 if (check) {
   if (!existsSync(out)) die(`${out} does not exist — run without --check to create it`)
-  if (readFileSync(out, 'utf8') === output) {
+  // autocrlf can check the snapshot out with CRLF; compare content, not line endings
+  if (readFileSync(out, 'utf8').replace(/\r\n/g, '\n') === output.replace(/\r\n/g, '\n')) {
     console.log(`\n${out} is up to date`)
     process.exit(0)
   }
