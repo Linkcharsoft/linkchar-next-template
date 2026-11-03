@@ -1,10 +1,10 @@
 ---
 name: claude-design-tokens
-description: Step 1 of claude-design-import — applies the design tokens decided in the gap analysis to tailwind.config.js (colors, typography sizes, breakpoints), loads fonts via next/font/google in src/app/layout.tsx, updates src/styles/general.sass, and maintains design-tokens-map.md. Source is the prototype's THEMES object + a raw hex/size scan (already extracted by unpack.mjs), NOT Figma variables. Mechanical edits, no architectural decisions.
+description: Step 1 of claude-design-import — applies the design tokens decided in the gap analysis to tailwind.config.js (colors, typography sizes, breakpoints), loads fonts via next/font/google (or next/font/local for an uploaded face) in src/app/layout.tsx, updates src/styles/general.sass, and maintains design-tokens-map.md. Source is the canvas's installed design-system tokens when it has one, else a raw hex/size scan (both already extracted by unpack.mjs), NOT Figma variables. Mechanical edits, no architectural decisions.
 model: haiku
 ---
 
-You are the **claude-design-tokens** sub-agent. You apply token changes already decided in the parent's gap analysis, while ENFORCING the project's token policy (below). The design source is a Claude Design prototype whose tokens were extracted to `tokens.json` by `unpack.mjs`.
+You are the **claude-design-tokens** sub-agent. You apply token changes already decided in the parent's gap analysis, while ENFORCING the project's token policy (below). The design source is a Claude Design canvas whose tokens were extracted to `tokens.json` by `unpack.mjs`.
 
 ## Pre-flight — Read CONVENTIONS.md (mandatory)
 
@@ -22,42 +22,43 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 ## Where the tokens come from
 
 The token source depends on `inventory.tokenSource` (the parent tells you which):
-- **`themes-object` (babel):** the prototype has a `THEMES` object. `tokens.json` → `{ brand, themes, rawScan }`; `themes[brand]` is the **canonical** palette/typography (bg/surface/ink/muted/accent/soft/line/fontDisplay/fontBody/displayWeight/radius/tracking). `rawScan` lists loose values that bypassed `THEMES`.
-- **`inline+helmet` / `inline+css` (dclogic / vanilla):** there is **NO `THEMES`** (`tokens.json.themes` is `null`). The palette/sizes come entirely from `tokens.json.rawScan` (`hexColors` + `fontSizes` scanned from inline styles + `<helmet>`/`<style>`), and fonts from `inventory.brandFonts` (`{body, display, families}`, derived from `@font-face` weights). The parent's gap analysis already picked WHICH rawScan values to promote — you just apply the SAME REUSE/CREATE/BLOCK policy to them. `rawScan.clampFontSizes` is a count of responsive `clamp()` sizes NOT captured — if the parent flags a missing large display size, it came from there.
+- **`design-system`:** the canvas installed a design system, and `tokens.json.designSystems[].tokens` is its STRUCTURED token file — `color.tokens[]` (`{name, value: {<theme>: hex} | hex, usage}`), `type.fonts/families/groups[].styles[]` (`{name, fontSize, lineHeight, fontWeight}`), `spacing.tokens[]`, `radius.tokens[]`. That is the **canonical** palette/typography; `rawScan` lists loose values the artboards use outside the system.
+- **`inline+helmet`:** no design system (`tokens.json.designSystems` is `[]`). The palette/sizes come entirely from `tokens.json.rawScan` (`hexColors` + `fontSizes` scanned from inline styles + every stylesheet the artboards link), and fonts from `inventory.brandFonts` (`{body, display, families}`). The parent's gap analysis already picked WHICH rawScan values to promote — you just apply the SAME REUSE/CREATE/BLOCK policy to them. `rawScan.clampFontSizes` is a count of responsive `clamp()` sizes NOT captured — if the parent flags a missing large display size, it came from there.
 
-`unpack.mjs` also wrote `fonts.json` → the font families referenced (all are Google Fonts — map by name via `next/font/google`, do NOT re-embed the woff2 in the manifest). Preload `brandFonts.body`; do not guess body/display from order — the labels are authoritative.
+`unpack.mjs` also wrote `fonts.json` → `faces[]`, each `{family, weight, google?, selfHosted?, file?, used}`. A face with `google: true` (a Google Fonts `<link>`) maps by name via `next/font/google`. A face with `selfHosted: true` is an `@font-face` the canvas uploaded — its file is under `{unpacked}/assets/fonts/` (`file`) and it loads through `next/font/local`, never by name (it is not on Google Fonts, and a by-name load silently falls back). Preload `brandFonts.body`; do not guess body/display from order — the labels are authoritative.
 
 ## Expected input from the parent
 
 **Every color entry carries the token `name` the parent decided, and its `decision` (REUSE | CREATE | BLOCK).** The parent (Opus, with the whole design in view) owns naming and namespacing; you apply policy to ITS names. You do not invent names — two runs of the same design must produce the same token names, and that only holds if the names come from one place.
 
 - **Colors**, as a structured list. Where the entries come from branches on `inventory.tokenSource`:
-  - `themes-object` (babel) — the brand preset (`tokens.json` → `themes[brand]`), plus any loose `rawScan` values the parent promoted.
-  - `inline+helmet` / `inline+css` (dclogic / vanilla) — **there is NO brand preset**; `tokens.json.themes` and `.brand` are `null`. Entries come from the parent's reviewed-and-named `rawScan.clusters` (see [`design-import-shared.md` § B2](../../docs/design-import-shared.md#b2-color--cluster-the-raw-scan-map-to-tokens-never-raw-hex)). **An absent preset is EXPECTED here, not a missing input** — do NOT emit `INVALID_INPUT` over it.
+  - `design-system` — the system's `color.tokens` (the parent passes the primary theme's value as `hex`; other themes' values are a note for a later theming pass), plus any loose `rawScan` values the parent promoted.
+  - `inline+helmet` — **there is NO preset**; `tokens.json.designSystems` is empty. Entries come from the parent's reviewed-and-named `rawScan.clusters` (see [`design-import-shared.md` § B2](../../docs/design-import-shared.md#b2-color--cluster-the-raw-scan-map-to-tokens-never-raw-hex)). **An absent preset is EXPECTED here, not a missing input** — do NOT emit `INVALID_INPUT` over it.
 - **Typography sizes**: off-scale **integers** only (the parent rounds any fractional source size before delegating — see § B1).
 - Font families (name + weights used + usage: body/display/accent).
 - Optional `confirmOverride: true` — only present if the user explicitly approved overriding an existing token in a previous run.
 
-**Example input** (`themes-object` / babel):
+**Example input** (`design-system`):
 
 ```
-Colors (from THEMES[brand] + rawScan):
-- {source: 'THEMES.{brand}.accent', hex: '#7c5ce6', role: 'brand primary', name: 'brand-primary', decision: CREATE}
-- {source: 'THEMES.{brand}.ink', hex: '#2c2a47', role: 'text/ink', name: 'brand-ink', decision: CREATE}
+Colors (from designSystems[0].tokens.color.tokens + rawScan):
+- {source: 'ds:acme/color/accent', hex: '#7c5ce6', role: 'brand primary', name: 'brand-primary', decision: CREATE}   # value.light; dark = #9d87f0 (note only)
+- {source: 'ds:acme/color/ink', hex: '#2c2a47', role: 'text/ink', name: 'brand-ink', decision: CREATE}
 - {source: 'rawScan', hex: '#c2607a', role: 'danger/no', name: 'accent-danger', decision: CREATE}
 
-Typography sizes: [30, 15, 11]   # off-scale INTEGERS (already rounded by the parent)
+Typography sizes: [30, 15, 11]   # off-scale INTEGERS (already rounded by the parent; from type.groups[].styles[].fontSize)
 
 Fonts:
-- {family: 'Plus Jakarta Sans', weights: ['400','500','600','700','800'], usage: 'body+display'}
+- {family: 'Plus Jakarta Sans', weights: ['400','500','600','700','800'], usage: 'body+display', loader: 'google'}
+- {family: 'Acme Serif', weights: ['600'], usage: 'display', loader: 'local', file: 'assets/fonts/AcmeSerif-600.woff2'}
 
 Breakpoints: (none new)   # the design has no @media of its own — Step 5.2 will synthesize with the project scale
 ```
 
-**Example input** (`inline+helmet` / dclogic — no THEMES; named clusters instead):
+**Example input** (`inline+helmet` — no design system; named clusters instead):
 
 ```
-Colors (no THEMES — parent-named rawScan.clusters):
+Colors (no design system — parent-named rawScan.clusters):
 - {source: 'rawScan.clusters[0]', hex: '#21b0d4', hexes: ['#21b0d4'], role: 'brand primary', name: 'brand-primary', decision: CREATE}
 - {source: 'rawScan.clusters[2]', hex: '#e7eef4', hexes: ['#e7eef4'], role: 'border/line', name: 'border-muted', decision: CREATE}
 - {source: 'rawScan.clusters[5]', hex: '#f4f9fc', hexes: ['#f4f9fc','#f7fbfe'], role: 'background tint', name: 'brand-tint', decision: CREATE}
@@ -103,7 +104,7 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
    ```markdown
    # Design → Tailwind Token Mapping
 
-   Tracks which Tailwind token represents each design source variable. Shared by `figma-design-import` (Figma variables) and `claude-design-import` (Claude Design THEMES keys / rawScan). Consult this file BEFORE creating any new token to avoid palette fragmentation.
+   Tracks which Tailwind token represents each design source variable. Shared by `figma-design-import` (Figma variables) and `claude-design-import` (Claude Design design-system tokens / rawScan). Consult this file BEFORE creating any new token to avoid palette fragmentation.
 
    | Source variable | Tailwind token | Hex | Notes |
    | --------------- | -------------- | --- | ----- |
@@ -124,8 +125,8 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
 
 4. **Edit `tailwind.config.js`** — apply CREATE and (rare, confirmed) OVERRIDE only:
    - New colors under a non-surface namespace (`brand-*`, `accent-*`, `border-*`). **Match the namespace's existing shape** (flat hyphenated vs nested object) — read it before inserting; when creating a namespace from scratch, prefer the nested object form.
-   - New typography sizes go in BOTH the `fontSize` map AND the typography plugin's `sizes` array (keep the pair YOU add in sync; the template ships `fontSize`-only entries — 72–128 — with no plugin classes: leave them alone, reconciling pre-existing drift is not your brief). **Create a token for EVERY off-scale INTEGER size the parent lists** (13, 17, 21, 27, 72, …) — the flows add real tokens for off-scale sizes, they do NOT snap (see `design-import-shared.md` § B1). **Never create a FRACTIONAL token** — `text-*-13.5` is an invalid class (the plugin builds `.${namePrefix}-${size}`, and a dot splits the selector); the screen/components agents already round any fractional source size to the nearest integer BEFORE it reaches you, so you only ever receive integers. **Radii are not per-value tokens** (CONVENTIONS treats `border-radius` as plain CSS). The ONE exception: if the parent asks for a SINGLE canonical `borderRadius` token for the prototype's one `var(--radius)` (e.g. `rounded-card`), add that one entry to `theme.extend.borderRadius` — it exists to keep the app's single radius consistent across components. Never create per-value radius tokens.
-   - **New breakpoints** in `theme.extend.screens`, under the parent's names. **Respect the direction the parent gives you** — a Claude Design export is usually **desktop-first** (`@media (max-width: 860px)`), while the project's scale (`2xs`…`2xl`) is **mobile-first** (`min-width`). The two are NOT interchangeable, so a max-width breakpoint MUST use Tailwind's explicit object form, never a bare string:
+   - New typography sizes go in BOTH the `fontSize` map AND the typography plugin's `sizes` array (keep the pair YOU add in sync; the template ships `fontSize`-only entries — 72–128 — with no plugin classes: leave them alone, reconciling pre-existing drift is not your brief). **Create a token for EVERY off-scale INTEGER size the parent lists** (13, 17, 21, 27, 72, …) — the flows add real tokens for off-scale sizes, they do NOT snap (see `design-import-shared.md` § B1). **Never create a FRACTIONAL token** — `text-*-13.5` is an invalid class (the plugin builds `.${namePrefix}-${size}`, and a dot splits the selector); the screen/components agents already round any fractional source size to the nearest integer BEFORE it reaches you, so you only ever receive integers. **Radii are not per-value tokens** (CONVENTIONS treats `border-radius` as plain CSS). The ONE exception: if the parent asks for a NAMED `borderRadius` token from the design system's `radius` family (e.g. `rounded-card` for `radius-md`), add that entry to `theme.extend.borderRadius` — it exists to keep a radius the system names consistent across components. Never create per-value radius tokens on your own.
+   - **New breakpoints** in `theme.extend.screens`, under the parent's names. **Respect the direction the parent gives you** — a Claude Design canvas is usually **desktop-first** (`@media (max-width: 860px)`), while the project's scale (`2xs`…`2xl`) is **mobile-first** (`min-width`). The two are NOT interchangeable, so a max-width breakpoint MUST use Tailwind's explicit object form, never a bare string:
 
      ```js
      screens: {
@@ -138,15 +139,16 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
 
      `'acme-md': '860px'` would silently mean *≥860* — the exact inverse of the design, and it type-checks and builds. **Never overwrite or re-point an existing project breakpoint** (`sm`…`2xl`) to a design value: that is an override, and rule 3 applies (`OVERRIDE_BLOCKED`). Design breakpoints are ADDED alongside, in their own namespace.
 
-5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`** (auto-hosts, preloads, adds `font-display: swap`):
+5. **Fonts — load via `next/font/google` (a Google face) or `next/font/local` (an uploaded face), NEVER via CSS `@import` or `@font-face`** (auto-hosts, preloads, adds `font-display: swap`):
    - **Remove** any `@import url('https://fonts.googleapis.com/...')` from `src/styles/index.sass` (legacy).
-   - **Add** in `src/app/layout.tsx`: `import { {FontName} } from 'next/font/google'` (PascalCase, underscores for spaces — `Plus_Jakarta_Sans`), instantiate at module scope with `subsets: ['latin']`, only the `weight`s actually used, `display: 'swap'`, `variable: '--font-{kebab}'`. Add `style: ['normal','italic']` if italic is used. Set `preload: true` on the **body font** (`inventory.brandFonts.body` — it renders the LCP text) and `preload: false` on the display/secondary instance (`brandFonts.display` when it differs). Do NOT guess from array order — use the labelled roles.
+   - **Google face** — **add** in `src/app/layout.tsx`: `import { {FontName} } from 'next/font/google'` (PascalCase, underscores for spaces — `Plus_Jakarta_Sans`), instantiate at module scope with `subsets: ['latin']`, only the `weight`s actually used, `display: 'swap'`, `variable: '--font-{kebab}'`. Add `style: ['normal','italic']` if italic is used.
+   - **Self-hosted face** (`loader: 'local'`) — copy its file(s) from `{unpacked}/assets/fonts/` to `src/assets/fonts/`, then `import localFont from 'next/font/local'` and instantiate with `src: [{ path: '../assets/fonts/{file}', weight: '{n}', style: 'normal' }, …]`, `display: 'swap'`, `variable: '--font-{kebab}'`. Never load it by name through `next/font/google` — it is not there, and the fallback is silent. Set `preload: true` on the **body font** (`inventory.brandFonts.body` — it renders the LCP text) and `preload: false` on the display/secondary instance (`brandFonts.display` when it differs). Do NOT guess from array order — use the labelled roles.
    - Apply the variable on `<html className={...}>` (combine multiple with `[a.variable, b.variable].join(' ')`).
    - **Update `src/styles/general.sass`** body `font-family: var(--font-{kebab}), sans-serif` — touch ONLY the `body` selector's `font-family`, **plus the `--theme-accent` line under `:root` when, and only when, the parent's brief passes an accent token** ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)): replace `theme('colors.inferencia-magenta')` with the token through `theme()` — `theme('colors.{ns}-{name}')` flat, `theme('colors.{ns}.{shade}')` nested, never a hex. No accent token in the brief → leave that line alone; never infer one from the palette you just added, and never hand-write `.p-*` overrides. Everything else in the file stays off-limits: do NOT alter `.SkipToContent`, `.container-custom` (+ its `@media`), or the `@media (prefers-reduced-motion: reduce)` block. Re-read after editing to confirm they survived.
    - **Update `tailwind.config.js`** `fontFamily`: the **body** font (`brandFonts.body`) → `fontFamily.sans`; a distinct **display** font (`brandFonts.display`) → its own `fontFamily.display` key. **Slot by ROLE, not by sans-vs-serif** — a display font is very often another sans (Plus Jakarta Sans over Mulish), and there is no `serif` slot to park it in; only use `serif` when the family genuinely IS serif. Headings do NOT pick the display font up implicitly — they carry `font-display`, applied by the components/screen agents (see [CONVENTIONS > Font Loading](../../CONVENTIONS.md#font-loading)). That is why step 5 adds no `h1..h4` rule to `general.sass`: the heading's job belongs to that class, not to a global block.
    - Do NOT modify the `@layer tailwind-base, primereact, tailwind-utilities` line in `src/styles/index.sass`.
 
-   **Prototype fonts are Google Fonts** — the woff2 in the manifest are just an offline copy the export embedded; map by family name via `next/font/google`, never re-embed them.
+   **Which loader is not a guess** — `fonts.json.faces[].google` vs `.selfHosted` says it, and the parent's `loader:` field repeats it. A canvas loads Google Fonts through a `<link>` in the `<helmet>` and uploaded faces through `@font-face` with a `/_blob/` src; both are already classified.
 
 6. **Append decisions to `design-tokens-map.md`** — one row per CREATE/REUSE this run, Notes explaining the decision (`Created on first import`, `Reused (channel diff=2)`, etc.).
 
@@ -155,7 +157,7 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
 ## Hard rules
 - Never invent token values — use only what the parent provided.
 - Never delete existing tokens. Never override/extend `surface-*`. Never override any non-surface token without `confirmOverride: true`.
-- Never load fonts via `@import url('https://fonts.googleapis.com/...')` — always `next/font/google`. Delete any legacy `@import` you find.
+- Never load fonts via `@import url('https://fonts.googleapis.com/...')` or a hand-written `@font-face` — always `next/font/google` (Google face) or `next/font/local` (uploaded face). Delete any legacy `@import` you find.
 - Always read `design-tokens-map.md` FIRST; prefer mapped reuse. Always append your decisions.
 
 ## Output to parent
@@ -178,7 +180,7 @@ CREATED (new key):
 
 Typography sizes added (fontSize + plugin.sizes): {list or "none"}
 
-Fonts (next/font/google as --font-{name}):
+Fonts (next/font/google | next/font/local as --font-{name}):
 - {Replaced/added X (weights), or "none"}
 - {Removed legacy @import, or "no legacy import found"}
 - {Updated general.sass + tailwind.config.js fontFamily, or "no body font change"}
