@@ -42,17 +42,20 @@ fonts:                                                        # REQUIRED — rea
   display: '--font-{kebab}' | none
   google: 'Figtree:wght@400;500;600' | 'Inter' | none         # the Google Fonts family spec(s) for the global-error <link>; none = not on Google Fonts
 logo:                                                         # REQUIRED — the shared brand mark from Step 2
-  path: 'src/assets/images/{name}.webp' | 'src/assets/icons/{Name}Icon.tsx'
-  kind: raster | icon
+  path: 'src/assets/images/{name}.webp' | 'src/assets/icons/{Name}Icon.tsx' | none
+  kind: raster | icon | text-wordmark                         # text-wordmark = the design has NO logo image; the header sets the brand name in type
   alt: '{Brand}'
+  text: '{BRAND}'                                             # text-wordmark only — the exact string the header renders
+  font: '--font-{kebab}' + '{text-{weight}-{size}}' + 'tracking / uppercase as the header has it'   # text-wordmark only — copy the header's treatment, never invent one
 buttons:                                                      # REQUIRED — CustomButton variants that exist after Step 3
   primary: '{variant}'
-  secondary: '{variant}' | none
+  secondary: '{variant}' | none                               # none when no variant reads on the error screens' background (the template's `transparent` is ink-on-light): render the primary alone, or the primary twice — never a variant that vanishes on a dark page
 homeRoute: '/'                                                # OPTIONAL — default '/'
 poweredBy:                                                    # REQUIRED
   mount: 'src/components/{Footer}/{Footer}.tsx' | 'src/layouts/{Layout}/{Layout}.tsx' | none
                                                               # landing-page project → the Footer (or the public layout); dashboard / custom app → none
   tone: dark | light                                          # the strip's tone against what it sits on
+  designed: true | false                                      # true = the DESIGN drew the credit and Step 4 already restyled PoweredBy from that region (design-import-shared § B14): task B keeps that styling and only localizes + verifies the mount
 toast:                                                        # OPTIONAL — omit the block, or any field, to derive it (see D)
   surface: {token}           # the toast card background — the design's card/panel surface
   text: {token}              # summary + detail colour on that surface
@@ -89,7 +92,7 @@ All three screens keep the template's **structure** — a full-height `<main id=
 ```tsx
 <main id='main' className='NotFoundPage'>
   <header className='NotFoundPage__Header container-custom'>
-    {/* logo → homeRoute; raster: <Image src={Logo} alt={brand} width height priority fetchPriority='high'/>; icon: <LogoIcon/> inside a <Link aria-label='{Brand} — inicio'> */}
+    {/* logo → homeRoute; raster: <Image src={Logo} alt={brand} width height priority fetchPriority='high'/>; icon: <LogoIcon/> inside a <Link aria-label='{Brand} — inicio'>; text-wordmark: <Link>{logo.text}</Link> with the header's exact type treatment (logo.font) — the same classes the Step 4 header uses */}
   </header>
 
   <div className='NotFoundPage__Body container-custom'>
@@ -190,6 +193,8 @@ All three screens keep the template's **structure** — a full-height `<main id=
 ### B. `PoweredBy` — restyle, localize, mount once (or not at all)
 
 `src/components/PoweredBy/PoweredBy.tsx` is the template's credit strip: `Powered by <a>Inferencia AI Solutions</a>`. It ships **unmounted**: it is a landing-page thing (the last strip of the footer on every marketing site this template has produced), while a dashboard or a custom app carries it in a spot the developer picks at build time, if at all. Three edits — the first two always, the third per `poweredBy.mount`:
+
+> **`poweredBy.designed: true` — the design drew the credit, and Step 4 already restyled the component from that region** ([§ B14](../../docs/design-import-shared.md#b14-the-credit-strip-the-design-draws--powered-by-is-template-chrome-only-when-the-design-has-none)). Then B1 is **verify, not restyle**: read `PoweredBy.sass`, confirm it no longer carries the template's defaults (`text-bold-14`, the underline hover, the grey strip), and leave it as Step 4 left it — its magenta hover is the credit's own brand and is allowed there. Do B2 and B3 as usual. Measured: without this the designed 10px tracked strip shipped replaced by the template's 14px bold one.
 
 1. **Restyle `PoweredBy.sass` with the brand**: strip background + text + link colours as tokens matching `poweredBy.tone` (a dark strip under a dark footer, a light hairline-topped strip under a light one — anodal used `bg-white border-t border-black/[0.08]` with uppercase tracking; all-service a solid brand-red strip). Typography via `text-{weight}-{size}` tokens. State the link's hover style explicitly (the template underlines it). Keep the link ≥ 44px tall (its `padding-block`).
 2. **Localize** the copy: `es` → `Desarrollado por`; `en` → `Powered by`. The link text stays `Inferencia AI Solutions` (or `Inferencia` alone when the strip is tight — say which). `href`, `target='_blank'`, `rel='noopener noreferrer'` stay.
