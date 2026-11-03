@@ -11,6 +11,11 @@
  * having measured, and that failure is indistinguishable from a real pass. Numbers here come from
  * an artefact no model writes. Two runs of the same tree produce the same findings.
  *
+ * CHECKS  CONTAINER_SHRINK · BACKGROUND_CLIPPED · HORIZONTAL_OVERFLOW · FLUSH_HEADING (SUSPECT) ·
+ *         SCROLL_CONTAINER_BODY · SMOOTH_SCROLL_ON_BODY · PREFIX_PAIR_DROPPED · STICKY_NOT_STICKING ·
+ *         HOVER_COLOR_INHERIT (widest width only) · MOBILE_NAV_DID_NOT_OPEN (narrowest width only).
+ *         The report lists, per route × width, which of them RAN and passed — absent there = never ran.
+ *
  * WHAT IT DOES NOT COVER — say this out loud in any report that quotes it:
  *   · a breakpoint mapped to the wrong width, or a typeface swapped — both render coherently
  *   · a spacing loss that is not degenerate (72px shipped as 40px); only a collapse to 0 is caught
@@ -334,6 +339,104 @@ const COLLECTOR = /* js */ `(() => {
     }
   }
 
+  /* ── 7 · SCROLL_CONTAINER_BODY — body became the scroll container ──
+   * 'overflow-x: hidden' on BOTH html and body stops body's overflow propagating to the viewport, so
+   * body scrolls instead of the window: every position: sticky is then relative to a box that never
+   * scrolls, and scroll-behavior on html is dead. Measured: a 420svh sticky reveal never showed, and
+   * it passed lint, type-check, build and this sweep's older checks. 'clip' is the value that keeps
+   * the horizontal guard without creating a scroll container. */
+  const bodyCs = cs(document.body), htmlCs = cs(de)
+  if ((bodyCs.overflowY === 'auto' || bodyCs.overflowY === 'scroll') && (htmlCs.overflowX !== 'visible' || htmlCs.overflowY !== 'visible')) {
+    add('MEASURED', 'SCROLL_CONTAINER_BODY', {
+      selector: 'body', expected: 'html/body overflow: visible or clip (viewport scrolls)', actual: 'html ' + htmlCs.overflowX + '/' + htmlCs.overflowY + ' · body ' + bodyCs.overflowX + '/' + bodyCs.overflowY,
+      note: 'body is the scroll container: position: sticky and scroll-behavior stop working — use overflow-x: clip, never hidden, on html/body',
+    })
+  }
+
+  /* ── 8 · SMOOTH_SCROLL_ON_BODY — scroll-behavior declared where the viewport does not read it ──
+   * The viewport takes scroll-behavior from <html>; a 'smooth' on body does nothing for #anchor links. */
+  if (bodyCs.scrollBehavior === 'smooth' && htmlCs.scrollBehavior !== 'smooth') {
+    add('MEASURED', 'SMOOTH_SCROLL_ON_BODY', {
+      selector: 'body', expected: 'html { scroll-behavior: smooth }', actual: 'body smooth, html ' + htmlCs.scrollBehavior,
+      note: 'anchor links jump instead of scrolling — move the declaration to html (and data-scroll-behavior="smooth" on <html> for Next)',
+    })
+  }
+
+  /* ── 9 · PREFIX_PAIR_DROPPED — a vendor-prefixed declaration left WITHOUT its standard twin ──
+   * Lightning CSS keeps only the last of a prefixed/unprefixed pair, so 'backdrop-filter' written
+   * AFTER '-webkit-backdrop-filter' ships as the prefix alone and Chrome computes 'none'. WebKit
+   * (this engine) honours the prefix, so the computed value cannot show it — read the rules instead. */
+  const PAIRS = ['backdrop-filter', 'mask-image', 'mask', 'mask-size', 'mask-position', 'mask-repeat', 'clip-path', 'user-select', 'text-fill-color', 'background-clip', 'appearance', 'line-clamp', 'box-decoration-break']
+  const seenPrefixOnly = new Set()
+  const visitRules = (rules) => {
+    for (const r of rules) {
+      if (r.selectorText && r.style) {
+        for (const p of PAIRS) {
+          const pref = r.style.getPropertyValue('-webkit-' + p)
+          if (pref && !r.style.getPropertyValue(p)) {
+            const key = r.selectorText + '|' + p
+            if (seenPrefixOnly.has(key)) continue
+            seenPrefixOnly.add(key)
+            let matches = 0
+            try { matches = document.querySelectorAll(r.selectorText).length } catch {}
+            if (!matches) continue
+            add('MEASURED', 'PREFIX_PAIR_DROPPED', {
+              selector: r.selectorText.slice(0, 80), expected: p + ' + -webkit-' + p, actual: '-webkit-' + p + ' only (' + pref.slice(0, 40) + ')',
+              note: 'the standard declaration was minified away — write the -webkit- line FIRST, the standard one after it (CONVENTIONS > Inside .sass files)',
+            })
+          }
+        }
+      }
+      if (r.cssRules && r.cssRules.length) visitRules(r.cssRules)
+    }
+  }
+  for (const ss of document.styleSheets) { try { visitRules(ss.cssRules) } catch { /* cross-origin */ } }
+
+  return F
+})()`
+
+/* ── 10 · STICKY_NOT_STICKING — a position: sticky element that does not hold its top ──
+ * Scrolls the window past each sticky element and checks that its rect top lands on its `top`
+ * while its parent still has room. Skips stickies inside a GENUINE inner scroller (one that can
+ * scroll on its own); an ancestor with `overflow: hidden` is not a scroller, it is the usual cause,
+ * and the finding names it. Restores the scroll position afterwards. */
+const STICKY_PROBE = /* js */ `(async () => {
+  const F = []
+  const cs = (el) => getComputedStyle(el)
+  const sel = (el) => {
+    const cls = String(el.className || '').split(/\\s+/).filter(Boolean).slice(0, 3).join('.')
+    return el.tagName.toLowerCase() + (cls ? '.' + cls : '')
+  }
+  const stickies = [...document.body.querySelectorAll('*')].filter((el) => cs(el).position === 'sticky' && (el.offsetWidth > 0 || el.offsetHeight > 0)).slice(0, 12)
+  const prevY = window.scrollY
+  for (const el of stickies) {
+    const top = parseFloat(cs(el).top)
+    if (!Number.isFinite(top)) continue
+    let a = el.parentElement, blocker = null
+    while (a && a !== document.body) {
+      const s = cs(a)
+      if (['auto', 'scroll', 'hidden'].includes(s.overflowY) || ['auto', 'scroll', 'hidden'].includes(s.overflowX)) { blocker = a; break }
+      a = a.parentElement
+    }
+    if (blocker && (cs(blocker).overflowY === 'auto' || cs(blocker).overflowY === 'scroll') && blocker.scrollHeight > blocker.clientHeight + 1) continue
+    const parent = el.parentElement
+    const er = el.getBoundingClientRect(), pr = parent.getBoundingClientRect()
+    const room = pr.height - er.height
+    if (room < 150) continue
+    const target = er.top + window.scrollY - top + Math.min(100, room / 2)
+    window.scrollTo(0, target)
+    await new Promise((r) => setTimeout(r, 150))
+    const after = el.getBoundingClientRect()
+    const parentBottom = parent.getBoundingClientRect().bottom
+    if (parentBottom > after.top + after.height && Math.abs(after.top - top) > 2) {
+      F.push({
+        severity: 'MEASURED', check: 'STICKY_NOT_STICKING', selector: sel(el),
+        expected: 'top ' + top + 'px while its parent (' + Math.round(pr.height) + 'px tall) scrolls', actual: Math.round(after.top) + 'px after scrolling to ' + Math.round(target) + 'px',
+        note: blocker ? 'sticky is trapped by ' + sel(blocker) + ' (overflow ' + cs(blocker).overflowX + '/' + cs(blocker).overflowY + ') — use clip, or move the sticky out of it' : 'no scroll container above it holds it — check html/body overflow (SCROLL_CONTAINER_BODY) and transformed ancestors',
+      })
+    }
+  }
+  window.scrollTo(0, prevY)
   return F
 })()`
 
@@ -399,8 +502,15 @@ const SETTLE = /* js */ `(async () => {
 const findings = []
 const skipped = []
 const notes = []
+const ran = []            // which checks actually executed per route × width — a check absent here never ran
 const hoverSeen = new Set()
 const push = (route, width, f) => findings.push({ route, width, ...f })
+const COLLECTOR_CHECKS = ['CONTAINER_SHRINK', 'BACKGROUND_CLIPPED', 'HORIZONTAL_OVERFLOW', 'FLUSH_HEADING', 'SCROLL_CONTAINER_BODY', 'SMOOTH_SCROLL_ON_BODY', 'PREFIX_PAIR_DROPPED']
+const markRan = (route, width, ...checks) => {
+  let r = ran.find((x) => x.route === route && x.width === width)
+  if (!r) { r = { route, width, checks: [] }; ran.push(r) }
+  for (const c of checks) if (!r.checks.includes(c)) r.checks.push(c)
+}
 
 async function auditRoute(page, baseUrl, route, width, skipHover) {
   const target = resolveRoute(route)
@@ -428,6 +538,13 @@ async function auditRoute(page, baseUrl, route, width, skipHover) {
   await page.evaluate(SETTLE)
 
   for (const f of await page.evaluate(COLLECTOR)) push(route, width, f)
+  markRan(route, width, ...COLLECTOR_CHECKS)
+  try {
+    for (const f of await page.evaluate(STICKY_PROBE)) push(route, width, f)
+    markRan(route, width, 'STICKY_NOT_STICKING')
+  } catch (e) {
+    skipped.push({ route, width, level: 'feature', reason: `sticky probe failed: ${String(e).split('\n')[0]}` })
+  }
 
   /* ── 5 · HOVER_COLOR_INHERIT — the global `a:hover { color: unset }` trap ──
    * `a:hover` is 0,1,1 and outranks a root class's 0,1,0; `unset` on an inherited property means
@@ -439,6 +556,7 @@ async function auditRoute(page, baseUrl, route, width, skipHover) {
    * (the image scale) while the colour bug was live. */
   if (skipHover) return  // hover is a pointer state, not a responsive one; probe it once, at the widest viewport
 
+  markRan(route, width, 'HOVER_COLOR_INHERIT')
   const candidates = await page.evaluate(hoverCandidates([...hoverSeen]))
   const ambiguous = []
   for (const c of candidates) {
@@ -532,6 +650,7 @@ async function auditMobileNav(page, route, width) {
       skipped.push({ route, width, level: 'feature', reason: 'no [aria-expanded] toggle found at this width — mobile nav NOT verified' })
       return
     }
+    markRan(route, width, 'MOBILE_NAV_DID_NOT_OPEN')
     const controls = await toggle.getAttribute('aria-controls')
     const isOpen = async () => (controls
       ? page.evaluate((id) => { const el = document.getElementById(id); return !!el && (el.offsetWidth > 0 || el.offsetHeight > 0) }, controls)
@@ -563,6 +682,14 @@ const NOT_COVERED = [
   'a spacing loss that is not degenerate (72px shipped as 40px); only a collapse to 0 is visible here',
   'anything on a route listed under SKIPPED below',
 ]
+
+/** Per route × width: the checks that ran minus the ones that produced a finding there. */
+function passedByRoute() {
+  return ran.map((r) => ({
+    route: r.route, width: r.width,
+    passed: r.checks.filter((c) => !findings.some((f) => f.route === r.route && f.width === r.width && f.check === c)),
+  }))
+}
 
 function report(routes, baseUrl) {
   const measured = findings.filter((f) => f.severity === 'MEASURED')
@@ -596,6 +723,17 @@ function report(routes, baseUrl) {
   }
   table(measured, 'MEASURED — hard predicate, no judgement involved. These are defects.')
   table(suspect, 'SUSPECT — measured anomaly that may be intentional. Adjudicate against the design source.')
+
+  /* A check that ran and found nothing used to appear nowhere, and the reader could not tell "passed"
+   * from "never ran" (measured: "JSON records no mobile-nav result for /"). List the passes explicitly. */
+  L.push('### PASSED — checks that ran on the route and found nothing', '')
+  const passedRows = passedByRoute()
+  if (!passedRows.length) L.push('_no check completed on any route_', '')
+  else {
+    L.push('| route | w | passed |', '| --- | ---: | --- |')
+    for (const r of passedRows) L.push(`| ${r.route} | ${r.width} | ${r.passed.join(', ') || '—'} |`)
+    L.push('')
+  }
 
   L.push('### SKIPPED — could not verify. This is NOT a pass.', '')
   if (!skipped.length) L.push('_nothing skipped_', '')
@@ -694,7 +832,7 @@ async function main() {
     appDir: APP, baseUrl, widths: WIDTHS, routes,
     coverage: { requested: routes.length, rendered: routes.length - unverified.length, unverifiedRoutes: unverified },
     summary: { measured: measured.length, suspect: findings.length - measured.length, skipped: skipped.length },
-    findings, skipped, intentionalHoverChanges: notes, notCovered: NOT_COVERED,
+    findings, skipped, passed: passedByRoute(), intentionalHoverChanges: notes, notCovered: NOT_COVERED,
   }
   fs.writeFileSync(path.join(OUT, 'render-audit.json'), JSON.stringify(payload, null, 2))
   const md = report(routes, baseUrl)
