@@ -44,6 +44,8 @@ A multi-page canvas is N page artboards (`inventory.screens`), and the **header 
 2. **Create ONE layout** (`src/layouts/{Name}Layout/`) holding that chrome. **Create the Navbar/Footer components yourself from the source** (you have the markup — translate its inline styles/`style-hover`/class rules the same way) as real components under `src/components/` — never inlined in the layout. Do NOT route this through `claude-design-components` — chrome is this step's deliverable. The nav's links = the page list (entry → `/`, others → `/{slug}`), using `next/link`. **If the chrome carries imperative behavior** (sticky-shrink on scroll, dropdowns, a scroll-driven solid header, an `aria-current` alias map, a dynamic footer year — in its `.logic.js` or a `source/support/*.js` the parent specs), transcribe it as a `// TODO: port imperative behavior` for now, exposing an explicit opt-in for any per-route bit (a `forceSolid` for the one page with no hero).
 3. **Wrap all N routes in a single route-group** (`src/app/(site-layout)/…`) whose `layout.tsx` delegates to the layout. So every page inherits the chrome ONCE. When the parent passed route groups (two audiences, two shells), one layout + one group per shell.
 4. Translate the chrome's `style-hover`/inline styles the same way the screen agent does (Tailwind `hover:` / tokens / `container-custom`).
+5. **The credit strip, when the design draws it** ([§ B14](../../docs/design-import-shared.md#b14-the-credit-strip-the-design-draws--powered-by-is-template-chrome-only-when-the-design-has-none)): the parent cites the `Powered by` region. Restyle `src/components/PoweredBy/PoweredBy.sass` (and its markup, if the design's structure differs) from that region — colours, type, tracking, hover (its hover may REUSE `inferencia-magenta`, CONVENTIONS > Color System) — and mount it where the design puts it (the Footer's last child, full-width). Do NOT create a second credit component. Step 7 then verifies and localizes only.
+6. **Declare the DOM contract** ([§ C8](../../docs/design-import-shared.md#c8-cross-step-dom-contracts--chrome-that-reads-the-screens-dom-must-say-so)): every attribute, `id` or class your chrome's logic reads off the SCREENS' DOM (`data-light` on light sections for a tone-switching header, `id="intro"` for a scroll target, section `id`s for an active-nav state) goes in your report under `DOM contract:`, with the element each must sit on. The screen agents never see your code; the parent carries this list into their briefs.
 
 Without this, each of the N `claude-design-screen` runs would re-inline the header/nav/footer (N× duplication — 19× on one measured canvas) — that is the failure this step prevents. For `single-page-sections`, the sticky header is part of the ONE screen (no layout needed) unless a genuine shared shell exists.
 
@@ -100,7 +102,7 @@ Route groups: each audience the parent derived from the canvas's groups (`(site-
 - **Never port drawn device chrome** (a status bar, a home indicator, a phone frame) into a layout — it's prototype framing, not product UI.
 
 ## Output to parent
-A summary (each layout adjusted/created: file paths + route groups wired). End with the footer:
+A summary (each layout adjusted/created: file paths + route groups wired), then a `DOM contract:` list — every attribute / `id` / class the chrome reads off the screens' DOM, with the element it must sit on, or `DOM contract: none` — then the footer:
 
 <!-- The `model=sonnet` literal below must match the `model:` frontmatter. Keep it in sync on any model change. -->
 

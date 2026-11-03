@@ -30,6 +30,7 @@ Screen type: {auth | public | protected}
 Screen slug: {kebab-case}
 Source: {unpacked}/{inventory.screens[].file}   # a .markup.html + sibling .logic.js + .helmet.css (the CSS its classes use)
 Support files: [source/support/*]                # the scripts/data the artboard links; omitted when the canvas has none
+DOM contract: [{attribute | id → element}, ...]  # the hooks the layout chrome reads off THIS screen's DOM (§ C8) — render every one on the element named; omitted = Step 4 reported none
 Canvas board: {title} · {w}×{h} · expand={fill|none} · interactive={true|false}   # the author's own frame from canvas.json; `fill` = a fluid PAGE
 navModel: {single-page-sections | multi-page}   # from inventory — drives section-vs-route handling
 Screen component: {board slug}                   # from inventory.screens[].component
@@ -198,6 +199,8 @@ details:
 
 ## Hard rules
 - Verbatim copy from the source — do NOT paraphrase or "improve" text.
+- **Honour the `DOM contract`** ([§ C8](../../docs/design-import-shared.md#c8-cross-step-dom-contracts--chrome-that-reads-the-screens-dom-must-say-so)): every attribute / `id` the layout chrome reads must be on the element named, or the header never switches tone and the nav never highlights — and nothing downstream sees it. An item the design cannot satisfy on this screen goes under `Discrepancies`, never silently dropped.
+- **Card / item titles are `<p>` styled as the source's `<h3>`** ([§ B13](../../docs/design-import-shared.md#b13-headings--the-convention-owns-the-semantics-the-design-owns-the-look)); an `<h3>` that is the only heading of its block stays a heading at the level the outline needs.
 - **Verbatim UI too — the control set and its affordances are the design ([§ B9](../../docs/design-import-shared.md#b9-fidelity-is-not-only-about-copy--the-control-set-and-its-affordances-are-the-design-too)).** Every input, button, link and toggle you emit traces to one in the source; a static label stays static, an editable field stays editable, a bottom-sheet stays a bottom-sheet. Anything you add, drop or convert goes through `STOP-ADVISORY` with `default_applied` — never silently.
 - Typography size outside the project scale → `TOKENS_MISSING` STOP, never `text-[Npx]`.
 - Internal `<a>` → `next/link` / `CustomButton href`.

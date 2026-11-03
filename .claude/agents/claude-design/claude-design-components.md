@@ -86,6 +86,10 @@ Only AFTER this inspection do you write the component.
 2. `.claude/CONVENTIONS.md` — BEM in SASS, `m` not `motion`, `classNames` from `primereact/utils` not `clsx`, default exports, no manual `memo()`.
 3. `src/components/` (Glob folders) — the real on-disk component list; the CONVENTIONS table can lag. Filesystem wins.
 
+## Imperative behaviours as components
+
+A behaviour the design implements imperatively (a reveal on `IntersectionObserver`, a sticky scroll track on `requestAnimationFrame`, a marquee, a drag rail, a rotator, a scroll-driven nav tone, a WebGL module) arrives as a `create` entry whose source is a PAIR: the markup region + the `.logic.js` (or `source/support/*.js` module) region. [§ B15](../../docs/design-import-shared.md#b15-imperative-dclogic--spec-each-behaviour-at-05-build-it-as-a-component-at-step-3) holds the translation table (what each pattern becomes in `m` / `useScroll` / `useEffect` / `next/dynamic`). Build it as a `'use client'` component with the behaviour INSIDE it, so the screen only composes. A module that imports from a CDN (`three@0.184.0` from unpkg) is a real dependency: `pnpm add` the exact version the parent names (the `.npmrc` pins exact), never leave the CDN import. Card / item titles inside such a component follow [§ B13](../../docs/design-import-shared.md#b13-headings--the-convention-owns-the-semantics-the-design-owns-the-look) (`<p>` styled as the design's `<h3>`).
+
 ## Where to place a new component
 
 | Role | Destination |

@@ -33,7 +33,7 @@ Detect the platform from the `Platform` field in your environment (`win32` → P
 
 ## Expected input from the parent
 - The path to the unpacked working tree (so you can read `inventory.json`, `assets/img/*`, and `source/*`).
-- **Images**: from `inventory.images` — each `{ file (path under unpacked/assets/img), srcRef, alt, mime, blob, dataDriven, inline }`, plus a `screenSlug` when the parent decided the image belongs to a single screen (omit for shared assets like logos). **`srcRef` is the image's identity** — exactly how the markup references it: `/_blob/<32hex>` for an upload in the artifact's asset store (`blob: true`), a `project/`-relative path for a file (`assets/hero.png`), or `inline/<name>.<ext>` for a `data:` URI the extractor decoded. Use it for dedup/lookup and as the provenance label. `alt` is the first `alt=` found on an `<img>` using the asset (may be `null`).
+- **Images**: from `inventory.images` — each `{ file (path under unpacked/assets/img), srcRef, alt, mime, width, height, hasAlpha, blob, dataDriven, inline }`, plus a `screenSlug` when the parent decided the image belongs to a single screen (omit for shared assets like logos). **`srcRef` is the image's identity** — exactly how the markup references it: `/_blob/<32hex>` for an upload in the artifact's asset store (`blob: true`), a `project/`-relative path for a file (`assets/hero.png`), or `inline/<name>.<ext>` for a `data:` URI the extractor decoded. Use it for dedup/lookup and as the provenance label. `alt` is the first `alt=` found on an `<img>` using the asset (may be `null`).
 - **Icons** (may be EMPTY): the parent passes an icon list for any inline `<svg>` glyph **used 2+ times across the artboards (it repeats)**, each with a `file:lines` region of one instance; single-use glyphs stay inline (parent omits them; see "Icons" below). The parent pre-filters the list **by role, per [`design-import-shared.md` § B8](../../docs/design-import-shared.md#b8-icons--primeicons-pre-filter-vs-the-sources-own-glyph) — NOT by "a PrimeIcon with that name exists"**: when the design ships a coherent icon set, every member keeps its source glyph and the list you receive contains **zero** PrimeIcon-covered names. That is the correct outcome, not an oversight — build every glyph the parent passes you, even one whose name matches a `pi pi-*`.
 
 - **Remote images (OPTIONAL — usually absent)**: a SECOND, explicitly-labelled list of `{ url, name, screenSlug? }` from `inventory.remoteImages`. Its presence means the user chose "download + convert" at the Step 0.5 checkpoint. **Absent means do nothing** — the user picked keep-remote or placeholders, and that is handled elsewhere. See [Remote images](#remote-images-only-when-the-parent-passes-a-second-list).
@@ -145,6 +145,15 @@ Rules that are NOT optional:
 - **`renditions` means ONE asset, not several.** When an entry carries a `renditions` array, the CDN served the same photo at several sizes. Fetch `url` **once** — `unpack.mjs` already picked the largest readable variant — convert it once, and reuse that single `.webp` for every call site. Do not fetch the other renditions.
 - **Use the parent's `name` verbatim**, exactly as with local images: `remoteImages` entries carry only an `alt`, so the parent derived the name from it. Do not re-derive it and do not emit `NAMING_NEEDED` for an image the parent named.
 - **Fetch only what is on the list.** Do not follow redirects to other hosts beyond the normal `-L`/`Invoke-WebRequest` behaviour, do not discover extra URLs from the source yourself, and do not retry more than twice per URL.
+
+## Media (video / audio — `inventory.media`)
+
+The canvas ships video as files (`project/assets/*.mp4`) or asset-store uploads; `unpack.mjs` copies them to `{unpacked}/assets/media/` and lists each with `bytes`, the boards that use it and the `<video>` attrs (`autoplay`, `muted`, `loop`, `playsinline`, `poster`). The contract:
+
+1. **Copy as-is to `public/videos/{name}.{ext}`** (the parent names them, like images) — no transcoding, no re-encoding: there is no `sharp` for video and a lossy re-encode is a quality loss nobody asked for. Screens reference them as `/videos/{name}.mp4`.
+2. **Report every file over 5 MB** with its size and the parent's decision for it (the parent decided at Step 0.5: keep / compress outside the flow / poster + lazy). A 6 MB autoplay hero is a real LCP cost; shipping it silently is the failure.
+3. **A `poster` the design references** is an image — it went through the raster pipeline above; report the mapping so the screen agent wires `poster=` to the `.webp`.
+4. Never download a video from a URL (that is the remote-images rule, and video has no equivalent here), and never generate a poster frame yourself — report `no poster` instead.
 
 ## Icons
 
