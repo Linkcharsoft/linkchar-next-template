@@ -11,7 +11,9 @@
 //   source/{slug}.markup.html + .logic.js + .helmet.css, source/support/*, assets/img/*, assets/fonts/*,
 //   design-system/*.tokens.json, inventory.json, tokens.json, fonts.json, nav-graph.json, components.json
 //
-// Usage: node unpack.mjs <root-dir> <outDir> [--url <artifact url>] [--allow-broken-links]
+// Usage: node unpack.mjs <root-dir> <outDir> [--url <artifact url>] [--entry <board.dc.html>] [--allow-broken-links]
+//   --entry  names the board that is the site's home when it is not the canvas's own entry (an exploration canvas
+//            whose deliverable is one variant board) — the parent decides it at Step 0.5 and re-runs.
 
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync, statSync, readdirSync, copyFileSync } from 'node:fs'
 import { join, dirname, basename, resolve, relative, posix } from 'node:path'
@@ -21,11 +23,12 @@ const die = (msg) => { console.error(`\n[unpack] ERROR: ${msg}\n`); process.exit
 
 const argv = process.argv.slice(2)
 const allowBrokenLinks = argv.includes('--allow-broken-links')
-const urlIdx = argv.indexOf('--url')
-const artifactUrl = urlIdx >= 0 ? argv[urlIdx + 1] || null : null
-const positional = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--url')
+const flagValue = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] || null : null }
+const artifactUrl = flagValue('--url')
+const entryOverride = flagValue('--entry')
+const positional = argv.filter((a, i) => !a.startsWith('--') && !['--url', '--entry'].includes(argv[i - 1]))
 const [input, outDir] = positional
-if (!input || !outDir) die('usage: node unpack.mjs <root-dir> <outDir> [--url <artifact url>] [--allow-broken-links]')
+if (!input || !outDir) die('usage: node unpack.mjs <root-dir> <outDir> [--url <artifact url>] [--entry <board.dc.html>] [--allow-broken-links]')
 
 // ─────────────────────────────────────────────────────────── helpers
 const EXT_MIME = {
@@ -396,7 +399,9 @@ const relOf = (p) => toPosix(relative(projectDir, p))
 const boardFiles = projectFiles.filter((p) => /\.dc\.html$/i.test(p))
 if (!boardFiles.length) die(`no .dc.html artboard under ${projectDir} — the canvas has no artboards, or project/ was not fully read.`)
 
-const entryRel = (canvas.launch && canvas.launch.view === 'focused' && canvas.launch.file) || order[0] || (existsSync(join(projectDir, 'Main.dc.html')) ? 'Main.dc.html' : relOf(boardFiles[0]))
+const canvasEntryRel = (canvas.launch && canvas.launch.view === 'focused' && canvas.launch.file) || order[0] || (existsSync(join(projectDir, 'Main.dc.html')) ? 'Main.dc.html' : relOf(boardFiles[0]))
+if (entryOverride && !existsSync(join(projectDir, entryOverride))) die(`--entry "${entryOverride}" is not a file under ${projectDir}. Boards on disk:\n  ${boardFiles.map(relOf).join('\n  ')}`)
+const entryRel = entryOverride || canvasEntryRel
 const slugOfRel = (rel) => slugify(rel.replace(/\.dc\.html$/i, ''))
 
 // a board's group = the title1 note nearest ABOVE it whose horizontal span covers it (a title names SEVERAL artboards)
@@ -708,7 +713,7 @@ const unusedFonts = faces.filter((f) => f.used === false).map((f) => f.family)
 const usageFonts = faces.filter((f) => f.fromUsage).map((f) => f.family)
 const selfHosted = faces.filter((f) => f.selfHosted)
 const notes = [
-  `source=Design artifact canvas "${canvas.title || basename(root)}" — ${docs.length} artboard(s): ${pageDocs.length} page(s), ${realComponents.length} <dc-import> component(s). navModel=${navModel}, tokenSource=${tokenSource}, entry=${entryDoc ? entryDoc.slug : 'none'} (${canvas.launch && canvas.launch.view === 'focused' ? 'canvas launch.file' : 'first of canvas.order'}).`,
+  `source=Design artifact canvas "${canvas.title || basename(root)}" — ${docs.length} artboard(s): ${pageDocs.length} page(s), ${realComponents.length} <dc-import> component(s). navModel=${navModel}, tokenSource=${tokenSource}, entry=${entryDoc ? entryDoc.slug : 'none'} (${entryOverride ? `--entry override; the canvas's own entry is ${slugOfRel(canvasEntryRel)}` : canvas.launch && canvas.launch.view === 'focused' ? 'canvas launch.file' : 'first of canvas.order'}).`,
   Object.keys(groups).length ? `GROUPS — the canvas titles its artboards (title1 notes): ${Object.entries(groups).map(([g, s]) => `"${g}" → ${s.join(', ')}`).join(' · ')}. A group named like explorations/alternatives/backup holds variants, not routes — Step 0.5 decides per group with the user; nothing here classifies by the words.` : 'NOTE: the canvas has no title1 notes — no author grouping of the artboards; classify from links/size/title at Step 0.5.',
   stickyNotes.length ? `NOTE: ${stickyNotes.length} sticky note(s) on the canvas (nav-graph.json → stickyNotes) — the author's briefs and post-design feedback, NOT in the markup. Step 0.5 reads every one and carries actionable items into the screens' Adjustment notes.` : null,
   unreferenced.length ? `NOTE: ${unreferenced.length} page board(s) are linked by NO other board and are not the entry (${unreferenced.map((d) => `${d.slug}${d.group ? ` [${d.group}]` : ''}`).join(', ')}). Each is either a page reached only from the canvas (a variant, a backup, a detail template) or a genuine orphan route — Step 0.5 decides route / skip with the user; do not scaffold them blind.` : null,
