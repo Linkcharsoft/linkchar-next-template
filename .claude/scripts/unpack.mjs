@@ -379,6 +379,9 @@ const boardsMeta = canvas.boards && typeof canvas.boards === 'object' ? canvas.b
 const order = Array.isArray(canvas.order) ? canvas.order : Object.keys(boardsMeta)
 const title1Notes = Object.entries(canvas.notes || {}).filter(([, n]) => n && n.kind === 'title1' && typeof n.text === 'string')
   .map(([id, n]) => ({ id, text: n.text, x: Number(n.x) || 0, y: Number(n.y) || 0, maxW: Number(n.maxW) || null }))
+// everything the author wrote on the canvas that is not a heading: stickies hold briefs and post-design feedback
+const stickyNotes = Object.entries(canvas.notes || {}).filter(([, n]) => n && n.kind !== 'title1' && typeof n.text === 'string' && n.text.trim())
+  .map(([id, n]) => ({ id, kind: n.kind || 'sticky', text: n.text, x: Number(n.x) || 0, y: Number(n.y) || 0, page: n.page || null }))
 
 // every .dc.html under project/ except project/ds/ IS an artboard, listed in `boards` or not (the type's own rule)
 function walk (dir, out = []) {
@@ -696,7 +699,7 @@ const boards = docs.map((d) => ({
   entry: d.entry, w: d.w, h: d.h, expand: d.expand, isInteractive: d.isInteractive, canvasPage: d.page, unlisted: d.unlisted, isDc: d.isDc,
   linksTo: d.linksTo, inDegree: d.inDegree, importedBy: d.importedBy, imports: d.imports, sections: d.pageVals, bytes: d.bytes,
 }))
-writeJson('nav-graph.json', { navModel, entry: entryDoc ? entryDoc.slug : null, boards, groups, pages: canvas.pages || [], entryLinkage, brokenLinks, missingImports })
+writeJson('nav-graph.json', { navModel, entry: entryDoc ? entryDoc.slug : null, boards, groups, stickyNotes, pages: canvas.pages || [], entryLinkage, brokenLinks, missingImports })
 writeJson('components.json', components)
 
 const realComponents = components.filter((c) => !c.missing)
@@ -707,6 +710,7 @@ const selfHosted = faces.filter((f) => f.selfHosted)
 const notes = [
   `source=Design artifact canvas "${canvas.title || basename(root)}" — ${docs.length} artboard(s): ${pageDocs.length} page(s), ${realComponents.length} <dc-import> component(s). navModel=${navModel}, tokenSource=${tokenSource}, entry=${entryDoc ? entryDoc.slug : 'none'} (${canvas.launch && canvas.launch.view === 'focused' ? 'canvas launch.file' : 'first of canvas.order'}).`,
   Object.keys(groups).length ? `GROUPS — the canvas titles its artboards (title1 notes): ${Object.entries(groups).map(([g, s]) => `"${g}" → ${s.join(', ')}`).join(' · ')}. A group named like explorations/alternatives/backup holds variants, not routes — Step 0.5 decides per group with the user; nothing here classifies by the words.` : 'NOTE: the canvas has no title1 notes — no author grouping of the artboards; classify from links/size/title at Step 0.5.',
+  stickyNotes.length ? `NOTE: ${stickyNotes.length} sticky note(s) on the canvas (nav-graph.json → stickyNotes) — the author's briefs and post-design feedback, NOT in the markup. Step 0.5 reads every one and carries actionable items into the screens' Adjustment notes.` : null,
   unreferenced.length ? `NOTE: ${unreferenced.length} page board(s) are linked by NO other board and are not the entry (${unreferenced.map((d) => `${d.slug}${d.group ? ` [${d.group}]` : ''}`).join(', ')}). Each is either a page reached only from the canvas (a variant, a backup, a detail template) or a genuine orphan route — Step 0.5 decides route / skip with the user; do not scaffold them blind.` : null,
   navModel === 'single-page-sections' ? `navModel=single-page-sections — ONE page board${screens.length > 1 ? ` with sections (${screens.map((s) => s.key).join(', ')}) switched by internal state` : ''}: one route, NOT a route per section.` : `navModel=multi-page — ${pageDocs.length} page boards → ${pageDocs.length} routes (entry → "/").`,
   entryLinkage ? `WARNING: ORPHAN ENTRY — "${entryLinkage.entry}" is first in canvas.order but NO other board links to it, while ${entryLinkage.hubs.length} board(s) are linked ${entryLinkage.maxOther}× each (${entryLinkage.hubs.join(', ')}). The order on a canvas is editorial, not a route map — Step 0.5 MUST confirm the home with the user before assigning routes; a wrong entry renders, builds and passes every gate.` : null,
