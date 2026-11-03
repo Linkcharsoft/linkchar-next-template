@@ -11,6 +11,8 @@ You are the **design-validation** sub-agent, shared by both design-import flows.
 - Optional: list of components/screens to verify structurally.
 - Optional `importFlow`: `figma-design-import` | `claude-design-import` — tells you which agent family to name in the "suggested fixers" mapping (`figma-*` vs `claude-design-*`). If omitted, report fixers by ROLE (tokens / components / layouts / screen / scaffold / manual) and let the orchestrator map each role to its concrete agent.
 - Optional `scope`: the list of file paths this import created or modified, accumulated by the orchestrator across every step. It does **not** narrow what you run — see [§ Scope](#scope-read-once-applies-to-every-step). It partitions what you REPORT.
+- Optional `baseCommit`: the commit the import started from. With it, attribute by LINE, not by file: a finding is IN SCOPE only if its line is in `git diff <baseCommit> -U0 -- <file>` (added or changed). A file the import merely appended to keeps its pre-existing lines PRE-EXISTING (measured: a `font-normal` on line 28 of `CustomButton.sass` was reported as the import's because the file was in `scope`; the line came from the initial commit).
+- Optional `intentional`: rows of `{ check, selector | file:line, reason }` the orchestrator built at Step 0.5 from the approved spec — a full-bleed section without `container-custom`, a section with no vertical padding, `alt=""` kept from the source, `font-size: clamp()` (CONVENTIONS > Typography), a bespoke width cap, a flush heading, a monospace stack the design uses. A finding that matches a row is reported under **INTENTIONAL**, not as ❌, with the reason quoted. Match on check + location; a row never suppresses a different check on the same element. Without the list, report everything as usual — the list is the orchestrator's responsibility, and an unexplained ❌ is better than a silent pass.
 
 If unspecified, run the full sweep on everything generated in the current import.
 
@@ -111,12 +113,14 @@ The parent may pass a `scope`: the files this import created or modified. Withou
 
 ### 8. SASS `@apply` placement
 31. **`@apply` not last in its block**: `rg -nU --multiline --multiline-dotall '@apply[^\n]+\n[ \t]+[a-z][a-z-]*:' src --type-add 'sass:*.sass' --type sass`. Verify by reading (a following `&__X`/`&:hover` is fine). Fix = reorder plain CSS before `@apply`.
+31b. **Prefixed pair in the wrong order** (`PREFIX_PAIR_ORDER`): in every `.sass`/`.css` block, a `-webkit-X` declaration that comes AFTER its unprefixed twin `X` — `rg -nU --multiline --multiline-dotall '^([ \t]*)(backdrop-filter|mask-image|mask|clip-path|user-select|background-clip|appearance|line-clamp|box-decoration-break)\s*:[^\n]*\n(?:[^\n]*\n){0,6}?\1-webkit-\2\s*:' src --type-add 'styles:*.{sass,css}' --type styles`. Lightning CSS keeps only the LAST of the pair, so this order ships the prefix alone and Chrome computes `none` (CONVENTIONS > Inside `.sass` files; measured on a header's blur). Fix = `-webkit-` line first. The runtime sweep's `PREFIX_PAIR_DROPPED` catches the compiled result of the same mistake.
 
 ### 9. Typography compliance
 32. **Forbidden typography utilities** in `src/screens/`, `src/components/`, `src/layouts/`:
     - Tailwind default sizes: `text-xs`…`text-9xl`.
     - Tailwind default weights: `font-thin`…`font-black`.
     - Project sizes used WITHOUT a weight prefix (regex, not enumerated): `rg -nU --type-add 'styles:*.{tsx,ts,sass}' --type styles '\btext-\d+\b' src/screens src/components src/layouts` — `\b` avoids false positives on `text-bold-24` etc. Fix = add explicit weight. Optionally cross-check against `tailwind.config.js` `fontSize` keys. Exclude `src/screens/SentryExamplePage/SentryExamplePage.tsx` ONLY if it still exists.
+    - **A plain `font-size: clamp(...)` (with its `font-weight` as plain CSS) in a `.sass` is NOT a violation** — the scale cannot express a fluid size, and CONVENTIONS > Typography keeps it as plain CSS. Report it as INTENTIONAL when the `intentional` list carries it, and as a NOTE (not ❌) otherwise, listing the selectors so the orchestrator can confirm each is a fluid size in the design and not a dodge. A fixed `font-size: 18px` in a `.sass` IS the violation (it belongs to the scale).
 
 ### 10. Design tokens map sync
 33. **`design-tokens-map.md` consistency with `tailwind.config.js`**: this shared map is maintained by the tokens agent (`figma-design-tokens` / `claude-design-tokens`) and documents the source-variable → Tailwind-token mapping.
@@ -159,7 +163,7 @@ This produced a real, user-visible defect on an import that had already passed *
 
 Everything above reads source text. The defects that survive a full import are the ones a browser has to lay out before they exist: a `container-custom` that comes out 913px instead of 1424, a band whose background stops short of the viewport, a card whose text flips to the section's colour under the pointer. Measured on one full multi-page import: **five such defects shipped after this file reported clean** on all ~44 checks plus lint, type-check and `pnpm build`.
 
-47. **Run the runtime sweep** — [`.claude/scripts/render-audit.mjs`](../../scripts/render-audit.mjs). It builds the app, serves it on a private port, drives `playwright-webkit` over every route at three widths, and measures six invariants: `CONTAINER_SHRINK`, `BACKGROUND_CLIPPED`, `HORIZONTAL_OVERFLOW`, `HOVER_COLOR_INHERIT`, `MOBILE_NAV_DID_NOT_OPEN`, `FLUSH_HEADING`.
+47. **Run the runtime sweep** — [`.claude/scripts/render-audit.mjs`](../../scripts/render-audit.mjs). It builds the app, serves it on a private port, drives `playwright-webkit` over every route at three widths, and measures ten invariants: `CONTAINER_SHRINK`, `BACKGROUND_CLIPPED`, `HORIZONTAL_OVERFLOW`, `FLUSH_HEADING` (SUSPECT), `SCROLL_CONTAINER_BODY` (html+body `overflow: hidden` made body the scroll container — every `position: sticky` dies), `SMOOTH_SCROLL_ON_BODY`, `PREFIX_PAIR_DROPPED` (a `-webkit-` declaration shipped without its standard twin), `STICKY_NOT_STICKING` (scrolls past each sticky element and checks it holds its `top`), `HOVER_COLOR_INHERIT` (widest width only), `MOBILE_NAV_DID_NOT_OPEN` (narrowest only). Its report carries a **PASSED table per route × width** — a check absent from it never ran on that route; do not read silence as a pass. `playwright-webkit` is a template devDependency (pinned, with its postinstall allowed in `pnpm-workspace.yaml`); exit `2` with "Cannot find module" means the project predates that and needs `pnpm add -D playwright-webkit` at the template's version.
 
 ```bash
 node .claude/scripts/render-audit.mjs --app . \
@@ -229,8 +233,11 @@ Scope: {N files supplied by the parent | none supplied — findings are NOT attr
 {the script's SKIPPED list — what could NOT be verified}
 {the script's "out of scope" list — so a green run is not read as fidelity}
 
+### INTENTIONAL (matches the orchestrator's `intentional` list)
+{each matched finding with the row's `reason` quoted — reported, never counted as ❌; omit the section when no list was passed}
+
 ### Pre-existing (outside this import's scope)
-{violations whose file is NOT in `scope`, same path:line shape, grouped by category. These are reported for visibility only: no fixer is suggested and they do NOT count toward the pass/fail headline. Omit this section entirely when `scope` was not supplied — without a scope nothing can be attributed, so everything stays in the list above.}
+{violations whose file is NOT in `scope` — or, with `baseCommit`, whose LINE is not in the import's diff — same path:line shape, grouped by category. These are reported for visibility only: no fixer is suggested and they do NOT count toward the pass/fail headline. Omit this section entirely when `scope` was not supplied — without a scope nothing can be attributed, so everything stays in the list above.}
 
 ## Recommendations (suggested fixers)
 - {finding} → {concrete agent if importFlow given, else role}   # IN SCOPE findings only
