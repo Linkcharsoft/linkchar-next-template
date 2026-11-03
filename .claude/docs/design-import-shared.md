@@ -28,8 +28,8 @@
 
 # Section B — Import-translation rules
 
-How to turn a design's raw values (Figma variables / node styles, or a Claude Design `THEMES` object /
-`rawScan`) into this project's tokens and conventions. Applies to `*-tokens`, `*-components`, `*-layouts`,
+How to turn a design's raw values (Figma variables / node styles, or a Claude Design canvas's installed
+design-system tokens / `rawScan`) into this project's tokens and conventions. Applies to `*-tokens`, `*-components`, `*-layouts`,
 and `*-screen` agents of both flows.
 
 ## B1. Typography — off-scale sizes become real tokens (both flows), never rounded
@@ -58,9 +58,10 @@ in `src/assets/icons/*.tsx`, and brand gradients — see B4). Every color must m
 sensible token set up front. How much reduction is needed depends on the
 source:
 
-- **Clean palette source** (Figma variables, or a Claude Design `THEMES[brand]` object) → already ~8–15
-  named colors; map each to a token more or less 1:1.
-- **Raw-scan source** (`tokenSource = inline+helmet` / `inline+css` — dclogic/vanilla) → `rawScan.hexColors`
+- **Clean palette source** (Figma variables, or the design system a Claude Design canvas installed —
+  `tokenSource = design-system`, structured `color.tokens`) → already ~8–15 named colors; map each to a
+  token more or less 1:1.
+- **Raw-scan source** (`tokenSource = inline+helmet` — a canvas with no design system) → `rawScan.hexColors`
   can list **40+** hexes: brand colors, muted text, hairlines, background tints, **plus** one-off gradient
   stops and alpha-overlay values. This MUST be clustered before tokenizing.
 
@@ -112,12 +113,14 @@ Radius handling also **diverges by flow**:
   `TOKENS_MISSING` → add a `borderRadius` token. Do NOT emit arbitrary `rounded-[Npx]`.
 - **Claude Design (`claude-design-*`)** — CONVENTIONS treats border-radius as plain CSS, so radii are NOT
   per-value tokens; **never** `TOKENS_MISSING` on a radius. Two sub-cases by `tokenSource`:
-  - **`THEMES`/babel, single `var(--radius)`** → decide ONE canonical translation in the gap analysis (a
-    specific `rounded-*`, or one `borderRadius` token like `rounded-card`) and pass it to every
-    component/screen agent so all radii match — the `Radius translation` prompt field.
-  - **`inline+helmet` / `inline+css`** → no single `--radius`; radii are per-element literals (cards
-    20–24px, buttons 12–13px, pills 999px). Use arbitrary `rounded-[Npx]` per element. The
-    single-`--radius` `Radius translation` field is **N/A**; note it as such.
+  - **`inline+helmet`** (no design system) → no single `--radius`; radii are per-element literals (cards
+    20–24px, buttons 12–13px, pills 999px). Use arbitrary `rounded-[Npx]` per element. The `Radius
+    translation` field is **N/A**; note it as such.
+  - **`design-system`** with a `radius.tokens` family → the system NAMES its radii (`radius-md: 8px`);
+    decide one translation per name in the gap analysis (a specific `rounded-*`, or a `borderRadius` token
+    like `rounded-card`) and pass the map to every component/screen agent so every instance of a named
+    radius matches — the `Radius translation` prompt field. A radius the artboards use outside the system
+    stays a per-element literal.
 
 ## B4. Brand gradients — the one hex exception besides icons
 
@@ -144,8 +147,8 @@ rule branches on the `Target` the orchestrator detected (`web` | `mobile-app`).
 
 **Which branch applies is a property of the FLOW, not a judgement call.** `figma-design-import` has no
 `mobile-app` target — a Figma frame is a desktop artboard — so its agents are always on the `web` branch and
-never see the field. `claude-design-import` detects the target per prototype (most Claude Design exports are
-phone-framed) and **passes it explicitly**; a `claude-design-*` agent that did not receive `Target:` emits
+never see the field. `claude-design-import` detects the target per canvas (a PAGE board is `expand: "fill"`,
+a phone mockup is a fixed 390–430 wide board) and **passes it explicitly**; a `claude-design-*` agent that did not receive `Target:` emits
 `STOP-BLOCKING / INVALID_INPUT` rather than picking a branch.
 
 **`Target: web` — `container-custom` on every top-level `<section>`.** Each top-level `<section>` of a screen
@@ -553,8 +556,8 @@ Two symmetric failure modes:
 Report the confirmed no-op with its evidence in the normal report shape (C4) — a reasoned no-op is a
 deliverable, not a failure. Applies to any step, most often **Step 4 (layouts)** — e.g.
 `navModel = single-page-sections`, where the header and footer belong to the one screen. Expect the brief to
-SAY when a required input does not exist for the format (roles/registries are a `screen-registry` construct;
-dclogic has none): a named absence is valid input, not a missing field — do not emit
+SAY when a required input does not exist for the design (route groups come from the canvas's own grouping;
+a single-audience canvas has none): a named absence is valid input, not a missing field — do not emit
 `STOP-BLOCKING / INVALID_INPUT` over it. C1's missing-input rule covers fields the parent forgot, not fields
 the format cannot have.
 

@@ -210,7 +210,7 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 | `/new-api-resource` | Manually scaffold a single API resource (`src/api/{resource}.ts`) — types interleaved with `customFetch`-based handlers, token-last for authenticated endpoints. Use when there is NO OpenAPI spec |
 | `/openapi-import` | Orchestrate the API + hooks layer from a full OpenAPI 3.x YAML spec: spec validation → handlers per tag → SWR hooks for GETs → code validation. Use AFTER `/figma-design-import` |
 | `/figma-design-import` | Orchestrate a full Figma-to-code import: tokens → assets → components → layouts → screens → validation → template chrome |
-| `/claude-design-import` | Same pipeline from a Claude Design prototype (project archive or standalone HTML), extracted locally by `unpack.mjs` |
+| `/claude-design-import` | Same pipeline from a Claude Design canvas (an Artifact of type "Design", read from its URL), extracted locally by `unpack.mjs` |
 
 All conventions enforced by these skills are documented in `CLAUDE.md` — the canonical project guide for any AI-assisted contribution.
 
