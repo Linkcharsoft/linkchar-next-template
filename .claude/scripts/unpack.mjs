@@ -204,9 +204,13 @@ function scanFontFaces (str) {
 function scanGoogleFontLinks (str) {
   const out = []
   for (const link of str.matchAll(/fonts\.googleapis\.com\/css2\?([^"'\s>]+)/gi)) {
-    for (const fam of link[1].replace(/&amp;/g, '&').matchAll(/family=([^&:]+)(?::[^&]*?wght@([0-9;.]+))?/gi)) {
+    for (const fam of link[1].replace(/&amp;/g, '&').matchAll(/family=([^&:]+)(?::([a-z,]+)@([0-9;.,]+))?/gi)) {
       const family = decodeURIComponent(fam[1].replace(/\+/g, ' ')).trim()
-      if (family) out.push({ family, weight: fam[2] ? fam[2].replace(/;/g, ' ') : null, google: true })
+      // a multi-axis spec lists one value per axis in order (`opsz,wght@12..96,200..800`): read the wght slot, not the first
+      const axes = fam[2] ? fam[2].split(',') : []
+      const values = fam[3] ? fam[3].split(',') : []
+      const wght = axes.includes('wght') ? values[axes.indexOf('wght')] : null
+      if (family) out.push({ family, weight: wght ? wght.replace(/;/g, ' ') : null, google: true })
     }
   }
   return out
@@ -441,7 +445,7 @@ try { canvas = JSON.parse(readText(join(projectDir, 'canvas.json'))) } catch (e)
 const boardsMeta = canvas.boards && typeof canvas.boards === 'object' ? canvas.boards : {}
 const order = Array.isArray(canvas.order) ? canvas.order : Object.keys(boardsMeta)
 const title1Notes = Object.entries(canvas.notes || {}).filter(([, n]) => n && n.kind === 'title1' && typeof n.text === 'string')
-  .map(([id, n]) => ({ id, text: n.text, x: Number(n.x) || 0, y: Number(n.y) || 0, maxW: Number(n.maxW) || null }))
+  .map(([id, n]) => ({ id, text: n.text, x: Number(n.x) || 0, y: Number(n.y) || 0, maxW: Number(n.maxW) || null, page: n.page || null }))
 // everything the author wrote on the canvas that is not a heading: stickies hold briefs and post-design feedback
 const stickyNotes = Object.entries(canvas.notes || {}).filter(([, n]) => n && n.kind !== 'title1' && typeof n.text === 'string' && n.text.trim())
   .map(([id, n]) => ({ id, kind: n.kind || 'sticky', text: n.text, x: Number(n.x) || 0, y: Number(n.y) || 0, page: n.page || null }))
@@ -469,6 +473,8 @@ function groupOf (meta) {
   if (!meta || meta.x === undefined) return null
   let best = null
   for (const n of title1Notes) {
+    // every canvas page starts at 0,0: a title on another page overlaps this board's coordinates without covering it
+    if ((n.page || null) !== (meta.page || null)) continue
     if (n.y > meta.y) continue
     if (meta.x < n.x - 1 || (n.maxW && meta.x > n.x + n.maxW)) continue
     if (!best || n.y > best.y) best = n
