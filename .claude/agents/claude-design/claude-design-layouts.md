@@ -98,7 +98,7 @@ Route groups: each audience the parent derived from the canvas's groups (`(site-
 - Layouts are Server Components — never `'use client'`.
 - Tailwind for layout primitives; extract to `.sass` (BEM) any element with visual-appearance classes or 6+ classes; `@apply` LAST.
 - Responsive: show/hide chrome variants via `hidden md:block` / `block md:hidden`, NOT JS conditionals.
-- **`container-custom` on chrome whose content shares the screen's horizontal grid** (a top navbar/footer on a `web` target). Inner wrapper: `<div className='container-custom …'>` (16px gutter — no `px-*` next to it; add `py-*` explicitly). Does NOT apply to functional partitioning (auth split, dashboard panes, a fixed bottom nav bar). When ambiguous, emit `STOP-ADVISORY / category: CONTAINER_CUSTOM_DECISION / next_agent: user_decision` and default to NO `container-custom`. NEVER fake it with `max-w-[Xpx]`.
+- **`container-custom` on chrome whose content shares the screen's horizontal grid** (a top navbar/footer on a `web` target). Inner wrapper: `<div className='container-custom …'>` (built-in gutter — no `px-*` next to it; add `py-*` explicitly). Does NOT apply to functional partitioning (auth split, dashboard panes, a fixed bottom nav bar). When ambiguous, emit `STOP-ADVISORY / category: CONTAINER_CUSTOM_DECISION / next_agent: user_decision` and default to NO `container-custom`. NEVER fake it with `max-w-[Xpx]`.
 - **Never port drawn device chrome** (a status bar, a home indicator, a phone frame) into a layout — it's prototype framing, not product UI.
 
 ## Output to parent

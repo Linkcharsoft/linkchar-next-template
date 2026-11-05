@@ -265,7 +265,7 @@ Read the extracted artifacts AND the codebase, then produce a written gap-analys
 ## Target  (D5 — detect per canvas)
 - Signals: {expandFill, boardWidths, phoneFrame, iosChrome} from inventory.targetSignals — the canvas states it: a PAGE board is `expand: "fill"` (fluid web page), a phone mockup is a fixed 390–430 wide board.
 - Decision: `mobile-app` | `web` — with reasoning. Drives Step 5.2 responsive strategy.
-- Content width: on `web`, state it per [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target) — "at 1440px the content measures 1140px (`container-custom`) against the design's {board width − 2×gutter}px" — and offer the `general.sass` cap change as the project-level alternative. Decided here, not at visual review.
+- Content width: on `web`, state it per [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target) — "at 1440px the content measures {M}px (`container-custom`) against the design's {board width − 2×gutter}px" — and offer the `general.sass` cap change as the project-level alternative. Decided here, not at visual review.
 
 ## Tokens
 - Source (read `inventory.tokenSource`): `design-system` → the canvas installed a design system and `tokens.json.designSystems[].tokens` is its STRUCTURED token file (`color.tokens` with per-theme values, `type.groups[].styles` with sizes/weights/line-heights, `spacing`, `radius`) — the canonical palette/typography; `rawScan` is only the cross-check for values the artboards use outside it. `inline+helmet` (no design system — the common case) → palette/sizes come from `tokens.json.rawScan` (`hexColors` + `fontSizes`, scanned from inline styles + every stylesheet the artboards link) + CSS vars, fonts from `brandFonts`. Also check `rawScan.clampFontSizes` — responsive `clamp()` sizes are not captured (a canvas built fluid can have hundreds); read the big heading sizes from `source/*.helmet.css`.
@@ -572,7 +572,7 @@ Remote images: {mode: downloaded|keep-remote|placeholder} + [{sourceUrl → targ
 Existing components to reuse: [{Component} → path, ...]   # from Step 3
 Tokens available: [list from Step 1]
 Inline (decided at 0.5): [{primitive} — {file:lines} | none]   # single-use primitives already ruled inline at the checkpoint: implement inline, NO COMPONENT_GAP STOP, NO TODO (CONVENTIONS > STOP Protocol)
-Container rule: BRANCHES ON `Target` — § B5. `web` → every top-level <section> anchored with `container-custom` (16px built-in gutter, no px-* on the same element), and the prototype's own frame width is ignored. `mobile-app` → NO `container-custom`: the layout's app-shell caps the width, so the screen keeps the source's horizontal padding as px-*. Either way, per-section py-* from the design. State the branch explicitly here — the agent STOPs rather than guessing.
+Container rule: BRANCHES ON `Target` — § B5. `web` → every top-level <section> anchored with `container-custom` (built-in gutter, no px-* on the same element), and the prototype's own frame width is ignored. `mobile-app` → NO `container-custom`: the layout's app-shell caps the width, so the screen keeps the source's horizontal padding as px-*. Either way, per-section py-* from the design. State the branch explicitly here — the agent STOPs rather than guessing.
 Bespoke widths: [{section → max-width}, ...]   # `web` only. Sections whose source width is NOT the design's default frame width: `container-custom` replaces the DEFAULT width only, so a section the design deliberately narrowed keeps its cap (nest it inside the container-custom section). List them or they silently render full-width. N/A on `mobile-app` (no container-custom to override) — say so.
 Adjustment notes (only on re-runs): {text}
 ```
@@ -659,7 +659,7 @@ Branch on the reply exactly like the figma flow (empty/"siguiente"→next; free 
 grep -rn "#[0-9a-fA-F]\{3,8\}" $F | grep -v "rgba\|assets/icons/\|FLAG raw-hex"
 # loose typography (banned — must be text-{weight}-{size})
 grep -rnE "\b(text-(xs|sm|base|lg|[0-9]?xl)|font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b" $F
-# px-* on the same element as container-custom (banned — 16px gutter is built in)
+# px-* on the same element as container-custom (banned — the gutter is built in)
 grep -rn "container-custom" $F | grep -E "px-[0-9]"
 # banned imports
 grep -rn "from 'clsx'\|import { motion }\|from '@/api\|useSWR\|customFetch" $F

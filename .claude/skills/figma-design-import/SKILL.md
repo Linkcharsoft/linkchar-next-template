@@ -590,7 +590,7 @@ Pass any provided fields to `figma-design-screen`; fall back to the registry for
 grep -rn "#[0-9a-fA-F]\{3,8\}" $F | grep -v "rgba\|assets/icons/\|FLAG raw-hex"
 # loose typography (banned — must be text-{weight}-{size})
 grep -rnE "\b(text-(xs|sm|base|lg|[0-9]?xl)|font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b" $F
-# px-* on the same element as container-custom (banned — 16px gutter is built in)
+# px-* on the same element as container-custom (banned — the gutter is built in)
 grep -rn "container-custom" $F | grep -E "px-[0-9]"
 # banned imports
 grep -rn "from 'clsx'\|import { motion }\|from '@/api\|useSWR\|customFetch" $F

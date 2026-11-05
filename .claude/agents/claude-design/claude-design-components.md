@@ -140,7 +140,7 @@ Common design primitives and their likely home (confirm against the on-disk list
 - Read the "Existing Reusable Components" table BEFORE creating — extend a close match instead of creating.
 - Every component satisfies the Accessibility & Lighthouse rules — blocking, not aspirational.
 - **NEVER mount `<LoadingModal/>`, `<StateModal/>`, or `<ToastNotifications/>` inside a component.** `LoadingModal` is `claude-design-layouts`'s job (per-layout scope); `StateModal`/`ToastNotifications` live only in `src/providers/ModalsProvider.tsx`. A component needing loading calls `openModal('loadingModal', …)`; for toasts `setNotification(…)`.
-- **Full-bleed components (bars, navs) MUST use `container-custom`** on the inner content wrapper (16px built-in gutter — no `px-*` next to it). NEVER hardcode `max-w-[Xpx]`. Add vertical `py-*` explicitly (container-custom is horizontal only).
+- **Full-bleed components (bars, navs) MUST use `container-custom`** on the inner content wrapper (built-in gutter — no `px-*` next to it). NEVER hardcode `max-w-[Xpx]`. Add vertical `py-*` explicitly (container-custom is horizontal only).
 
 ## Output to parent
 A summary table (each component: variants/props added, files touched). End with the footer:

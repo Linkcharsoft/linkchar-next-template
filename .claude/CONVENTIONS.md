@@ -295,7 +295,7 @@ So: `md:` = "≥768, project scale"; `acme-md:` = "≤860, this design". Both ar
 Use `container-custom` class for centered content with responsive max-widths AND a built-in responsive lateral gutter:
 
 - **Max-width tiers** — **the source of truth is [`src/styles/general.sass`](../src/styles/general.sass)**, and it is the ONLY place the numbers live. Read it when an exact value matters; do not copy the tiers into any doc, prompt or agent file — same rule, same reason, as `engines` in [`CLAUDE.md`](../CLAUDE.md): a copy nobody enforces rots, and a design import that reasons about section widths against drifted tiers gets them all wrong.
-- **Lateral padding (built-in)**: 16px on every viewport. This guarantees a safe edge gutter and prevents content from touching the screen edges on mobile.
+- **Lateral padding (built-in)**: a responsive gutter defined next to the tiers in `general.sass` — same single-source rule, do not copy its value either (an import that widens the frame changes it, and every copy then lies). It guarantees a safe edge gutter so content never touches the screen edges on mobile.
 
 Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. `px-4`) on the same element that already has `container-custom` — it's redundant. If a specific section truly needs a different inner padding than the global gutter, nest a child `<div>` and apply `px-*` there instead of duplicating it on the container.
 
@@ -532,7 +532,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 2. **Typography**: ALWAYS `text-{weight}-{size}` (e.g., `text-bold-24`). NEVER loose `text-xl`, `font-bold`.
 3. **Colors**: `surface-50` to `surface-900` for grays. Semantic colors with Tailwind defaults.
 4. **Responsive**: Custom breakpoints: `2xs:`, `xs:`, `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
-5. **Container**: `container-custom` is MANDATORY on every top-level `<section>` (or the inner `<div>` when the `<section>` is full-bleed) so all sections share the same horizontal alignment. Brings a built-in 16px lateral gutter — do NOT add `px-*` next to it. Also required on layout chrome (Navbar, Footer). NEVER substitute with `max-w-[Xpx]` or custom horizontal per-section paddings. **Vertical padding (`py-*`) is YOUR call** — `container-custom` does not set any, so always add the vertical rhythm Figma specifies (or sensible defaults like `py-16` / `py-20`).
+5. **Container**: `container-custom` is MANDATORY on every top-level `<section>` (or the inner `<div>` when the `<section>` is full-bleed) so all sections share the same horizontal alignment. Brings a built-in lateral gutter — do NOT add `px-*` next to it. Also required on layout chrome (Navbar, Footer). NEVER substitute with `max-w-[Xpx]` or custom horizontal per-section paddings. **Vertical padding (`py-*`) is YOUR call** — `container-custom` does not set any, so always add the vertical rhythm Figma specifies (or sensible defaults like `py-16` / `py-20`).
 6. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`. Plain CSS for layout/spacing/sizing; `@apply` only for design tokens (colors, `text-{weight}-{size}`, pseudo-state tokens). **`@apply` LAST in each block scope**.
 
 ---

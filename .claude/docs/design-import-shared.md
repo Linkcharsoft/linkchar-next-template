@@ -158,16 +158,16 @@ a phone mockup is a fixed 390–430 wide board) and **passes it explicitly**; a 
 
 **`Target: web` — `container-custom` on every top-level `<section>`.** Each top-level `<section>` of a screen
 (and the inner content of layout chrome — navbar/footer/sidebar) anchors its content with `container-custom`
-(16px built-in gutter — **no** `px-*` on the same element). **Ignore** the source's own frame width and
+(built-in gutter — **no** `px-*` on the same element). **Ignore** the source's own frame width and
 per-section horizontal padding (a `max-width:1180px; margin:0 auto; padding:0 24px` block) —
 `container-custom` replaces the horizontal part. For a full-bleed background, keep the bg on `<section>` and
 nest a `container-custom` inner `<div>`.
 
 **Say the width difference out loud at the Step 0.5 checkpoint — it is the convention, and the user will
-still see it.** `container-custom` caps at 1140px on a 1440 viewport (`general.sass`: 1600 → 1440 → 1240 →
-1140 by breakpoint), while a 1440-wide design with 48px gutters lays its content out at 1344px. Headings
+still see it.** `container-custom` caps the content well below a 1440-wide design's frame (the tiers live ONLY in
+`general.sass` — read them there, never copy them), while a 1440-wide design with 48px gutters lays its content out at 1344px. Headings
 wrap a line earlier and grids tighten — fidelity, not a bug, but discovered at visual review it reads as one.
-The gap-analysis report carries one line: *"at 1440px the content measures 1140px against the design's
+The gap-analysis report carries one line: *"at 1440px the content measures {M}px (`container-custom`) against the design's
 {N}px"*, and offers the per-project alternative: raise the caps in `general.sass` (`.container-custom`'s
 `max-width` rules — a project decision, applied once, never per section) rather than `max-w-*` on screens.
 **When the user picks that alternative, the orchestrator applies it itself, right after Step 1's commit and
