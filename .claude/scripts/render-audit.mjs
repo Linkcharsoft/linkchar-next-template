@@ -680,7 +680,7 @@ const NOT_COVERED = [
   'a breakpoint mapped to the wrong width — the page still renders coherently',
   'a typeface / weight / size swapped for a near-identical one',
   'a spacing loss that is not degenerate (72px shipped as 40px); only a collapse to 0 is visible here',
-  'anything on a route listed under SKIPPED below',
+  'anything on a route listed under SKIPPED above',
 ]
 
 /** Per route × width: the checks that ran minus the ones that produced a finding there. */
@@ -741,9 +741,10 @@ function report(routes, baseUrl) {
     const byReason = new Map()
     for (const s of skipped) {
       const k = s.reason.replace(/\d+/g, 'N')
-      byReason.set(k, (byReason.get(k) || 0) + 1)
+      if (!byReason.has(k)) byReason.set(k, [])
+      byReason.get(k).push(`${s.route} @${s.width}`)
     }
-    for (const [r, n] of byReason) L.push(`- ${r}${n > 1 ? ` (×${n})` : ''}`)
+    for (const [r, where] of byReason) L.push(`- ${r} — ${[...new Set(where)].join(', ')}${where.length > 1 ? ` (×${where.length})` : ''}`)
     L.push('')
   }
 
