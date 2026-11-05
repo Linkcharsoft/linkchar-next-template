@@ -463,15 +463,15 @@ illustrative:
 Each row's **source** for Step 3 is the pair "markup region + logic region"; a behaviour with no logic region
 cited is prose, and Step 3 refuses prose.
 
+## B12. Loading state — every screen ships its own skeleton
+
+The template deliberately ships no `loading.tsx`: a loading state is only good when it mirrors the screen it stands in for, so it is generated per screen by whoever builds that screen. Once the screen's JSX is final and before validating: invoke `/new-skeleton {ScreenName}` (one skill at a time, per [§ C7](#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-and-you-do-the-writing) — you do the writing) so `{ScreenName}Skeleton` mirrors the screen's layout with `SkeletonBlock`, then add `src/app/{route}/loading.tsx` as a thin wrapper rendering it with `aria-busy` on its root. Skip it only for screens with no async data (static marketing sections, auth forms) — a skeleton that never shows is dead weight — and say so in the report.
+
 ---
 
 # Section C — Agent protocol
 
 Cross-agent machinery, identical for every step agent of both flows.
-
-## B12. Loading state — every screen ships its own skeleton
-
-The template deliberately ships no `loading.tsx`: a loading state is only good when it mirrors the screen it stands in for, so it is generated per screen by whoever builds that screen. Once the screen's JSX is final and before validating: invoke `/new-skeleton {ScreenName}` (one skill at a time, per [§ C7](#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-and-you-do-the-writing) — you do the writing) so `{ScreenName}Skeleton` mirrors the screen's layout with `SkeletonBlock`, then add `src/app/{route}/loading.tsx` as a thin wrapper rendering it with `aria-busy` on its root. Skip it only for screens with no async data (static marketing sections, auth forms) — a skeleton that never shows is dead weight — and say so in the report.
 
 ## C1. Delegation contract
 
