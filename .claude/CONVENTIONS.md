@@ -208,7 +208,7 @@ Other rules:
 - **Colocated styles**: each component imports its own `.sass` file directly (`import './Component.sass'`).
 - `src/styles/index.sass` only contains global styles (fonts, Tailwind layers, general reset).
 - SASS mixins are auto-injected globally via `next.config.ts` `sassOptions.additionalData`.
-- **Layer order in `src/styles/index.sass`** is `@layer tailwind-base, primereact, tailwind-utilities` — ensures Tailwind utilities override PrimeReact. **NEVER modify this line.**
+- **Layer order in `src/styles/index.sass`** is `@layer tailwind-base, primereact, general, tailwind-utilities` — `general` overrides the PrimeReact theme, and any Tailwind utility overrides both. **NEVER modify this line.**
 
 ### A colocated `.sass` BEATS every Tailwind utility — plan for it
 
