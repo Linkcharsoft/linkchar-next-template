@@ -411,7 +411,7 @@ Everything downstream has a source-of-truth gate except **you**. The `file:lines
 So before the checkpoint, hand a cheap agent the **source** and your **spec**, and ask it to *re-derive independently and report every mismatch* — not to agree with you:
 
 ```
-Source: {unpacked}/source/*   # the CSS you need is source/{slug}.helmet.css (@media/@font-face/vars — the <helmet> plus every stylesheet the artboard linked, inlined); the .markup.html has it stripped. Data arrays and shared scripts: source/support/*.
+Source: {unpacked}/source/{slug}.{markup.html,logic.js,helmet.css} for EACH in-scope board — list them from inventory.screens[].file and components[].file — plus source/support/*.   # NOT source/*: even with --scope entry, source/ holds EVERY board on the canvas (measured: 35 for 2 in scope), and an auditor that reads them all contaminates questions 1, 4, 5 and 7. The CSS you need is the .helmet.css (@media/@font-face/vars — the <helmet> plus every stylesheet the artboard linked, inlined); the .markup.html has it stripped. Data arrays and shared scripts: source/support/*.
 My spec: {the gap-analysis report you just wrote}
 
 Re-derive these FROM THE SOURCE, without reference to my spec, then diff:
