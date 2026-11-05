@@ -753,6 +753,7 @@ node .claude/scripts/primereact-theme.mjs --check
    PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
    Toast: superficie {token} · texto {token} · radius {valor} · posición {valor} · severidades {defaults de PrimeReact | tokens del diseño}
    PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado} · snapshot del theme: {al día | regenerado desde primereact@X | no mapeable → manual}
+   Assets del template sin referencias: {ninguno | lista — no se borraron (§ C1b); decidí si van}
    Validation: lint=✅ type-check=✅ build=✅
 
 Probá: pnpm start → /una-ruta-inexistente (404). Las pantallas de error no se ven en dev (las tapa el overlay): pnpm serve y /sentry-example-page → el botón Client Break aterriza en el error boundary; global-error solo con un throw temporal en src/app/layout.tsx. El toast sí se ve en dev: /login con credenciales inválidas.

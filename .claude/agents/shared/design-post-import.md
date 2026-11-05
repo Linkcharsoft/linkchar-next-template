@@ -257,6 +257,14 @@ A white card, 6px radius, no desktop width cap — right for the template, wrong
 - **The icon size classes in the `.tsx`** (`text-regular-24` / `text-regular-28`) are typography tokens. If Step 1 renamed the scale, update them to what exists; never leave a class that resolves to nothing.
 - **The component's behaviour** — the `notifications` → `show()` → `clearNotifications()` effect, the severity → PrimeIcon map, the `useMediaQuery` icon-size switch. You restyle; you do not rewire the store.
 
+### E0. Template assets left unreferenced
+
+The import replaced the template's home and, in A, the logo on the error screens — so template assets like `src/assets/images/logo.svg` may now have zero references. List them, **delete nothing** ([§ C1b](../../docs/design-import-shared.md#c1b-stay-inside-your-brief--never-delete-what-it-does-not-name)): the parent puts the list in front of the user at the checkpoint.
+
+```bash
+for f in src/assets/images/* src/assets/videos/*; do [ -f "$f" ] && ! grep -rqF "$(basename "$f")" src --include='*.tsx' --include='*.ts' --include='*.sass' && echo "$f"; done
+```
+
 ### E. Validate
 
 1. `pnpm run lint-check --fix` → 0 errors.
@@ -308,6 +316,9 @@ Per [§ C4](../../docs/design-import-shared.md#c4-output-to-parent-report-shape)
 ### PrimeReact accent
 - snapshot: {fresh | regenerated from primereact@X (commit it separately) | cannot map — manual: {script message}}
 - accent: {set now: `--theme-accent: theme('colors.…')` | already set at Step 1 (verified) | not requested}
+
+### Unreferenced template assets
+{none | `path` — 0 references in src/, NOT deleted (§ C1b); one per line}
 
 ### Discrepancies vs brief
 {none | list}
