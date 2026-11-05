@@ -203,6 +203,11 @@ No screen/component adds `customFetch`, SWR, or `src/api/*`. The data layer is t
   store, never re-declare the seed.
 - **Per-screen demo data** (a static list only one screen shows) → an inline `const MOCK_{KIND}` at the
   top of that screen, marked `// TODO: replace with API call once openapi-import has run for {endpoint}`.
+- **Static design copy** (a services list, process steps, manifesto lines, logo captions — content the
+  design hardcodes and no endpoint will ever serve) is neither: a plain `const` in the screen or in the
+  component that renders it, **no `MOCK_` prefix, no TODO** — a TODO naming an endpoint that will never
+  exist is a promise the next flow acts on. The orchestrator lists these arrays in `intentional` at 0.5 so
+  `design-validation`'s check 40 reports them as INTENTIONAL (measured: 11 false positives on one landing).
 
 Never scatter shared-state mock as `MOCK_*` in screens (leaves the store empty); never split per-screen
 mock into a sibling `.ts`.
