@@ -170,7 +170,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
 
    Skip this step if the project does not add a NEW icon font with `font-display: block`. Most modern icon sets shipped as SVG components (Lucide, Heroicons, etc.) are not affected.
 
-7. **Append decisions to `design-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
+7. **Append decisions to `design-tokens-map.md`** — one row per CREATE or REUSE in this run, **colours, typography sizes AND breakpoints alike** (the Hex column stays empty for the last two; measured on the twin flow: a run that mapped only its colours left 7 size/breakpoint tokens UNMAPPED for Step 6 to find). The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
 
 8. Run `pnpm run lint-check --fix` (auto-fixes any quote/comma/import-order drift introduced into `tailwind.config.js` or `src/app/layout.tsx`) followed by `pnpm run type-check`. Report PASS/FAIL for each.
 

@@ -150,7 +150,7 @@ Maintain `design-tokens-map.md` at the project root — **shared by both `claude
 
    **Which loader is not a guess** — `fonts.json.faces[].google` vs `.selfHosted` vs `.remote` says it, and the parent's `loader:` field repeats it. A canvas loads Google Fonts through a `<link>` in the `<helmet>`, uploaded faces through `@font-face` with a `/_blob/` src, and some faces through ANOTHER provider's `<link>` (Fontshare, Typekit, Bunny — `remote: { provider, cssUrl }`). A remote face has no file until the parent downloads its woff2 per weight into `assets/fonts/` (Step 0.5's job); you receive it as `loader: 'local'` with files, or not at all. **Never load a remote face by name through `next/font/google`** — it is not there, and the fallback is silent. If the brief names a remote face with no files, `STOP-BLOCKING / INVALID_INPUT` naming it.
 
-6. **Append decisions to `design-tokens-map.md`** — one row per CREATE/REUSE this run, Notes explaining the decision (`Created on first import`, `Reused (channel diff=2)`, etc.).
+6. **Append decisions to `design-tokens-map.md`** — one row per CREATE/REUSE this run, **colours, typography sizes AND breakpoints alike** (the Hex column stays empty for the last two; measured: a run that mapped only its 12 colours left 7 size/breakpoint tokens UNMAPPED for Step 6 to find), Notes explaining the decision (`Created on first import`, `Reused (channel diff=2)`, etc.).
 
 7. Run `pnpm run lint-check --fix` then `pnpm run type-check`. Report PASS/FAIL for each.
 

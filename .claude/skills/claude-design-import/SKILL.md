@@ -95,6 +95,8 @@ This is measured, not hypothetical — on one dclogic single-page-sections run *
 # design-tokens-map.md, so count the rows this run added (the step is not committed yet at verification
 # time). Grepping tailwind.config.js keys is unreliable — nested namespaces and digitless names like
 # brand-primary match no single pattern. First import: subtract the 2 header rows the agent just created.
+# Compare against EVERY decision you passed — colours + typography sizes + breakpoints: a count equal to
+# the colours alone means the sizes/breakpoints were never mapped (measured: 12 = 12 colours, 7 missing).
 git diff -U0 -- design-tokens-map.md | grep -c '^+|'
 # Step 2 — converted assets + extracted icons
 find src/assets/images -name '*.webp' | wc -l ; ls src/assets/icons/*.tsx | wc -l
