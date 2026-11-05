@@ -474,6 +474,7 @@ Existing components to reuse:
   - {ComponentB} (created in Step 3, no variants) → src/components/{ComponentB}/{ComponentB}.tsx
   # Pre-resolved from Step 3 output (screen registry → expected reusable components) — short-circuits the per-screen reuse audit so figma-design-screen doesn't have to re-grep src/components/.
 Tokens available: {list from Step 1}
+Inline (decided at 0.5): [{primitive} — {nodeId} | none]   # single-use primitives already ruled inline at the checkpoint: implement inline, NO COMPONENT_GAP STOP, NO TODO (CONVENTIONS > STOP Protocol)
 Container rule: every top-level <section> MUST be anchored with `container-custom` (or wrap its content in a child <div className='container-custom ...'> when the section has a full-bleed background). The class already brings a built-in 16px lateral gutter — do NOT add `px-*` on the same element. Ignore Figma's absolute frame width and per-section padding-x — they break cross-section alignment. BUT keep the per-section `py-*` / `pt-*` / `pb-*` from Figma intact — `container-custom` only handles horizontal spacing, so every section still needs its own vertical rhythm.
 Adjustment notes (only on re-runs): {text from user}
 ```
@@ -488,7 +489,7 @@ Step 0.55 diffs your **spec** against the design *before* anything is built. Ste
 
 ```
 Design: fileKey {key}, desktop nodeId {X:Y}   # pull get_design_context on THIS node only
-Output: src/screens/{Name}Page/{Name}Page.tsx + .sass
+Output: src/screens/{Name}Page/{Name}Page.tsx + .sass, PLUS the .tsx/.sass of every component under src/components/ the screen composes: [{list them}]   # question 5 lives there — radius/border/fill sit in the components' .sass, not the screen's (measured on the twin flow: without this list the auditor read the .tsx alone and declared question 5 unverified)
 
 Read the frame, then the output, and report where the output is NOT faithful to the frame.
 Check exactly these, per § B9/B10 of .claude/docs/design-import-shared.md:

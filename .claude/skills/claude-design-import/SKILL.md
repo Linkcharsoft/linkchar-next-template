@@ -571,6 +571,7 @@ Images: [{srcRef → `@/assets/images/…webp`}, ...]   # ALREADY converted by S
 Remote images: {mode: downloaded|keep-remote|placeholder} + [{sourceUrl → target}, ...]   # from the Step 0.5 checkpoint decision. `downloaded` → the entries are already in `Images:` above, keyed by URL, nothing else to do. `keep-remote` → render `next/image` against the ORIGINAL URL (I have already added the host to `next.config.ts` remotePatterns). `placeholder` → render a correctly-SIZED placeholder box + `// TODO: remote image {url}` — never omit the element, and never substitute another image. Omit this field only when `inventory.remoteImages` was empty.
 Existing components to reuse: [{Component} → path, ...]   # from Step 3
 Tokens available: [list from Step 1]
+Inline (decided at 0.5): [{primitive} — {file:lines} | none]   # single-use primitives already ruled inline at the checkpoint: implement inline, NO COMPONENT_GAP STOP, NO TODO (CONVENTIONS > STOP Protocol)
 Container rule: BRANCHES ON `Target` — § B5. `web` → every top-level <section> anchored with `container-custom` (16px built-in gutter, no px-* on the same element), and the prototype's own frame width is ignored. `mobile-app` → NO `container-custom`: the layout's app-shell caps the width, so the screen keeps the source's horizontal padding as px-*. Either way, per-section py-* from the design. State the branch explicitly here — the agent STOPs rather than guessing.
 Bespoke widths: [{section → max-width}, ...]   # `web` only. Sections whose source width is NOT the design's default frame width: `container-custom` replaces the DEFAULT width only, so a section the design deliberately narrowed keeps its cap (nest it inside the container-custom section). List them or they silently render full-width. N/A on `mobile-app` (no container-custom to override) — say so.
 Adjustment notes (only on re-runs): {text}
@@ -588,7 +589,7 @@ Running it here, per screen, is deliberate: the user is already stopping at this
 
 ```
 Source: {unpacked}/{inventory.screens[].file}  (the region implementing {component})
-Output: src/screens/{Name}Page/{Name}Page.tsx + .sass
+Output: src/screens/{Name}Page/{Name}Page.tsx + .sass, PLUS the .tsx/.sass of every component under src/components/ the screen composes: [{list them}]   # question 5 lives there — radius/border/fill sit in the components' .sass, not the screen's (measured: without this list the auditor read the .tsx alone and declared question 5 unverified)
 Target: {mobile-app|web}
 
 Read the source, then the output, and report where the output is NOT faithful to the source.
