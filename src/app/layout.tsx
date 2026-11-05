@@ -158,7 +158,7 @@ interface Props {
 }
 
 const Layout = async ({ children }: Props) => (
-  <html lang="en" className={`${merriweatherSans.variable} ${primeIcons.variable}`}>
+  <html lang="en" data-scroll-behavior="smooth" className={`${merriweatherSans.variable} ${primeIcons.variable}`}>
     <head>
       {APP_ENV === 'development' && (
         <Script

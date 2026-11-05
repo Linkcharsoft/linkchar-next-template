@@ -89,6 +89,8 @@ Measured, not hypothetical. On a `claude-design-import` run, all three main step
 # design-tokens-map.md, so count the rows this run added (the step is not committed yet at verification
 # time). Grepping tailwind.config.js keys is unreliable — nested namespaces and digitless names like
 # brand-primary match no single pattern. First import: subtract the 2 header rows the agent just created.
+# Compare against EVERY decision you passed — colours + typography sizes + breakpoints: a count equal to
+# the colours alone means the sizes/breakpoints were never mapped (measured: 12 = 12 colours, 7 missing).
 git diff -U0 -- design-tokens-map.md | grep -c '^+|'
 # Step 2 — downloaded/converted assets + generated icon components
 find src/assets/images -name '*.webp' | wc -l ; ls src/assets/icons/*.tsx | wc -l
@@ -191,7 +193,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    - `design-tokens-map.md` (project root, may not exist yet) — Figma-variable → Tailwind-token mapping from prior imports. ALWAYS read this first: if a Figma variable from the current node is already mapped, do NOT propose it as a new token; reuse the mapped one.
    - `src/styles/index.sass` — fonts loaded
    - `src/components/` — list every folder; cross-reference with the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md`
-   - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`
+   - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`, `LandingLayout` (the public shell behind `(landing-layout)`, wrapping `/`)
    - `src/proxy.ts` — current `AUTH_PATHS`, `PUBLIC_PATHS`
    - `src/assets/icons/index.ts` — existing icons
 3. **Produce a gap analysis** as a written report (in chat — NOT a `.md` file unless the user asks):
@@ -224,6 +226,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    ## Layouts
    - Existing match: [DashboardLayout matches dashboard nav? Yes/No]
    - To create: [{NewLayoutName} if a Figma shell doesn't match any existing layout]
+   - Content width: per [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target) — "at 1440px the content measures {N}px (`container-custom`) against the design's {frame − 2×gutter}px" — and offer the `general.sass` cap change as the project-level alternative. Decided here, not at visual review.
 
    ## Screens (with desktop + mobile node IDs resolved)
    - **{ScreenName}Page** → route `{/path}`, type `{auth|public|protected}`
@@ -252,6 +255,9 @@ Read the Figma source AND the relevant codebase before touching any file.
    - Waves gradients: `[{4 tokens, light → dark}]` fading into the background — **the wave component stays** (it is the template's mark); only its colours change
    - PoweredBy: **landing-page project** → mount in `{the Footer component this import will create | the public layout}` · tone `{dark|light}` · copy `Desarrollado por` (es) / `Powered by` (en). **Dashboard / custom app** → `none` — the component ships unmounted and the developer places it later, case by case — unless the user names a spot here
    - Toast (`setNotification` — where every form success and API error of the import lands): surface `{token}` · text `{token}` · radius `{value}` · position `{bottom-left | …}` · severities → `{PrimeReact's own | the design's semantic tokens}` — the accent hook never reaches it (severities are state signals), so it stays the template's white card otherwise
+
+   ## Intentional deviations (for Step 6)
+   Every decision above that `design-validation` would otherwise report as a finding, as `{ check, selector | file:line, reason }` rows — full-bleed sections without `container-custom` (the design's), static content arrays that are copy, not data (§ B6 — check 40 would otherwise read them as unmarked mock), sections with no vertical padding (the design's), `alt=""` kept for decorative frames, bespoke width caps, a heading flush against its block. The list is BUILT HERE and passed to Step 6 as `intentional`; it is not a place to excuse a defect found later.
 
    ## Detected language
    - Sample of visible text strings from the Figma frames: {3-5 short quoted examples, e.g. "Comenzar ahora", "Nuestros productos", "Iniciar sesión"}
@@ -356,6 +362,8 @@ Read the Figma source AND the relevant codebase before touching any file.
 > **Delegate to**: `Agent({ subagent_type: 'figma-design-tokens' })` — runs in **Haiku**.
 
 Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
+
+**If the user picked § B5's alternative (b) at the checkpoint — raise the `container-custom` caps — that is YOURS, not the agent's.** After this step's commit, edit `.container-custom` in `src/styles/general.sass` (the `max-width` tiers, and `padding-inline` only when the design's gutter differs) and commit it alone as `[ STYLE ] Widen container-custom to the design frame`. Do not pass it to the tokens agent: its brief forbids touching `.container-custom`, correctly.
 
 **If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked): it replaces the `--theme-accent` value in `general.sass` with the token through `theme()` — one line, every component, no hand-mapped selectors. **Omit the item entirely if the user declined** — the agent touches that line only when the brief passes a token, so silence is the off switch. Record the outcome in the ledger (`applied` / `declined`): Step 7 reads it as `primereactAccent`.
 
@@ -466,7 +474,8 @@ Existing components to reuse:
   - {ComponentB} (created in Step 3, no variants) → src/components/{ComponentB}/{ComponentB}.tsx
   # Pre-resolved from Step 3 output (screen registry → expected reusable components) — short-circuits the per-screen reuse audit so figma-design-screen doesn't have to re-grep src/components/.
 Tokens available: {list from Step 1}
-Container rule: every top-level <section> MUST be anchored with `container-custom` (or wrap its content in a child <div className='container-custom ...'> when the section has a full-bleed background). The class already brings a built-in 16px lateral gutter — do NOT add `px-*` on the same element. Ignore Figma's absolute frame width and per-section padding-x — they break cross-section alignment. BUT keep the per-section `py-*` / `pt-*` / `pb-*` from Figma intact — `container-custom` only handles horizontal spacing, so every section still needs its own vertical rhythm.
+Inline (decided at 0.5): [{primitive} — {nodeId} | none]   # single-use primitives already ruled inline at the checkpoint: implement inline, NO COMPONENT_GAP STOP, NO TODO (CONVENTIONS > STOP Protocol)
+Container rule: every top-level <section> MUST be anchored with `container-custom` (or wrap its content in a child <div className='container-custom ...'> when the section has a full-bleed background). The class already brings a built-in lateral gutter — do NOT add `px-*` on the same element. Ignore Figma's absolute frame width and per-section padding-x — they break cross-section alignment. BUT keep the per-section `py-*` / `pt-*` / `pb-*` from Figma intact — `container-custom` only handles horizontal spacing, so every section still needs its own vertical rhythm.
 Adjustment notes (only on re-runs): {text from user}
 ```
 
@@ -480,7 +489,7 @@ Step 0.55 diffs your **spec** against the design *before* anything is built. Ste
 
 ```
 Design: fileKey {key}, desktop nodeId {X:Y}   # pull get_design_context on THIS node only
-Output: src/screens/{Name}Page/{Name}Page.tsx + .sass
+Output: src/screens/{Name}Page/{Name}Page.tsx + .sass, PLUS the .tsx/.sass of every component under src/components/ the screen composes: [{list them}]   # question 5 lives there — radius/border/fill sit in the components' .sass, not the screen's (measured on the twin flow: without this list the auditor read the .tsx alone and declared question 5 unverified)
 
 Read the frame, then the output, and report where the output is NOT faithful to the frame.
 Check exactly these, per § B9/B10 of .claude/docs/design-import-shared.md:
@@ -564,6 +573,8 @@ Pass any provided fields to `figma-design-screen`; fall back to the registry for
 >
 > **Fallback — ONLY if `design-validation` is not an available `subagent_type`.** A project agent can silently fail to load ([#14018](https://github.com/anthropics/claude-code/issues/14018)) — see [`agent-loading-troubleshooting.md`](../../docs/agent-loading-troubleshooting.md). Then run the sweep inline (below) rather than hard-failing or skipping validation, and **say in the report that validation ran inline (fallback) and is a reduced check set** — the inline sweep is a strict subset of the agent's, so a clean inline run proves less.
 
+**Also pass `baseCommit`** — the commit the import started from (the one before Step 1's commit) — so the agent attributes by LINE (`git diff <baseCommit> -U0 -- <file>`), not by file: a pre-existing violation in a file the import merely touched is OUT OF SCOPE, not an import defect. **And pass `intentional`** — the rows the Step 0 report built under "Intentional deviations" — so the agent files them under INTENTIONAL instead of reporting the spec's own decisions back as findings.
+
 **Scope — pass it to the agent, or apply it inline.** Hand over the list of files this import created/modified so findings can be ATTRIBUTED; without it you'll read pre-existing template violations as import defects (`Waves.sass` — until Step 7 recolours it —, `Filters.sass` and `mixins.sass` legitimately carry hex; `ToastNotifications.sass` is the template's white card until Step 7 re-skins it; `sentry-example-page/` is a documented throwaway). **It does NOT narrow what gets checked** — the agent still runs every check over its own paths and splits the OUTPUT into `IN SCOPE` / `PRE-EXISTING`. That is deliberate: several checks assert repo-wide invariants an import can break in a file it never wrote (a global-only modal newly mounted in an existing component, a `'use client'` pushed onto an existing layout), and this list is assembled from the step agents' self-reported `files_touched` — the very thing the ledger rules above tell you to distrust. Partitioning makes an incomplete list *mislabel* a finding; filtering would make it *vanish*. **Build the file list as you go** — every step agent's report names the files it touched; accumulate them in the workload ledger and hand that list over. Do not reconstruct it from `git status` (the worktree may hold unrelated work) and do not default to `src/`.
 
 **The inline sweep** (fallback only):
@@ -579,7 +590,7 @@ Pass any provided fields to `figma-design-screen`; fall back to the registry for
 grep -rn "#[0-9a-fA-F]\{3,8\}" $F | grep -v "rgba\|assets/icons/\|FLAG raw-hex"
 # loose typography (banned — must be text-{weight}-{size})
 grep -rnE "\b(text-(xs|sm|base|lg|[0-9]?xl)|font-(thin|extralight|light|normal|medium|semibold|bold|extrabold|black))\b" $F
-# px-* on the same element as container-custom (banned — 16px gutter is built in)
+# px-* on the same element as container-custom (banned — the gutter is built in)
 grep -rn "container-custom" $F | grep -E "px-[0-9]"
 # banned imports
 grep -rn "from 'clsx'\|import { motion }\|from '@/api\|useSWR\|customFetch" $F
@@ -674,6 +685,7 @@ node .claude/scripts/primereact-theme.mjs --check
    PoweredBy: {montado en {path} ("{Desarrollado por|Powered by}") | sin montar (none) — restyleado igual}
    Toast: superficie {token} · texto {token} · radius {valor} · posición {valor} · severidades {defaults de PrimeReact | tokens del diseño}
    PrimeReact accent: {seteado ahora con {token} | ya seteado en Step 1 | no solicitado} · snapshot del theme: {al día | regenerado desde primereact@X | no mapeable → manual}
+   Assets del template sin referencias: {ninguno | lista — no se borraron (§ C1b); decidí si van}
    Validation: lint=✅ type-check=✅ build=✅
 
 Probá: pnpm start → /una-ruta-inexistente (404). Las pantallas de error no se ven en dev (las tapa el overlay): pnpm serve y /sentry-example-page → el botón Client Break aterriza en el error boundary; global-error solo con un throw temporal en src/app/layout.tsx. El toast sí se ve en dev: /login con credenciales inválidas.
@@ -751,7 +763,7 @@ Every STOP contributes one row to the workload ledger with the `Notes` column qu
 - ❌ Import `motion` from `framer-motion` — always `m` + `LazyMotion` (already set up in `ProvidersContainer`). ESLint enforces this; using `motion` fails lint and inflates the bundle.
 - ❌ Import `clsx` for conditional classes — always `classNames` from `primereact/utils`. The project pins on `classNames` for consistency with PrimeReact's passthrough system.
 - ❌ Translate Figma's absolute frame width / per-section `padding-x` literally instead of anchoring every top-level `<section>` with `container-custom` — this is the #1 cause of misaligned sections in Figma-driven screens. Every section (and the inner content of full-bleed layout chrome — Navbar, Footer) MUST use `container-custom`. NEVER substitute with `max-w-[Xpx]`, `max-w-7xl`, or arbitrary horizontal per-section paddings.
-- ❌ Strip vertical padding from sections "because container-custom handles spacing" — IT DOES NOT. `container-custom` is horizontal-only (max-width + 16px lateral gutter). Every section must keep its own `py-*` / `pt-*` / `pb-*` translated from Figma; sections without vertical padding collapse against each other and look broken.
+- ❌ Strip vertical padding from sections "because container-custom handles spacing" — IT DOES NOT. `container-custom` is horizontal-only (max-width + the built-in lateral gutter). Every section must keep its own `py-*` / `pt-*` / `pb-*` translated from Figma; sections without vertical padding collapse against each other and look broken.
 - ❌ Skip the "confirm with user" checkpoint at the end of Step 0
 - ❌ Manual scaffolding instead of invoking `/new-component`, `/new-screen`, `/new-modal` (sub-agents already follow this rule, but you might be tempted)
 - ❌ Pass components to `figma-design-components` as PROSE only (no `figmaNodeId`) — screenshots and text descriptions hide structure (e.g. which fill belongs to which node, auto-layout direction, exact paddings, hover/focus variants), and prose-driven components are the #1 source of rework. Resolve a representative nodeId for every component during Step 0.

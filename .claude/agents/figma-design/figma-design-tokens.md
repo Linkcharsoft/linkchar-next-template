@@ -111,7 +111,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
      - **Nested** as an object: `brand: { primary: '#1f3a5b' }` — also generates `bg-brand-primary`.
 
      Both produce the same utility classes. **Mixing them within the same namespace is the failure mode** — if `brand` already lives as a nested object (`brand: { 500: '...' }`), adding `'brand-700': '...'` flat fragments the namespace across two definitions and makes future edits error-prone. **Read the namespace's current shape from `tailwind.config.js` BEFORE inserting; replicate that shape.** When you create a new namespace from scratch, prefer the nested object form — it scales better when the namespace grows past 2-3 shades and reads cleaner in the diff.
-   - Add new typography sizes to BOTH the `fontSize` map AND the typography plugin's `sizes` array — keep the pair YOU add in sync. (The template ships `fontSize`-only entries — 72–128 — with no plugin classes: leave them alone, reconciling pre-existing drift is not your brief.)
+   - Add new typography sizes to the `fontSize` map only — the typography plugin derives `text-{weight}-{size}` from it, so there is no second list to keep in sync.
    - Add new breakpoints to `theme.extend.screens` if specified.
 
 5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`**:
@@ -137,7 +137,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
      - Apply the CSS variable on the `<html>` element: `<html lang="en" className={ {camelCaseName}.variable}>`. If multiple fonts, combine: `className={[font1.variable, font2.variable].join(' ')}`.
    - **Update `src/styles/general.sass`** body selector: `font-family: var(--font-{kebab-case-name}), sans-serif` (replaces the old `"FontName", sans-serif` form). **Touch ONLY the `body` selector's `font-family` line — plus the `--theme-accent` line under `:root` when, and only when, the parent's brief passes an accent token** ([§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked)): replace `theme('colors.inferencia-magenta')` with the token through `theme()` — `theme('colors.{ns}-{name}')` for a flat token, `theme('colors.{ns}.{shade}')` for a nested scale, never a hex. No accent token in the brief → leave that line alone; never infer one from the palette you just added, and never hand-write `.p-*` overrides. **Do NOT delete or rewrite any other rule in this file** — in particular: `.SkipToContent` (a11y skip-to-content link), `.container-custom` and its `@media` breakpoints (project's mandatory horizontal anchor), and the `@media (prefers-reduced-motion: reduce)` block (global a11y reset). Re-read the file after editing to confirm those blocks survived.
    - **Update `tailwind.config.js`** `fontFamily.sans`: `['var(--font-{kebab-case-name})', 'sans-serif']` (and any secondary family — e.g. `serif: ['var(--font-merriweather)', 'serif']`).
-   - **DO NOT modify the layer order line** in `src/styles/index.sass`: `@layer tailwind-base, primereact, tailwind-utilities` stays as-is.
+   - **DO NOT modify the `@layer …` order line** in `src/styles/index.sass` (CONVENTIONS > Styling owns it; do not "restore" it to any order you remember).
 
 6. **Icon fonts with `font-display: block` (PrimeIcons, FontAwesome, etc.) — only run this step if the project adds a NEW icon-font library beyond what the template already wires up**.
 
@@ -170,7 +170,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
 
    Skip this step if the project does not add a NEW icon font with `font-display: block`. Most modern icon sets shipped as SVG components (Lucide, Heroicons, etc.) are not affected.
 
-7. **Append decisions to `design-tokens-map.md`** — one row per CREATE or REUSE in this run. The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
+7. **Append decisions to `design-tokens-map.md`** — one row per CREATE or REUSE in this run, **colours, typography sizes AND breakpoints alike** (the Hex column stays empty for the last two; measured on the twin flow: a run that mapped only its colours left 7 size/breakpoint tokens UNMAPPED for Step 6 to find). The Notes column should briefly explain the decision (e.g. `Created on first import`, `Reused (ΔE=1.2)`, `Reused (heuristic match)`).
 
 8. Run `pnpm run lint-check --fix` (auto-fixes any quote/comma/import-order drift introduced into `tailwind.config.js` or `src/app/layout.tsx`) followed by `pnpm run type-check`. Report PASS/FAIL for each.
 

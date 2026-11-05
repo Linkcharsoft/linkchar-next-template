@@ -186,6 +186,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    4. If no match exists, branch on the usage count:
       - No match, used 2+ times → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: figma-design-components`, so the parent creates it via `figma-design-components` instead of you inlining bespoke JSX.
       - No match, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into a component if it repeats`.
+      - The parent's brief already rules the primitive `inline (decided at 0.5)` → inline it with **no STOP and no `// TODO`** — the decision is on record ([CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol)).
 
    **The usage count is the ONLY criterion** for SEVERITY — 1× advisory, 2+× blocking, per [CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol). Do NOT add side conditions ("…or is a clearly named primitive"): that contradicts the source-of-truth table (it makes the same 1× case ADVISORY there and BLOCKING here) and leaves the single-use no-match case — the most common one — with no branch. (§ B10 widens *what counts as a gap*, never how loudly one is reported — a near match routes through these same two severities.)
 
@@ -194,7 +195,7 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    Inlining bespoke versions of what should be reusable components is the most common silent regression in this flow. The reuse audit costs ~2-3 extra Grep calls per screen and prevents it.
 
 6. **Implement the screen** at the path that matches `screenType` (see "File path and `<main>` className by screen type" above): `src/screens/{Name}Page/{Name}Page.tsx` for `public`/`protected`, `src/screens/auth/{Name}Page/{Name}Page.tsx` for `auth`. Replace the placeholder content INSIDE the existing `<main>`; do NOT change the `<main>` wrapper or its className. Follow `.claude/CONVENTIONS.md` strictly:
-   - **`container-custom` is MANDATORY on every top-level section.** Unconditional here because the Figma flow has no `mobile-app` target — every Figma frame is a desktop artboard, so this agent is always on the `web` branch of [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target). Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute *horizontal* padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a 16px built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. **Vertical padding is a separate concern**: `container-custom` does NOT set any `py-*` / `pt-*` / `pb-*`, so you MUST translate the vertical spacing from the Figma frame (e.g. a hero `padding-top: 120px; padding-bottom: 80px` → `pt-[120px] pb-20` or the closest token-friendly equivalent). NEVER ship a section without vertical padding — it will collapse against its siblings. Two valid patterns:
+   - **`container-custom` is MANDATORY on every top-level section.** Unconditional here because the Figma flow has no `mobile-app` target — every Figma frame is a desktop artboard, so this agent is always on the `web` branch of [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target). Figma frames return a fixed width (e.g. 1440px or 1920px) plus per-section absolute *horizontal* padding — IGNORE both. Every top-level `<section>` (or its inner content wrapper) MUST be anchored with `container-custom` so that all sections of the screen share the SAME horizontal alignment and lateral padding across breakpoints. The class ALREADY ships a built-in lateral gutter, so do NOT add `px-*` on the same element — it's redundant. **Vertical padding is a separate concern**: `container-custom` does NOT set any `py-*` / `pt-*` / `pb-*`, so you MUST translate the vertical spacing from the Figma frame (e.g. a hero `padding-top: 120px; padding-bottom: 80px` → `pt-[120px] pb-20` or the closest token-friendly equivalent). NEVER ship a section without vertical padding — it will collapse against its siblings. Two valid patterns:
 
      ```tsx
      // 1) Section with a full-bleed background (color/image spans 100vw)
@@ -225,7 +226,6 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    **Horizontal scroll containers** (when mobile shows cards in `overflow-x-auto`): make them accessible:
    ```tsx
    <ul
-     role='list'
      aria-label='Featured items'
      className='flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 md:grid md:grid-cols-3 md:overflow-visible md:snap-none'
    >

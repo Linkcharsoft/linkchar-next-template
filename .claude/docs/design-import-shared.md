@@ -28,8 +28,8 @@
 
 # Section B — Import-translation rules
 
-How to turn a design's raw values (Figma variables / node styles, or a Claude Design `THEMES` object /
-`rawScan`) into this project's tokens and conventions. Applies to `*-tokens`, `*-components`, `*-layouts`,
+How to turn a design's raw values (Figma variables / node styles, or a Claude Design canvas's installed
+design-system tokens / `rawScan`) into this project's tokens and conventions. Applies to `*-tokens`, `*-components`, `*-layouts`,
 and `*-screen` agents of both flows.
 
 ## B1. Typography — off-scale sizes become real tokens (both flows), never rounded
@@ -58,9 +58,10 @@ in `src/assets/icons/*.tsx`, and brand gradients — see B4). Every color must m
 sensible token set up front. How much reduction is needed depends on the
 source:
 
-- **Clean palette source** (Figma variables, or a Claude Design `THEMES[brand]` object) → already ~8–15
-  named colors; map each to a token more or less 1:1.
-- **Raw-scan source** (`tokenSource = inline+helmet` / `inline+css` — dclogic/vanilla) → `rawScan.hexColors`
+- **Clean palette source** (Figma variables, or the design system a Claude Design canvas installed —
+  `tokenSource = design-system`, structured `color.tokens`) → already ~8–15 named colors; map each to a
+  token more or less 1:1.
+- **Raw-scan source** (`tokenSource = inline+helmet` — a canvas with no design system) → `rawScan.hexColors`
   can list **40+** hexes: brand colors, muted text, hairlines, background tints, **plus** one-off gradient
   stops and alpha-overlay values. This MUST be clustered before tokenizing.
 
@@ -97,6 +98,11 @@ there is no `clusters` block:
    **name** of the cluster (pick the dominant use), not whether to collapse. Example: `#0e2f4d` (a heading
    `color:`) and `#11314f` (a section `background:`) are Δ≤4 → one `ink-800`, named for whichever dominates.
    Feed the tokens agent the cluster, not 20 near-identical hexes.
+   **One exception: two surfaces that TOUCH.** Before collapsing a hex, check whether it paints a band that
+   sits directly against another band of the same cluster (a credit strip under a footer, a sidebar beside
+   a panel). Side by side, a Δ5 reads as a visible step and the design meant it (measured: `#050506` folded
+   into `#0a0a0b` erased the seam between a footer and the strip below it, and the user saw it). Keep both
+   as tokens (`ink` / `ink-deep`) when they are adjacent; collapse freely when they never meet.
 4. **Map, don't multiply:** a source hex with no exact token → the **nearest token in its family**, not a
    fresh token per pixel-value. Aim for a palette in the low tens, not 40+. Drop pure alpha-overlay values
    that only ever appear as `rgba(...)` gradient/scrim layers — those are `.sass` values, not palette
@@ -112,12 +118,14 @@ Radius handling also **diverges by flow**:
   `TOKENS_MISSING` → add a `borderRadius` token. Do NOT emit arbitrary `rounded-[Npx]`.
 - **Claude Design (`claude-design-*`)** — CONVENTIONS treats border-radius as plain CSS, so radii are NOT
   per-value tokens; **never** `TOKENS_MISSING` on a radius. Two sub-cases by `tokenSource`:
-  - **`THEMES`/babel, single `var(--radius)`** → decide ONE canonical translation in the gap analysis (a
-    specific `rounded-*`, or one `borderRadius` token like `rounded-card`) and pass it to every
-    component/screen agent so all radii match — the `Radius translation` prompt field.
-  - **`inline+helmet` / `inline+css`** → no single `--radius`; radii are per-element literals (cards
-    20–24px, buttons 12–13px, pills 999px). Use arbitrary `rounded-[Npx]` per element. The
-    single-`--radius` `Radius translation` field is **N/A**; note it as such.
+  - **`inline+helmet`** (no design system) → no single `--radius`; radii are per-element literals (cards
+    20–24px, buttons 12–13px, pills 999px). Use arbitrary `rounded-[Npx]` per element. The `Radius
+    translation` field is **N/A**; note it as such.
+  - **`design-system`** with a `radius.tokens` family → the system NAMES its radii (`radius-md: 8px`);
+    decide one translation per name in the gap analysis (a specific `rounded-*`, or a `borderRadius` token
+    like `rounded-card`) and pass the map to every component/screen agent so every instance of a named
+    radius matches — the `Radius translation` prompt field. A radius the artboards use outside the system
+    stays a per-element literal.
 
 ## B4. Brand gradients — the one hex exception besides icons
 
@@ -144,16 +152,29 @@ rule branches on the `Target` the orchestrator detected (`web` | `mobile-app`).
 
 **Which branch applies is a property of the FLOW, not a judgement call.** `figma-design-import` has no
 `mobile-app` target — a Figma frame is a desktop artboard — so its agents are always on the `web` branch and
-never see the field. `claude-design-import` detects the target per prototype (most Claude Design exports are
-phone-framed) and **passes it explicitly**; a `claude-design-*` agent that did not receive `Target:` emits
+never see the field. `claude-design-import` detects the target per canvas (a PAGE board is `expand: "fill"`,
+a phone mockup is a fixed 390–430 wide board) and **passes it explicitly**; a `claude-design-*` agent that did not receive `Target:` emits
 `STOP-BLOCKING / INVALID_INPUT` rather than picking a branch.
 
 **`Target: web` — `container-custom` on every top-level `<section>`.** Each top-level `<section>` of a screen
 (and the inner content of layout chrome — navbar/footer/sidebar) anchors its content with `container-custom`
-(16px built-in gutter — **no** `px-*` on the same element). **Ignore** the source's own frame width and
+(built-in gutter — **no** `px-*` on the same element). **Ignore** the source's own frame width and
 per-section horizontal padding (a `max-width:1180px; margin:0 auto; padding:0 24px` block) —
 `container-custom` replaces the horizontal part. For a full-bleed background, keep the bg on `<section>` and
 nest a `container-custom` inner `<div>`.
+
+**Say the width difference out loud at the Step 0.5 checkpoint — it is the convention, and the user will
+still see it.** `container-custom` caps the content well below a 1440-wide design's frame (the tiers live ONLY in
+`general.sass` — read them there, never copy them), while a 1440-wide design with 48px gutters lays its content out at 1344px. Headings
+wrap a line earlier and grids tighten — fidelity, not a bug, but discovered at visual review it reads as one.
+The gap-analysis report carries one line: *"at 1440px the content measures {M}px (`container-custom`) against the design's
+{N}px"*, and offers the per-project alternative: raise the caps in `general.sass` (`.container-custom`'s
+`max-width` rules — a project decision, applied once, never per section) rather than `max-w-*` on screens.
+**When the user picks that alternative, the orchestrator applies it itself, right after Step 1's commit and
+in its own `[ STYLE ]` commit** — touching only `.container-custom` in `general.sass` (its `max-width` tiers
+and, when the design's gutter differs, its `padding-inline`). No step agent owns it: the tokens agent's brief
+forbids `.container-custom` on purpose, and a cap change buried in a tokens commit is invisible at review
+(measured: decided at 0.5, applied by nobody until the orchestrator noticed after Step 1).
 
 **`Target: mobile-app` — the app shell owns the width; `container-custom` is NOT applied.** The design was
 drawn inside a phone frame (≈390–430px) and the layout renders it as a centered app-shell column, so the
@@ -182,6 +203,11 @@ No screen/component adds `customFetch`, SWR, or `src/api/*`. The data layer is t
   store, never re-declare the seed.
 - **Per-screen demo data** (a static list only one screen shows) → an inline `const MOCK_{KIND}` at the
   top of that screen, marked `// TODO: replace with API call once openapi-import has run for {endpoint}`.
+- **Static design copy** (a services list, process steps, manifesto lines, logo captions — content the
+  design hardcodes and no endpoint will ever serve) is neither: a plain `const` in the screen or in the
+  component that renders it, **no `MOCK_` prefix, no TODO** — a TODO naming an endpoint that will never
+  exist is a promise the next flow acts on. The orchestrator lists these arrays in `intentional` at 0.5 so
+  `design-validation`'s check 40 reports them as INTENTIONAL (measured: 11 false positives on one landing).
 
 Never scatter shared-state mock as `MOCK_*` in screens (leaves the store empty); never split per-screen
 mock into a sibling `.ts`.
@@ -392,15 +418,70 @@ with only the accent colours swapped, so the script tokenises `lara-light-blue` 
 replaces exactly the colours that differ between the two — an exact definition, not a hue heuristic. That is
 also why the semantic blues survive: they are identical in both themes.
 
+## B13. Headings — the convention owns the semantics, the design owns the look
+
+CONVENTIONS asks for `<p>` on card / list-item titles inside a page that already has `h1`/`h2`, and a
+design routinely draws those titles as `<h3>`. § B9's "verbatim UI" is about **what the user can do**, not
+about which tag carries a title, so the two do not conflict:
+
+- **The convention wins on the ELEMENT** — a card title becomes `<p>` styled exactly like the source's `<h3>`
+  (same token, same weight, same spacing). The outline is the project's; the pixels are the design's.
+- **The ONE exception**: an `<h3>` that structures a section with no `h2` of its own (the design's only
+  heading for that block) stays a heading, at the level the outline needs (`h2` if that is the gap).
+- Step 3 and Step 5.2 apply this without asking; `design-validation` reports a card `<h3>` as a finding, not
+  as fidelity.
+
+## B14. The credit strip the design draws — "Powered by" is template chrome only when the design has none
+
+Step 7 (`design-post-import`) restyles `PoweredBy` from the brand system because no design draws it. **Check
+that premise at Step 0.5**: grep the source for the credit (`Powered by`, `Desarrollado por`, `Inferencia`,
+`Linkchar`). When the design DOES draw it (measured: a 10px uppercase strip, tracked `.3em`, cream at 38%,
+magenta on hover, on a band darker than the footer), it is a designed region like any other:
+
+- Step 0.5 cites it (`file:lines`) and lists the `PoweredBy` restyle under **Step 4's** chrome work, with that
+  region as the source gate — the same rule as the footer it sits under.
+- Step 4 restyles `src/components/PoweredBy/PoweredBy.sass` from the region (colours, type, tracking, hover)
+  and mounts it where the design puts it; the link's hover may REUSE `inferencia-magenta` (CONVENTIONS >
+  Color System — the credit's own brand, not the project's).
+- Step 7's task B becomes **verify + localize** (`poweredBy.designed: true` in its brief): it keeps the
+  Step 4 styling, only fixes the copy language and the mount count.
+
+Without this the designed strip ships replaced by the template's 14px bold card — measured, caught by the
+user, after every gate was green.
+
+## B15. Imperative DCLogic — spec each behaviour at 0.5, build it as a component at Step 3
+
+A `.logic.js` built on `componentDidMount` + DOM queries (reveals, sticky scroll tracks, marquees, drag rails,
+rotators, scroll-driven nav tone) does not translate line by line. What worked, measured on a canvas that
+had all of them: **Step 0.5 names every behaviour with its `file:lines` in the markup AND in the logic;
+Step 3 builds each as a client component with that source as its gate; Step 5.2 then composes them** and
+ships zero `// TODO: port imperative behavior`. The table is the translation; the component names are
+illustrative:
+
+| DCLogic pattern (what the logic does) | React translation | Shape of the component |
+| --- | --- | --- |
+| `IntersectionObserver` toggling a `data-reveal` class (up / mask / card) | `m.div` + `whileInView` + `viewport={{ once, amount, margin }}` | `Reveal` with a `variant` prop |
+| A tall sticky track reading scroll progress with `requestAnimationFrame` | `useScroll({ target, offset: ['start start', 'end end'] })` + `useMotionValueEvent` / `useTransform` | `ScrollTrack` / `IntroReveal` owning its own `ref` |
+| Marquee with the item list duplicated in the markup | the component duplicates its children itself; CSS keyframes in its `.sass` | `Marquee` |
+| A horizontal rail with pointer drag and inertia | pointer events + `rAF`; the loop period measured between an item and its duplicate | `DragRail` |
+| A word/phrase rotator on `setInterval` | `useEffect` + `useState` index, cleared on unmount | `WordRotator` |
+| `data-par` parallax offsets | `useScroll` + `useTransform` into a motion value | inside the section's component |
+| Nav turning light/dark over `[data-light]` sections | a scroll listener over the sections' rects in a `'use client'` child of the layout | `SiteHeader` — and the sections must keep `data-light` (§ C8) |
+| A preloader | a timeout with a hard cap, plus a CSS fallback that hides it if hydration fails | `Preloader` |
+| A `three.js` (or other WebGL) module loaded with `import('/_blob/…')` | a client component via `next/dynamic` with `ssr: false`, `useImperativeHandle` for its `set`/`destroy` API; the CDN import becomes a real dependency | `StandScene` |
+
+Each row's **source** for Step 3 is the pair "markup region + logic region"; a behaviour with no logic region
+cited is prose, and Step 3 refuses prose.
+
+## B12. Loading state — every screen ships its own skeleton
+
+The template deliberately ships no `loading.tsx`: a loading state is only good when it mirrors the screen it stands in for, so it is generated per screen by whoever builds that screen. Once the screen's JSX is final and before validating: invoke `/new-skeleton {ScreenName}` (one skill at a time, per [§ C7](#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-and-you-do-the-writing) — you do the writing) so `{ScreenName}Skeleton` mirrors the screen's layout with `SkeletonBlock`, then add `src/app/{route}/loading.tsx` as a thin wrapper rendering it with `aria-busy` on its root. Skip it only for screens with no async data (static marketing sections, auth forms) — a skeleton that never shows is dead weight — and say so in the report.
+
 ---
 
 # Section C — Agent protocol
 
 Cross-agent machinery, identical for every step agent of both flows.
-
-## B12. Loading state — every screen ships its own skeleton
-
-The template deliberately ships no `loading.tsx`: a loading state is only good when it mirrors the screen it stands in for, so it is generated per screen by whoever builds that screen. Once the screen's JSX is final and before validating: invoke `/new-skeleton {ScreenName}` (one skill at a time, per [§ C7](#c7-invoking-a-project-skill-from-inside-a-sub-agent--one-at-a-time-and-you-do-the-writing) — you do the writing) so `{ScreenName}Skeleton` mirrors the screen's layout with `SkeletonBlock`, then add `src/app/{route}/loading.tsx` as a thin wrapper rendering it with `aria-busy` on its root. Skip it only for screens with no async data (static marketing sections, auth forms) — a skeleton that never shows is dead weight — and say so in the report.
 
 ## C1. Delegation contract
 
@@ -553,8 +634,8 @@ Two symmetric failure modes:
 Report the confirmed no-op with its evidence in the normal report shape (C4) — a reasoned no-op is a
 deliverable, not a failure. Applies to any step, most often **Step 4 (layouts)** — e.g.
 `navModel = single-page-sections`, where the header and footer belong to the one screen. Expect the brief to
-SAY when a required input does not exist for the format (roles/registries are a `screen-registry` construct;
-dclogic has none): a named absence is valid input, not a missing field — do not emit
+SAY when a required input does not exist for the design (route groups come from the canvas's own grouping;
+a single-audience canvas has none): a named absence is valid input, not a missing field — do not emit
 `STOP-BLOCKING / INVALID_INPUT` over it. C1's missing-input rule covers fields the parent forgot, not fields
 the format cannot have.
 
@@ -612,3 +693,20 @@ carry out its steps, then the next.
 **The acknowledgement is not evidence.** After completing each one, confirm the deliverable exists
 (`ls`/`Test-Path` the folder) before starting the next. Same rule the orchestrator applies to your reported
 counts: a claim about what happened is not a measurement of it.
+
+## C8. Cross-step DOM contracts — chrome that reads the screens' DOM must say so
+
+Layout chrome sometimes depends on attributes the SCREENS render: a header that turns light over
+`[data-light]` sections, a nav that highlights the section whose `id` is in view, a scroll-progress bar that
+reads `#intro`'s height. Step 4 builds the chrome; Step 5.2 builds the sections, in a fresh context that has
+never seen the chrome. Measured: it worked only because the parent typed the attributes into both briefs.
+
+So it is a contract, not luck:
+
+- **Step 4's report lists every DOM hook its chrome reads** — attribute names, `id`s, class names, with the
+  element they must sit on (`data-light` on every section whose background is light; `id="intro"` on the
+  hero `<section>`), under a `DOM contract:` heading.
+- **The parent carries that list into every Step 5.2 brief** as `DOM contract:` — and into Step 3 when a
+  component renders one of those sections.
+- A screen agent that cannot honour an item (the design has no light section on that page) reports it under
+  `Discrepancies`, never drops it silently.

@@ -1,6 +1,6 @@
 ---
 name: claude-design-layouts
-description: Step 4 of claude-design-import — verifies, adjusts, or creates layouts in src/layouts/ from the prototype's chrome (TopBar / bottom tab bar / iOS status bar) and its host/guest roles. Translates or drops mobile-app chrome per the detected target. Wires up route groups. Sonnet-level judgment.
+description: Step 4 of claude-design-import — verifies, adjusts, or creates layouts in src/layouts/ from the canvas's shared chrome (a Nav/Footer artboard, or the header/nav/footer region every page repeats; a bottom tab bar / iOS status bar on a phone-framed canvas) and the route groups the parent derived from the canvas's groups. Translates or drops mobile-app chrome per the detected target. Wires up route groups. Sonnet-level judgment.
 model: sonnet
 ---
 
@@ -22,32 +22,32 @@ If you cannot read `CONVENTIONS.md`, STOP and emit `STOP-BLOCKING / category: IN
 
 ## Expected input from the parent
 - The current state of `src/layouts/` (AuthLayout, DashboardLayout, GeneralLayout).
-- **Chrome findings** from the prototype: which screens share a `TopBar`, a bottom tab bar (`HOST_TABS`), a header/footer — plus the source JSX files.
-- **Roles**: the prototype's `host` / `guest` split (from the registries) and how they map to route groups + protected/public.
+- **Chrome findings** from the canvas: which pages share a header/nav/footer, a top bar, a bottom tab bar — plus the chrome SOURCE: a dedicated Nav/Footer artboard (`source/{slug}.markup.html` + `.logic.js` + `.helmet.css`, measured on one canvas as `GxNavApp` / `GxFooterApp` under a "Componentes" group) or, when there is none, one page's `.markup.html` whose header/footer region repeats in every page.
+- **Route groups**: the split the parent derived from the canvas's own grouping (`inventory.groups` / `canvas.pages` — "Sitio público" vs "Paneles", measured) and how each maps to protected/public. May be `none`.
 - **Target**: `mobile-app` | `web` (from Step 0.5). This decides how mobile chrome translates.
-- **`navModel`** (from `inventory`): `screen-registry` (babel) | `multi-page` (dclogic web / routed vanilla) | `single-page-sections`/`single-page`.
+- **`navModel`** (from `inventory`): `multi-page` | `single-page-sections`.
 - Names of any new layout to create.
 
 If any of those is missing, emit `STOP-BLOCKING / category: INVALID_INPUT / next_agent: manual` naming the field — per [§ C1](../../docs/design-import-shared.md#c1-delegation-contract), you have **no user to ask**.
 
 **EXCEPTIONS — an input that is EMPTY or `N/A` for the format is VALID input, not a missing one.** That STOP routes to `manual` and would deadlock the flow over nothing, so do NOT emit it for any of these; proceed and say so in your report:
 
-- **`roles`** (host/guest) is a `screen-registry` construct — dclogic exports have no registries (`unpack.mjs` emits none), so its absence there is expected.
-- **`navModel = single-page-sections` / `single-page` with no chrome to hoist.** The chrome belongs to the one screen and is wired to its own `page`/`menuOpen` state; hoisting it would force UI state into a store (out of scope). **A confirmed no-op is a valid outcome — report it as one** (per [§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)); do not manufacture a layout to look productive, and do not STOP.
+- **`route groups: none`** — a canvas with one audience has no role split; a single layout wraps everything.
+- **`navModel = single-page-sections` with no chrome to hoist.** The chrome belongs to the one screen and is wired to its own `page`/`menuOpen` state; hoisting it would force UI state into a store (out of scope). **A confirmed no-op is a valid outcome — report it as one** (per [§ C5b](../../docs/design-import-shared.md#c5b-a-confirmed-no-op-is-a-valid-outcome--still-delegate)); do not manufacture a layout to look productive, and do not STOP.
 - **An empty "names of new layouts to create" list** — it means the existing layouts already cover the design.
 
-## navModel = `multi-page`: extract the shared chrome to ONE layout (dclogic web & routed vanilla)
+## navModel = `multi-page`: extract the shared chrome to ONE layout
 
-A dclogic multi-page export is N `.dc` pages (`inventory.screens`), and the **header / nav / footer repeats in EVERY page's `.markup.html`** (a corporate site's shared shell). Your #1 job here:
+A multi-page canvas is N page artboards (`inventory.screens`), and the **header / nav / footer repeats in EVERY page's `.markup.html`** (a corporate site's shared shell). Your #1 job here:
 
-1. Read one or two pages' `.markup.html` (the parent points you at them) and identify the shared chrome — the top nav (with links to the other pages), any announcement bar, the footer. It's the markup that's byte-similar across pages.
-2. **Create ONE layout** (`src/layouts/{Name}Layout/`) holding that chrome. The shared header/footer are raw `<header>`/`<footer>` markup **regions** (NOT `<dc-import>` children), so **create the Navbar/Footer components yourself from the region** (you have the markup — translate its inline styles/`style-hover` the same way) as real components under `src/components/` — never inlined in the layout. Do NOT route this through `claude-design-components` — its dclogic path only handles `<dc-import>` children listed in `components.json`, not arbitrary markup regions. The nav's links = the page list (entry → `/`, others → `/{slug}`), using `next/link`. **If the header contains imperative behavior** (sticky-shrink on scroll, dropdowns — see the screen agent's imperative note), transcribe it as a `// TODO: port imperative behavior` for now.
-3. **Wrap all N routes in a single route-group** (`src/app/(site-layout)/…`) whose `layout.tsx` delegates to the layout. So every page inherits the chrome ONCE.
+1. Read the chrome source the parent points you at. Two shapes: **a dedicated artboard** (the author drew the Nav / Footer as its own `.dc.html` — read its markup, logic and helmet CSS; it is the cleanest spec), or **a region** of one or two pages' `.markup.html` — the top nav (with links to the other pages), any announcement bar, the footer: the markup that's byte-similar across pages. The CSS the chrome's classes use is in that page's `.helmet.css`.
+2. **Create ONE layout** (`src/layouts/{Name}Layout/`) holding that chrome. **Create the Navbar/Footer components yourself from the source** (you have the markup — translate its inline styles/`style-hover`/class rules the same way) as real components under `src/components/` — never inlined in the layout — and register each one in the reuse table per [§ C6](../../docs/design-import-shared.md#c6-registering-a-new-component-in-the-reuse-table) (measured: a header, menu and footer created here shipped with no row, so the screen agents could not see them). Do NOT route this through `claude-design-components` — chrome is this step's deliverable. The nav's links = the page list (entry → `/`, others → `/{slug}`), using `next/link`. **If the chrome carries imperative behavior** (sticky-shrink on scroll, dropdowns, a scroll-driven solid header, an `aria-current` alias map, a dynamic footer year — in its `.logic.js` or a `source/support/*.js` the parent specs), build it per [§ B15](../../docs/design-import-shared.md#b15-imperative-dclogic--spec-each-behaviour-at-05-build-it-as-a-component-at-step-3): a `'use client'` child the server layout composes (`SiteHeader` reading `[data-light]`, the footer year), with the markup + logic regions the parent cites as its source — never a `// TODO: port imperative behavior`. Expose an explicit opt-in for any per-route bit (a `forceSolid` for the one page with no hero).
+3. **Wrap all N routes in a single route-group** whose `layout.tsx` delegates to the layout, so every page inherits the chrome ONCE. **The template already ships one for a public site — `src/app/(landing-layout)/` → `src/layouts/LandingLayout/`, where `/` lives: fill it** instead of creating a parallel `(site-layout)`. Create a new group only for a second shell (two audiences → one layout + one group per shell, e.g. `(panel-layout)`).
 4. Translate the chrome's `style-hover`/inline styles the same way the screen agent does (Tailwind `hover:` / tokens / `container-custom`).
+5. **The credit strip, when the design draws it** ([§ B14](../../docs/design-import-shared.md#b14-the-credit-strip-the-design-draws--powered-by-is-template-chrome-only-when-the-design-has-none)): the parent cites the `Powered by` region. Restyle `src/components/PoweredBy/PoweredBy.sass` (and its markup, if the design's structure differs) from that region — colours, type, tracking, hover (its hover may REUSE `inferencia-magenta`, CONVENTIONS > Color System) — and mount it where the design puts it (the Footer's last child, full-width). Do NOT create a second credit component. Step 7 then verifies and localizes only.
+6. **Declare the DOM contract** ([§ C8](../../docs/design-import-shared.md#c8-cross-step-dom-contracts--chrome-that-reads-the-screens-dom-must-say-so)): every attribute, `id` or class your chrome's logic reads off the SCREENS' DOM (`data-light` on light sections for a tone-switching header, `id="intro"` for a scroll target, section `id`s for an active-nav state) goes in your report under `DOM contract:`, with the element each must sit on. The screen agents never see your code; the parent carries this list into their briefs.
 
-**Routed `vanilla` (client-side router) — same job, different source location.** The per-route files (`source/route.{key}.markup.html`) deliberately EXCLUDE the chrome, so do NOT look for byte-similar markup across them (there is none): the header/nav/footer/floating buttons live in the shell, `source/index.markup.html` (full body), which the parent points you at. The shell's inline `<script>` also carries router behavior that is design intent (scroll-driven solid header, `aria-current` alias map, per-route `forceSolid`, dynamic footer year) — the parent specs it; the layout owns it, exposing an explicit opt-in for the per-route bits.
-
-Without this, each of the N `claude-design-screen` runs would re-inline the header/nav/footer (N× duplication) — that is the failure this step prevents. For `single-page-sections`/`single-page`, the sticky header is part of the ONE screen (no layout needed) unless a genuine shared shell exists.
+Without this, each of the N `claude-design-screen` runs would re-inline the header/nav/footer (N× duplication — 19× on one measured canvas) — that is the failure this step prevents. For `single-page-sections`, the sticky header is part of the ONE screen (no layout needed) unless a genuine shared shell exists.
 
 ## Pre-flight (read BEFORE creating/adjusting)
 1. `tailwind.config.js` — tokens only, no hex.
@@ -60,22 +60,22 @@ Root `src/app/layout.tsx` → `<GeneralLayout>` → `<ProvidersContainer>` alrea
 
 ## Target-aware chrome translation (the Claude Design specificity)
 
-The prototype is usually **mobile-app shaped** (phone frame, `TopBar`, bottom tab bar, iOS status bar). Translate per `target`:
+A phone-framed canvas (fixed 390×844 boards: top bar, bottom tab bar, a drawn status bar) needs its chrome translated per `target`:
 
-| Prototype chrome | `target = web` | `target = mobile-app` |
-| ---------------- | -------------- | --------------------- |
-| Bottom tab bar (`HOST_TABS`) | Becomes a **top navbar** (horizontal nav) — bottom tab bars are a mobile idiom. Keep the same destinations. | Keep as a **bottom nav** (`fixed bottom-0`), with `md:` fallback to a top/side nav for wider viewports. |
-| `TopBar` (back + title per screen) | A back-arrow header is per-screen chrome, not a layout — usually leave it to the screen, or a slim shared header. | Keep as a shared top header in the layout. |
-| iOS status bar / home indicator / `IOSDevice` frame | **Drop** — demo device framing, not product UI. | **Drop** — real devices render their own status bar; never port `IOSStatusBar`/`IOSDevice`. |
+| Design chrome | `target = web` | `target = mobile-app` |
+| ------------- | -------------- | --------------------- |
+| Bottom tab bar | Becomes a **top navbar** (horizontal nav) — bottom tab bars are a mobile idiom. Keep the same destinations. | Keep as a **bottom nav** (`fixed bottom-0`), with `md:` fallback to a top/side nav for wider viewports. |
+| Top bar (back + title per screen) | A back-arrow header is per-screen chrome, not a layout — usually leave it to the screen, or a slim shared header. | Keep as a shared top header in the layout. |
+| Drawn status bar / home indicator / device frame | **Drop** — demo device framing, not product UI. | **Drop** — real devices render their own status bar; never port a drawn one. |
 | Splash screen | Drop (or map to a real loading state) — it's the prototype's boot animation. | Same. |
 
-Roles → route groups: `host` and `guest` become route groups (e.g. `(host-layout)` / `(guest-layout)`) mapping to protected/public per the parent's decision. Confirm with the parent's classification; don't invent auth semantics.
+Route groups: each audience the parent derived from the canvas's groups (`(site-layout)` / `(panel-layout)`, `(host-layout)` / `(guest-layout)`) maps to protected/public per the parent's decision. Confirm with the parent's classification; don't invent auth semantics.
 
 **Route group vs persistent nav — structural, not a preference.** A route group for a persistent nav (bottom tab bar, sidebar) only holds while **no member of the group has sub-routes**. The moment a tab needs a pushed detail route, the same URL segment would have to exist both inside and outside the group — which Next.js rejects. So: **any tab with children ⇒ no route group.** Put the nav in the shared layout with flat routes and drive its visibility off `usePathname()` (in a `'use client'` child, per the reminders below). Check the parent's route list for children BEFORE choosing the group.
 
 ## Steps
 
-1. Compare each existing layout in `src/layouts/{AuthLayout,DashboardLayout,GeneralLayout}` against the prototype's chrome intent (per target).
+1. Compare each existing layout in `src/layouts/{AuthLayout,DashboardLayout,GeneralLayout,LandingLayout}` against the prototype's chrome intent (per target). `LandingLayout` (behind `(landing-layout)`, wrapping `/`) is the expected home for a public site's nav + footer — fill it before creating a parallel layout.
 2. **Adjust** an existing layout if the prototype matches one with structural changes.
 3. **Create new layouts** when the prototype shows a shell that doesn't match any existing one:
    1. `src/layouts/{LayoutName}/{LayoutName}.tsx` + colocated `.sass`.
@@ -94,15 +94,15 @@ Roles → route groups: `host` and `guest` become route groups (e.g. `(host-layo
 - **Bottom-nav active state** on `mobile-app`: derive from `usePathname()` in a `'use client'` child, not the layout.
 
 ## Hard rules
-- Layouts compose existing components — no inline nav/footer markup. Missing part → `claude-design-components` first. **One carve-out:** on `navModel = multi-page` the shared chrome has no `<dc-import>` source, so YOU create the Navbar/Footer components from the markup region (see that section) — created by you, still never inlined.
+- Layouts compose existing components — no inline nav/footer markup. Missing part → `claude-design-components` first. **One carve-out:** on `navModel = multi-page` the shared chrome is this step's deliverable, so YOU create the Navbar/Footer components from the chrome source (an artboard or a region — see that section) — created by you, still never inlined.
 - Layouts are Server Components — never `'use client'`.
 - Tailwind for layout primitives; extract to `.sass` (BEM) any element with visual-appearance classes or 6+ classes; `@apply` LAST.
 - Responsive: show/hide chrome variants via `hidden md:block` / `block md:hidden`, NOT JS conditionals.
-- **`container-custom` on chrome whose content shares the screen's horizontal grid** (a top navbar/footer on a `web` target). Inner wrapper: `<div className='container-custom …'>` (16px gutter — no `px-*` next to it; add `py-*` explicitly). Does NOT apply to functional partitioning (auth split, dashboard panes, a fixed bottom nav bar). When ambiguous, emit `STOP-ADVISORY / category: CONTAINER_CUSTOM_DECISION / next_agent: user_decision` and default to NO `container-custom`. NEVER fake it with `max-w-[Xpx]`.
-- **Never port iOS device chrome** (`IOSStatusBar`, `IOSNavBar`, `IOSDevice`, home indicator) into a layout — it's prototype framing, not product UI.
+- **`container-custom` on chrome whose content shares the screen's horizontal grid** (a top navbar/footer on a `web` target). Inner wrapper: `<div className='container-custom …'>` (built-in gutter — no `px-*` next to it; add `py-*` explicitly). Does NOT apply to functional partitioning (auth split, dashboard panes, a fixed bottom nav bar). When ambiguous, emit `STOP-ADVISORY / category: CONTAINER_CUSTOM_DECISION / next_agent: user_decision` and default to NO `container-custom`. NEVER fake it with `max-w-[Xpx]`.
+- **Never port drawn device chrome** (a status bar, a home indicator, a phone frame) into a layout — it's prototype framing, not product UI.
 
 ## Output to parent
-A summary (each layout adjusted/created: file paths + route groups wired). End with the footer:
+A summary (each layout adjusted/created: file paths + route groups wired), then a `DOM contract:` list — every attribute / `id` / class the chrome reads off the screens' DOM, with the element it must sit on, or `DOM contract: none` — then the footer:
 
 <!-- The `model=sonnet` literal below must match the `model:` frontmatter. Keep it in sync on any model change. -->
 

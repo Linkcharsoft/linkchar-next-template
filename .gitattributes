@@ -9,3 +9,5 @@
 .claude/**/*.md text eol=lf
 .claude/**/*.mjs text eol=lf
 .claude/*.md text eol=lf
+# Generated snapshot compared byte-for-byte by primereact-theme.mjs --check
+src/styles/primereact-theme.css text eol=lf

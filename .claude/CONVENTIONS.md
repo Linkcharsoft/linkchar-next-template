@@ -169,6 +169,7 @@ Prefer plain CSS, `@apply` only for design tokens. When you move styles into a `
 - ✅ **Plain CSS** for: `display`, `flex-direction`, `gap`, `padding`, `margin`, `width`, `height`, `border-radius`, `position`, `top/right/bottom/left`, `cursor`, `overflow`, `text-align`, `transition`, `transform`
 - ✅ **`@apply`** for: project colors (e.g. `text-surface-700`, `bg-surface-100`), typography tokens (`text-bold-14`, `text-medium-16` — these compose size + weight + letter-spacing), responsive prefixes (`md:flex-row`), and pseudo-state tokens (`hover:bg-surface-100`)
 - ⚠️ **`@apply` MUST be the LAST declaration in each block scope** — root selector, `&__Element`, `&--Modifier`, pseudo-state. Plain CSS properties go FIRST, then a single `@apply` line at the end. Putting `@apply` between plain CSS declarations breaks the SASS indented-syntax parser with a confusing "expected selector" error. Nested child blocks (`&__X`, `&--X`, `&:hover`) are fine after `@apply` because they're a deeper scope.
+- ⚠️ **A prefixed/unprefixed pair: the `-webkit-` declaration goes FIRST.** Lightning CSS (Next's CSS minifier) keeps only the LAST declaration of a pair it treats as one property, in dev and in prod. `backdrop-filter: blur(12px)` followed by `-webkit-backdrop-filter: blur(12px)` compiles to the `-webkit-` one alone, which Chrome ignores — the computed value is `none` and the blur silently disappears (measured on a generated header). `-webkit-backdrop-filter` first, then `backdrop-filter`, survives; same for `-webkit-mask-image` / `mask-image`. `design-validation` greps for the wrong order.
 - ⚠️ **`@apply !utility` (Tailwind's important modifier) does NOT compile here** — the indented-syntax parser fails on the `!` with `expected newline`. So there is no way to `@apply` something as `!important`. When you genuinely need to win a specificity fight against a third-party stylesheet, either write that one declaration as plain CSS with `!important`, or — better — **narrow the rule instead of escalating it** (`&:focus:not(.p-invalid)` rather than an `!important` on the state you were trying to preserve). Reaching for `!important` here is what pushes an override out of `@apply` and into hand-written CSS, which is where hardcoded colours reappear.
 
 ```sass
@@ -207,7 +208,7 @@ Other rules:
 - **Colocated styles**: each component imports its own `.sass` file directly (`import './Component.sass'`).
 - `src/styles/index.sass` only contains global styles (fonts, Tailwind layers, general reset).
 - SASS mixins are auto-injected globally via `next.config.ts` `sassOptions.additionalData`.
-- **Layer order in `src/styles/index.sass`** is `@layer tailwind-base, primereact, tailwind-utilities` — ensures Tailwind utilities override PrimeReact. **NEVER modify this line.**
+- **Layer order in `src/styles/index.sass`** is `@layer tailwind-base, primereact, general, tailwind-utilities` — `general` overrides the PrimeReact theme, and any Tailwind utility overrides both. **NEVER modify this line.**
 
 ### A colocated `.sass` BEATS every Tailwind utility — plan for it
 
@@ -257,6 +258,7 @@ Use the custom typography classes defined in `tailwind.config.js`:
 - **NEVER** use loose Tailwind defaults (`text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`, …, `text-9xl`) — banned in favor of the project scale.
 - **NEVER** use loose weight utilities (`font-thin`, `font-extralight`, …, `font-black`) — banned, weights live inside `text-{weight}-{size}`.
 - **NEVER** use a standalone `text-{size}` without a weight (e.g. `text-24` alone) — the convention is strict; every size must be paired with a weight.
+- **Fluid sizes are plain CSS, not a violation.** The scale cannot express `font-size: clamp(2rem, 1rem + 3vw, 4.5rem)`: a design that sizes a heading fluidly keeps that `clamp()` as a plain declaration in the colocated `.sass`, paired with the weight token's `font-weight` as plain CSS too (the `text-{weight}-{size}` class would re-set the size). Use it only where the design is fluid; a fixed size still goes through the scale. `design-validation` reports a `clamp()` as INTENTIONAL when the import's spec lists it, never as a typography violation.
 
 ---
 
@@ -266,7 +268,7 @@ Use the custom typography classes defined in `tailwind.config.js`:
 - **Semantic colors**: Use Tailwind defaults (`text-red-600`, `bg-blue-600`, `text-green-600`, etc.).
 - **Custom surface palette**: `50(#FAFAFA) 100(#F5F5F5) 200(#EEEEEE) 300(#E0E0E0) 400(#BDBDBD) 500(#9E9E9E) 600(#757575) 700(#616161) 800(#424242) 900(#212121)`.
 - **Brand/extra tokens** added via Figma imports live as new namespaces (e.g. `brand-*`, `accent-*`). Never reuse `surface-*` for them. See `design-tokens-map.md` for the canonical mapping.
-- **`inferencia-magenta` (`#FE00FE`) is the template's own brand accent**, template-shipped like `surface-*` (so it never appears in `design-tokens-map.md`): it drives `--theme-accent` in `general.sass` and the Waves by default. A project replaces the *references* with its own accent token; it never REUSEs `inferencia-magenta` for a design colour and never deletes it from `tailwind.config.js`.
+- **`inferencia-magenta` (`#FE00FE`) is the template's own brand accent**, template-shipped like `surface-*` (so it never appears in `design-tokens-map.md`): it drives `--theme-accent` in `general.sass` and the Waves by default. A project replaces the *references* with its own accent token; it never REUSEs `inferencia-magenta` for a design colour and never deletes it from `tailwind.config.js`. **The one place a design colour IS this token: the "Powered by" credit.** When a design draws the Inferencia / Linkchar credit strip with `#FE00FE` on its link hover, that colour is the credit's own brand, not the project's — the `PoweredBy` component REUSEs `inferencia-magenta` there, and the tokens agent does not create a project token for it.
 - **NEVER hardcode hex** in screens, components, layouts, or stylesheets. Every color must resolve to a Tailwind token. The only exception is multi-color brand glyphs inside `src/assets/icons/*.tsx` where the hex IS the brand identity.
 
 ---
@@ -293,7 +295,7 @@ So: `md:` = "≥768, project scale"; `acme-md:` = "≤860, this design". Both ar
 Use `container-custom` class for centered content with responsive max-widths AND a built-in responsive lateral gutter:
 
 - **Max-width tiers** — **the source of truth is [`src/styles/general.sass`](../src/styles/general.sass)**, and it is the ONLY place the numbers live. Read it when an exact value matters; do not copy the tiers into any doc, prompt or agent file — same rule, same reason, as `engines` in [`CLAUDE.md`](../CLAUDE.md): a copy nobody enforces rots, and a design import that reasons about section widths against drifted tiers gets them all wrong.
-- **Lateral padding (built-in)**: 16px on every viewport. This guarantees a safe edge gutter and prevents content from touching the screen edges on mobile.
+- **Lateral padding (built-in)**: a responsive gutter defined next to the tiers in `general.sass` — same single-source rule, do not copy its value either (an import that widens the frame changes it, and every copy then lies). It guarantees a safe edge gutter so content never touches the screen edges on mobile.
 
 Because the lateral padding is part of the class itself, NEVER add `px-*` (e.g. `px-4`) on the same element that already has `container-custom` — it's redundant. If a specific section truly needs a different inner padding than the global gutter, nest a child `<div>` and apply `px-*` there instead of duplicating it on the container.
 
@@ -446,7 +448,7 @@ Lighthouse "Accessibility".
 - **Tap target size**: interactive elements on mobile need at least `44×44px` with 8px gap to neighbors (Lighthouse measures `48×48` effective). Set `min-h-[44px] min-w-[44px]` on icon buttons; rely on `CustomButton` size variants that already meet this for regular buttons.
 - **Color contrast** must meet WCAG AA: 4.5:1 for normal text, 3:1 for large text (18pt+ or 14pt+ bold) and UI components. When picking color tokens, verify every text/background pair before shipping — Lighthouse runs `axe-core` contrast checks automatically.
 - **Skip-to-content link**: the root layout (`src/app/layout.tsx`) renders `<a href='#main' className='SkipToContent'>...</a>` as the first child of `<body>`, paired with `id='main'` on the screen's `<main>`. Required for the "Bypass blocks of repetitive content" Lighthouse audit.
-- **Horizontal-scroll carousels** (mobile `overflow-x-auto` lists): use semantic `<ul role='list' aria-label='...'>` + `<li>` items. Screen readers announce the item count; the label describes what the carousel contains.
+- **Horizontal-scroll carousels** (mobile `overflow-x-auto` lists): use a semantic `<ul aria-label='...'>` + `<li>` items — **no `role='list'`**: the role is implicit and `jsx-a11y/no-redundant-roles` errors on it (measured). Screen readers announce the item count; the label describes what the carousel contains.
 - **Focus visibility**: NEVER `outline: none` (or `box-shadow: none` on `:focus`) without providing a visible replacement (`focus-visible:ring-*`, a custom `&:focus-visible` block, or PrimeReact's default ring). Keyboard users navigate by sight of focus — removing the indicator fails WCAG 2.4.7.
 - **Clickable non-button elements** need `role="button"`, `tabIndex={0}`, and `onKeyDown` for Enter/Space — or just use a `<button>`.
 
@@ -530,7 +532,7 @@ The repo ships with a `.mcp.json` that wires Claude Code to the Figma Dev Mode M
 2. **Typography**: ALWAYS `text-{weight}-{size}` (e.g., `text-bold-24`). NEVER loose `text-xl`, `font-bold`.
 3. **Colors**: `surface-50` to `surface-900` for grays. Semantic colors with Tailwind defaults.
 4. **Responsive**: Custom breakpoints: `2xs:`, `xs:`, `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
-5. **Container**: `container-custom` is MANDATORY on every top-level `<section>` (or the inner `<div>` when the `<section>` is full-bleed) so all sections share the same horizontal alignment. Brings a built-in 16px lateral gutter — do NOT add `px-*` next to it. Also required on layout chrome (Navbar, Footer). NEVER substitute with `max-w-[Xpx]` or custom horizontal per-section paddings. **Vertical padding (`py-*`) is YOUR call** — `container-custom` does not set any, so always add the vertical rhythm Figma specifies (or sensible defaults like `py-16` / `py-20`).
+5. **Container**: `container-custom` is MANDATORY on every top-level `<section>` (or the inner `<div>` when the `<section>` is full-bleed) so all sections share the same horizontal alignment. Brings a built-in lateral gutter — do NOT add `px-*` next to it. Also required on layout chrome (Navbar, Footer). NEVER substitute with `max-w-[Xpx]` or custom horizontal per-section paddings. **Vertical padding (`py-*`) is YOUR call** — `container-custom` does not set any, so always add the vertical rhythm Figma specifies (or sensible defaults like `py-16` / `py-20`).
 6. **SASS**: `.sass` indented syntax (NO semicolons, NO curly braces). BEM: `.Name__Element--Modifier`. Plain CSS for layout/spacing/sizing; `@apply` only for design tokens (colors, `text-{weight}-{size}`, pseudo-state tokens). **`@apply` LAST in each block scope**.
 
 ---
@@ -590,7 +592,7 @@ details:
 | `COMPONENT_GAP` | ADVISORY when the primitive is used **1×** in the screen, BLOCKING when used **2+×** | Existing component does not cover a design variant/state | `{flow}-components` |
 | `CONTAINER_CUSTOM_DECISION` | ADVISORY | Hybrid layout: ambiguous whether `container-custom` should anchor the chrome | `user_decision` (default = no `container-custom`) |
 
-**`COMPONENT_GAP` — the count is the ONLY criterion.** 1× → ADVISORY (inline it with a `// TODO: refactor into <Name> variant`); 2+× → BLOCKING (a primitive that repeats must be a component, or the screen duplicates it N times). Do not add side conditions like "…or a clearly-named primitive" — that made the same 1× case ADVISORY here and BLOCKING in an agent file, and left "no match, used once, not clearly named" — the most common case on a flat landing — with no branch at all.
+**`COMPONENT_GAP` — the count is the ONLY criterion.** 1× → ADVISORY (inline it with a `// TODO: refactor into <Name> variant`); 2+× → BLOCKING (a primitive that repeats must be a component, or the screen duplicates it N times). Do not add side conditions like "…or a clearly-named primitive" — that made the same 1× case ADVISORY here and BLOCKING in an agent file, and left "no match, used once, not clearly named" — the most common case on a flat landing — with no branch at all. **One exception, which is not a side condition on severity:** when the orchestrator's brief already rules a single-use primitive `inline (decided at 0.5)`, the agent inlines it with **no STOP and no `// TODO`** — the decision is on record in the brief, and re-emitting it as an ADVISORY plus a TODO comment (which also trips `sonarjs/todo-tag`) reports a settled question as an open one.
 
 ### Defaults applied by ADVISORY STOPs
 
