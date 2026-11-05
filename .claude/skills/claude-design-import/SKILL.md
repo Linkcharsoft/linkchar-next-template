@@ -482,6 +482,8 @@ Also pass: the pre-rounded off-scale **integer** typography sizes (see Step 0.5 
 
 Also pass the **self-hosted faces**, if any (`fonts.json.faces[].selfHosted` with their `file` under `assets/fonts/`) — those load with `next/font/local`, not by name.
 
+**If the user picked § B5's alternative (b) at the checkpoint — raise the `container-custom` caps — that is YOURS, not the agent's.** After this step's commit, edit `.container-custom` in `src/styles/general.sass` (the `max-width` tiers, and `padding-inline` only when the design's gutter differs) and commit it alone as `[ STYLE ] Widen container-custom to the design frame`. Do not pass it to the tokens agent: its brief forbids touching `.container-custom`, correctly.
+
 The agent applies REUSE/CREATE/BLOCK against `tailwind.config.js` + `design-tokens-map.md`, loads fonts via `next/font/google` (or `next/font/local`) in `layout.tsx`, updates `general.sass`, runs `type-check`.
 
 **If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked): it replaces the `--theme-accent` value in `general.sass` with the token through `theme()` — one line, every component, no hand-mapped selectors. **Omit the item entirely if the user declined** — the agent touches that line only when the brief passes a token, so silence is the off switch. Record the outcome in the ledger (`applied` / `declined`): Step 7 reads it as `primereactAccent`.

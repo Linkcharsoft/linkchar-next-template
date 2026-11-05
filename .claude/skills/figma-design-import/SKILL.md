@@ -224,6 +224,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    ## Layouts
    - Existing match: [DashboardLayout matches dashboard nav? Yes/No]
    - To create: [{NewLayoutName} if a Figma shell doesn't match any existing layout]
+   - Content width: per [§ B5](../../docs/design-import-shared.md#b5-container-custom-at-import-time--branches-on-target) — "at 1440px the content measures {N}px (`container-custom`) against the design's {frame − 2×gutter}px" — and offer the `general.sass` cap change as the project-level alternative. Decided here, not at visual review.
 
    ## Screens (with desktop + mobile node IDs resolved)
    - **{ScreenName}Page** → route `{/path}`, type `{auth|public|protected}`
@@ -356,6 +357,8 @@ Read the Figma source AND the relevant codebase before touching any file.
 > **Delegate to**: `Agent({ subagent_type: 'figma-design-tokens' })` — runs in **Haiku**.
 
 Pass to the agent the exact list from the gap analysis: colors with hex values, typography sizes to add, font families. The agent edits `tailwind.config.js` + `src/styles/index.sass` + (if needed) `src/styles/general.sass`, then runs `pnpm type-check`.
+
+**If the user picked § B5's alternative (b) at the checkpoint — raise the `container-custom` caps — that is YOURS, not the agent's.** After this step's commit, edit `.container-custom` in `src/styles/general.sass` (the `max-width` tiers, and `padding-inline` only when the design's gutter differs) and commit it alone as `[ STYLE ] Widen container-custom to the design frame`. Do not pass it to the tokens agent: its brief forbids touching `.container-custom`, correctly.
 
 **If the user approved the PrimeReact accent override at the checkpoint, this is the step that applies it.** Pass the accent **token name** and point the agent at [§ B11](../../docs/design-import-shared.md#b11-the-primereact-accent-override--one-variable-in-generalsass-only-when-asked): it replaces the `--theme-accent` value in `general.sass` with the token through `theme()` — one line, every component, no hand-mapped selectors. **Omit the item entirely if the user declined** — the agent touches that line only when the brief passes a token, so silence is the off switch. Record the outcome in the ledger (`applied` / `declined`): Step 7 reads it as `primereactAccent`.
 

@@ -170,6 +170,11 @@ wrap a line earlier and grids tighten — fidelity, not a bug, but discovered at
 The gap-analysis report carries one line: *"at 1440px the content measures 1140px against the design's
 {N}px"*, and offers the per-project alternative: raise the caps in `general.sass` (`.container-custom`'s
 `max-width` rules — a project decision, applied once, never per section) rather than `max-w-*` on screens.
+**When the user picks that alternative, the orchestrator applies it itself, right after Step 1's commit and
+in its own `[ STYLE ]` commit** — touching only `.container-custom` in `general.sass` (its `max-width` tiers
+and, when the design's gutter differs, its `padding-inline`). No step agent owns it: the tokens agent's brief
+forbids `.container-custom` on purpose, and a cap change buried in a tokens commit is invisible at review
+(measured: decided at 0.5, applied by nobody until the orchestrator noticed after Step 1).
 
 **`Target: mobile-app` — the app shell owns the width; `container-custom` is NOT applied.** The design was
 drawn inside a phone frame (≈390–430px) and the layout renders it as a centered app-shell column, so the
