@@ -191,7 +191,7 @@ Read the Figma source AND the relevant codebase before touching any file.
    - `design-tokens-map.md` (project root, may not exist yet) — Figma-variable → Tailwind-token mapping from prior imports. ALWAYS read this first: if a Figma variable from the current node is already mapped, do NOT propose it as a new token; reuse the mapped one.
    - `src/styles/index.sass` — fonts loaded
    - `src/components/` — list every folder; cross-reference with the [Existing Reusable Components](../../CONVENTIONS.md#existing-reusable-components) table in `.claude/CONVENTIONS.md`
-   - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`
+   - `src/layouts/` — `AuthLayout`, `DashboardLayout`, `GeneralLayout`, `LandingLayout` (the public shell behind `(landing-layout)`, wrapping `/`)
    - `src/proxy.ts` — current `AUTH_PATHS`, `PUBLIC_PATHS`
    - `src/assets/icons/index.ts` — existing icons
 3. **Produce a gap analysis** as a written report (in chat — NOT a `.md` file unless the user asks):

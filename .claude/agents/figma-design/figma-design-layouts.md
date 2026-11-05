@@ -53,7 +53,7 @@ If the Figma design suggests a layout needs a feature that would require its own
 
 ## Steps
 
-1. Compare each existing layout in `src/layouts/{AuthLayout,DashboardLayout,GeneralLayout}/{Layout}.tsx` against the Figma design intent.
+1. Compare each existing layout in `src/layouts/{AuthLayout,DashboardLayout,GeneralLayout,LandingLayout}/{Layout}.tsx` against the Figma design intent. `LandingLayout` (behind `(landing-layout)`, wrapping `/`) is the expected home for a public site's nav + footer — fill it before creating a parallel layout.
 2. **Adjust** existing layouts if the Figma matches an existing layout but with structural changes (e.g. a new sticky behavior, an added Footer slot).
 3. **Create new layouts** when Figma shows a structural shell that doesn't match any existing one:
    1. Place in `src/layouts/{LayoutName}/{LayoutName}.tsx` + colocated `.sass`.
