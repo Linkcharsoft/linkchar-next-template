@@ -144,6 +144,7 @@ details:
    - Match missing the variant, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into {Component} variant {variant}`.
    - No match, used 2+ times → `STOP-BLOCKING / category: COMPONENT_GAP / next_agent: claude-design-components`.
    - No match, used once → `STOP-ADVISORY / category: COMPONENT_GAP / default_applied: inline with a // TODO: refactor into a component if it repeats`.
+   - The parent's brief already rules the primitive `inline (decided at 0.5)` → inline it with **no STOP and no `// TODO`** — the decision is on record ([CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol)).
 
    **The usage count is the ONLY criterion** for SEVERITY — 1× advisory, 2+× blocking, per [CONVENTIONS > STOP Protocol](../../CONVENTIONS.md#stop-protocol). Do NOT add side conditions ("…or a clearly-named primitive"): that contradicts the source-of-truth table and leaves the single-use no-match case — the most common one on a flat landing — with no branch. (§ B10 widens what counts as a *gap*, never how loudly one is reported — a near match still routes through these same two severities.)
 

@@ -592,7 +592,7 @@ details:
 | `COMPONENT_GAP` | ADVISORY when the primitive is used **1×** in the screen, BLOCKING when used **2+×** | Existing component does not cover a design variant/state | `{flow}-components` |
 | `CONTAINER_CUSTOM_DECISION` | ADVISORY | Hybrid layout: ambiguous whether `container-custom` should anchor the chrome | `user_decision` (default = no `container-custom`) |
 
-**`COMPONENT_GAP` — the count is the ONLY criterion.** 1× → ADVISORY (inline it with a `// TODO: refactor into <Name> variant`); 2+× → BLOCKING (a primitive that repeats must be a component, or the screen duplicates it N times). Do not add side conditions like "…or a clearly-named primitive" — that made the same 1× case ADVISORY here and BLOCKING in an agent file, and left "no match, used once, not clearly named" — the most common case on a flat landing — with no branch at all.
+**`COMPONENT_GAP` — the count is the ONLY criterion.** 1× → ADVISORY (inline it with a `// TODO: refactor into <Name> variant`); 2+× → BLOCKING (a primitive that repeats must be a component, or the screen duplicates it N times). Do not add side conditions like "…or a clearly-named primitive" — that made the same 1× case ADVISORY here and BLOCKING in an agent file, and left "no match, used once, not clearly named" — the most common case on a flat landing — with no branch at all. **One exception, which is not a side condition on severity:** when the orchestrator's brief already rules a single-use primitive `inline (decided at 0.5)`, the agent inlines it with **no STOP and no `// TODO`** — the decision is on record in the brief, and re-emitting it as an ADVISORY plus a TODO comment (which also trips `sonarjs/todo-tag`) reports a settled question as an open one.
 
 ### Defaults applied by ADVISORY STOPs
 
