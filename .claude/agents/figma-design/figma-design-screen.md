@@ -226,7 +226,6 @@ What is NOT covered by this exception: colors (`bg-[#ff0000]`), font sizes (`tex
    **Horizontal scroll containers** (when mobile shows cards in `overflow-x-auto`): make them accessible:
    ```tsx
    <ul
-     role='list'
      aria-label='Featured items'
      className='flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 md:grid md:grid-cols-3 md:overflow-visible md:snap-none'
    >
