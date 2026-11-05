@@ -111,7 +111,7 @@ Maintain a `design-tokens-map.md` file at the project root (next to `figma.confi
      - **Nested** as an object: `brand: { primary: '#1f3a5b' }` — also generates `bg-brand-primary`.
 
      Both produce the same utility classes. **Mixing them within the same namespace is the failure mode** — if `brand` already lives as a nested object (`brand: { 500: '...' }`), adding `'brand-700': '...'` flat fragments the namespace across two definitions and makes future edits error-prone. **Read the namespace's current shape from `tailwind.config.js` BEFORE inserting; replicate that shape.** When you create a new namespace from scratch, prefer the nested object form — it scales better when the namespace grows past 2-3 shades and reads cleaner in the diff.
-   - Add new typography sizes to BOTH the `fontSize` map AND the typography plugin's `sizes` array — keep the pair YOU add in sync. (The template ships `fontSize`-only entries — 72–128 — with no plugin classes: leave them alone, reconciling pre-existing drift is not your brief.)
+   - Add new typography sizes to the `fontSize` map only — the typography plugin derives `text-{weight}-{size}` from it, so there is no second list to keep in sync.
    - Add new breakpoints to `theme.extend.screens` if specified.
 
 5. **Fonts — load via `next/font/google`, NEVER via CSS `@import`**:
