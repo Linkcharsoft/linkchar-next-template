@@ -66,16 +66,13 @@ const SignupPage = () => {
       })
 
       try {
-        const isTestUser = localStorage.getItem('test_user')
         const { ok, error } = await signup({
           email: values.email,
           password1: values.password,
-          password2: values.password,
-          is_test_user: isTestUser === 'true' ? true : false
+          password2: values.password
         })
 
         if (ok) {
-          localStorage.removeItem('test_user')
           router.push(`/signup/email-validation/${encodeURIComponent(values.email)}`)
         } else {
           const emailError = error as { email?: string[] }

@@ -16,8 +16,7 @@ export const AUTH_ERRORS = {
   'refresh-token': 'Error refreshing token',
   'no-refresh-token': 'No access token returned from refresh',
   'login': 'Login failed',
-  'logout': 'Logout failed',
-  'delete-test-users': 'Test users not deleted'
+  'logout': 'Logout failed'
 }
 
 export const AUTH_INPUT_ERRORS = {
