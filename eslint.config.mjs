@@ -225,6 +225,8 @@ const ESLintConfig = [
       'unicorn/no-top-level-assignment-in-function': 'off',
       // Its "simple first" reordering breaks conditions where the typeof check narrows the rest.
       'unicorn/prefer-simple-condition-first': 'off',
+      // Module-level types (Formik values, API responses) are the shape every skill generates.
+      'unicorn/prefer-smaller-scope': 'off',
 
       // eslint-comments — every disable must justify its WHY
       '@eslint-community/eslint-comments/require-description': ['error', { ignore: [] }],
