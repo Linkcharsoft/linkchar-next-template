@@ -17,8 +17,8 @@
       "Bash(pnpm exec tsc:*)",
       "Bash(pnpm --version)",
       "Bash(node --version)",
-      "Bash(node .claude/scripts/render-audit.mjs:*)",
-      "Bash(node .claude/scripts/unpack.mjs:*)",
+      "Bash(node *render-audit.mjs*)",
+      "Bash(node *unpack.mjs*)",
       "Bash(pnpm dlx js-yaml:*)",
       "Bash(npx -y js-yaml:*)",
       "Bash(npx -y json2yaml:*)",
@@ -41,8 +41,8 @@
       "PowerShell(pnpm build:*)",
       "PowerShell(pnpm start:*)",
       "PowerShell(pnpm exec eslint:*)",
-      "PowerShell(node .claude/scripts/render-audit.mjs:*)",
-      "PowerShell(node .claude/scripts/unpack.mjs:*)",
+      "PowerShell(node *render-audit.mjs*)",
+      "PowerShell(node *unpack.mjs*)",
       "PowerShell(git status:*)",
       "PowerShell(git diff:*)",
       "PowerShell(git log:*)",
@@ -62,5 +62,16 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "linkchar-next@linkchar": true
+  },
+  "extraKnownMarketplaces": {
+    "linkchar": {
+      "source": {
+        "source": "github",
+        "repo": "Linkcharsoft/linkchar-claude-plugins"
+      }
+    }
   }
 }

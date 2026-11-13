@@ -195,7 +195,7 @@ Sentry is fully integrated with environment-aware configuration:
 
 ## Claude Code Skills
 
-This template ships with a set of [Claude Code](https://claude.com/claude-code) skills under `.claude/skills/` that automate the most common scaffolding tasks. Invoke them with a slash command:
+The [Claude Code](https://claude.com/claude-code) skills that automate the most common scaffolding tasks are not stored in this repo: they ship in the `linkchar-next` plugin of the private `Linkcharsoft/linkchar-claude-plugins` marketplace, which `.claude/settings.json` enables. Once per machine, run `gh auth login && gh auth setup-git`; once per clone, run `claude plugin install linkchar-next@linkchar --scope project`. Invoke the skills with a slash command:
 
 | Skill | Purpose |
 | --- | --- |
@@ -212,7 +212,7 @@ This template ships with a set of [Claude Code](https://claude.com/claude-code) 
 | `/figma-design-import` | Orchestrate a full Figma-to-code import: tokens → assets → components → layouts → screens → validation → template chrome |
 | `/claude-design-import` | Same pipeline from a Claude Design canvas (an Artifact of type "Design", read from its URL), extracted locally by `unpack.mjs` |
 
-All conventions enforced by these skills are documented in `CLAUDE.md` — the canonical project guide for any AI-assisted contribution.
+The conventions these skills enforce live in the plugin's `CONVENTIONS.md`; `CLAUDE.md` describes the project itself.
 
 ### Figma MCP Integration
 
