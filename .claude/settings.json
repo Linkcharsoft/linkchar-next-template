@@ -1,15 +1,4 @@
 {
-  "extraKnownMarketplaces": {
-    "linkchar": {
-      "source": {
-        "source": "github",
-        "repo": "Linkcharsoft/linkchar-claude-plugins"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "linkchar-next@linkchar": true
-  },
   "permissions": {
     "allow": [
       "Bash(pnpm run lint-check:*)",
@@ -73,5 +62,16 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "linkchar-next@linkchar": true
+  },
+  "extraKnownMarketplaces": {
+    "linkchar": {
+      "source": {
+        "source": "github",
+        "repo": "Linkcharsoft/linkchar-claude-plugins"
+      }
+    }
   }
 }
