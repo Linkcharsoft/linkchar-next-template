@@ -1,8 +1,8 @@
 # CLAUDE.md — Project Overview
 
-This file describes **what** this project is: the tech stack, structure, and high-level patterns. The **operational rules** an agent must follow when generating or editing code live in [`.claude/CONVENTIONS.md`](./.claude/CONVENTIONS.md) — that file is the source of truth for styling, accessibility, performance, Figma translation, naming conventions, component reuse, and the STOP protocol used by sub-agents.
+This file describes **what** this project is: the tech stack, structure, and high-level patterns. The **operational rules** for generating or editing code — styling, accessibility, performance, design translation, naming, component reuse, the sub-agents' STOP protocol — live in `CONVENTIONS.md` of the **`linkchar-next` Claude Code plugin**, together with every skill, sub-agent and pipeline script.
 
-> **Skills and agents `Read` `.claude/CONVENTIONS.md` at their Step 0 before generating code.** If you're editing a convention, edit it there — not in this file. CLAUDE.md mentions operational rules only as one-line summaries with a link to the canonical section.
+> **Skills, agents and conventions are not in this repo.** `.claude/settings.json` enables `linkchar-next` from the `linkchar` marketplace (`Linkcharsoft/linkchar-claude-plugins`). At session start the plugin injects its own context: its root path, the mandatory skills table and the `CONVENTIONS.md` pointer. To change a skill, agent or convention, edit that repo, not this one. First time on a machine: `gh auth login && gh auth setup-git`, then `claude plugin install linkchar-next@linkchar --scope project`.
 
 ---
 
@@ -20,39 +20,15 @@ This file describes **what** this project is: the tech stack, structure, and hig
 
 > **Why no version numbers here.** `engines` is machine-enforced and is the single source of truth; a copy in a doc is unenforced and drifts silently. It did — this file and `README.md` each carried their own stale node/pnpm constraints, and had even drifted apart from *each other*. The framework versions above are deliberately **majors only**: those are architectural context an agent needs up front (`Next.js 16 App Router` changes how you write a page; `Tailwind 3` vs 4 changes the config shape), they change rarely, and they stayed accurate while the precise constraints rotted. **Rule: a major is context and may live here; anything more precise is a constraint and belongs only in `package.json`.**
 
-## Automation Skills
+## Skills & agents
 
-> **MANDATORY: For any of the tasks below, ALWAYS invoke the matching skill instead of writing files manually.** Even when the user does not type the slash command explicitly (e.g. "add a screen for settings", "create a modal to confirm deletion"), recognize the intent and invoke the skill. The skills encapsulate every convention in [`.claude/CONVENTIONS.md`](./.claude/CONVENTIONS.md) and generate files in the correct locations.
-
-| Task | Skill | Example invocation |
-| ---- | ----- | ------------------ |
-| Initialize a fresh template clone into a new product (rename app, gen `.env.local`/`AUTH_SECRET`) — run ONCE first | `/init-project` | `/init-project Acme Dashboard` |
-| Create a new screen + page route (+ proxy.ts update) | `/new-screen` | `/new-screen UsersPage protected /dashboard/users` |
-| Add a page or collection to the Linkchar CMS, with its site screen (only after `init-linkchar-cms`) | `/new-cms-page` | `/new-cms-page servicios page /servicios` |
-| Create a paginated DataTable screen (with `useTableParams`, filters, search, sorting) | `/new-table` | `/new-table UsersPage users /dashboard/users` |
-| Create a new reusable component | `/new-component` | `/new-component CustomTable client` |
-| Create a new custom React hook | `/new-hook` | `/new-hook useDebounce` |
-| Create a new Zustand store | `/new-store` | `/new-store Cart` |
-| Create a new modal type | `/new-modal` | `/new-modal ConfirmDelete` |
-| Create a skeleton loader for an existing component or screen | `/new-skeleton` | `/new-skeleton ProductCard` |
-| Import a full Figma design (orchestrates tokens → assets → components → layouts → screens) | `/figma-design-import` | `/figma-design-import https://figma.com/design/.../?node-id=X-Y` |
-| Import a full Claude Design canvas — an Artifact of type "Design", read from its URL — to code (fetch → unpack → tokens → assets → components → layouts → screens) | `/claude-design-import` | `/claude-design-import https://claude.ai/artifact/K5cFDu2UkQa7exJ7VqLciA` |
-| Import a full OpenAPI YAML spec and wire the backend layer (handlers + GET hooks, no UI) — typically runs AFTER `/figma-design-import` or `/claude-design-import` | `/openapi-import` | `/openapi-import ./openapi.yaml --tags=users,products` |
-| Scaffold a single API resource by hand (no spec) — `src/api/{resource}.ts` with the canonical interleaved layout | `/new-api-resource` | `/new-api-resource Users` |
+Every slash command (`/new-screen`, `/new-table`, `/figma-design-import`, …) and sub-agent comes from the plugin; sub-agents are namespaced `linkchar-next:<name>`.
 
 > **`/init-project` is enforced on fresh clones.** Until it runs (sentinel: `package.json` `name` is still `linkchar-next-template`), two guards block work: the Husky **`pre-commit`** hook refuses commits, and a Claude **PreToolUse** hook (`.claude/hooks/require-init.mjs`) refuses `Edit`/`Write`. Running `/init-project` renames the app and disarms both. Maintainers working on the **template itself** bypass with `LINKCHAR_TEMPLATE_DEV` — set it once in `.claude/settings.local.json` (`"env"` key, gitignored) and both guards read it (the shell env also works and takes precedence).
 
-Skills live in `.claude/skills/{skill-name}/SKILL.md` — **all at ONE level, never nested**. Do not duplicate their logic in chat — invoke the skill.
-
-> ⚠️ **Keep this directory FLAT. Skill discovery is NOT recursive**: Claude Code loads only `.claude/skills/{name}/SKILL.md` at one level, so grouping them into subfolders silently unloads every one it moves — the slash command just returns `Unknown command`.
->
-> **The breakage is invisible, which is why this warning exists.** When a skill is unloaded the workflows keep producing correct-looking output: the intent is still recognized, the `SKILL.md` still gets read from disk and followed by hand. Nothing fails; the `Skill` tool simply stops being invoked. Do not treat "it still works" as evidence the skills are loaded.
->
-> **Agents, in the same `.claude/` tree, DO recurse** (`.claude/agents/figma-design/*.md`, `.claude/agents/claude-design/*.md` all load from subfolders). That asymmetry is the trap — it makes it natural to assume skills behave the same. They do not: **agents may nest, skills may not.**
-
 ### Optional modules
 
-Some features are not wanted by every product. The template ships each one as a **working, inert base** in `src/` — it lints, type-checks and builds on every template change, so it cannot drift, but it does nothing until its env vars are set and nothing mounts it. A dedicated agent under `.claude/agents/init/` then **completes** that base for one project (or, for features the template ships by default, **removes** them). Agents are named after the provider or feature they touch (`init-{provider}` completes a base, `init-remove-{feature}` strips a default), so the name says which vendor a project depends on.
+Some features are not wanted by every product. The template ships each one as a **working, inert base** in `src/` — it lints, type-checks and builds on every template change, so it cannot drift, but it does nothing until its env vars are set and nothing mounts it. A dedicated plugin agent (`linkchar-next:init-*`) then **completes** that base for one project (or, for features the template ships by default, **removes** them). Agents are named after the provider or feature they touch (`init-{provider}` completes a base, `init-remove-{feature}` strips a default), so the name says which vendor a project depends on.
 
 | Agent | Kind | What it does |
 | ----- | ---- | ------------ |
@@ -60,45 +36,9 @@ Some features are not wanted by every product. The template ships each one as a 
 | `init-linkchar-cms` | add | Adds Linkchar's CMS (`@linkcharsoft/cms`): schema in `src/cms/schema.ts`, Supabase, the editor panel at `/cms` (its own Supabase Auth, invited users only), site readers and Draft Mode preview. **No base in the template** — the package is private, so its `linkchar-cms init` writes the starting files and the agent adapts them: the site moves into `src/app/(site)/` (see CONVENTIONS > App root), the proxy hands `/cms` to the panel, env constants, CSP, Amplify. Alternative to `init-storyblok`: it removes the Storyblok base. |
 | `init-storyblok` | add | Completes the Storyblok CMS layer: editable pages (one singleton story per page, bundled fallback in `src/constants/content/`, field-by-field override) and/or a collection (folder → listing + `[slug]` detail, e.g. a blog), Draft Mode targets, env. Base: `src/api/storyblok.ts` + `cms.ts` + `blog.ts`, `src/utils/storyblok.ts`, `src/types/cms.ts` + `blog.ts`, `StoryblokBridge`, `src/app/api/draft/route.ts`. Screens never import Storyblok — each `page.tsx` fetches and passes domain objects down. |
 
-Two ways to run one, same result: `/init-project` asks which modules to set up (its Step 9) and delegates; or, any time later, ask Claude to *run the `init-resend` agent* — the main session gathers the brief the agent's `.md` lists and delegates the same way. There is deliberately no wrapper skill per agent: that would be two files to keep in sync for one task. The shared protocol (brief, file boundary, three-gate validation, "the invoker commits, one commit per module", report shape) lives in [`.claude/docs/init-modules-shared.md`](./.claude/docs/init-modules-shared.md); each agent's `.md` holds only its own mechanics. Planned next, in this order: `init-remove-sentry`, `init-remove-auth`.
+Two ways to run one, same result: `/init-project` asks which modules to set up (its Step 9) and delegates; or, any time later, ask Claude to *run the `init-resend` agent* — the main session gathers the brief the agent's `.md` lists and delegates the same way. There is deliberately no wrapper skill per agent: that would be two files to keep in sync for one task. The shared protocol (brief, file boundary, three-gate validation, "the invoker commits, one commit per module", report shape) lives in the plugin's `docs/init-modules-shared.md`; each agent's `.md` holds only its own mechanics. Planned next, in this order: `init-remove-sentry`, `init-remove-auth`.
 
-**A sub-agent can also silently fail to load** — no error, it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. Symptom check, remedy, and the causes already ruled out: [`.claude/docs/agent-loading-troubleshooting.md`](./.claude/docs/agent-loading-troubleshooting.md). After adding or renaming an agent, **restart and verify it appears** before relying on it.
-
-### Keep `figma-design-import` and `claude-design-import` in sync
-
-These two orchestrators are deliberately parallel: the **same** bottom-up pipeline (tokens → assets → components → layouts → screens → validation → template chrome), the same conventions, and the same output quality — only the **source-ingestion front-end** differs (Figma MCP vs the Artifact tool reading the canvas to disk + the local `unpack.mjs` extractor). The goal is that a design lands with equal fidelity no matter which flow produced it.
-
-**The shared substance lives in ONE place, so it can't drift — there is no manual "mirror it to the twin in the same commit" step.** Two single sources of truth, both `Read` at pre-flight by every step agent of both flows:
-
-- **Code conventions** — what valid *output* looks like (tokens, typography, color/no-hex, a11y, `container-custom`, SASS) → [`.claude/CONVENTIONS.md`](./.claude/CONVENTIONS.md).
-- **Import-translation rules** — how to translate a design into that code (color clustering, typography snapping, radius, brand gradients, mock-data, forms) — **plus the agent protocol** (delegation contract, STOP emission, workload footer, report shape) → [`.claude/docs/design-import-shared.md`](./.claude/docs/design-import-shared.md).
-
-Edit either file **once** and both flows inherit automatically; `design-validation` (Step 6) and `design-post-import` (Step 7 — brands the template's own 404 / error / global-error / `PoweredBy` / toast / PrimeReact accent from the imported system, since no design draws those) are likewise shared agents, and **`.claude/scripts/` holds EVERY executable of the import flows**, whether shared or single-owner: `render-audit.mjs` (the runtime invariant sweep `design-validation` runs at its step 15, called by both flows), `primereact-theme.mjs` (vendors the compiled PrimeReact theme as `src/styles/primereact-theme.css` with its accent slots turned into `var(--theme-accent…)` — run once and committed, re-run only after a `primereact` upgrade; the flows only `--check` it at Step 7 and regenerate a stale snapshot — the accent itself is a variable they set) and `unpack.mjs` (the Claude Design canvas extractor — turns the artifact's `project/` files and asset-store uploads, saved to disk at Step 0a, into the IR; called only by `claude-design-import`). The folder is organised by KIND, not by ownership — a script lives here even when one flow owns it, so there is one place to look for "what code, as opposed to prose, does this pipeline run". A script is the right home for anything that must be *measured* rather than judged: it is deterministic across runs, it costs no tokens beyond its own output, and — unlike an agent — it cannot report a check as passing without having performed it. **Each agent's own `.md` holds ONLY its source-ingestion mechanics** — which diverge *by design* and are never synced to the twin.
-
-**Decision test when you change something:**
-
-- Shared **convention / translation rule / protocol** (would apply to both flows)? → edit the shared file (`CONVENTIONS.md` or `design-import-shared.md`) **once**; touch neither agent. Both inherit.
-- **Source-ingestion mechanics** of one format? → edit only that agent's `.md`; the twin is unaffected. These diverge by design: how the design context is read (Figma `get_design_context` / screenshots / asset URLs vs `unpack.mjs`'s source tree, `tokens.json`, `nav-graph.json`, local `assets/img/`), the "spec gate" (a Figma `nodeId` vs a source-file path/region), asset acquisition (download vs the artifact's asset store read to disk by id), navigation (Figma frames → screens vs the canvas's artboards, groups and link graph → route/component/variant classification), and responsive strategy (Figma desktop+mobile frames vs the boards' `expand`/width target detection).
-- A **new format-specific rule** (e.g. dclogic's empty-`components.json` handling, or a Figma-variable quirk) lives in that flow's agent only — it has no counterpart to sync.
-
-**The one documented exception: `## Workload tracking` is duplicated in both `SKILL.md` files ON PURPOSE.** By the test above it is protocol and belongs in `design-import-shared.md` — but that file is `Read` at pre-flight by **every step agent of both flows**, and the workload ledger is instruction only the *orchestrator* ever acts on. Moving it there would load it into ~7 sub-agent contexts per import to serve a single reader. So it stays duplicated, and both copies carry a banner saying so.
-
-> This exception is **not** a precedent for "duplicating is fine when it's convenient" — it is narrowly about *audience*: orchestrator-only content in a file whose readers are the step agents. Anything a step agent acts on still goes in the shared file, once. And the cost is real, not theoretical: within days of being written the two copies had already diverged (one was missing a verification command the other had). **If you edit one, edit the other in the same commit.**
-
-The old rigid 1:1 map is now just a **navigation aid** (find your twin to compare), NOT a "move them together" mandate:
-
-| figma-design-import | claude-design-import |
-| ------------------- | -------------------- |
-| `skills/figma-design-import/SKILL.md` | `skills/claude-design-import/SKILL.md` |
-| `agents/figma-design/figma-design-tokens.md` | `agents/claude-design/claude-design-tokens.md` |
-| `agents/figma-design/figma-design-assets.md` | `agents/claude-design/claude-design-assets.md` |
-| `agents/figma-design/figma-design-components.md` | `agents/claude-design/claude-design-components.md` |
-| `agents/figma-design/figma-design-layouts.md` | `agents/claude-design/claude-design-layouts.md` |
-| `agents/figma-design/figma-design-scaffold.md` | `agents/claude-design/claude-design-scaffold.md` |
-| `agents/figma-design/figma-design-screen.md` | `agents/claude-design/claude-design-screen.md` |
-| `agents/shared/design-validation.md` + `agents/shared/design-post-import.md` + `docs/design-import-shared.md` | *(same files — already shared; a change benefits both automatically)* |
-
-> **Screen vs DataTable**: when the requested screen is a list/table with pagination, filters, search or sorting, prefer `/new-table` over `/new-screen` — the latter generates a blank screen, the former scaffolds the full stack (types + API + screen + SASS + page wrapper) wired to `useTableParams`.
+**A sub-agent can also silently fail to load** — no error, it just never appears in the available-agent list, and every skill that delegates to it breaks at that step. Symptom check, remedy, and the causes already ruled out: the plugin's `docs/agent-loading-troubleshooting.md`. After updating the plugin, **restart and verify the agent appears** (and check `/plugin` for errors) before relying on it.
 
 ## Project Structure
 
@@ -154,7 +94,7 @@ src/
 ### Error Boundaries
 
 - **ONE root boundary, deliberately**: `src/app/error.tsx` → `src/screens/ErrorPage/` (Sentry `captureException` on mount + `reset` retry). It renders inside the root layout, so the shell and providers survive. Per-segment `error.tsx` / `loading.tsx` files are per-project decisions — the template ships none.
-- `src/app/global-error.tsx` catches ONLY root-layout failures and **replaces the entire root layout**, so nothing the layout provides exists there: it must import `@/styles/index.sass`, set its title via `<head><title>` (a `metadata` export is inert in a `'use client'` file), and **never load `next/font`** — not even through a shared module (breaks every route in dev under `reactCompiler`; the Google `<link>` + inline CSS variable pattern is the way — see [`.claude/CONVENTIONS.md > Font Loading`](./.claude/CONVENTIONS.md#font-loading)).
+- `src/app/global-error.tsx` catches ONLY root-layout failures and **replaces the entire root layout**, so nothing the layout provides exists there: it must import `@/styles/index.sass`, set its title via `<head><title>` (a `metadata` export is inert in a `'use client'` file), and **never load `next/font`** — not even through a shared module (breaks every route in dev under `reactCompiler`; the Google `<link>` + inline CSS variable pattern is the way — see the plugin's `CONVENTIONS.md > Font Loading`).
 - Neither screen is visible in dev (the overlay covers them). Production preview: `pnpm run serve`, then `/sentry-example-page` → "Client Break" throws during render and lands on `ErrorPage`; global-error requires a temporary `throw` in `src/app/layout.tsx`.
 
 ## Design Tokens (Figma & Claude Design imports)
@@ -171,7 +111,7 @@ Modals and notifications are managed globally via `useModalStore` (Zustand):
 
 ```tsx
 // Consume with atomic selectors — never destructure the whole store.
-// See .claude/CONVENTIONS.md > Zustand selectors
+// See CONVENTIONS.md (linkchar-next plugin) > Zustand selectors
 const openModal = useModalStore((s) => s.openModal)
 const closeModal = useModalStore((s) => s.closeModal)
 const setNotification = useModalStore((s) => s.setNotification)
@@ -189,7 +129,7 @@ setNotification({ severity: 'error', summary: 'Error', detail: 'Something failed
 
 To add a new modal type, use the `/new-modal` skill — it handles all four steps (type declaration in `modalStore.ts`, `ModalPayloads` entry, component in `components/modals/`, and registration in `providers/ModalsProvider.tsx`).
 
-> Modal scope rules (global `ModalsProvider` vs local mount on a single screen) are documented in [`.claude/CONVENTIONS.md > Bundle & Performance Architecture`](./.claude/CONVENTIONS.md#bundle--performance-architecture).
+> Modal scope rules (global `ModalsProvider` vs local mount on a single screen) are documented in the plugin's `CONVENTIONS.md > Bundle & Performance Architecture`.
 
 ## State Management (Zustand)
 
@@ -198,7 +138,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 - Stores are in `src/stores/` with `create<StoreType>()` pattern.
 - Stores do NOT need a `'use client'` directive — `create()` runs no hooks at import; the store hook only runs inside consumers, which already carry `'use client'`.
 - Named `useXxxStore` and exported as default.
-- **Consume with atomic selectors** (`useStore((s) => s.field)`), one value per call — never destructure the whole store (`useStore()`), which re-renders on every state change. See [`.claude/CONVENTIONS.md > Zustand selectors`](./.claude/CONVENTIONS.md#zustand-selectors).
+- **Consume with atomic selectors** (`useStore((s) => s.field)`), one value per call — never destructure the whole store (`useStore()`), which re-renders on every state change. See the plugin's `CONVENTIONS.md > Zustand selectors`.
 
 ## Forms (Formik + Yup)
 
@@ -207,7 +147,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 - `validateOnChange: false` to validate only on submit.
 - Use `InputContainer` component to wrap inputs with label and error display.
 
-> Per-input rules (autoComplete tokens, `aria-label` on icon-only buttons, focus-on-error handling, etc.) live in [`.claude/CONVENTIONS.md > Accessibility`](./.claude/CONVENTIONS.md#accessibility).
+> Per-input rules (autoComplete tokens, `aria-label` on icon-only buttons, focus-on-error handling, etc.) live in the plugin's `CONVENTIONS.md > Accessibility`.
 
 ## API Layer
 
@@ -241,7 +181,7 @@ To add a new modal type, use the `/new-modal` skill — it handles all four step
 
 ### Slash Commands
 
-- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` or `/claude-design-import` scaffolds the UI (both leave screens rendering `MOCK_*` data with a `// TODO: openapi-import` marker for this flow to replace). Delegates to four sub-agents in `.claude/agents/openapi/`: `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-spec-validate` (Haiku) for input spec audit, `openapi-code-validate` (Haiku) for emitted code audit.
+- **`/openapi-import {spec-path-or-url} [--tags=a,b,c] [--force] [--no-auth]`** — full orchestrator. Ingests a YAML spec, generates one `src/api/{tag}.ts` per tag and one `src/hooks/use{Resource}.ts` per resource (GET endpoints only), and runs lint + type-check. Use this AFTER `/figma-design-import` or `/claude-design-import` scaffolds the UI (both leave screens rendering `MOCK_*` data with a `// TODO: openapi-import` marker for this flow to replace). Delegates to four plugin sub-agents (`linkchar-next:openapi-*`): `openapi-handlers` (Sonnet), `openapi-hooks` (Haiku), `openapi-spec-validate` (Haiku) for input spec audit, `openapi-code-validate` (Haiku) for emitted code audit.
 - **`/new-api-resource {ResourceName} [list,detail,create,update,delete] [no-auth]`** — single-file manual scaffold. No spec input, no merge logic. Use for ad-hoc endpoints not yet in the spec or for quick prototyping.
 
 ### Conventions
@@ -324,7 +264,7 @@ The template ships with `src/app/sentry-example-page/`, `src/screens/SentryExamp
 **The only test runner installed is Cypress (E2E). There is no unit-testing setup** — no `vitest`, no `@testing-library/*`, no `__tests__/` folders, and neither `pnpm test` nor `pnpm test-unit` exists. Verify against `package.json` before assuming any other runner is available.
 
 - `cypress` + `cypress-mailslurp` (inbox helpers), `eslint-plugin-cypress`, and `playwright-webkit` for cross-browser runs. Versions: `package.json`.
-- **`playwright-webkit` is NOT Cypress-only — removing Cypress must keep it.** `.claude/scripts/render-audit.mjs` (the runtime sweep `design-validation` runs at its step 15) loads it from the app; without it every design import fails at Step 6 with `Cannot find module 'playwright-webkit'`. Its `allowBuilds` entry in `pnpm-workspace.yaml` stays too.
+- **`playwright-webkit` is NOT Cypress-only — removing Cypress must keep it.** The plugin's `scripts/render-audit.mjs` (the runtime sweep `design-validation` runs at its step 15) loads it from the app; without it every design import fails at Step 6 with `Cannot find module 'playwright-webkit'`. Its `allowBuilds` entry in `pnpm-workspace.yaml` stays too.
 - Config: `cypress.config.ts` at the repo root — `specPattern: 'src/cypress/e2e/**/*.cy.{ts,tsx}'`, `baseUrl: http://localhost:3000` (so the app must be running).
 - Commands: `pnpm run test-open` (interactive) · `pnpm run test-run` (headless).
 - **Specs DO exist** — 7 of them, under **`src/cypress/e2e/`** (**not** a root `cypress/`; looking for one is what hides them): the auth flow (`Login`, `SignUp`, `EmailValidation`, `PasswordRecovery`, `ChangePassword`, `Flow`) plus `NavigationProtection.cy.ts`. Alongside them: `src/cypress/support/` (`commands.ts`, `e2e.ts`), `src/cypress/utils/` (shared helpers), and its own `tsconfig.json`.
